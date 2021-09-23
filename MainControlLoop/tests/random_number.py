@@ -32,5 +32,5 @@ class RandomNumber:
             print("Above 50:", self.state_field_registry.get(
                 state_fields.StateField.RAND_NUMBER))
         else:
-            print("Above 50:", self.state_field_registry.get(
+            print("Below 50:", self.state_field_registry.get(
                 state_fields.StateField.RAND_NUMBER))
