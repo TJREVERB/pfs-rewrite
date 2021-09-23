@@ -7,3 +7,4 @@ class StateField(Enum):
     """
     RAND_NUMBER = "RAND_NUMBER"
     ABOVE_50 = "ABOVE_50"
+    RECEIVED_COMMAND = "RECEIVED_COMMAND"
