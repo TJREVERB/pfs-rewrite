@@ -10,7 +10,8 @@ class StateFieldRegistry:
         """
         self.registry = {
             StateField.RAND_NUMBER: 0,
-            StateField.ABOVE_50: False
+            StateField.ABOVE_50: False,
+            StateField.RECEIVED_COMMAND: ""
         }
 
     def update(self, field: StateField, value):
