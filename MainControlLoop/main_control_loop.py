@@ -1,7 +1,7 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.tests.random_number import RandomNumber
-from aprs import APRS
-from eps import EPS
+from MainControlLoop.aprs import APRS
+from MainControlLoop.eps import EPS
 import datetime
 
 
@@ -16,9 +16,17 @@ class MainControlLoop:
         self.aprs = APRS(self.state_field_registry)
         self.eps = EPS(self.state_field_registry)
         self.command_registry = {
-            "TST": (print, "Hello"),  # Test method
+            "TST": (self.log, "Hello"),  # Test method
             "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
+            "BTS": (self.log, str(self.eps.battery_voltage())),  # Reads battery voltage and logs it
         }
+
+    def log(self, string) -> None:
+        """
+        Logs string
+        """
+        with open("log.txt", "a") as f:
+            f.write(string + "\n")
 
     def command_interpreter(self) -> bool:
         """
@@ -29,6 +37,7 @@ class MainControlLoop:
         # If no command was received, don't do anything
         if raw_command == "":
             return True
+        self.state_field_registry.RECEIVED_COMMAND = ""
         # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
@@ -45,14 +54,17 @@ class MainControlLoop:
 
     def execute(self):
         """READ"""
-        self.randnumber.read()
-        self.aprs.read()
+        #self.randnumber.read()
+        #self.aprs.read()
+        #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
 
         """CONTROL"""
-        self.randnumber.control()
-        self.randnumber.actuate()
+        #self.randnumber.control()
+        #self.randnumber.actuate()
         self.command_interpreter()
+        #print(self.eps.battery_voltage())
 
     def run(self):  # Repeat main control loop forever
+        self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
         while True:
             self.execute()

@@ -1,6 +1,6 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-#from smbus2 import SMBusWrapper
-from smbus2 import SMBus
+from smbus2 import SMBusWrapper
+#from smbus2 import SMBus
 import time
 
 
@@ -13,8 +13,8 @@ class EPS:
         self.state_field_registry: state_field_registry = state_field_registry
 
     def battery_voltage(self):
-        # with SMBusWrapper(1) as bus:
-        with SMBus(1) as bus:
+        with SMBusWrapper(1) as bus:
+        #with SMBus(1) as bus:
             bus.write_i2c_block_data(self.EPS_ADDRESS, 0x10, [0xE2, 0x80])
             time.sleep(0.5)
             data = bus.read_i2c_block_data(self.EPS_ADDRESS, 0, 2)
