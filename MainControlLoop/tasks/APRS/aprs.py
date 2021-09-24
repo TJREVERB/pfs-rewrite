@@ -18,8 +18,8 @@ class APRS:
         self.state_field_registry = state_field_registry
         # Registry of all commands we can be sent
         self.command_registry = {
-            "TST": [print, "Hello"],
-            "BVT": [self.return_battery_voltage, None]
+            "TST": [print, "Hello"],  # Test method
+            "BVT": [self.return_battery_voltage, None],  # Reads and transmit battery voltage
         }
 
     def return_battery_voltage(self) -> bool:
@@ -109,13 +109,13 @@ class APRS:
         # If no command was received, don't do anything
         if raw_command is None:
             return True
-        # Attempts to
+        # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
             command = raw_command[raw_command.find("TJ;")+3:raw_command.find("TJ;")+6]
             # Executes command associated with code and logs result
             with open("log.txt", "a") as f:
-                # Datetime + tab + code + tab + result of command execution + newline
+                # Timestamp + tab + code + tab + result of command execution + newline
                 f.write(str(datetime.datetime.now().timestamp()) + "\t" + command + "\t" +
                         self.command_registry[command][0](self.command_registry[command][1]) + "\n")
             return True
