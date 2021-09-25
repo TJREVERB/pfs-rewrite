@@ -12,21 +12,7 @@ class APRS:
 
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
         self.state_field_registry = state_field_registry
-
-    def write(self, message: str) -> bool:
-        """
-        Writes the message to the APRS radio through the serial port
-        :param message: (str) message to write
-        :return: (bool) whether or not the write worked
-        """
-        if not self.functional():
-            return False
-        try:
-            self.serial.write((message + "\n").encode("utf-8"))
-            return True
-        except:
-            return False
-        
+    
     def functional(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed)
@@ -44,6 +30,37 @@ class APRS:
         try:  # try to open the serial, and return whether it worked
             self.serial.open()
             self.serial.flush()
+            return True
+        except:
+            return False
+    
+    def powered_on(self) -> bool:
+        """
+        NEED TO IMPLEMENT
+        Checks whether the APRS is powered on
+        :return: (bool) APRS is receiving power
+        """
+        if not self.functional():
+            return False
+        try:
+            self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
+            self.serial.write("MYCALL\n".encode("utf-8"))
+            # Read returned value to make sure EPS is powered on
+            self.serial.write("QUIT\n".encode("utf-8"))
+            return True
+        except Exception:
+            return False
+
+    def write(self, message: str) -> bool:
+        """
+        Writes the message to the APRS radio through the serial port
+        :param message: (str) message to write
+        :return: (bool) whether or not the write worked
+        """
+        if not self.functional():
+            return False
+        try:
+            self.serial.write((message + "\n").encode("utf-8"))
             return True
         except:
             return False

@@ -18,7 +18,6 @@ class MainControlLoop:
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
             "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
-            "BTS": (self.log, str(self.eps.battery_voltage())),  # Reads battery voltage and logs it
         }
 
     def log(self, string) -> None:
@@ -51,20 +50,41 @@ class MainControlLoop:
             return True
         except Exception:
             return False
+    
+    def charging_mode(self) -> bool:
+        """
+        Enter charging mode, with Iridium off
+        :return: (bool) whether or not mode switch was successful
+        """
+        return self.eps.pin_on("Iridium")
+    
+    def science_mode(self) -> bool:
+        """
+        Enter science mode, with Iridium on
+        :return: (bool) whether or not mode switch was successful
+        """
+        return self.eps.pin_off("Iridium")
 
     def execute(self):
         """READ"""
-        #self.randnumber.read()
-        #self.aprs.read()
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
+        # Reads messages from APRS
+        self.aprs.read()
+        # Reads battery voltage from EPS
+        battery_voltage = self.eps.battery_voltage()
 
         """CONTROL"""
-        #self.randnumber.control()
-        #self.randnumber.actuate()
+        # Runs command from APRS, if any
         self.command_interpreter()
-        #print(self.eps.battery_voltage())
+        # Automatic mode switching
+        if battery_voltage < 4:  # Arbitrary number, fix later
+            # Enter charging mode if battery voltage < 4
+            self.charging_mode()
+        elif battery_voltage > 6:  # Arbitrary number, fix later
+            # Enter science mode if battery has charged > 6
+            self.science_mode()
 
     def run(self):  # Repeat main control loop forever
-        self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
+        #self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
         while True:
             self.execute()
