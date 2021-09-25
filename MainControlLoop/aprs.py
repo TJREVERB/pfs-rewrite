@@ -37,6 +37,7 @@ class APRS:
             return False
         self.serial.flush()
         self.serial.write("QUIT\n".encode("utf-8"))
+        self.serial.close()
         return True
 
     def write(self, message: str) -> bool:
@@ -48,7 +49,9 @@ class APRS:
         if not self.functional():
             return False
         try:
+            self.serial.open()
             self.serial.write((message + "\n").encode("utf-8"))
+            self.serial.close()
             return True
         except:
             return False
@@ -60,6 +63,7 @@ class APRS:
         """
         if not self.functional():  # see if aprs is properly working
             return ""
+        self.serial.open()
         output = bytes()  # create an output variable
         for loop in range(50):
             try:
@@ -72,6 +76,7 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
+        self.serial.close()
         message = output.decode('utf-8')
         self.state_field_registry.update(
             state_fields.StateField.RECEIVED_COMMAND, message)  # store message in statefield
