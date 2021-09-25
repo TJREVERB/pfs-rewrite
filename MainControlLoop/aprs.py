@@ -35,24 +35,18 @@ class APRS:
         TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
         :return: (bool) APRS and serial connection are working
         """
-        if self.serial is None:  # if serial has not been connected yet
+        try:
             try:
+                self.serial.open()
+            except AttributeError:
                 self.serial = Serial(
                     port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
-                self.serial.flush()
-                if self.powered_on():
-                    return True
-                return False
-            except:
-                return False
-
-        try:  # try to open the serial, and return whether it worked
-            self.serial.open()
+                self.serial.open()
             self.serial.flush()
             if self.powered_on():
                 return True
             return False
-        except:
+        except Exception:
             return False
 
     def write(self, message: str) -> bool:
