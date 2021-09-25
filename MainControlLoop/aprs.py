@@ -13,35 +13,12 @@ class APRS:
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
         self.state_field_registry = state_field_registry
     
-    def functional(self) -> bool:
-        """
-        Checks the state of the serial port (initializing it if needed)
-        :return: (bool) serial connection is working
-        """
-        if self.serial is None:  # if serial has not been connected yet
-            try:
-                self.serial = Serial(
-                    port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
-                self.serial.flush()
-                return True
-            except:
-                return False
-
-        try:  # try to open the serial, and return whether it worked
-            self.serial.open()
-            self.serial.flush()
-            return True
-        except:
-            return False
-    
     def powered_on(self) -> bool:
         """
         NEED TO IMPLEMENT
-        Checks whether the APRS is powered on
-        :return: (bool) APRS is receiving power
+        Checks whether the APRS is powered on and functioning
+        :return: (bool) APRS is receiving power and responsive
         """
-        if not self.functional():
-            return False
         try:
             self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
             self.serial.write("MYCALL\n".encode("utf-8"))
@@ -49,6 +26,33 @@ class APRS:
             self.serial.write("QUIT\n".encode("utf-8"))
             return True
         except Exception:
+            return False
+    
+    def functional(self) -> bool:
+        """
+        Checks the state of the serial port (initializing it if needed)
+        Calls powered_on() to check whether APRS is on and working
+        TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
+        :return: (bool) APRS and serial connection are working
+        """
+        if self.serial is None:  # if serial has not been connected yet
+            try:
+                self.serial = Serial(
+                    port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
+                self.serial.flush()
+                if self.powered_on():
+                    return True
+                return False
+            except:
+                return False
+
+        try:  # try to open the serial, and return whether it worked
+            self.serial.open()
+            self.serial.flush()
+            if self.powered_on():
+                return True
+            return False
+        except:
             return False
 
     def write(self, message: str) -> bool:
