@@ -23,8 +23,7 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
 4. **aprs.py** contains all code pertaining to the APRS.
    1. The **read** method reads and returns a message received over the APRS, and adds it to the **StateFieldRegistry**. NEEDS TESTING
    2. The **write** method transmits a message through the APRS. NEEDS TESTING
-   3. The **functional** method tests if the component is connected properly NEEDS TESTING
-   4. The **powered_on** method tests if the component is powered on and can send data back to the flight computer NOT IMPLEMENTED
+   3. The **functional** method tests if the component is connected properly and responsive to commands NEEDS TESTING, NOT FULLY IMPLEMENTED
 5. **eps.py** contains all code pertaining to the EPS.
    1. The **components** dictionary contains a list of all components connected to the EPS and their respective PDMs
    2. The **battery_voltage** method reads and returns the current battery voltage.
