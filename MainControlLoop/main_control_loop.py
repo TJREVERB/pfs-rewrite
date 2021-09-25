@@ -11,6 +11,8 @@ class MainControlLoop:
         Create all the objects
         Each object should take in the state field registry
         """
+        self.LOWER_THRESHOLD = 6
+        self.UPPER_THRESHOLD = 8
         self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
         self.randnumber = RandomNumber(self.state_field_registry)
         self.aprs = APRS(self.state_field_registry)
@@ -18,7 +20,17 @@ class MainControlLoop:
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
             "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
+            "CHG": (self.charging_mode, None),  # Enters charging mode
+            "SCI": (self.science_mode, None),  # Enters science mode
+            "U": self.set_upper,  # Set upper threshold
+            "L": self.set_lower,  # Set lower threshold
         }
+
+    def set_lower(self, threshold):
+        self.LOWER_THRESHOLD = threshold
+
+    def set_upper(self, threshold):
+        self.UPPER_THRESHOLD = threshold
 
     def log(self, string) -> None:
         """
@@ -44,7 +56,10 @@ class MainControlLoop:
             # Executes command associated with code and logs result
             with open("log.txt", "a") as f:
                 # Executes command
-                result = self.command_registry[command][0](self.command_registry[command][1])
+                if command[1:].isdigit():
+                    result = self.command_registry[command[0]](int(command[1]) + float(command[2]) / 10)
+                else:
+                    result = self.command_registry[command][0](self.command_registry[command][1])
                 # Timestamp + tab + code + tab + result of command execution + newline
                 f.write(str(datetime.datetime.now().timestamp()) + "\t" + command + "\t" + result + "\n")
             return True
@@ -77,10 +92,10 @@ class MainControlLoop:
         # Runs command from APRS, if any
         self.command_interpreter()
         # Automatic mode switching
-        if battery_voltage < 6:  # Arbitrary number, fix later
+        if battery_voltage < self.LOWER_THRESHOLD:
             # Enter charging mode if battery voltage < 4
             self.charging_mode()
-        elif battery_voltage > 8:  # Arbitrary number, fix later
+        elif battery_voltage > self.UPPER_THRESHOLD:
             # Enter science mode if battery has charged > 6
             self.science_mode()
 
