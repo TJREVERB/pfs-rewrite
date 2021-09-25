@@ -19,14 +19,23 @@ class APRS:
         Checks whether the APRS is powered on and functioning
         :return: (bool) APRS is receiving power and responsive
         """
-        try:
+        """try:
             self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
             self.serial.write("MYCALL\n".encode("utf-8"))
             # Read returned value to make sure EPS is powered on
             self.serial.write("QUIT\n".encode("utf-8"))
             return True
         except Exception:
-            return False
+            return False"""
+        """try:
+            self.serial.open()
+        except AttributeError:
+            self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
+            self.serial.open()"""
+        self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
+        self.serial.write("MYCALL\n".encode("utf-8"))
+        self.serial.write("QUIT\n".encode("utf-8"))
+        return True
     
     def functional(self) -> bool:
         """
@@ -38,14 +47,16 @@ class APRS:
         try:
             try:
                 self.serial.open()
+                #print("serial already open")
             except AttributeError:
                 self.serial = Serial(
                     port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
-                self.serial.open()
+                print("serial connection created")
+                #self.serial.open()
+                #print("serial opened")
             self.serial.flush()
-            if self.powered_on():
-                return True
-            return False
+            print("serial flushed")
+            return self.powered_on()
         except Exception:
             return False
 
