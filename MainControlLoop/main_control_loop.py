@@ -77,10 +77,10 @@ class MainControlLoop:
         # Runs command from APRS, if any
         self.command_interpreter()
         # Automatic mode switching
-        if battery_voltage < 4:  # Arbitrary number, fix later
+        if battery_voltage < 6:  # Arbitrary number, fix later
             # Enter charging mode if battery voltage < 4
             self.charging_mode()
-        elif battery_voltage > 6:  # Arbitrary number, fix later
+        elif battery_voltage > 8:  # Arbitrary number, fix later
             # Enter science mode if battery has charged > 6
             self.science_mode()
 
