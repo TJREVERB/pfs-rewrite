@@ -1,5 +1,6 @@
 from MainControlLoop.lib.StateFieldRegistry import registry, state_fields
 from serial import Serial
+import time
 
 
 class APRS:
@@ -27,6 +28,11 @@ class APRS:
             pass
         self.serial.flush()
         self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
+        time.sleep(1)
+        self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
+        time.sleep(1)
+        self.serial.write((chr(27) + chr(27) + chr(27)).encode("utf-8"))
+        time.sleep(0.5)
         self.serial.write("MYCALL\n".encode("utf-8"))
         try:
             byte = self.serial.read(size=1) #For now, just reads first byte, and if byte exists and isn't empty. 
