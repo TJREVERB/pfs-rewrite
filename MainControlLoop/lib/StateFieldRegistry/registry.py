@@ -11,7 +11,9 @@ class StateFieldRegistry:
         self.registry = {
             StateField.RAND_NUMBER: 0,
             StateField.ABOVE_50: False,
-            StateField.RECEIVED_COMMAND: ""
+            StateField.RECEIVED_COMMAND: "",
+            StateField.START_TIME: -1,
+            StateField.ANTENNA_DEPLOYED: False
         }
 
     def update(self, field: StateField, value):
