@@ -29,5 +29,8 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    2. The **battery_voltage** method reads and returns the current battery voltage.
    3. The **pin_on** method enables a particular component NEEDS TESTING
    4. The **pin_off** method disables a particular component NEEDS TESTING
+6. **antenna_deployer.py** contains all code pertaining to the antenna
+   1. Does not contain a read method, only a control method. control checks if 30 minutes have elapsed by checking the start time in the state field registry. 
+   2. If 30 minutes have elapsed and the antenna has not already been deployed, then it deploys the antenna. Code to actually deploy still needs to be written. 
 
 For more details on each specific part of the PFS, refer to the comments within the code. This README will be kept as up-to-date as possible.
