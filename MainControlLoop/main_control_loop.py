@@ -71,14 +71,14 @@ class MainControlLoop:
         Enter charging mode, with Iridium off
         :return: (bool) whether or not mode switch was successful
         """
-        return self.eps.pin_on("Iridium")
+        return self.eps.pin_off("Iridium")
     
     def science_mode(self) -> bool:
         """
         Enter science mode, with Iridium on
         :return: (bool) whether or not mode switch was successful
         """
-        return self.eps.pin_off("Iridium")
+        return self.eps.pin_on("Iridium")
 
     def execute(self):
         """READ"""
