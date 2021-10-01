@@ -93,10 +93,10 @@ class MainControlLoop:
         self.command_interpreter()
         # Automatic mode switching
         if battery_voltage < self.LOWER_THRESHOLD:
-            # Enter charging mode if battery voltage < 4
+            # Enter charging mode if battery voltage < lower threshold
             self.charging_mode()
         elif battery_voltage > self.UPPER_THRESHOLD:
-            # Enter science mode if battery has charged > 6
+            # Enter science mode if battery has charged > upper threshold
             self.science_mode()
 
     def run(self):  # Repeat main control loop forever
