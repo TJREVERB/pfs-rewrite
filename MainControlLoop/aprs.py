@@ -22,10 +22,10 @@ class APRS:
         TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
         :return: (bool) APRS and serial connection are working
         """
-        try:
-            self.serial.open()
-        except serial.serialutil.SerialException:
-            pass
+        #try:
+        #    self.serial.open()
+        #except serial.serialutil.SerialException:
+        #    pass
         self.serial.flush()
         self.serial.write((chr(27)).encode("utf-8"))
         time.sleep(0.5)
@@ -63,7 +63,7 @@ class APRS:
         self.serial.write(("\n").encode("utf-8"))
         self.serial.write(("\n").encode("utf-8"))
         self.serial.write("QUIT\n".encode("utf-8"))
-        self.serial.close()
+        #self.serial.close()
         return True
 
     def write(self, message: str) -> bool:
@@ -75,9 +75,9 @@ class APRS:
         #if not self.functional():
         #    return False
         try:
-            self.serial.open()
+        #    self.serial.open()
             self.serial.write((message + "\n").encode("utf-8"))
-            self.serial.close()
+            self.serial.flush()
             return True
         except:
             return False
@@ -89,7 +89,7 @@ class APRS:
         """
         #if not self.functional():  # see if aprs is properly working
         #    return ""
-        self.serial.open()
+        #self.serial.open()
         output = bytes()  # create an output variable
         for loop in range(50):
             try:
@@ -102,7 +102,7 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
-        self.serial.close()
+        self.serial.flush()
         message = output.decode('utf-8')
         self.state_field_registry.update(
             state_fields.StateField.RECEIVED_COMMAND, message)  # store message in statefield
