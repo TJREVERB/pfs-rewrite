@@ -1,5 +1,6 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.lib.StateFieldRegistry import state_fields
+from MainControlLoop.lib.StateFieldRegistry.state_fields import StateField
 from MainControlLoop.tests.random_number import RandomNumber
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
@@ -21,15 +22,23 @@ class MainControlLoop:
         #self.aprs = APRS(self.state_field_registry)
         # self.eps = EPS(self.state_field_registry)
         self.antenna_deployer = AntennaDeployer(self.state_field_registry)
-        """self.command_registry = {
+        self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
-            # Reads and transmit battery voltage
-            "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),
+            "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
             "CHG": (self.charging_mode, None),  # Enters charging mode
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-        }"""
+            "RST": (self.reset_power, None) # Reset power to the entire satellite (!!!!)
+        }
+
+    def reset_power(self) -> None:
+        """
+        Reset Power to the entire cubesat
+        """
+        self.eps.all_off() 
+        time.sleep(0.5)
+        self.eps.bus_reset([0x0F])
 
     def set_lower(self, threshold):
         self.LOWER_THRESHOLD = threshold
@@ -49,11 +58,10 @@ class MainControlLoop:
         This will take whatever is read, parse it, and then execute it
         :return: (bool) whether the control ran without error
         """
-        raw_command: str = self.state_field_registry.RECEIVED_COMMAND
+        raw_command: str = self.state_field_registry.get(StateField.RECEIVED_COMMAND)
         # If no command was received, don't do anything
         if raw_command == "":
             return True
-        self.state_field_registry.RECEIVED_COMMAND = ""
         # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
@@ -93,21 +101,20 @@ class MainControlLoop:
         """READ"""
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
         # Reads messages from APRS
-        #self.aprs.read()
+        self.aprs.read()
         # Reads battery voltage from EPS
-        #battery_voltage = self.eps.battery_voltage()
+        battery_voltage = self.eps.battery_voltage()
 
         """CONTROL"""
         # Runs command from APRS, if any
-        #self.command_interpreter()
+        self.command_interpreter()
         # Automatic mode switching
-        #if battery_voltage < self.LOWER_THRESHOLD:
-            # Enter charging mode if battery voltage < 4
-         #   self.charging_mode()
-        #elif battery_voltage > self.UPPER_THRESHOLD:
-            # Enter science mode if battery has charged > 6
-            #self.science_mode()
-        self.antenna_deployer.control()
+        if battery_voltage < self.LOWER_THRESHOLD:
+            # Enter charging mode if battery voltage < lower threshold
+            self.charging_mode()
+        elif battery_voltage > self.UPPER_THRESHOLD:
+            # Enter science mode if battery has charged > upper threshold
+            self.science_mode()
 
     def run(self):  # Repeat main control loop forever
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
