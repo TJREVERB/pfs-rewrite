@@ -24,10 +24,6 @@ class APRS:
         TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
         :return: (bool) APRS and serial connection are working
         """
-        #try:
-        #    self.serial.open()
-        #except serial.serialutil.SerialException:
-        #    pass
         self.serial.flush()
         self.serial.write((chr(27)).encode("utf-8"))
         time.sleep(0.5)
@@ -77,7 +73,6 @@ class APRS:
         #if not self.functional():
         #    return False
         try:
-        #    self.serial.open()
             self.serial.write((message + "\n").encode("utf-8"))
             self.serial.flush()
             return True
@@ -91,7 +86,6 @@ class APRS:
         """
         #if not self.functional():  # see if aprs is properly working
         #    return ""
-        #self.serial.open()
         output = bytes()  # create an output variable
         for loop in range(50):
             try:
