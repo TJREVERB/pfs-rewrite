@@ -48,7 +48,10 @@ class MainControlLoop:
         # If no command was received, don't do anything
         if raw_command == "":
             return True
-        self.state_field_registry.RECEIVED_COMMAND = ""
+        try:
+            self.state_field_registry.RECEIVED_COMMAND = ""
+        except AttributeError:
+            return False
         # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
