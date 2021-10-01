@@ -1,14 +1,15 @@
 from MainControlLoop.lib.StateFieldRegistry import registry, state_fields
+from MainControlLoop.antennatest.antenna_deploy import deploy, isisants
 import time
 
 
 class AntennaDeployer:
-    THIRTY_MINUTES = 1800  # 1800 seconds in 30 minutes
+    THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
 
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
         self.state_field_registry = state_field_registry
 
-    def deploy(self):
+    def antenna_deploy(self):
         pass
 
     def control(self):
