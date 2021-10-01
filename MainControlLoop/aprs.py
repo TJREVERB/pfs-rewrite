@@ -72,8 +72,8 @@ class APRS:
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
-        if not self.functional():
-            return False
+        #if not self.functional():
+        #    return False
         try:
             self.serial.open()
             self.serial.write((message + "\n").encode("utf-8"))
@@ -87,8 +87,8 @@ class APRS:
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        if not self.functional():  # see if aprs is properly working
-            return ""
+        #if not self.functional():  # see if aprs is properly working
+        #    return ""
         self.serial.open()
         output = bytes()  # create an output variable
         for loop in range(50):
