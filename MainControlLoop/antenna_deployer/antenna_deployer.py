@@ -10,7 +10,7 @@ class AntennaDeployer:
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
         self.state_field_registry = state_field_registry
 
-    def deploy():
+    def deploy(self):
         # Initiate connection with the device
         isisants.py_k_ants_init(b"/dev/i2c-1", 0x31, 0x32, 4, 10)
 
