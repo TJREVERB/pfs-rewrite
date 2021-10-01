@@ -44,10 +44,7 @@ class MainControlLoop:
         This will take whatever is read, parse it, and then execute it
         :return: (bool) whether the control ran without error
         """
-        try:
-            raw_command: str = self.state_field_registry.RECEIVED_COMMAND
-        except AttributeError:
-            return False
+        raw_command: str = self.state_field_registry.RECEIVED_COMMAND
         # If no command was received, don't do anything
         if raw_command == "":
             return True
@@ -88,6 +85,7 @@ class MainControlLoop:
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
         # Reads messages from APRS
         self.aprs.read()
+        print(self.state_field_registry.RECEIVED_COMMAND)
         # Reads battery voltage from EPS
         battery_voltage = self.eps.battery_voltage()
 
@@ -104,5 +102,6 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
+        self.state_field_registry.update(self.state_field_registry.RECEIVED_COMMAND, "")
         while True:
             self.execute()
