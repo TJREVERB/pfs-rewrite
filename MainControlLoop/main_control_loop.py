@@ -35,7 +35,7 @@ class MainControlLoop:
         """
         self.eps.all_off() 
         time.sleep(0.5)
-        self.eps.bus_reset()
+        self.eps.bus_reset([0x0F])
         
 
     def set_lower(self, threshold):
