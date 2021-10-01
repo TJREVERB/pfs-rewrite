@@ -26,7 +26,7 @@ class MainControlLoop:
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-            "RST": (self.reset_power, None)
+            "RST": (self.reset_power, None) #Reset power to the entire satellite (!!!!)
         }
 
     def reset_power(self) -> None:
