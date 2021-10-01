@@ -1,5 +1,5 @@
 from MainControlLoop.lib.StateFieldRegistry import registry, state_fields
-from MainControlLoop.antennatest.antenna_deploy import deploy, isisants
+from MainControlLoop.antenna_deployer.antenna_deploy import deploy, isisants
 import time
 
 
@@ -18,6 +18,6 @@ class AntennaDeployer:
             # if 30 minutes have elapsed
             if(time.time() - self.state_field_registry.get(state_fields.StateField.START_TIME) > self.THIRTY_MINUTES):
                 print("deployed")
-                self.deploy()
+                deploy()
                 self.state_field_registry.update(
                     state_fields.StateField.ANTENNA_DEPLOYED, True)

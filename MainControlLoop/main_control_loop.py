@@ -3,7 +3,7 @@ from MainControlLoop.lib.StateFieldRegistry import state_fields
 from MainControlLoop.tests.random_number import RandomNumber
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
-from MainControlLoop.antennatest.antenna_deployer import AntennaDeployer
+from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 import datetime
 import time
 
