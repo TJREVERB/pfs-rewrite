@@ -19,8 +19,8 @@ class MainControlLoop:
         self.UPPER_THRESHOLD = 8
         self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
         self.randnumber = RandomNumber(self.state_field_registry)
-        #self.aprs = APRS(self.state_field_registry)
-        # self.eps = EPS(self.state_field_registry)
+        self.aprs = APRS(self.state_field_registry)
+        self.eps = EPS(self.state_field_registry)
         self.antenna_deployer = AntennaDeployer(self.state_field_registry)
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
