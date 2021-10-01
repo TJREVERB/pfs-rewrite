@@ -81,8 +81,8 @@ class Iridium(Device):
         """
         if not self.functional():
             return False
-     
-		command = command + "\r\n"
+    
+        command = command + "\r\n"
         try:
             self.serial.write(command.encode("UTF-8"))
         except:
@@ -90,7 +90,7 @@ class Iridium(Device):
 
         return True
 
-    def read(self) -> (bytes, bool):
+    def read(self) -> Tuple[bytes, bool]:
         """
         Reads in as many available bytes as it can if timeout permits.
         :return: (byte) bytes read from Iridium, whether or not the write worked
