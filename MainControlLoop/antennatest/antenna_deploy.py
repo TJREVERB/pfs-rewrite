@@ -22,4 +22,4 @@ def deploy():
     isisants.py_k_ants_deploy(ANT_4, False, 5)
 
 
-#deploy()
+deploy()
