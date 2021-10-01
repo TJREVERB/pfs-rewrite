@@ -16,6 +16,7 @@ class APRS:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
+
     def functional(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed)
@@ -24,44 +25,29 @@ class APRS:
         :return: (bool) APRS and serial connection are working
         """
         self.serial.flush()
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write(("\n").encode("utf-8"))
-        time.sleep(1)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write(("\n").encode("utf-8"))
-        time.sleep(1)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write((chr(27)).encode("utf-8"))
-        time.sleep(0.5)
-        self.serial.write(("\n").encode("utf-8"))
-        self.serial.write(("\n").encode("utf-8"))
+        self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8") +
+                          "\n".encode("utf-8"))
+        time.sleep(.5)
+        self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8") +
+                          "\n".encode("utf-8"))
+        time.sleep(.5)
+        self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8"))
+        time.sleep(.5)
+        self.serial.write(("\n\n").encode("utf-8"))
         self.serial.write("MYCALL\n".encode("utf-8"))
         try:
             # For now, just reads first byte, and if byte exists and isn't empty.
             byte = self.serial.read(size=1)
-            # Can be updated to match what the message actually is and match it to an expected value once we get a good idea of what we expect from MYCALL
+            # Can be updated to match what the message actually is and match it to an expected value
+            # once we get a good idea of what we expect from MYCALL
         except:
             return False
         if byte == bytes():
             return False
         self.serial.flush()
-        self.serial.write(("\n").encode("utf-8"))
-        self.serial.write(("\n").encode("utf-8"))
+        self.serial.write(("\n\n").encode("utf-8"))
         self.serial.write("QUIT\n".encode("utf-8"))
-        #self.serial.close()
+        time.sleep(.5)
         return True
 
     def write(self, message: str) -> bool:
@@ -70,8 +56,6 @@ class APRS:
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
-        #if not self.functional():
-        #    return False
         try:
             self.serial.write((message + "\n").encode("utf-8"))
             self.serial.flush()
@@ -84,8 +68,6 @@ class APRS:
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        #if not self.functional():  # see if aprs is properly working
-        #    return ""
         output = bytes()  # create an output variable
         for loop in range(50):
             try:
