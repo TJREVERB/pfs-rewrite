@@ -4,6 +4,7 @@ from MainControlLoop.tests.random_number import RandomNumber
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
 import datetime
+import time
 
 
 class MainControlLoop:
@@ -25,7 +26,17 @@ class MainControlLoop:
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
+            "RST": (self.reset_power, None)
         }
+
+    def reset_power(self) -> None:
+        """
+        Reset Power to the entire cubesat
+        """
+        self.eps.all_off() 
+        time.sleep(0.5)
+        self.eps.bus_reset()
+        
 
     def set_lower(self, threshold):
         self.LOWER_THRESHOLD = threshold

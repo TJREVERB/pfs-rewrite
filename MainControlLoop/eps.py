@@ -48,3 +48,26 @@ class EPS:
         """
         with SMBusWrapper(1) as bus:
             return bus.write_i2c_block_data(self.EPS_ADDRESS, 0x51, self.components[component])
+
+    def all_on(self) -> bool:
+        """
+        Turn all PDMs on
+        :return: (bool) whether PDM on succeeded
+        """
+        with SMBusWrapper(1) as bus:
+            return bus.write_i2c_block_data(self.EPS_ADDRESS, 0x40, [0x00])
+
+    def all_off(self) -> bool:
+        """
+        Turn all PDMs off
+        :return: (bool) whether PDM off succeeded
+        """
+        with SMBusWrapper(1) as bus:
+            return bus.write_i2c_block_data(self.EPS_ADDRESS, 0x41, [0x00])
+
+    def bus_reset(self) -> None:
+        """
+        Resets all power buses
+        """
+        with SMBusWrapper(1) as bus:
+            return bus.write_i2c_block_data(self.EPS_ADDRESS, 0x70, [0x0F])
