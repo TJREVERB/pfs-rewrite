@@ -1,8 +1,10 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
+from MainControlLoop.lib.StateFieldRegistry import state_fields
 from MainControlLoop.lib.StateFieldRegistry.state_fields import StateField
 from MainControlLoop.tests.random_number import RandomNumber
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
+from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 import datetime
 import time
 
@@ -17,8 +19,9 @@ class MainControlLoop:
         self.UPPER_THRESHOLD = 8
         self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
         self.randnumber = RandomNumber(self.state_field_registry)
-        self.aprs = APRS(self.state_field_registry)
-        self.eps = EPS(self.state_field_registry)
+        #self.aprs = APRS(self.state_field_registry)
+        # self.eps = EPS(self.state_field_registry)
+        self.antenna_deployer = AntennaDeployer(self.state_field_registry)
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
             "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
@@ -26,7 +29,7 @@ class MainControlLoop:
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-            "RST": (self.reset_power, None) #Reset power to the entire satellite (!!!!)
+            "RST": (self.reset_power, None) # Reset power to the entire satellite (!!!!)
         }
 
     def reset_power(self) -> None:
@@ -36,7 +39,6 @@ class MainControlLoop:
         self.eps.all_off() 
         time.sleep(0.5)
         self.eps.bus_reset([0x0F])
-        
 
     def set_lower(self, threshold):
         self.LOWER_THRESHOLD = threshold
@@ -63,27 +65,31 @@ class MainControlLoop:
         # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
-            command = raw_command[raw_command.find("TJ;")+3:raw_command.find("TJ;")+6]
+            command = raw_command[raw_command.find(
+                "TJ;")+3:raw_command.find("TJ;")+6]
             # Executes command associated with code and logs result
             with open("log.txt", "a") as f:
                 # Executes command
                 if command[1:].isdigit():
-                    result = self.command_registry[command[0]](int(command[1]) + float(command[2]) / 10)
+                    result = self.command_registry[command[0]](
+                        int(command[1]) + float(command[2]) / 10)
                 else:
-                    result = self.command_registry[command][0](self.command_registry[command][1])
+                    result = self.command_registry[command][0](
+                        self.command_registry[command][1])
                 # Timestamp + tab + code + tab + result of command execution + newline
-                f.write(str(datetime.datetime.now().timestamp()) + "\t" + command + "\t" + result + "\n")
+                f.write(str(datetime.datetime.now().timestamp()) +
+                        "\t" + command + "\t" + result + "\n")
             return True
         except Exception:
             return False
-    
+
     def charging_mode(self) -> bool:
         """
         Enter charging mode, with Iridium off
         :return: (bool) whether or not mode switch was successful
         """
         return self.eps.pin_off("Iridium")
-    
+
     def science_mode(self) -> bool:
         """
         Enter science mode, with Iridium on
@@ -112,5 +118,7 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
+        self.state_field_registry.update(
+            state_fields.StateField.START_TIME, time.time())  # set the time that the pi first ran
         while True:
             self.execute()

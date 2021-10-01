@@ -16,7 +16,6 @@ class APRS:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
-    
     def functional(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed)
@@ -51,8 +50,9 @@ class APRS:
         self.serial.write(("\n").encode("utf-8"))
         self.serial.write("MYCALL\n".encode("utf-8"))
         try:
-            byte = self.serial.read(size=1) #For now, just reads first byte, and if byte exists and isn't empty. 
-            #Can be updated to match what the message actually is and match it to an expected value once we get a good idea of what we expect from MYCALL
+            # For now, just reads first byte, and if byte exists and isn't empty.
+            byte = self.serial.read(size=1)
+            # Can be updated to match what the message actually is and match it to an expected value once we get a good idea of what we expect from MYCALL
         except:
             return False
         if byte == bytes():

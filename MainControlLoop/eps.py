@@ -1,6 +1,6 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
-#from smbus2 import SMBus
+from smbus2 import SMBus
 import time
 
 
@@ -8,6 +8,7 @@ class EPS:
     """
     Class for EPS
     """
+
     def __init__(self, state_field_registry):
         self.EPS_ADDRESS: hex = 0x2b
         self.state_field_registry: state_field_registry = state_field_registry
@@ -88,7 +89,7 @@ class EPS:
             time.sleep(0.5)
             adc_count = (data[0] << 8 | data[1]) * .008993157
         return adc_count
-
+    
     #Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes) with no commands recieved.
     def get_watchdog_period(self) -> bytes:
         """
