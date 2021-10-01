@@ -44,14 +44,14 @@ class MainControlLoop:
         This will take whatever is read, parse it, and then execute it
         :return: (bool) whether the control ran without error
         """
-        raw_command: str = self.state_field_registry.RECEIVED_COMMAND
+        try:
+            raw_command: str = self.state_field_registry.RECEIVED_COMMAND
+        except AttributeError:
+            return False
         # If no command was received, don't do anything
         if raw_command == "":
             return True
-        try:
-            self.state_field_registry.RECEIVED_COMMAND = ""
-        except AttributeError:
-            return False
+        self.state_field_registry.RECEIVED_COMMAND = ""
         # Attempts to execute command
         try:
             # Extracts 3-letter code from raw message
