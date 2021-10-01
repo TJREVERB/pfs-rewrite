@@ -85,7 +85,6 @@ class MainControlLoop:
         #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
         # Reads messages from APRS
         self.aprs.read()
-        print(self.state_field_registry.get(StateField.RECEIVED_COMMAND))
         # Reads battery voltage from EPS
         battery_voltage = self.eps.battery_voltage()
 
