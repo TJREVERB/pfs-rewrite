@@ -50,6 +50,14 @@ class APRS:
         time.sleep(.5)
         return True
 
+    def clear_data_lines(self) -> None:
+        with open("/sys/devices/platform/soc/20980000.usb/buspower", "w") as f:
+            f.write(str(0))
+        time.sleep(15)
+        with open("/sys/devices/platform/soc/20980000.usb/buspower", "w") as f:
+            f.write(str(1))
+        time.sleep(5)
+
     def write(self, message: str) -> bool:
         """
         Writes the message to the APRS radio through the serial port
