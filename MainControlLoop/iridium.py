@@ -73,7 +73,8 @@ class Iridium:
 
     def request(self, command: str) -> str:
         self.write(command)
-        return self.read()
+        result = self.read()
+        return result[result.find(":"):result[result.find(":"):].find("\n")].lstrip(" ")
 
     def write(self, command: str) -> bool:
         """
