@@ -182,6 +182,7 @@ class EPS:
             bus.write_i2c_block_data(self.EPS_ADDRESS, 0x10, data[0])
             time.sleep(.5)
             raw = bus.read_i2c_block_data(self.EPS_ADDRESS, 0, 2)
+            time.sleep(.5)
         return (raw[0] << 8 | raw[1]) * data[1]
 
     def command(self, data) -> bool:
