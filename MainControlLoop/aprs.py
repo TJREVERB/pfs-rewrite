@@ -27,13 +27,11 @@ class APRS:
         self.serial.flush()
         self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8") +
                           "\n".encode("utf-8"))
-        time.sleep(.5)
-        self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8") +
-                          "\n".encode("utf-8"))
-        time.sleep(.5)
+        time.sleep(1)
         self.serial.write(chr(27).encode("utf-8") + chr(27).encode("utf-8") + chr(27).encode("utf-8"))
         time.sleep(.5)
-        self.serial.write(("\n\n").encode("utf-8"))
+        self.serial.write(("\n").encode("utf-8"))
+        time.sleep(.3)
         self.serial.write("MYCALL\n".encode("utf-8"))
         try:
             # For now, just reads first byte, and if byte exists and isn't empty.
@@ -45,7 +43,8 @@ class APRS:
         if byte == bytes():
             return False
         self.serial.flush()
-        self.serial.write(("\n\n").encode("utf-8"))
+        self.serial.write(("\n").encode("utf-8"))
+        time.sleep(.3)
         self.serial.write("QUIT\n".encode("utf-8"))
         time.sleep(.5)
         return True
