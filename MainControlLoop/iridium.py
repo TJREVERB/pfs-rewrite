@@ -71,6 +71,10 @@ class Iridium:
         except:
             return False
 
+    def request(self, command: str) -> str:
+        self.write(command)
+        return self.read()
+
     def write(self, command: str) -> bool:
         """
         Write a command to the serial port.
