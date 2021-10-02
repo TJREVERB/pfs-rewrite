@@ -32,6 +32,7 @@ class MainControlLoop:
             "L": self.set_lower,  # Set lower threshold
             "RST": (self.reset_power, None),  # Reset power to the entire satellite (!!!!)
             "IRI": (self.iridium_test, None),  # Transmit message through Iridium to ground station
+            "PWR": (self.total_power, None), # Calculate total power draw of connected components
         }
 
     def iridium_test(self) -> bool:
@@ -111,12 +112,27 @@ class MainControlLoop:
         """
         return self.eps.component_command(self.eps.component_command_args("Pin On"), "Iridium")
 
+    def total_power(self) -> float:
+        """
+        Returns total power draw based on EPS telemetry
+        :return: (float) power draw in W
+        """
+        power = self.eps.telemetry_request(self.eps.request_telemetry_args["I12VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V12VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["IBATBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VBATBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I5VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V5VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I3V3BUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V3V3BUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW3"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW3"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW4"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW4"])
+        return power
+
     def execute(self):
         """READ"""
         # Reads messages from APRS
         self.aprs.read()
         # Reads battery voltage from EPS
         battery_voltage = self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"])
+
+        print(self.total_power())
 
         """CONTROL"""
         # Deploys antenna if 30 minute timer has passed and antenna not already deployed
