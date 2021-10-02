@@ -25,7 +25,7 @@ class MainControlLoop:
         self.iridium = Iridium(self.state_field_registry)
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
-            "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
+            "BVT": (self.aprs.write, "TJ;" + str(self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"]))),  # Reads and transmit battery voltage
             "CHG": (self.charging_mode, None),  # Enters charging mode
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
@@ -116,7 +116,7 @@ class MainControlLoop:
         # Reads messages from APRS
         self.aprs.read()
         # Reads battery voltage from EPS
-        battery_voltage = self.eps.battery_voltage()
+        battery_voltage = self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"])
 
         """CONTROL"""
         # Deploys antenna if 30 minute timer has passed and antenna not already deployed

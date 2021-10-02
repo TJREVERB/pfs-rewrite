@@ -25,7 +25,6 @@ class EPS:
             "Firmware Version": (0x04, [0x00], 2),  # Reads and returns firmware version
             "Checksum": (0x05, [0x00], 2),  # Reads and returns generated checksum of ROM contents
             "Firmware Revision": (0x06, [0x00], 2),  # Reads and returns firmware revision number
-            "Battery Voltage": (0x10, [0xE2, 0x80], 2),  # Reads and returns battery voltage
 
             # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
             # with no commands received.
@@ -46,6 +45,69 @@ class EPS:
             # These depend on whether they have been commanded on or off, regardless of protection trips
             "All Initial States": (0x44, [0x00], 4),  # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
+        }
+        # Format: self.eps.telemetry_request(self.eps.request_telemetry_args["REQUESTED TELEMETRY"])
+        # Refer to EPS Manual Table 11.8-10
+        self.request_telemetry_args = {
+            "IBCROUT": ([0xE2, 0x84], 14.662757), #BCR Output current in mA
+            "VBCROUT": ([0xE2, 0x80], 0.008993157), #BCR Output voltage in V
+            "I3V3DRW": ([0xE2, 0x05], 0.001327547), #3V3 Current draw of EPS in A
+            "I5VDRW" : ([0xE2, 0x15], 0.001327547), #5V Current draw of EPS in A
+            "I12VBUS": ([0xE2, 0x34], 0.00207),  #12V Bus output current in A
+            "V12VBUS": ([0xE2, 0x30], 0.01349),  #12V Bus output voltage in V
+            "IBATBUS": ([0xE2, 0x24], 0.005237), #Batt Bus output current in A
+            "VBATBUS": ([0xE2, 0x20], 0.008978), #Batt Bus output voltage in V
+            "I5VBUS" : ([0xE2, 0x14], 0.005237), #5V Bus output current in A
+            "V5VBUS" : ([0xE2, 0x10], 0.005865), #5V Bus output voltage in V
+            "I3V3BUS": ([0xE2, 0x04], 0.005237), #3V3 Bus output current in A
+            "V3V3BUS": ([0xE2, 0x00], 0.004311), #3V3 Bus output voltage in V
+            "VSW1"   : ([0xE4, 0x10], 0.01349),  #SW1 output voltage in V
+            "ISW1"   : ([0xE4, 0x14], 0.001328), #SW1 output current in A
+            "VSW2"   : ([0xE4, 0x20], 0.01349),  #SW2 output voltage in V
+            "ISW2"   : ([0xE4, 0x24], 0.001328), #SW2 output current in A
+            "VSW3"   : ([0xE4, 0x30], 0.008993), #SW3 output voltage in V
+            "ISW3"   : ([0xE4, 0x34], 0.006239), #SW3 output current in A
+            "VSW4"   : ([0xE4, 0x40], 0.008993), #SW4 output voltage in V
+            "ISW4"   : ([0xE4, 0x44], 0.006239), #SW4 output current in A
+            "VSW5"   : ([0xE4, 0x50], 0.005865), #SW5 output voltage in V
+            "ISW5"   : ([0xE4, 0x54], 0.001328), #SW5 output current in A
+            "VSW6"   : ([0xE4, 0x60], 0.005865), #SW6 output voltage in V
+            "ISW6"   : ([0xE4, 0x64], 0.001328), #SW6 output current in A
+            "VSW7"   : ([0xE4, 0x70], 0.005865), #SW7 output voltage in V
+            "ISW7"   : ([0xE4, 0x74], 0.001328), #SW7 output current in A
+            "VSW8"   : ([0xE4, 0x80], 0.004311), #SW8 output voltage in V
+            "ISW8"   : ([0xE4, 0x84], 0.001328), #SW8 output current in A
+            "VSW9"   : ([0xE4, 0x90], 0.004311), #SW9 output voltage in V
+            "ISW9"   : ([0xE4, 0x94], 0.001328), #SW9 output current in A
+            "VSW10"  : ([0xE4, 0xA0], 0.004311), #SW10 output voltage in V
+            "ISW10"  : ([0xE4, 0xA4], 0.001328), #SW10 output current in A
+            "TBRD"   : ([0xE3, 0x08], 0.372434), #Motherboard temperature in K
+
+            #Telemetry unique to 25-02452 and 01-02453 (CHECK THIS LATER) 
+            "VBCR1"  : ([0xE1, 0x10], 0.0322581), #Voltage feeding BCR1 in V
+            "IBCR1A" : ([0xE1, 0x14], 0.0009775), #Current BCR1 connector SA1A in A
+            "IBCR1B" : ([0xE1, 0x15], 0.0009775), #Current BCR1 connector SA1B in B
+            "TBCR1A" : ([0xE1, 0x18], 0.4963), #Array temperature connector SA1A in K
+            "TBCR1B" : ([0xE1, 0x19], 0.4963), #Array temperature connector SA1B in K
+            "SDBCR1A": ([0xE1, 0x1C], 1.59725), #Sun detector connector SA1A in W/m^2
+            "SDBCR1B": ([0xE1, 0x1D], 1.59725), #Sun detector connector SA1B in W/m^2
+            
+            "VBCR2"  : ([0xE1, 0x20], 0.0322581), #Voltage feeding BCR2 in V
+            "IBCR2A" : ([0xE1, 0x24], 0.0009775), #Current BCR2 connector SA2A in A
+            "IBCR2B" : ([0xE1, 0x25], 0.0009775), #Current BCR2 connector SA2B in B
+            "TBCR2A" : ([0xE1, 0x28], 0.4963), #Array temperature connector SA2A in K
+            "TBCR2B" : ([0xE1, 0x29], 0.4963), #Array temperature connector SA2B in K
+            "SDBCR2A": ([0xE1, 0x2C], 1.59725), #Sun detector connector SA2A in W/m^2
+            "SDBCR2B": ([0xE1, 0x2D], 1.59725), #Sun detector connector SA2B in W/m^2
+
+            "VBCR3"  : ([0xE1, 0x30], 0.0099706), #Voltage feeding BCR3 in V, can also be used to monitor input voltage from 5V USB CHG
+            "IBCR3A" : ([0xE1, 0x34], 0.0009775), #Current BCR3 connector SA3A in A, can also be used to monitor input current from 5V USB CHG
+            "IBCR3B" : ([0xE1, 0x35], 0.0009775), #Current BCR3 connector SA3B in B
+            "TBCR3A" : ([0xE1, 0x38], 0.4963), #Array temperature connector SA3A in K
+            "TBCR3B" : ([0xE1, 0x39], 0.4963), #Array temperature connector SA3B in K
+            "SDBCR3A": ([0xE1, 0x3C], 1.59725), #Sun detector connector SA3A in W/m^2
+            "SDBCR3B": ([0xE1, 0x3D], 1.59725), #Sun detector connector SA3B in W/m^2
+
         }
         # Format: self.eps.component_request(self.eps.component_request_args["REQUESTED INFORMATION"], component)
         self.component_request_args = {
@@ -110,6 +172,18 @@ class EPS:
         """
         return self.request((data[0], self.components[component], data[1]))
 
+    def telemetry_request(self, data) -> float:
+        """
+        Requests and returns interpreted telemetry data
+        :param data: data[0] = TLE code, data[1] = multiplier
+        :return: (float) telemetry value
+        """
+        with SMBusWrapper(1) as bus:
+            bus.write_i2c_block_data(self.EPS_ADDRESS, 0x10, data[0])
+            time.sleep(.5)
+            raw = bus.read_i2c_block_data(self.EPS_ADDRESS, 0, 2)
+        return (raw[0] << 8 | raw[1]) * data[1]
+
     def command(self, data) -> bool:
         """
         Sends command to EPS
@@ -157,12 +231,3 @@ class EPS:
         :return: (bool) whether reset was successful
         """
         return self.command((0x70, pcm))
-
-    # Board info commands: Basic board info
-    def battery_voltage(self) -> float:
-        """
-        Reads and returns current battery voltage
-        :return: (float) battery voltage
-        """
-        data = self.request(self.request_args["Battery Voltage"])
-        return (data[0] << 8 | data[1]) * .008993157
