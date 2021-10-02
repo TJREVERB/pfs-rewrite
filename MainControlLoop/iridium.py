@@ -74,8 +74,9 @@ class Iridium:
     def request(self, command: str) -> str:
         self.write(command)
         result = self.read()
-        return result[result.find(":"):result[result.find(":"):].find("\n")].lstrip(" ")
-
+        return result[result.find(":") + 1:result[result.find(":") + 1:].find("\n") +
+                                         len(result[:result.find(":") + 1])].lstrip(" ")
+    
     def write(self, command: str) -> bool:
         """
         Write a command to the serial port.
