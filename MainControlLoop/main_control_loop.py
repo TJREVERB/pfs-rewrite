@@ -1,10 +1,10 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from MainControlLoop.lib.StateFieldRegistry import state_fields
 from MainControlLoop.lib.StateFieldRegistry.state_fields import StateField
 from MainControlLoop.tests.random_number import RandomNumber
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
 from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+from MainControlLoop.iridium import Iridium
 import datetime
 import time
 
@@ -22,6 +22,7 @@ class MainControlLoop:
         self.aprs = APRS(self.state_field_registry)
         self.eps = EPS(self.state_field_registry)
         self.antenna_deployer = AntennaDeployer(self.state_field_registry)
+        self.iridium = Iridium(self.state_field_registry)
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
             "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
@@ -29,8 +30,15 @@ class MainControlLoop:
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-            "RST": (self.reset_power, None)  # Reset power to the entire satellite (!!!!)
+            "RST": (self.reset_power, None),  # Reset power to the entire satellite (!!!!)
+            "IRI": (self.iridium_test, None),  # Transmit message through Iridium to ground station
         }
+
+    def iridium_test(self) -> bool:
+        """
+        Transmit message through iridium to ground station to test functionality
+        """
+        pass
 
     def reset_power(self) -> None:
         """
@@ -111,6 +119,8 @@ class MainControlLoop:
         battery_voltage = self.eps.battery_voltage()
 
         """CONTROL"""
+        # Deploys antenna if 30 minute timer has passed and antenna not already deployed
+        self.antenna_deployer.control()
         # Runs command from APRS, if any
         self.command_interpreter()
         # Automatic mode switching
@@ -122,8 +132,6 @@ class MainControlLoop:
             self.science_mode()
 
     def run(self):  # Repeat main control loop forever
-        #self.state_field_registry.RECEIVED_COMMAND = "TJ;BVT"
-        self.state_field_registry.update(
-            state_fields.StateField.START_TIME, time.time())  # set the time that the pi first ran
+        self.state_field_registry.update(StateField.START_TIME, time.time())  # set the time that the pi first ran
         while True:
             self.execute()
