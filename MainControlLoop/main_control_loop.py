@@ -118,10 +118,10 @@ class MainControlLoop:
         :return: (float) power draw in W
         """
         power = 0
-        #power += self.eps.telemetry_request(self.eps.request_telemetry_args["I12VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V12VBUS"])
-        #power += self.eps.telemetry_request(self.eps.request_telemetry_args["IBATBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VBATBUS"])
-        #power += self.eps.telemetry_request(self.eps.request_telemetry_args["I5VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V5VBUS"])
-        #power += self.eps.telemetry_request(self.eps.request_telemetry_args["I3V3BUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V3V3BUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I12VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V12VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["IBATBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VBATBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I5VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V5VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I3V3BUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V3V3BUS"])
         power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW3"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW3"])
         power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW4"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW4"])
         return power
