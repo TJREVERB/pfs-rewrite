@@ -24,21 +24,11 @@ class APRS:
         TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
         :return: (bool) APRS and serial connection are working
         """
-        if self.serial is None:
-            try:
-                self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
-            except:
-                return False
-        if not self.serial.is_open:
-            try:
-                self.serial.open()
-            except:
-                return False
-        self.serial.flush()
+        """self.serial.flush()
         self.serial.write(b"\x1b\x1b\x1b\n")
         self.serial.write(b"\x1b\x1b\x1b\n")
         self.serial.write(b"\x1b\x1b\x1b")
-        """time.sleep(.3)
+        time.sleep(.3)
         self.write("MYCALL")
         try:
             # For now, just reads first byte, and if byte exists and isn't empty.
@@ -53,7 +43,18 @@ class APRS:
         self.serial.write(("\n").encode("utf-8"))
         time.sleep(.3)
         self.serial.write("QUIT\n".encode("utf-8"))
-        time.sleep(.5)"""
+        time.sleep(.5)
+        return True"""
+        if self.serial is None:
+            try:
+                self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
+            except:
+                return False
+        if not self.serial.is_open:
+            try:
+                self.serial.open()
+            except:
+                return False
         return True
 
     def clear_data_lines(self) -> None:
