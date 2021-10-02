@@ -33,13 +33,15 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
 5. **eps.py** contains all code pertaining to the EPS.
    1. The **components** dictionary contains a list of all components connected to the EPS and their respective PDMs
    2. The **battery_voltage** method reads and returns the current battery voltage.
-6. **antenna_deployer.py** contains all code pertaining to the antenna
-   1. Does not contain a read method, only a control method. control checks if 30 minutes have elapsed by checking the start time in the state field registry. 
-   2. If 30 minutes have elapsed and the antenna has not already been deployed, then it deploys the antenna. Code to actually deploy still needs to be written. 
    3. The **pin_on** method enables a particular component
    4. The **pin_off** method disables a particular component
    5. The **all_on** method enables all PDM powered components
    6. The **all_off** method disables all PDM powered components
-   7. The **bus_reset** method resets the 3.3V, 5V, 12V, and Battery power buses (which includes the flight computer), turning off for 0.5s then back on
+   7. The **bus_reset** method resets the specified PCM bus components
+   8. There are a bunch more methods
+   9. A method to get more detailed telemetry than battery voltage is still to be implemented
+6. **antenna_deployer.py** contains all code pertaining to the antenna
+   1. Does not contain a read method, only a control method. control checks if 30 minutes have elapsed by checking the start time in the state field registry. 
+   2. If 30 minutes have elapsed and the antenna has not already been deployed, then it deploys the antenna. Code to actually deploy still needs to be written. 
 
 For more details on each specific part of the PFS, refer to the comments within the code. This README will be kept as up-to-date as possible.
