@@ -5,8 +5,14 @@
 The goal of this rewrite is to increase the simplicity, readability, and conciseness of the TJREVERB PFS. General structure overview is below:
 
 1. **StateFieldRegistry** stores global variables that all parts of the PFS can access.
-2. **main.py** executes **main_control_loop.py**.
-3. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle.
+   1. **StateFieldLogger** is a more permanent version of the state field; it stores the values in a file
+      1. The values can be found in the `LOG_PATH` variable. Right now it is `./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt`
+      2. If the pi crashes in space, when the pfs is ran again, it can directly use the last saved variables in the state field instead of completely rebooting the system. It will load the variables from the file. 
+      3. StateFieldLogger saves the variables in the statefield every 200 iterations. This can be changed easily through the variable `DUMP_ITERATION`
+      4. Additional Notes:
+         1. If a value is of type bool, in the state_field_log.txt file, it must have an empty value. This is because Python will convert all strings except the empty string to True. For example, `ANTENNA_DEPLOYED:`, not `ANTENNA_DEPLOYED:False`
+3. **main.py** executes **main_control_loop.py**.
+4. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle.
    1. **command_registry** stores all the 3-digit codes we can send up from the ground station and the associated commands.
       1. **TST**: Test method, calls **log** and logs "Hello"
       2. **BVT**: Calls **eps.battery_voltage** and transmits the value to the ground station using **aprs.write** NEEDS TESTING
@@ -26,11 +32,11 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
          1. Reads battery voltage from eps and switches to charging mode or science mode depending on value
             1. **charging_mode** disables Iridium NEEDS TESTING
             2. **science_mode** enables Iridium NEEDS TESTING
-4. **aprs.py** contains all code pertaining to the APRS.
+5. **aprs.py** contains all code pertaining to the APRS.
    1. The **read** method reads and returns a message received over the APRS, and adds it to the **StateFieldRegistry**.
    2. The **write** method transmits a message through the APRS.
    3. The **functional** method tests if the component is connected properly and responsive to commands NEEDS TESTING, NOT FULLY IMPLEMENTED
-5. **eps.py** contains all code pertaining to the EPS.
+6. **eps.py** contains all code pertaining to the EPS.
    1. The **components** dictionary contains a list of all components connected to the EPS and their respective PDMs.
 
       1. “APRS”: APRS
