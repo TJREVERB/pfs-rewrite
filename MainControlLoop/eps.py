@@ -25,7 +25,7 @@ class EPS:
             "Firmware Version": (0x04, [0x00], 2),  # Reads and returns firmware version
             "Checksum": (0x05, [0x00], 2),  # Reads and returns generated checksum of ROM contents
             "Firmware Revision": (0x06, [0x00], 2),  # Reads and returns firmware revision number
-            "Battery Voltage": (0x10, [0xE2, 0x80], 2),
+            "Battery Voltage": (0x10, [0xE2, 0x80], 2),  # Reads and returns battery voltage
 
             # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
             # with no commands received.
@@ -110,15 +110,6 @@ class EPS:
         """
         return self.request((data[0], self.components[component], data[1]))
 
-    # Board info commands: Basic board info
-    def battery_voltage(self) -> float:
-        """
-        Reads and returns current battery voltage
-        :return: (float) battery voltage
-        """
-        data = self.request(self.request_args["Battery Voltage"])
-        return (data[0] << 8 | data[1]) * .008993157
-
     def command(self, data) -> bool:
         """
         Sends command to EPS
@@ -153,7 +144,8 @@ class EPS:
         """
         Sets timer limit for given PDM
         :param component: Component to set timer limit for
-        :param period: Period of time to set limit, increments of 30 seconds, with 0xFF setting the pin to indefinitely remain on and 0x00 setting the pin permanently off until set otherwise again (REFER TO EPS MANUAL PG 54)
+        :param period: Period of time to set limit, increments of 30 seconds, with 0xFF setting the pin to indefinitely
+        remain on and 0x00 setting the pin permanently off until set otherwise again (REFER TO EPS MANUAL PG 54)
         :return: (bool) whether set limit was successful
         """
         return self.command((0x60, [period[0], self.components[component][0]]))
@@ -165,3 +157,12 @@ class EPS:
         :return: (bool) whether reset was successful
         """
         return self.command((0x70, pcm))
+
+    # Board info commands: Basic board info
+    def battery_voltage(self) -> float:
+        """
+        Reads and returns current battery voltage
+        :return: (float) battery voltage
+        """
+        data = self.request(self.request_args["Battery Voltage"])
+        return (data[0] << 8 | data[1]) * .008993157
