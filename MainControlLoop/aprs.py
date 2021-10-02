@@ -29,7 +29,7 @@ class APRS:
                 self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
             except:
                 return False
-        if not self.serial.is_open():
+        if not self.serial.is_open:
             try:
                 self.serial.open()
             except:
