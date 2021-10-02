@@ -98,7 +98,7 @@ class Iridium:
             try:
                 next_byte = self.serial.read(size=1)
             except:
-                return ""
+                break
             if next_byte == bytes():
                 break
             output += next_byte
