@@ -19,7 +19,7 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    5. The **charging_mode** method disables Iridium
    6. The **science_mode** method enables Iridium
    7. The **execute** method first reads in data from our components, then decides what to do with that information.
-      1. **aprs.read** NEEDS TESTING
+      1. **aprs.read**
       2. **command_interpreter**
          1. The **command_interpreter** method takes the APRS message in the **StateFieldRegistry** (if any) and executes the command sent by the ground station if it’s in the **command_registry**. Logs result using **log** method.
       3. **battery_voltage**
@@ -89,8 +89,30 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
        2. The **set_timer_limit** method sets the timer limit for a given PDM. This is the time the PDM is allowed to remain on before being switched off automatically by the EPS. The **period** argument defines how long to set the limit in increments of 30 seconds. 0xFF sets the time limit indefinitely, forcing the pin to remain on at all times, and 0x00 sets the time limit to 0, forcing the pin to remain off unless set again.
        3. The **bus_reset** method resets the selected power busses by turning them off for a half second and turning them back on. The **pcm_busses** dictionary lists the values for each of the EPS’ busses.
    12. The **battery_voltage** method reads and returns the current battery voltage, interpreted into a usable number.
-6. **antenna_deployer.py** contains all code pertaining to the antenna
+6. **antenna_deployer.py** contains all code pertaining to the antenna.
    1. The **deploy** method deploys the antenna.
    2. The **control** method deploys the antenna if 30 minutes have elapsed and the antenna is not already deployed.
+7. **iridium.py** contians all code pertaining to the Iridium.
+   1. The **commands** dictionary contains a list of all commands which can be sent to the Iridium.
+      1. “Test”: Tests iridium by sending “AT”. Correct reply is “OK”.
+      2. “Geolocation”: NOT UNDERSTOOD
+      3. “Active Config”: NOT UNDERSTOOD
+      4. “Check Registration”: NOT UNDERSTOOD
+      5. “Phone Model”: NOT UNDERSTOOD
+      6. “Phone Revision”: NOT UNDERSTOOD
+      7. “Phone IMEI”: NOT UNDERSTOOD
+      8. “Check Network”: NOT UNDERSTOOD
+      9. “Shut Down”: NOT UNDERSTOOD
+      10. “Signal Quality”: Returns strength of satellite signal.
+      11. “Send SMS”: NOT UNDERSTOOD
+      12. “SBD Ring Alert On”: NOT UNDERSTOOD
+      13. “SBD Ring Alert Off”: NOT UNDERSTOOD
+      14. “Battery Check”: NOT UNDERSTOOD
+      15. “Call Status”: NOT UNDERSTOOD
+      16. “Soft Reset”: NOT UNDERSTOOD
+   2. The **functional** method verifies that the serial port is open and that sending AT returns OK.
+   3. The **request** method requests information from the Iridium and returns the parsed response.
+   4. The **write** method writes a command to the Iridium.
+   5. The **read** method reads in as many bytes as are available from the Iridium, serial timeout permitting.
 
 For more details on each specific part of the PFS, refer to the comments within the code. This README will be kept as up-to-date as possible.

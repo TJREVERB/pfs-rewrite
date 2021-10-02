@@ -13,65 +13,55 @@ class Iridium:
         while not self.serial.is_open:
             time.sleep(0.5)
         self.commands = {
-            "TEST_IRIDIUM": 'AT',
-            "GEOLOCATION": 'AT-MSGEO',
-            "ACTIVE_CONFIG": 'AT+V',
-            "CHECK_REGISTRATION": 'AT+SBDREG?',
-            "PHONE_MODEL": 'AT+CGMM',
-            "PHONE_REVISION": 'AT+CGMR',
-            "PHONE_IMEI": 'AT+CSGN',
-            "CHECK_NETWORK": 'AT-MSSTM',
-            "SHUT_DOWN": 'AT*F',
-            "SIGNAL_QUAL": 'AT+CSQ',
+            "Test": 'AT',  # Tests connection to Iridium
+            "Geolocation": 'AT-MSGEO',
+            "Active Config": 'AT+V',
+            "Check Registration": 'AT+SBDREG?',
+            "Phone Model": 'AT+CGMM',
+            "Phone Revision": 'AT+CGMR',
+            "Phone IMEI": 'AT+CSGN',
+            "Check Network": 'AT-MSSTM',
+            "Shut Down": 'AT*F',
+            "Signal Quality": 'AT+CSQ',  # Returns strength of satellite connection
 
             # FIXME: cannot be tested until patch antenna is working
             # following commands probably need to be retested once patch antenna is fixed
 
-            "SEND_SMS": 'AT+CMGS=',
-            "SIGNAL": 'AT+CSQ',
-            "SBD_RING_ALERT_ON": 'AT+SBDMTA=1',
-            "SBD_RING_ALERT_OFF": 'AT+SBDMTA=0',
-            "BATTERY_CHECK": 'AT+CBC=?',
-            "CALL_STATUS": 'AT+CLCC=?',
-            "SOFT_RESET": 'ATZn',
+            "Send SMS": 'AT+CMGS=',
+            "SBD Ring Alert On": 'AT+SBDMTA=1',
+            "SBD Ring Alert Off": 'AT+SBDMTA=0',
+            "Battery Check": 'AT+CBC=?',
+            "Call Status": 'AT+CLCC=?',
+            "Soft Reset": 'ATZn',
         }
-        self.responses = {
-            "OK": [b'O', b'K'],
-            "ERROR": [b'E', b'R', b'R', b'O', b'R'],
-        }
-
-    def flush(self):
-        """
-        Clears the serial buffer
-        :return: (None)
-        """
-        self.serial.flushInput()
-        self.serial.flushOutput()
 
     def functional(self) -> bool:
         """
-        Checks the state of the serial port (initializing it if needed)
+        Checks the state of the serial port (initializing it if needed) and verifies that AT returns OK
         :return: (bool) serial connection is working
         """
         if self.serial is None:
             try:
-                self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
-                self.serial.flush()
-                return True
+                self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
             except:
                 return False
-
-        if self.serial.is_open:
+        if not self.serial.is_open:
+            try:
+                self.serial.open()
+            except:
+                return False
+        self.serial.flush()
+        self.write(self.commands["Test"])
+        if self.read().find("OK") != -1:
             return True
-
-        try:
-            self.serial.open()
-            self.serial.flush()
-            return True
-        except:
-            return False
+        return False
 
     def request(self, command: str) -> str:
+        """
+        Requests information from Iridium and returns parsed response
+        :param command: Command to send
+        :return: (str) Response from Iridium
+        """
         self.write(command)
         result = self.read()
         index = result.find(":")+1
