@@ -29,26 +29,32 @@ class MainControlLoop:
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-            "RST": (self.reset_power, None) # Reset power to the entire satellite (!!!!)
+            "RST": (self.reset_power, None)  # Reset power to the entire satellite (!!!!)
         }
 
     def reset_power(self) -> None:
         """
         Reset Power to the entire cubesat
         """
-        self.eps.all_off() 
+        self.eps.command(self.eps.command_args["All Off"])
         time.sleep(0.5)
-        self.eps.bus_reset([0x0F])
+        self.eps.bus_reset([sum([i[0] for i in self.eps.pcm_busses.values()])])
 
-    def set_lower(self, threshold):
+    def set_lower(self, threshold) -> None:
+        """
+        Set lower threshold for entering charging mode
+        """
         self.LOWER_THRESHOLD = threshold
 
-    def set_upper(self, threshold):
+    def set_upper(self, threshold) -> None:
+        """
+        Set upper threshold for entering science mode
+        """
         self.UPPER_THRESHOLD = threshold
 
     def log(self, string) -> None:
         """
-        Logs string
+        Logs string in file "log.txt"
         """
         with open("log.txt", "a") as f:
             f.write(string + "\n")
@@ -88,18 +94,17 @@ class MainControlLoop:
         Enter charging mode, with Iridium off
         :return: (bool) whether or not mode switch was successful
         """
-        return self.eps.pin_off("Iridium")
+        return self.eps.component_command(self.eps.component_command_args("Pin Off"), "Iridium")
 
     def science_mode(self) -> bool:
         """
         Enter science mode, with Iridium on
         :return: (bool) whether or not mode switch was successful
         """
-        return self.eps.pin_on("Iridium")
+        return self.eps.component_command(self.eps.component_command_args("Pin On"), "Iridium")
 
     def execute(self):
         """READ"""
-        #self.state_field_registry.RECEIVED_COMMAND = "TJ;BTS"
         # Reads messages from APRS
         self.aprs.read()
         # Reads battery voltage from EPS
