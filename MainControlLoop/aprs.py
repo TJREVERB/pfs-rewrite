@@ -35,9 +35,9 @@ class APRS:
             except:
                 return False
         self.serial.flush()
-        self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
-        self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
-        self.serial.write((chr(27) + chr(27) + chr(27) + "\n").encode("utf-8"))
+        self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
+        self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
+        self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
         """time.sleep(.3)
         self.write("MYCALL")
         try:
