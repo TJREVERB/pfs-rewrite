@@ -1,9 +1,9 @@
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.lib.StateFieldRegistry.state_fields import StateField
 from MainControlLoop.tests.random_number import RandomNumber
-# from MainControlLoop.aprs import APRS
-# from MainControlLoop.eps import EPS
-# from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+from MainControlLoop.aprs import APRS
+from MainControlLoop.eps import EPS
+from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.iridium import Iridium
 from MainControlLoop.lib.StateFieldRegistry.state_field_logger import StateFieldLogger
 import datetime
@@ -21,21 +21,20 @@ class MainControlLoop:
         self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
         self.randnumber = RandomNumber(self.state_field_registry)
         self.state_field_logger = StateFieldLogger(self.state_field_registry)
-        # self.aprs = APRS(self.state_field_registry)
-        # self.eps = EPS(self.state_field_registry)
-        # self.antenna_deployer = AntennaDeployer(self.state_field_registry)
-        # self.iridium = Iridium(self.state_field_registry)
+        self.aprs = APRS(self.state_field_registry)
+        self.eps = EPS(self.state_field_registry)
+        self.antenna_deployer = AntennaDeployer(self.state_field_registry)
+        self.iridium = Iridium(self.state_field_registry)
         self.command_registry = {
             "TST": (self.log, "Hello"),  # Test method
-            # "BVT": (self.aprs.write, "TJ;" + str(self.eps.battery_voltage())),  # Reads and transmit battery voltage
+            "BVT": (self.aprs.write, "TJ;" + str(self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"]))),  # Reads and transmit battery voltage
             "CHG": (self.charging_mode, None),  # Enters charging mode
             "SCI": (self.science_mode, None),  # Enters science mode
             "U": self.set_upper,  # Set upper threshold
             "L": self.set_lower,  # Set lower threshold
-            # Reset power to the entire satellite (!!!!)
-            "RST": (self.reset_power, None),
-            # Transmit message through Iridium to ground station
-            "IRI": (self.iridium_test, None),
+            "RST": (self.reset_power, None),  # Reset power to the entire satellite (!!!!)
+            "IRI": (self.iridium_test, None),  # Transmit message through Iridium to ground station
+            "PWR": (self.total_power, None), # Calculate total power draw of connected components
         }
 
     def iridium_test(self) -> bool:
@@ -116,30 +115,45 @@ class MainControlLoop:
         """
         return self.eps.component_command(self.eps.component_command_args("Pin On"), "Iridium")
 
+    def total_power(self) -> float:
+        """
+        Returns total power draw based on EPS telemetry
+        :return: (float) power draw in W
+        """
+        power = 0
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I12VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V12VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["IBATBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VBATBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I5VBUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V5VBUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["I3V3BUS"])*self.eps.telemetry_request(self.eps.request_telemetry_args["V3V3BUS"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW3"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW3"])
+        power += self.eps.telemetry_request(self.eps.request_telemetry_args["ISW4"])*self.eps.telemetry_request(self.eps.request_telemetry_args["VSW4"])
+        return power
+
     def execute(self):
-        self.state_field_logger.control()  # run the state_field_logger at the beginning of each iteration
+#         self.state_field_logger.control()  # run the state_field_logger at the beginning of each iteration; commented out during testing
 
         """READ"""
         # Reads messages from APRS
-        # self.aprs.read()
+        self.aprs.read()
         # Reads battery voltage from EPS
-        # battery_voltage = self.eps.battery_voltage()
+        battery_voltage = self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"])
+        print(self.total_power())
 
         """CONTROL"""
         # Deploys antenna if 30 minute timer has passed and antenna not already deployed
-        # self.antenna_deployer.control()
+        self.antenna_deployer.control()
         # Runs command from APRS, if any
-        # self.command_interpreter()
+        self.command_interpreter()
         # Automatic mode switching
-        # if battery_voltage < self.LOWER_THRESHOLD:
-        # Enter charging mode if battery voltage < lower threshold
-        # self.charging_mode()
-        # elif battery_voltage > self.UPPER_THRESHOLD:
-        # Enter science mode if battery has charged > upper threshold
-        # self.science_mode()
-        self.randnumber.read()
-        self.randnumber.control()
-        self.randnumber.actuate()
+        if battery_voltage < self.LOWER_THRESHOLD:
+          # Enter charging mode if battery voltage < lower threshold
+          self.charging_mode()
+        elif battery_voltage > self.UPPER_THRESHOLD:
+          # Enter science mode if battery has charged > upper threshold
+          self.science_mode()
+#         self.randnumber.read()
+#         self.randnumber.control()
+#         self.randnumber.actuate()
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
