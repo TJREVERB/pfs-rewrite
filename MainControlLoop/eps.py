@@ -74,7 +74,7 @@ class EPS:
             # Sets timer limit for given PDM
 
             # PCM bus control
-            "Bus Reset": lambda pcm: self.command(0x70, str(sum([self.pcm_busses[i][0] for i in pcm]))),
+            "Bus Reset": lambda pcm: self.command(0x70, [sum([self.pcm_busses[i][0] for i in pcm])]),
 
             # Manual reset
             "Manual Reset": lambda: self.command(0x80, [0x00]),

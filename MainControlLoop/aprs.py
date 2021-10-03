@@ -36,10 +36,13 @@ class APRS:
                 return False
         self.serial.flush()
         self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
+        time.sleep(.5)
         print(self.read())
         self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
+        time.sleep(.5)
         print(self.read())
         self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
+        time.sleep(.5)
         print(self.read())
         time.sleep(.5)
         print(self.read())
