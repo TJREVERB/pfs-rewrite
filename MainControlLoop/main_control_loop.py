@@ -5,6 +5,7 @@ from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
 from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.iridium import Iridium
+from MainControlLoop.lib.StateFieldRegistry.state_field_logger import StateFieldLogger
 import datetime
 import time
 
@@ -19,6 +20,7 @@ class MainControlLoop:
         self.UPPER_THRESHOLD = 8
         self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
         self.randnumber = RandomNumber(self.state_field_registry)
+        self.state_field_logger = StateFieldLogger(self.state_field_registry)
         self.aprs = APRS(self.state_field_registry)
         self.eps = EPS(self.state_field_registry)
         self.antenna_deployer = AntennaDeployer(self.state_field_registry)
@@ -73,7 +75,8 @@ class MainControlLoop:
         This will take whatever is read, parse it, and then execute it
         :return: (bool) whether the control ran without error
         """
-        raw_command: str = self.state_field_registry.get(StateField.RECEIVED_COMMAND)
+        raw_command: str = self.state_field_registry.get(
+            StateField.RECEIVED_COMMAND)
         # If no command was received, don't do anything
         if raw_command == "":
             return True
@@ -127,12 +130,13 @@ class MainControlLoop:
         return power
 
     def execute(self):
+#         self.state_field_logger.control()  # run the state_field_logger at the beginning of each iteration; commented out during testing
+
         """READ"""
         # Reads messages from APRS
         self.aprs.read()
         # Reads battery voltage from EPS
         battery_voltage = self.eps.telemetry_request(self.eps.request_telemetry_args["VBCROUT"])
-
         print(self.total_power())
 
         """CONTROL"""
@@ -142,13 +146,17 @@ class MainControlLoop:
         self.command_interpreter()
         # Automatic mode switching
         if battery_voltage < self.LOWER_THRESHOLD:
-            # Enter charging mode if battery voltage < lower threshold
-            self.charging_mode()
+          # Enter charging mode if battery voltage < lower threshold
+          self.charging_mode()
         elif battery_voltage > self.UPPER_THRESHOLD:
-            # Enter science mode if battery has charged > upper threshold
-            self.science_mode()
+          # Enter science mode if battery has charged > upper threshold
+          self.science_mode()
+#         self.randnumber.read()
+#         self.randnumber.control()
+#         self.randnumber.actuate()
 
     def run(self):  # Repeat main control loop forever
-        self.state_field_registry.update(StateField.START_TIME, time.time())  # set the time that the pi first ran
+        # set the time that the pi first ran
+        self.state_field_registry.update(StateField.START_TIME, time.time())
         while True:
             self.execute()
