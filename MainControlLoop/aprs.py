@@ -38,20 +38,18 @@ class APRS:
         self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
         self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
         self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-        time.sleep(.5)
-        self.write("MYCALL")
         try:
             # For now, just reads first byte, and if byte exists and isn't empty.
             byte = self.serial.read(size=1)
+            print("byte read successfully")
             # Can be updated to match what the message actually is and match it to an expected value
             # once we get a good idea of what we expect from MYCALL
         except:
             return False
         if byte == bytes():
+            print("byte empty")
             return False
         self.serial.flush()
-        self.serial.write("\n".encode("utf-8"))
-        time.sleep(.3)
         self.serial.write("QUIT\n".encode("utf-8"))
         time.sleep(.5)
         return True
