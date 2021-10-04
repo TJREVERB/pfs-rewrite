@@ -74,7 +74,8 @@ class MainControlLoop:
             return False
 
     def execute(self):
-#         self.state_field_logger.control()  # run the state_field_logger at the beginning of each iteration; commented out during testing
+        #self.state_field_logger.control()
+        # run the state_field_logger at the beginning of each iteration; commented out during testing
 
         """READ"""
         # Reads messages from APRS
