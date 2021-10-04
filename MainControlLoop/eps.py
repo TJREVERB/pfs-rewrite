@@ -20,7 +20,7 @@ class EPS:
         # Format: self.eps.commands["COMMAND"](ARGS)
         self.commands = {
             # Board info commands: Basic board info
-            "Board Status": lambda: self.request(0x01, [0.00], 2),  # Reads and returns board status
+            "Board Status": lambda: self.request(0x01, [0x00], 2),  # Reads and returns board status
             "Last Error": lambda: self.request(0x03, [0x00], 2),  # Reads and returns last error
             "Firmware Version": lambda: self.request(0x04, [0x00], 2),  # Reads and returns firmware version
             "Checksum": lambda: self.request(0x05, [0x00], 2),  # Reads and returns generated checksum of ROM contents
