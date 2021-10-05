@@ -30,14 +30,8 @@ class MainControlLoop:
                                           for f in [open("log.txt", "a")]][0]],  # Test method, logs "Hello"
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "CHG": lambda: [i() for i in [
-                lambda: self.eps.commands["Pin Off"]("Iridium"),
-                lambda: self.state_field_registry.update(StateField.MODE, "CHARGING")
-            ]],  # Enters charging mode
-            "SCI": lambda: [i() for i in [
-                lambda: self.eps.commands["Pin On"]("Iridium"),
-                lambda: self.state_field_registry.update(StateField.MODE, "SCIENCE")
-            ]],  # Enters science mode
+            "CHG": self.charging_mode,  # Enters charging mode
+            "SCI": self.science_mode,  # Enters science mode
             "U": lambda threshold: setattr(self, "UPPER_THRESHOLD", threshold),  # Set upper threshold
             "L": lambda threshold: setattr(self, "LOWER_THRESHOLD", threshold),  # Set lower threshold
             "RST": lambda: [i() for i in [
@@ -45,10 +39,25 @@ class MainControlLoop:
                 lambda: time.sleep(.5),
                 lambda: self.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
             ]],  # Reset power to the entire satellite (!!!!)
-            "IRI": lambda: None,  # Transmit message through Iridium to ground station NEEDS IMPLEMENTATION
+            "IRI": self.iridium.wave,  
+            # Transmit message through Iridium to ground station
             "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
             # Calculate total power draw of connected components
         }
+    
+    def charging_mode(self):
+        """
+        Enter CHARGING mode, switch off Iridium
+        """
+        self.eps.commands["Pin Off"]("Iridium")  # Switch off iridium
+        self.state_field_registry.update(StateField.MODE, "CHARGING")  # Set MODE to CHARGING
+    
+    def science_mode(self):
+        """
+        Enter SCIENCE mode, switch on Iridium
+        """
+        self.eps.commands["Pin On"]("Iridium")  # Switch on iridium
+        self.state_field_registry.update(StateField.MODE, "SCIENCE")  # Set MODE to SCIENCE
     
     def log(self):
         # run the state_field_logger; commented out during testing
@@ -83,6 +92,14 @@ class MainControlLoop:
             return False
     
     def on_start(self):
+        """
+        Runs as soon as deployment switch is depressed.
+        Only runs once.
+        """
+        # Switch off all PDMs
+        self.eps.commands["All Off"]()
+        # Enable power to antenna deployer
+        self.eps.commands["Pin On"]("Antenna Deployer")
         # stay in STARTUP mode until antenna deploys
         while not self.state_field_registry.get(StateField.ANTENNA_DEPLOYED):
             self.log()
@@ -91,11 +108,26 @@ class MainControlLoop:
                 self.antenna_deployer.deploy()
                 print("deployed")
                 self.state_field_registry.update(StateField.ANTENNA_DEPLOYED, True)
+        self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
+        self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
+        # Wait for battery to charge to upper threshold
+        while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
+            time.sleep(5)
+        self.state_field_registry.update(StateField.MODE, "IOC")  # Enter IOC mode to test initial functionality
+    
+    def ioc(self):
+        """
+        Code to test initial operational capability of satellite.
+        """
+        # Switch on all PDMs
+        self.eps.commands["All On"]()
+        time.sleep(5)
+        self.iridium.wave()  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
-            self.state_field_registry.update(StateField.MODE, "CHARGING")
+            self.charging_mode()
         else:
-            self.state_field_registry.update(StateField.MODE, "SCIENCE")
+            self.science_mode()
 
     def execute(self):
         """READ"""
@@ -125,5 +157,7 @@ class MainControlLoop:
         self.state_field_registry.update(StateField.START_TIME, time.time())
         if self.state_field_registry.get(StateField.MODE) == "STARTUP":  # Run only once
             self.on_start()
+        if self.state_field_registry.get(StateField.MODE) == "IOC":  # Run only once, initial operations test
+            self.ioc()
         while True:
             self.execute()

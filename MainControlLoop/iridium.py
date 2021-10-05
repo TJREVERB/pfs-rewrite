@@ -13,26 +13,23 @@ class Iridium:
         while not self.serial.is_open:
             time.sleep(0.5)
         self.commands = {
-            "Test": 'AT',  # Tests connection to Iridium
-            "Geolocation": 'AT-MSGEO',
-            "Active Config": 'AT+V',
-            "Check Registration": 'AT+SBDREG?',
-            "Phone Model": 'AT+CGMM',
-            "Phone Revision": 'AT+CGMR',
-            "Phone IMEI": 'AT+CSGN',
-            "Check Network": 'AT-MSSTM',
-            "Shut Down": 'AT*F',
-            "Signal Quality": 'AT+CSQ',  # Returns strength of satellite connection
-
-            # FIXME: cannot be tested until patch antenna is working
-            # following commands probably need to be retested once patch antenna is fixed
-
-            "Send SMS": 'AT+CMGS=',
-            "SBD Ring Alert On": 'AT+SBDMTA=1',
-            "SBD Ring Alert Off": 'AT+SBDMTA=0',
-            "Battery Check": 'AT+CBC=?',
-            "Call Status": 'AT+CLCC=?',
-            "Soft Reset": 'ATZn',
+            "Test": self.functional(),  # Tests connection to Iridium
+            "Geolocation": lambda: self.request("AT-MSGEO"),  # Current geolocation
+            "Active Config": lambda: self.request("AT+V"),
+            "Check Registration": lambda: self.request("AT+SBDREG?"),
+            "Phone Model": lambda: self.request("AT+CGMM"),
+            "Phone Revision": lambda: self.request("AT+CGMR"),
+            "Phone IMEI": lambda: self.request("AT+CSGN"),
+            "Check Network": lambda: self.request("AT-MSSTM"),
+            "Shut Down": lambda: self.write("AT*F"),
+            "Signal Quality": lambda: self.request("AT+CSQ"),  # Returns strength of satellite connection
+            "Send SMS": lambda message: self.write("AT+CMGS=" + message),
+            "SBD Ring Alert On": lambda: self.write("AT+SBDMTA=1"),
+            "SBD Ring Alert Off": lambda: self.write("AT+SBDMTA=0"),
+            "Battery Check": lambda: self.request("AT+CBC=?"),
+            "Call Status": lambda: self.request("AT+CLCC=?"),
+            "Soft Reset": lambda: self.write("ATZn"),
+            "Transmit": lambda message: self.write("AT+SBDWT=" + message)
         }
 
     def functional(self) -> bool:
@@ -51,7 +48,7 @@ class Iridium:
             except:
                 return False
         self.serial.flush()
-        self.write(self.commands["Test"])
+        self.write("AT")
         if self.read().find("OK") != -1:
             return True
         return False
@@ -66,6 +63,13 @@ class Iridium:
         result = self.read()
         index = result.find(":")+1
         return result[index:result[index:].find("\n")+len(result[:index])].lstrip(" ")
+    
+    def wave(self) -> bool:
+        """
+        Transmits test message to ground station to verify Iridium works in space
+        :return: (bool) Whether write worked
+        """
+        return self.commands["TRANSMIT"]("TJ;Hello from outer space!")
 
     def write(self, command: str) -> bool:
         """
