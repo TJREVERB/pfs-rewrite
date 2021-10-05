@@ -108,12 +108,14 @@ class MainControlLoop:
                 self.antenna_deployer.deploy()
                 print("deployed")
                 self.state_field_registry.update(StateField.ANTENNA_DEPLOYED, True)
+                self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
         self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
             time.sleep(5)
         self.state_field_registry.update(StateField.MODE, "IOC")  # Enter IOC mode to test initial functionality
+        self.log()  # Log mode switch
     
     def ioc(self):
         """
