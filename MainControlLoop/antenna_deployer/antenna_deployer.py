@@ -5,7 +5,6 @@ import time
 
 
 class AntennaDeployer:
-    THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
 
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
         self.state_field_registry = state_field_registry
@@ -29,13 +28,3 @@ class AntennaDeployer:
         isisants.py_k_ants_deploy(ANT_2, False, 5)
         isisants.py_k_ants_deploy(ANT_3, False, 5)
         isisants.py_k_ants_deploy(ANT_4, False, 5)
-
-    def control(self):
-        # if antenna is not deployed, see if we can deploy it
-        if(self.state_field_registry.get(state_fields.StateField.ANTENNA_DEPLOYED) == False):
-            # if 30 minutes have elapsed
-            if(time.time() - self.state_field_registry.get(state_fields.StateField.START_TIME) > self.THIRTY_MINUTES):
-                self.deploy()
-                print("deployed")
-                self.state_field_registry.update(
-                    state_fields.StateField.ANTENNA_DEPLOYED, True)
