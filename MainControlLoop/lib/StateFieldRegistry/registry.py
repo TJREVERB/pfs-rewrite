@@ -13,7 +13,8 @@ class StateFieldRegistry:
             StateField.ABOVE_50: False,
             StateField.RECEIVED_COMMAND: "",
             StateField.START_TIME: -1,
-            StateField.ANTENNA_DEPLOYED: False
+            StateField.ANTENNA_DEPLOYED: False,
+            StateField.MODE: "STARTUP",
         }
 
     def update(self, field: StateField, value):

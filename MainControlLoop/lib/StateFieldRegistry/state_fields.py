@@ -10,6 +10,7 @@ class StateField(Enum):
     RECEIVED_COMMAND = "RECEIVED_COMMAND"
     START_TIME = "START_TIME"
     ANTENNA_DEPLOYED = "ANTENNA_DEPLOYED"
+    MODE = "STARTUP"
 
 
 STATE_FIELD_DICT = {
@@ -17,7 +18,8 @@ STATE_FIELD_DICT = {
     "ABOVE_50": StateField.ABOVE_50,
     "RECEIVED_COMMAND": StateField.RECEIVED_COMMAND,
     "START_TIME": StateField.START_TIME,
-    "ANTENNA_DEPLOYED": StateField.ANTENNA_DEPLOYED
+    "ANTENNA_DEPLOYED": StateField.ANTENNA_DEPLOYED,
+    "STARTUP": StateField.MODE,
 }
 
 STATE_FIELD_TYPE_DICT = {
@@ -25,5 +27,6 @@ STATE_FIELD_TYPE_DICT = {
     StateField.ABOVE_50: bool,
     StateField.RECEIVED_COMMAND: str,
     StateField.START_TIME: float,
-    StateField.ANTENNA_DEPLOYED: bool
+    StateField.ANTENNA_DEPLOYED: bool,
+    StateField.MODE: str,
 }

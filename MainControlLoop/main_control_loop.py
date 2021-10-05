@@ -16,10 +16,10 @@ class MainControlLoop:
         Create all the objects
         Each object should take in the state field registry
         """
-        self.LOWER_THRESHOLD = 6
-        self.UPPER_THRESHOLD = 8
-        self.state_field_registry: StateFieldRegistry = StateFieldRegistry()
-        self.randnumber = RandomNumber(self.state_field_registry)
+        self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
+        self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
+        self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
+        self.state_field_registry = StateFieldRegistry()
         self.state_field_logger = StateFieldLogger(self.state_field_registry)
         self.aprs = APRS(self.state_field_registry)
         self.eps = EPS(self.state_field_registry)
@@ -30,10 +30,14 @@ class MainControlLoop:
                                           for f in [open("log.txt", "a")]][0]],  # Test method, logs "Hello"
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "CHG": lambda: self.eps.commands["Pin Off"]("Iridium"),
-            # Enters charging mode
-            "SCI": lambda: self.eps.commands["Pin On"]("Iridium"),
-            # Enters science mode
+            "CHG": lambda: [i() for i in [
+                lambda: self.eps.commands["Pin Off"]("Iridium"),
+                lambda: self.state_field_registry.update(StateField.MODE, "CHARGING")
+            ]],  # Enters charging mode
+            "SCI": lambda: [i() for i in [
+                lambda: self.eps.commands["Pin On"]("Iridium"),
+                lambda: self.state_field_registry.update(StateField.MODE, "SCIENCE")
+            ]],  # Enters science mode
             "U": lambda threshold: setattr(self, "UPPER_THRESHOLD", threshold),  # Set upper threshold
             "L": lambda threshold: setattr(self, "LOWER_THRESHOLD", threshold),  # Set lower threshold
             "RST": lambda: [i() for i in [
@@ -45,6 +49,11 @@ class MainControlLoop:
             "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
             # Calculate total power draw of connected components
         }
+    
+    def log(self):
+        # run the state_field_logger; commented out during testing
+        #self.state_field_logger.control()
+        return
 
     def command_interpreter(self) -> bool:
         """
@@ -72,11 +81,23 @@ class MainControlLoop:
             return True
         except Exception:
             return False
+    
+    def on_start(self):
+        # stay in STARTUP mode until antenna deploys
+        while not self.state_field_registry.get(StateField.ANTENNA_DEPLOYED):
+            self.log()
+            # if 30 minutes have elapsed
+            if time.time() - self.state_field_registry.get(StateField.START_TIME) > self.THIRTY_MINUTES:
+                self.antenna_deployer.deploy()
+                print("deployed")
+                self.state_field_registry.update(StateField.ANTENNA_DEPLOYED, True)
+        # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
+        if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
+            self.state_field_registry.update(StateField.MODE, "CHARGING")
+        else:
+            self.state_field_registry.update(StateField.MODE, "SCIENCE")
 
     def execute(self):
-        #self.state_field_logger.control()
-        # run the state_field_logger at the beginning of each iteration; commented out during testing
-
         """READ"""
         # Reads messages from APRS
         self.aprs.read()
@@ -84,18 +105,25 @@ class MainControlLoop:
         battery_voltage = self.eps.telemetry["VBCROUT"]()
 
         """CONTROL"""
-        # Deploys antenna if 30 minute timer has passed and antenna not already deployed
-        self.antenna_deployer.control()
         # Runs command from APRS, if any
         self.command_interpreter()
         # Automatic mode switching
-        if battery_voltage < self.LOWER_THRESHOLD:  # Enter charging mode if battery voltage < lower threshold
+        # Enter charging mode if battery voltage < lower threshold
+        if battery_voltage < self.LOWER_THRESHOLD and self.state_field_registry.get(StateField.MODE) == "SCIENCE":
             self.eps.commands["Pin Off"]("Iridium")  # Switch off iridium
-        elif battery_voltage > self.UPPER_THRESHOLD:  # Enter science mode if battery has charged > upper threshold
+            self.state_field_registry.update(StateField.MODE, "CHARGING")  # Set MODE to CHARGING
+        # Enter science mode if battery has charged > upper threshold
+        elif battery_voltage > self.UPPER_THRESHOLD and self.state_field_registry.get(StateField.MODE) == "CHARGING":
             self.eps.commands["Pin On"]("Iridium")  # Switch on iridium
+            self.state_field_registry.update(StateField.MODE, "SCIENCE")  # Set MODE to SCIENCE
+        
+        """LOG"""
+        self.log()  # On every iteration, run state_field_logger
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
         self.state_field_registry.update(StateField.START_TIME, time.time())
+        if self.state_field_registry.get(StateField.MODE) == "STARTUP":  # Run only once
+            self.on_start()
         while True:
             self.execute()
