@@ -68,6 +68,7 @@ class MainControlLoop:
         :return: (bool) whether the control ran without error
         """
         raw_command: str = self.sfr.RECEIVED_COMMAND
+        self.sfr.RECEIVED_COMMAND = ""
         # If no command was received, don't do anything
         if raw_command == "":
             return True
