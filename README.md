@@ -14,14 +14,14 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
       4. **reset** clears the log file so that on the next boot, **StateFieldRegistry** sets object attributes to default values. NEEDS TESTING
    2. **data/state_field_log.txt** contains a backup of the **StateFieldRegistry** in case the pi crashes in space.
 2. **main.py** calls **run** in **main_control_loop.py**.
-3. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle.
+3. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle. The following are the attributes of the **MainControlLoop** class.
    1. **command_registry** stores all the 3-digit codes we can send up from the ground station and the associated lambda functions. Format: `self.command_registry[COMMAND]()`
       1. “TST”: Test method, calls **log** and logs "Hello" NEEDS TESTING
       2. “BVT”: Retrieves battery voltage from EPS and transmits the value to the ground station using **aprs.write**
       3. “CHG”: Calls **charging_mode** and enters charging mode NEEDS TESTING
       4. “SCI”: Calls **science_mode** and enters science mode NEEDS TESTING
-      5. “U”: Sets minimum battery voltage for when satellite will enter SCIENCE mode NEEDS TESTING
-      6. “L”: Sets maximum battery voltage for when satellite will enter CHARGING mode NEEDS TESTING
+      5. “U00”: Sets minimum battery voltage for when satellite will enter SCIENCE mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
+      6. “L00”: Sets maximum battery voltage for when satellite will enter CHARGING mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
       7. “RST”: Calls **reset_power** and power resets the entire cubesat NEEDS TESTING
       8. “IRI”: Calls **iridium.wave** and transmits a simple hardcoded message back to the ground station over Iridium
       9. “PWR”: Retrieves total power draw from EPS and transmits the result using **aprs.write** NEEDS TESTING
