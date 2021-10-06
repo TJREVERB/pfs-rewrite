@@ -128,6 +128,7 @@ class MainControlLoop:
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         time.sleep(5)
         #self.iridium = Iridium(self.sfr)  # Reconnect serial port
+        print("iridium.functional: " + self.iridium.functional())  # Debugging
         self.iridium.wave()  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
