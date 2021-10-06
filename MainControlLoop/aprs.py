@@ -12,7 +12,7 @@ class APRS:
     BAUDRATE = 19200
 
     def __init__(self, state_field_registry: registry.StateFieldRegistry):
-        self.state_field_registry = state_field_registry
+        self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
@@ -100,6 +100,5 @@ class APRS:
             if next_byte == '\n'.encode('utf-8'):
                 break
         message = output.decode('utf-8')
-        self.state_field_registry.update(
-            state_fields.StateField.RECEIVED_COMMAND, message)  # store message in statefield
+        self.sfr.RECEIVED_COMMAND = message  # store message in statefield
         return message

@@ -17,3 +17,6 @@ __pycache__/
 
 # ADCS TLE backup file
 backup_tle.txt
+
+# StateFieldRegistry log
+MainControlLoop/lib/StateFieldRegistry/data/

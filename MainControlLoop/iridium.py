@@ -8,7 +8,7 @@ class Iridium:
     BAUDRATE = 19200
 
     def __init__(self, state_field_registry: StateFieldRegistry):
-        self.state_field_registry: state_field_registry = state_field_registry
+        self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)

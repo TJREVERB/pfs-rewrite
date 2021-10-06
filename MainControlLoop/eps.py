@@ -10,7 +10,7 @@ class EPS:
     """
     def __init__(self, state_field_registry):
         self.EPS_ADDRESS: hex = 0x2b
-        self.state_field_registry: state_field_registry = state_field_registry
+        self.sfr = state_field_registry
         self.components = {  # List of components and their associated pins
             "APRS": [0x04],
             "Iridium": [0x03],

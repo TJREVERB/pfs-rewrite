@@ -1,42 +1,50 @@
-from copy import deepcopy
-from .state_fields import StateField
+import time
 
 
 class StateFieldRegistry:
+    LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
+    # after how many iterations should the state field logger save the state field
 
     def __init__(self):
         """
         Defines all the StateFields present in the state registry
         """
-        self.registry = {
-            StateField.RAND_NUMBER: 0,
-            StateField.ABOVE_50: False,
-            StateField.RECEIVED_COMMAND: "",
-            StateField.START_TIME: -1,
-            StateField.ANTENNA_DEPLOYED: False,
-            StateField.MODE: "STARTUP",
+        defaults = {
+            "RECEIVED_COMMAND": "",
+            "START_TIME": -1,
+            "ANTENNA_DEPLOYED": False,
+            "MODE": "STARTUP",
         }
+        try:
+            f = open(self.LOG_PATH, "r")
+            if len(f.readlines()) != len(defaults):
+                for key, val in defaults.items():
+                    exec(f"self.{key} = {val}")  # Create default fields
+            else:
+                for line in f.readlines():
+                    line = line.strip().split(':')
+                    key = line[0]
+                    val = line[1]
+                    exec(f"self.{key} = {val}")  # Create new field for each field in log and assign log's value
+        except FileNotFoundError:
+            for key, val in defaults.items():
+                exec(f"self.{key} = {val}")  # Create default fields
+        self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
 
-    def update(self, field: StateField, value):
-        """
-        Update a StateField in the registry.
-        :param field: (StateField) StateField type to update in registry
-        :param value: (Any) Value to put in the registry,
-        :return: (bool) If the value was updated in the registry
-        """
-        if field not in self.registry:
-            return False
+    def to_dict(self) -> {}:
+        result = {}
+        for i in [i for i in dir(self) if not i.startswith("__")]:  # Iterate through class variables only
+            result[i] = getattr(self, i)  # Get the value of the variable from a string name
+        return result
 
-        self.registry[field] = value
+    def dump(self):
+        with open(self.LOG_PATH, "w") as f:
+            for key, val in self.to_dict():
+                if not val:
+                    val = ""  # if val is the boolean false, it needs to be an empty string in the state field log,
+                    # or else it will be converted to True. Only empty strings are converted to False
+                f.write(f"{key}:{val}\n")  # Save the variables in the log
 
-        return True
-
-    def get(self, field: StateField):
-        """
-        Returns a StateField from the registry
-        :param field: (StateField) StateField type to get from registry
-        :return: (Any) The value found in the registry.
-        """
-        if field in self.registry:
-            return deepcopy(self.registry[field])
-        return None
+    def reset(self):
+        with open(self.LOG_PATH, "w") as f:
+            f.write("")
