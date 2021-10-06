@@ -167,6 +167,7 @@ class EPS:
             bus.write_i2c_block_data(self.EPS_ADDRESS, register, data)
             time.sleep(.5)
             result = bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
+            time.sleep(.5)
         return result
 
     def command(self, register, data) -> bool:
