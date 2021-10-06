@@ -115,6 +115,7 @@ class MainControlLoop:
         #self.aprs = APRS(self.sfr)  # Reconnect APRS
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
+        #while 1==0:  # DEBUG
             self.aprs.read()  # Listen for and execute ground station commands
             self.command_interpreter()
             time.sleep(5)
@@ -128,7 +129,7 @@ class MainControlLoop:
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         time.sleep(5)
         #self.iridium = Iridium(self.sfr)  # Reconnect serial port
-        print("iridium.functional: " + self.iridium.functional())  # Debugging
+        print("iridium.functional: " + str(self.iridium.functional()))  # Debugging
         self.iridium.wave()  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
