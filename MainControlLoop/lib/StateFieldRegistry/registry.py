@@ -31,7 +31,7 @@ class StateFieldRegistry:
                 exec(f"self.{key} = {val}")  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
 
-    def to_dict(self) -> {}:
+    def to_dict(self) -> dict:
         result = {}
         for i in [i for i in dir(self) if not i.startswith("__")]:  # Iterate through class variables only
             result[i] = getattr(self, i)  # Get the value of the variable from a string name
