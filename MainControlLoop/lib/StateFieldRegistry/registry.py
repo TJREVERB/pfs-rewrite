@@ -10,7 +10,7 @@ class StateFieldRegistry:
         Defines all the StateFields present in the state registry
         """
         self.defaults = {
-            "RECEIVED_COMMAND": "",
+            "RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "STARTUP",
