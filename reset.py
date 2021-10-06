@@ -2,9 +2,11 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.eps import EPS
 
 
-def reset():
-    sfr = StateFieldRegistry()
-    sfr.reset()
-    eps = EPS(sfr)
-    eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-    exit(0)
+class Reset:
+    def __init__(self):
+        self.sfr = StateFieldRegistry()
+        self.eps = EPS(self.sfr)
+    def reset(self):
+        self.sfr.reset()
+        self.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
+        exit(0)
