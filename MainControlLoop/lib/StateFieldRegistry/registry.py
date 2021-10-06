@@ -9,27 +9,40 @@ class StateFieldRegistry:
         """
         Defines all the StateFields present in the state registry
         """
-        defaults = {
+        self.defaults = {
             "RECEIVED_COMMAND": "",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "STARTUP",
         }
+        self.type_dict = {
+            "RECEIVED_COMMAND": str,
+            "START_TIME": float,
+            "ANTENNA_DEPLOYED": bool,
+            "MODE": str,
+        }
         try:
             f = open(self.LOG_PATH, "r")
-            if len(f.readlines()) != len(defaults):
-                for key, val in defaults.items():
-                    exec(f"self.{key} = {val}")  # Create default fields
+            if len(f.readlines()) != len(self.defaults):
+                self.load_defaults()  # Create default fields
             else:
                 for line in f.readlines():
                     line = line.strip().split(':')
                     key = line[0]
                     val = line[1]
-                    exec(f"self.{key} = {val}")  # Create new field for each field in log and assign log's value
+                    try:
+                        # Create new field for each field in log and assign log's value
+                        exec(f"self.{key} = {self.type_dict[key](val)}")
+                    except:
+                        self.load_defaults()
+                        break
         except FileNotFoundError:
-            for key, val in defaults.items():
-                exec(f"self.{key} = {val}")  # Create default fields
+            self.load_defaults()  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
+    
+    def load_defaults(self):
+        for key, val in self.defaults.items():
+            exec(f"self.{key} = {val}")  # Create default fields
 
     def to_dict(self) -> dict:
         result = {}
