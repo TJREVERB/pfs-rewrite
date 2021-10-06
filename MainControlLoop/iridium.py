@@ -31,6 +31,9 @@ class Iridium:
             "Soft Reset": lambda: self.write("ATZn"),
             "Transmit": lambda message: self.write("AT+SBDWT=" + message)
         }
+    
+    def __del__(self):
+        self.serial.close()
 
     def functional(self) -> bool:
         """

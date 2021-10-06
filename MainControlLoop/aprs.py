@@ -16,6 +16,9 @@ class APRS:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
+    
+    def __del__(self):
+        self.serial.close()
 
     def functional(self) -> bool:
         """
