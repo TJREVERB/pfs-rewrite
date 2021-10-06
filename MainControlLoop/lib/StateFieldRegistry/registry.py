@@ -40,9 +40,6 @@ class StateFieldRegistry:
     def dump(self):
         with open(self.LOG_PATH, "w") as f:
             for key, val in self.to_dict():
-                if not val:
-                    val = ""  # if val is the boolean false, it needs to be an empty string in the state field log,
-                    # or else it will be converted to True. Only empty strings are converted to False
                 f.write(f"{key}:{val}\n")  # Save the variables in the log
 
     def reset(self):
