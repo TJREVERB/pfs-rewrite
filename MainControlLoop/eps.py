@@ -15,6 +15,7 @@ class EPS:
             "APRS": [0x04],
             "Iridium": [0x03],
             "Antenna Deployer": [0x06],
+            "Iridium Serial Converter": [0x08],
         }
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)

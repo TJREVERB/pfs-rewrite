@@ -94,8 +94,6 @@ class MainControlLoop:
         Only runs once.
         """
         # Switch off all PDMs
-        #del self.iridium  # Disconnect Iridium serial port
-        #del self.aprs  # Disconnect APRS serial port
         self.eps.commands["All Off"]()
         # stay in STARTUP mode until antenna deploys
         while not self.sfr.ANTENNA_DEPLOYED:
@@ -111,14 +109,10 @@ class MainControlLoop:
                 self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
         self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
-        #time.sleep(5)
-        #self.aprs = APRS(self.sfr)  # Reconnect APRS
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
-        #while 1==0:  # DEBUG
             self.aprs.read()  # Listen for and execute ground station commands
             self.command_interpreter()
-            time.sleep(5)
         self.sfr.MODE = "IOC"  # Enter IOC mode to test initial functionality
         self.log()  # Log mode switch
     
@@ -127,8 +121,8 @@ class MainControlLoop:
         Code to test initial operational capability of satellite.
         """
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
+        self.eps.commands["Pin On"]("Iridium Serial Converter")  # Switch on Iridium serial converter
         time.sleep(5)
-        #self.iridium = Iridium(self.sfr)  # Reconnect serial port
         print("iridium.functional: " + str(self.iridium.functional()))  # Debugging
         self.iridium.wave()  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
@@ -166,6 +160,10 @@ class MainControlLoop:
                 self.on_start()
             if self.sfr.MODE == "IOC":  # Run only once, initial operations test
                 self.ioc()
+            if self.sfr.MODE == "CHARGING":
+                self.charging_mode()
+            if self.sfr.MODE == "SCIENCE":
+                self.science_mode()
             while True:
                 self.execute()
         except KeyboardInterrupt:
