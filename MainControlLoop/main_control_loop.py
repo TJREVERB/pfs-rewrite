@@ -44,7 +44,7 @@ class MainControlLoop:
         """
         Enter CHARGING mode, switch off Iridium
         """
-        del self.iridium  # Disconnect serial port
+        #del self.iridium  # Disconnect serial port
         self.eps.commands["Pin Off"]("Iridium")  # Switch off iridium
         self.sfr.MODE = "CHARGING"  # Set MODE to CHARGING
     
@@ -53,8 +53,8 @@ class MainControlLoop:
         Enter SCIENCE mode, switch on Iridium
         """
         self.eps.commands["Pin On"]("Iridium")  # Switch on iridium
-        time.sleep(5)
-        self.iridium = Iridium(self.sfr)  # Reconnect serial port
+        #time.sleep(5)
+        #self.iridium = Iridium(self.sfr)  # Reconnect serial port
         self.sfr.MODE = "SCIENCE"  # Set MODE to SCIENCE
     
     def log(self):
@@ -94,8 +94,8 @@ class MainControlLoop:
         Only runs once.
         """
         # Switch off all PDMs
-        del self.iridium  # Disconnect Iridium serial port
-        del self.aprs  # Disconnect APRS serial port
+        #del self.iridium  # Disconnect Iridium serial port
+        #del self.aprs  # Disconnect APRS serial port
         self.eps.commands["All Off"]()
         # stay in STARTUP mode until antenna deploys
         while not self.sfr.ANTENNA_DEPLOYED:
@@ -104,17 +104,19 @@ class MainControlLoop:
             if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
                 self.eps.commands["Pin On"]("Antenna Deployer")
-                time.sleep(10)
+                time.sleep(5)
                 self.antenna_deployer.deploy()  # Deploy antenna
                 print("deployed")
                 self.sfr.ANTENNA_DEPLOYED = True
                 self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
         self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
-        time.sleep(5)
-        self.aprs = APRS(self.sfr)  # Reconnect APRS
+        #time.sleep(5)
+        #self.aprs = APRS(self.sfr)  # Reconnect APRS
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
+            self.aprs.read()  # Listen for and execute ground station commands
+            self.command_interpreter()
             time.sleep(5)
         self.sfr.MODE = "IOC"  # Enter IOC mode to test initial functionality
         self.log()  # Log mode switch
@@ -125,7 +127,7 @@ class MainControlLoop:
         """
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         time.sleep(5)
-        self.iridium = Iridium(self.sfr)  # Reconnect serial port
+        #self.iridium = Iridium(self.sfr)  # Reconnect serial port
         self.iridium.wave()  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
