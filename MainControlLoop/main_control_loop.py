@@ -111,6 +111,7 @@ class MainControlLoop:
         self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
+            print("test")
             self.aprs.read()  # Listen for and execute ground station commands
             self.command_interpreter()
         self.sfr.MODE = "IOC"  # Enter IOC mode to test initial functionality
@@ -137,6 +138,7 @@ class MainControlLoop:
         self.aprs.read()
         # Reads battery voltage from EPS
         battery_voltage = self.eps.telemetry["VBCROUT"]()
+        print(battery_voltage)
 
         """CONTROL"""
         # Runs command from APRS, if any

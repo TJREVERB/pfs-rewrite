@@ -13,7 +13,7 @@ class Iridium:
         while not self.serial.is_open:
             time.sleep(0.5)
         self.commands = {
-            "Test": self.functional(),  # Tests connection to Iridium
+            "Test": self.functional,  # Tests connection to Iridium
             "Geolocation": lambda: self.request("AT-MSGEO"),  # Current geolocation
             "Active Config": lambda: self.request("AT+V"),
             "Check Registration": lambda: self.request("AT+SBDREG?"),
@@ -51,10 +51,13 @@ class Iridium:
             except:
                 return False
         self.serial.flush()
-        self.write("AT")
-        if self.read().find("OK") != -1:
-            return True
-        return False
+        try:
+            self.write("AT")
+            if self.read().find("OK") != -1:
+                return True
+            return False
+        except UnicodeDecodeError:
+            return False
 
     def request(self, command: str) -> str:
         """
