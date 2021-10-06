@@ -37,34 +37,25 @@ class APRS:
                 self.serial.open()
             except:
                 return False
-        self.serial.flush()
-        self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
+        self.serial.close()
+        with open(self.PORT, "+b") as ser:  # Open serial port without pyserial in write bytes mode
+            ser.write("\x1b\x1b\x1b\n\x1b\x1b\x1b\n\x1b\x1b\x1b\n".encode("utf-8"))  # Enter firmware menu
+            time.sleep(1)
+            result = ser.read()
+            print(result)
+            if result == b"":
+                return False
+            ser.write("QUIT\n".encode("utf-8"))
         time.sleep(.5)
-        print(self.read())
-        self.serial.write("\x1b\x1b\x1b\n".encode("utf-8"))
-        time.sleep(.5)
-        print(self.read())
-        self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-        time.sleep(.5)
-        print(self.read())
-        time.sleep(.5)
-        print(self.read())
-        try:
-            # For now, just reads first byte, and if byte exists and isn't empty.
-            byte = self.serial.read(size=1)
-            # Can be updated to match what the message actually is and match it to an expected value
-            # once we get a good idea of what we expect from MYCALL
-        except:
-            return False
-        if byte == bytes():
-            print("byte empty")
-            return False
-        self.serial.flush()
-        self.serial.write("QUIT\n".encode("utf-8"))
-        time.sleep(.5)
+        self.serial.open()
         return True
 
     def clear_data_lines(self) -> None:
+        """
+        Switch off USB bus power, then switch it back on.
+        This addresses problem with data lines becoming clogged.
+        Equivalent of tester.sh
+        """
         with open("/sys/devices/platform/soc/20980000.usb/buspower", "w") as f:
             f.write(str(0))
         time.sleep(15)
