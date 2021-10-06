@@ -1,4 +1,4 @@
-from MainControlLoop.lib.StateFieldRegistry import registry, state_fields
+from MainControlLoop.lib.StateFieldRegistry import registry
 from serial import Serial
 import time
 

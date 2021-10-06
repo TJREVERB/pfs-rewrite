@@ -13,7 +13,7 @@ class StateFieldRegistry:
             "RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
-            "MODE": "STARTUP",
+            "MODE": "\"STARTUP\"",
         }
         self.type_dict = {
             "RECEIVED_COMMAND": str,
@@ -52,7 +52,7 @@ class StateFieldRegistry:
 
     def dump(self):
         with open(self.LOG_PATH, "w") as f:
-            for key, val in self.to_dict():
+            for key, val in self.to_dict().items():
                 f.write(f"{key}:{val}\n")  # Save the variables in the log
 
     def reset(self):

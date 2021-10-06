@@ -69,7 +69,7 @@ class Iridium:
         Transmits test message to ground station to verify Iridium works in space
         :return: (bool) Whether write worked
         """
-        return self.commands["TRANSMIT"]("TJ;Hello from outer space!")
+        return self.commands["Transmit"]("TJ;Hello from outer space!")
 
     def write(self, command: str) -> bool:
         """

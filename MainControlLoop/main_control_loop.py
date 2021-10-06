@@ -119,7 +119,8 @@ class MainControlLoop:
         # Switch on all PDMs
         self.eps.commands["All On"]()
         time.sleep(5)
-        self.iridium.wave()  # Test Iridium
+        print(self.iridium.functional())
+        print(self.iridium.wave())  # Test Iridium
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
             self.charging_mode()

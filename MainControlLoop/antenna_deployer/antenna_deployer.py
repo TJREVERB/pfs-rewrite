@@ -1,5 +1,4 @@
-from MainControlLoop.lib.StateFieldRegistry import registry, state_fields
-#from MainControlLoop.antenna_deployer.antenna_deploy import deploy, isisants
+from MainControlLoop.lib.StateFieldRegistry import registry
 from MainControlLoop.antenna_deployer.antenna_deploy import isisants
 import time
 
