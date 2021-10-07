@@ -38,7 +38,7 @@ class APRS:
             except:
                 return False
         self.serial.close()
-        with open(self.PORT, "+b") as ser:  # Open serial port without pyserial in write bytes mode
+        with open(self.PORT, "b") as ser:  # Open serial port without pyserial in write bytes mode
             ser.write("\x1b".encode("utf-8"))
             time.sleep(.2)
             ser.write("\x1b".encode("utf-8"))
