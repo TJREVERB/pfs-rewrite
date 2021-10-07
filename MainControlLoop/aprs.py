@@ -36,7 +36,6 @@ class APRS:
                 self.serial.open()
             except:
                 return False
-        self.serial.close()
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x1b".encode("utf-8"))
@@ -57,7 +56,7 @@ class APRS:
         self.serial.write("\n".encode("utf-8"))
         time.sleep(1)
 
-        result = ser.read()
+        result = self.serial.read()
         print(result)
         if result == b"":
             return False
@@ -66,7 +65,6 @@ class APRS:
         time.sleep(.2)
         self.serial.write("\n".encode("utf-8"))
         time.sleep(.5)
-        self.serial.open()
         return True
 
     def clear_data_lines(self) -> None:
