@@ -39,13 +39,34 @@ class APRS:
                 return False
         self.serial.close()
         with open(self.PORT, "+b") as ser:  # Open serial port without pyserial in write bytes mode
-            ser.write("\x1b\x1b\x1b\n\x1b\x1b\x1b\n\x1b\x1b\x1b\n".encode("utf-8"))  # Enter firmware menu
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\n".encode("utf-8"))
             time.sleep(1)
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\x1b".encode("utf-8"))
+            time.sleep(.5)
+
+            ser.write("MYCALL".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\n".encode("utf-8"))
+            time.sleep(1)
+
             result = ser.read()
             print(result)
             if result == b"":
                 return False
-            ser.write("QUIT\n".encode("utf-8"))
+            
+            ser.write("QUIT".encode("utf-8"))
+            time.sleep(.2)
+            ser.write("\n".encode("utf-8"))
         time.sleep(.5)
         self.serial.open()
         return True
