@@ -1,4 +1,4 @@
-# pfs-rewrite
+# pFS-rewrite
 
 ## A full flight software rewrite
 
