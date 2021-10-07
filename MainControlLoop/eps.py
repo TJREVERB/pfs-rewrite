@@ -2,7 +2,7 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
-
+from functools import partial
 
 class EPS:
     """
@@ -21,16 +21,16 @@ class EPS:
         # Format: self.eps.commands["COMMAND"](ARGS)
         self.commands = {
             # Board info commands: Basic board info
-            "Board Status": lambda: self.request(0x01, [0x00], 2),  # Reads and returns board status
-            "Last Error": lambda: self.request(0x03, [0x00], 2),  # Reads and returns last error
-            "Firmware Version": lambda: self.request(0x04, [0x00], 2),  # Reads and returns firmware version
-            "Checksum": lambda: self.request(0x05, [0x00], 2),  # Reads and returns generated checksum of ROM contents
-            "Firmware Revision": lambda: self.request(0x06, [0x00], 2),  # Reads and returns firmware revision number
+            "Board Status": partial(self.request, register=0x01, data=[0x00], length=2),  # Reads and returns board status
+            "Last Error": partial(self.request, register=0x01, data=[0x00], length=2),  # Reads and returns last error
+            "Firmware Version": partial(self.request, register=0x04, data=[0x00], length=2),  # Reads and returns firmware version
+            "Checksum": partial(self.request, register=0x05, data=[0x00], length=2),  # Reads and returns generated checksum of ROM contents
+            "Firmware Revision": partial(self.request, register=0x06, data=[0x00], length=2),  # Reads and returns firmware revision number
 
             # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
             # with no commands received.
-            "Watchdog Period": lambda: self.request(0x20, [0x00], 2),  # Reads and returns current watchdog period
-            "Reset Watchdog": lambda: self.command(0x22, [0x00]),  # Resets communications watchdog timer
+            "Watchdog Period": partial(self.request, register=0x20, data=[0x00], length=2),  # Reads and returns current watchdog period
+            "Reset Watchdog": partial(self.command, register=0x22, data=[0x00]),  # Resets communications watchdog timer
             # Any command will reset the timer, this command can be used if no action from the EPS is needed
             "Set Watchdog Period": lambda period: self.command(0x21, period),
             # Sets communications timeout watchdog period, minimum 1 minute maximum 90 minutes
@@ -38,26 +38,26 @@ class EPS:
             # Reset count commands: EPS will be reset under various conditions,
             # these functions check how many times have been caused by each condition.
             # Counts roll over from 255 to 0.
-            "Brownout Resets": lambda: self.request(0x31, [0x00], 2),  # Reads and returns number of brownout resets
-            "Software Resets": lambda: self.request(0x32, [0x00], 2),  # Reads and returns number of software resets
-            "Manual Resets": lambda: self.request(0x33, [0x00], 2),  # Reads and returns number of manual resets
-            "Watchdog Resets": lambda: self.request(0x34, [0x00], 2),  # Reads and returns number of watchdog resets
+            "Brownout Resets": partial(self.request, register=0x31, data=[0x00], length=2),  # Reads and returns number of brownout resets
+            "Software Resets": partial(self.request, register=0x32, data=[0x00], length=2),  # Reads and returns number of software resets
+            "Manual Resets": partial(self.request, register=0x33, data=[0x00], length=2),  # Reads and returns number of manual resets
+            "Watchdog Resets": partial(self.request, register=0x34, data=[0x00], length=2),  # Reads and returns number of watchdog resets
 
             # PDM Control: Get information about PDMs and switch PDMs on and off to power on or off components
-            "All Actual States": lambda: self.request(0x42, [0x00], 4),
+            "All Actual States": partial(self.request, register=0x42, data=[0x00], length=4),
             # Reads and returns actual state of all PDMs in byte form
             # PDMs may be shut off due to protections, and this command shows the actual state of all PDMs
-            "All Expected States": lambda: self.request(0x43, [0x00], 4),
+            "All Expected States": partial(self.request, register=0x43, data=[0x00], length=4),
             # Reads and returns expected state of all PDMs in byte form
             # These depend on whether they have been commanded on or off, regardless of protection trips
-            "All Initial States": lambda: self.request(0x44, [0x00], 4),
+            "All Initial States": partial(self.request, register=0x44, data=[0x00], length=4),
             # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
             "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2),
             # Reads and returns actual state of one PDM
-            "All On": lambda: self.command(0x40, [0x00]),  # Turn all PDMs on
-            "All Off": lambda: self.command(0x41, [0x00]),  # Turn all PDMs off
-            "Set All Initial": lambda: self.command(0x45, [0x00]),  # Set all PDMs to their initial state
+            "All On": partial(self.command, 0x40, [0x00]),  # Turn all PDMs on
+            "All Off": partial(self.command, 0x41, [0x00]),  # Turn all PDMs off
+            "Set All Initial": partial(self.command, 0x45, [0x00]),  # Set all PDMs to their initial state
             "Pin On": lambda component: self.command(0x50, self.components[component]),  # Enable component
             "Pin Off": lambda component: self.command(0x51, self.components[component]),  # Disable component
             "Pin Init On": lambda component: self.command(0x52, self.components[component]),
@@ -78,7 +78,7 @@ class EPS:
             "Bus Reset": lambda pcm: self.command(0x70, [sum([self.pcm_busses[i][0] for i in pcm])]),
 
             # Manual reset
-            "Manual Reset": lambda: self.command(0x80, [0x00]),
+            "Manual Reset": partial(self.command, 0x80, [0x00]),
             # Manually resets EPS to initial state, and increments manual reset counter
         }
         # Format: self.eps.telemetry["REQUESTED TELEMETRY"]()
