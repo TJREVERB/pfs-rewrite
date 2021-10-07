@@ -1,3 +1,4 @@
+from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
@@ -21,22 +22,22 @@ class MainControlLoop:
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
         self.command_registry = {
-            "TST": lambda: [i() for i in [[lambda: f.write("Hello"), lambda: f.close()]
-                                          for f in [open("log.txt", "a")]][0]],  # Test method, logs "Hello"
-            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "TST": partial([i() for i in [[partial(f.write, "Hello"), partial(f.close)]
+                                          for f in [open("log.txt", "a")]][0]]),  # Test method, logs "Hello"
+            "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
             "CHG": self.charging_mode,  # Enters charging mode
             "SCI": self.science_mode,  # Enters science mode
-            "U": lambda threshold: setattr(self, "UPPER_THRESHOLD", threshold),  # Set upper threshold
-            "L": lambda threshold: setattr(self, "LOWER_THRESHOLD", threshold),  # Set lower threshold
-            "RST": lambda: [i() for i in [
-                lambda: self.eps.commands["All Off"],
-                lambda: time.sleep(.5),
-                lambda: self.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-            ]],  # Reset power to the entire satellite (!!!!)
+            "U": partial(setattr, obj=self, name="UPPER_THRESHOLD"),  # Set upper threshold
+            "L": partial(setattr, obj=self, name="LOWER_THRESHOLD"),  # Set lower threshold
+            "RST": partial([i() for i in [
+                partial(self.eps.commands["All Off"]),
+                partial(time.sleep, .5),
+                partial(self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"]))
+            ]]),  # Reset power to the entire satellite (!!!!)
             "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
+            "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
         }
     

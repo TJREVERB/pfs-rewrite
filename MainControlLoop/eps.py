@@ -1,3 +1,4 @@
+from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 from smbus2 import SMBus
@@ -84,66 +85,66 @@ class EPS:
         # Format: self.eps.telemetry["REQUESTED TELEMETRY"]()
         # Refer to EPS Manual Table 11.8-10
         self.telemetry = {
-            "IBCROUT": lambda: self.telemetry_request([0xE2, 0x84], 14.662757),  # BCR Output current in mA
-            "VBCROUT": lambda: self.telemetry_request([0xE2, 0x80], 0.008993157),  # BCR Output voltage in V
-            "I3V3DRW": lambda: self.telemetry_request([0xE2, 0x05], 0.001327547),  # 3V3 Current draw of EPS in A
-            "I5VDRW": lambda: self.telemetry_request([0xE2, 0x15], 0.001327547),  # 5V Current draw of EPS in A
-            "I12VBUS": lambda: self.telemetry_request([0xE2, 0x34], 0.00207),   # 12V Bus output current in A
-            "V12VBUS": lambda: self.telemetry_request([0xE2, 0x30], 0.01349),  # 12V Bus output voltage in V
-            "IBATBUS": lambda: self.telemetry_request([0xE2, 0x24], 0.005237),  # Batt Bus output current in A
-            "VBATBUS": lambda: self.telemetry_request([0xE2, 0x20], 0.008978),  # Batt Bus output voltage in V
-            "I5VBUS": lambda: self.telemetry_request([0xE2, 0x14], 0.005237),  # 5V Bus output current in A
-            "V5VBUS": lambda: self.telemetry_request([0xE2, 0x10], 0.005865),  # 5V Bus output voltage in V
-            "I3V3BUS": lambda: self.telemetry_request([0xE2, 0x04], 0.005237),  # 3V3 Bus output current in A
-            "V3V3BUS": lambda: self.telemetry_request([0xE2, 0x00], 0.004311),  # 3V3 Bus output voltage in V
-            "VSW1": lambda: self.telemetry_request([0xE4, 0x10], 0.01349),   # SW1 output voltage in V
-            "ISW1": lambda: self.telemetry_request([0xE4, 0x14], 0.001328),  # SW1 output current in A
-            "VSW2": lambda: self.telemetry_request([0xE4, 0x20], 0.01349),   # SW2 output voltage in V
-            "ISW2": lambda: self.telemetry_request([0xE4, 0x24], 0.001328),  # SW2 output current in A
-            "VSW3": lambda: self.telemetry_request([0xE4, 0x30], 0.008993),  # SW3 output voltage in V
-            "ISW3": lambda: self.telemetry_request([0xE4, 0x34], 0.006239),  # SW3 output current in A
-            "VSW4": lambda: self.telemetry_request([0xE4, 0x40], 0.008993),  # SW4 output voltage in V
-            "ISW4": lambda: self.telemetry_request([0xE4, 0x44], 0.006239),  # SW4 output current in A
-            "VSW5": lambda: self.telemetry_request([0xE4, 0x50], 0.005865),  # SW5 output voltage in V
-            "ISW5": lambda: self.telemetry_request([0xE4, 0x54], 0.001328),  # SW5 output current in A
-            "VSW6": lambda: self.telemetry_request([0xE4, 0x60], 0.005865),  # SW6 output voltage in V
-            "ISW6": lambda: self.telemetry_request([0xE4, 0x64], 0.001328),  # SW6 output current in A
-            "VSW7": lambda: self.telemetry_request([0xE4, 0x70], 0.005865),  # SW7 output voltage in V
-            "ISW7": lambda: self.telemetry_request([0xE4, 0x74], 0.001328),  # SW7 output current in A
-            "VSW8": lambda: self.telemetry_request([0xE4, 0x80], 0.004311),  # SW8 output voltage in V
-            "ISW8": lambda: self.telemetry_request([0xE4, 0x84], 0.001328),  # SW8 output current in A
-            "VSW9": lambda: self.telemetry_request([0xE4, 0x90], 0.004311),  # SW9 output voltage in V
-            "ISW9": lambda: self.telemetry_request([0xE4, 0x94], 0.001328),  # SW9 output current in A
-            "VSW10": lambda: self.telemetry_request([0xE4, 0xA0], 0.004311),  # SW10 output voltage in V
-            "ISW10": lambda: self.telemetry_request([0xE4, 0xA4], 0.001328),  # SW10 output current in A
-            "TBRD": lambda: self.telemetry_request([0xE3, 0x08], 0.372434),  # Motherboard temperature in K
+            "IBCROUT": partial(self.telemetry_request, [0xE2, 0x84], 14.662757),  # BCR Output current in mA
+            "VBCROUT": partial(self.telemetry_request, [0xE2, 0x80], 0.008993157),  # BCR Output voltage in V
+            "I3V3DRW": partial(self.telemetry_request, [0xE2, 0x05], 0.001327547),  # 3V3 Current draw of EPS in A
+            "I5VDRW": partial(self.telemetry_request, [0xE2, 0x15], 0.001327547),  # 5V Current draw of EPS in A
+            "I12VBUS": partial(self.telemetry_request, [0xE2, 0x34], 0.00207),   # 12V Bus output current in A
+            "V12VBUS": partial(self.telemetry_request, [0xE2, 0x30], 0.01349),  # 12V Bus output voltage in V
+            "IBATBUS": partial(self.telemetry_request, [0xE2, 0x24], 0.005237),  # Batt Bus output current in A
+            "VBATBUS": partial(self.telemetry_request, [0xE2, 0x20], 0.008978),  # Batt Bus output voltage in V
+            "I5VBUS": partial(self.telemetry_request, [0xE2, 0x14], 0.005237),  # 5V Bus output current in A
+            "V5VBUS": partial(self.telemetry_request, [0xE2, 0x10], 0.005865),  # 5V Bus output voltage in V
+            "I3V3BUS": partial(self.telemetry_request, [0xE2, 0x04], 0.005237),  # 3V3 Bus output current in A
+            "V3V3BUS": partial(self.telemetry_request, [0xE2, 0x00], 0.004311),  # 3V3 Bus output voltage in V
+            "VSW1": partial(self.telemetry_request, [0xE4, 0x10], 0.01349),   # SW1 output voltage in V
+            "ISW1": partial(self.telemetry_request, [0xE4, 0x14], 0.001328),  # SW1 output current in A
+            "VSW2": partial(self.telemetry_request, [0xE4, 0x20], 0.01349),   # SW2 output voltage in V
+            "ISW2": partial(self.telemetry_request, [0xE4, 0x24], 0.001328),  # SW2 output current in A
+            "VSW3": partial(self.telemetry_request, [0xE4, 0x30], 0.008993),  # SW3 output voltage in V
+            "ISW3": partial(self.telemetry_request, [0xE4, 0x34], 0.006239),  # SW3 output current in A
+            "VSW4": partial(self.telemetry_request, [0xE4, 0x40], 0.008993),  # SW4 output voltage in V
+            "ISW4": partial(self.telemetry_request, [0xE4, 0x44], 0.006239),  # SW4 output current in A
+            "VSW5": partial(self.telemetry_request, [0xE4, 0x50], 0.005865),  # SW5 output voltage in V
+            "ISW5": partial(self.telemetry_request, [0xE4, 0x54], 0.001328),  # SW5 output current in A
+            "VSW6": partial(self.telemetry_request, [0xE4, 0x60], 0.005865),  # SW6 output voltage in V
+            "ISW6": partial(self.telemetry_request, [0xE4, 0x64], 0.001328),  # SW6 output current in A
+            "VSW7": partial(self.telemetry_request, [0xE4, 0x70], 0.005865),  # SW7 output voltage in V
+            "ISW7": partial(self.telemetry_request, [0xE4, 0x74], 0.001328),  # SW7 output current in A
+            "VSW8": partial(self.telemetry_request, [0xE4, 0x80], 0.004311),  # SW8 output voltage in V
+            "ISW8": partial(self.telemetry_request, [0xE4, 0x84], 0.001328),  # SW8 output current in A
+            "VSW9": partial(self.telemetry_request, [0xE4, 0x90], 0.004311),  # SW9 output voltage in V
+            "ISW9": partial(self.telemetry_request, [0xE4, 0x94], 0.001328),  # SW9 output current in A
+            "VSW10": partial(self.telemetry_request, [0xE4, 0xA0], 0.004311),  # SW10 output voltage in V
+            "ISW10": partial(self.telemetry_request, [0xE4, 0xA4], 0.001328),  # SW10 output current in A
+            "TBRD": partial(self.telemetry_request, [0xE3, 0x08], 0.372434),  # Motherboard temperature in K
 
             #Telemetry unique to 25-02452 and 01-02453 (CHECK THIS LATER) 
-            "VBCR1": lambda: self.telemetry_request([0xE1, 0x10], 0.0322581),  # Voltage feeding BCR1 in V
-            "IBCR1A": lambda: self.telemetry_request([0xE1, 0x14], 0.0009775),  # Current BCR1 connector SA1A in A
-            "IBCR1B": lambda: self.telemetry_request([0xE1, 0x15], 0.0009775),  # Current BCR1 connector SA1B in B
-            "TBCR1A": lambda: self.telemetry_request([0xE1, 0x18], 0.4963),  # Array temperature connector SA1A in K
-            "TBCR1B": lambda: self.telemetry_request([0xE1, 0x19], 0.4963),  # Array temperature connector SA1B in K
-            "SDBCR1A": lambda: self.telemetry_request([0xE1, 0x1C], 1.59725),  # Sun detector connector SA1A in W/m^2
-            "SDBCR1B": lambda: self.telemetry_request([0xE1, 0x1D], 1.59725),  # Sun detector connector SA1B in W/m^2
+            "VBCR1": partial(self.telemetry_request, [0xE1, 0x10], 0.0322581),  # Voltage feeding BCR1 in V
+            "IBCR1A": partial(self.telemetry_request, [0xE1, 0x14], 0.0009775),  # Current BCR1 connector SA1A in A
+            "IBCR1B": partial(self.telemetry_request, [0xE1, 0x15], 0.0009775),  # Current BCR1 connector SA1B in B
+            "TBCR1A": partial(self.telemetry_request, [0xE1, 0x18], 0.4963),  # Array temperature connector SA1A in K
+            "TBCR1B": partial(self.telemetry_request, [0xE1, 0x19], 0.4963),  # Array temperature connector SA1B in K
+            "SDBCR1A": partial(self.telemetry_request, [0xE1, 0x1C], 1.59725),  # Sun detector connector SA1A in W/m^2
+            "SDBCR1B": partial(self.telemetry_request, [0xE1, 0x1D], 1.59725),  # Sun detector connector SA1B in W/m^2
             
-            "VBCR2": lambda: self.telemetry_request([0xE1, 0x20], 0.0322581),  # Voltage feeding BCR2 in V
-            "IBCR2A": lambda: self.telemetry_request([0xE1, 0x24], 0.0009775),  # Current BCR2 connector SA2A in A
-            "IBCR2B": lambda: self.telemetry_request([0xE1, 0x25], 0.0009775),  # Current BCR2 connector SA2B in B
-            "TBCR2A": lambda: self.telemetry_request([0xE1, 0x28], 0.4963),  # Array temperature connector SA2A in K
-            "TBCR2B": lambda: self.telemetry_request([0xE1, 0x29], 0.4963),  # Array temperature connector SA2B in K
-            "SDBCR2A": lambda: self.telemetry_request([0xE1, 0x2C], 1.59725),  # Sun detector connector SA2A in W/m^2
-            "SDBCR2B": lambda: self.telemetry_request([0xE1, 0x2D], 1.59725),  # Sun detector connector SA2B in W/m^2
+            "VBCR2": partial(self.telemetry_request, [0xE1, 0x20], 0.0322581),  # Voltage feeding BCR2 in V
+            "IBCR2A": partial(self.telemetry_request, [0xE1, 0x24], 0.0009775),  # Current BCR2 connector SA2A in A
+            "IBCR2B": partial(self.telemetry_request, [0xE1, 0x25], 0.0009775),  # Current BCR2 connector SA2B in B
+            "TBCR2A": partial(self.telemetry_request, [0xE1, 0x28], 0.4963),  # Array temperature connector SA2A in K
+            "TBCR2B": partial(self.telemetry_request, [0xE1, 0x29], 0.4963),  # Array temperature connector SA2B in K
+            "SDBCR2A": partial(self.telemetry_request, [0xE1, 0x2C], 1.59725),  # Sun detector connector SA2A in W/m^2
+            "SDBCR2B": partial(self.telemetry_request, [0xE1, 0x2D], 1.59725),  # Sun detector connector SA2B in W/m^2
 
-            "VBCR3": lambda: self.telemetry_request([0xE1, 0x30], 0.0099706),  # Voltage feeding BCR3 in V,
+            "VBCR3": partial(self.telemetry_request, [0xE1, 0x30], 0.0099706),  # Voltage feeding BCR3 in V,
             # can also be used to monitor input voltage from 5V USB CHG
-            "IBCR3A": lambda: self.telemetry_request([0xE1, 0x34], 0.0009775),  # Current BCR3 connector SA3A in A,
+            "IBCR3A": partial(self.telemetry_request, [0xE1, 0x34], 0.0009775),  # Current BCR3 connector SA3A in A,
             # can also be used to monitor input current from 5V USB CHG
-            "IBCR3B": lambda: self.telemetry_request([0xE1, 0x35], 0.0009775),  # Current BCR3 connector SA3B in B
-            "TBCR3A": lambda: self.telemetry_request([0xE1, 0x38], 0.4963),  # Array temperature connector SA3A in K
-            "TBCR3B": lambda: self.telemetry_request([0xE1, 0x39], 0.4963),  # Array temperature connector SA3B in K
-            "SDBCR3A": lambda: self.telemetry_request([0xE1, 0x3C], 1.59725),  # Sun detector connector SA3A in W/m^2
-            "SDBCR3B": lambda: self.telemetry_request([0xE1, 0x3D], 1.59725),  # Sun detector connector SA3B in W/m^2
+            "IBCR3B": partial(self.telemetry_request, [0xE1, 0x35], 0.0009775),  # Current BCR3 connector SA3B in B
+            "TBCR3A": partial(self.telemetry_request, [0xE1, 0x38], 0.4963),  # Array temperature connector SA3A in K
+            "TBCR3B": partial(self.telemetry_request, [0xE1, 0x39], 0.4963),  # Array temperature connector SA3B in K
+            "SDBCR3A": partial(self.telemetry_request, [0xE1, 0x3C], 1.59725),  # Sun detector connector SA3A in W/m^2
+            "SDBCR3B": partial(self.telemetry_request, [0xE1, 0x3D], 1.59725),  # Sun detector connector SA3B in W/m^2
 
         }
         # PCM busses for the Bus Reset command
