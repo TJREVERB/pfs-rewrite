@@ -23,7 +23,7 @@ class APRS:
         """
         Checks the state of the serial port (initializing it if needed)
         Calls powered_on() to check whether APRS is on and working
-        TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
+        TODO: EXCEPTION HANDLING INSTEAD OF STRING ERROR MESSAGE RETURNS
         :return: (bool) APRS and serial connection are working
         """
         if self.serial is None:
@@ -83,7 +83,7 @@ class APRS:
         self.serial.write("\x0d".encode("utf-8"))
         time.sleep(.5)
         print(self.serial.read(100))
-        return True
+        return "SUCCESS"
 
     def clear_data_lines(self) -> None:
         """
