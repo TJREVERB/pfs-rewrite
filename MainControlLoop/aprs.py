@@ -6,7 +6,7 @@ class APRS:
     """
     Class for APRS
     """
-    PORT = '/dev/ttyACM0'
+    PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
 

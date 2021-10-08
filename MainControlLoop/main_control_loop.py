@@ -20,7 +20,7 @@ class MainControlLoop:
         self.aprs = APRS(self.sfr)
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
-        self.iridium = Iridium(self.sfr)
+        #self.iridium = Iridium(self.sfr)
         self.command_registry = {
             "TST": partial([i() for i in [[partial(f.write, "Hello"), partial(f.close)]
                                           for f in [open("log.txt", "a")]][0]]),  # Test method, logs "Hello"
