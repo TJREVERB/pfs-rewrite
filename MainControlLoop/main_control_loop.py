@@ -22,8 +22,8 @@ class MainControlLoop:
         self.antenna_deployer = AntennaDeployer(self.sfr)
         #self.iridium = Iridium(self.sfr)
         self.command_registry = {
-            "TST": partial([i() for i in [[partial(f.write, "Hello"), partial(f.close)]
-                                          for f in [open("log.txt", "a")]][0]]),  # Test method, logs "Hello"
+            #"TST": partial([i() for i in [[partial(f.write, "Hello"), partial(f.close)]
+            #                              for f in [open("log.txt", "a")]][0]]),  # Test method, logs "Hello"
             "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
             "CHG": self.charging_mode,  # Enters charging mode
