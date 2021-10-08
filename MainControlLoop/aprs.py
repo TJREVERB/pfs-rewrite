@@ -70,7 +70,7 @@ class APRS:
         self.serial.write("\x0d".encode("utf-8"))
         time.sleep(1)
 
-        result = self.serial.read(50)
+        result = str(self.serial.read(50))
         print(result)
         
         if result.find("MYCALL") == -1:
