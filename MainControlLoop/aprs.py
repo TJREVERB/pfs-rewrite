@@ -43,7 +43,7 @@ class APRS:
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(1)
+        time.sleep(5)
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x1b".encode("utf-8"))
