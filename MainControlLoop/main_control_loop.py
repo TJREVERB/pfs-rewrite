@@ -30,11 +30,11 @@ class MainControlLoop:
             "SCI": self.science_mode,  # Enters science mode
             "U": partial(setattr, obj=self, name="UPPER_THRESHOLD"),  # Set upper threshold
             "L": partial(setattr, obj=self, name="LOWER_THRESHOLD"),  # Set lower threshold
-            "RST": partial([i() for i in [
-                partial(self.eps.commands["All Off"]),
-                partial(time.sleep, .5),
-                partial(self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"]))
-            ]]),  # Reset power to the entire satellite (!!!!)
+            "RST": lambda: [i() for i in [
+                lambda: self.eps.commands["All Off"],
+                lambda: time.sleep(.5),
+                lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
+            ]],  # Reset power to the entire satellite (!!!!)
             "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
             "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
