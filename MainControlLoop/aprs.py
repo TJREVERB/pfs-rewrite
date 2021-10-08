@@ -30,34 +30,40 @@ class APRS:
             try:
                 self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
             except:
-                return False
+                return "Serial port can't be created"
         if not self.serial.is_open:
             try:
                 self.serial.open()
             except:
-                return False
-        self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        print(self.serial.read(50))
-        time.sleep(3)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        print(self.serial.read(50))
-        time.sleep(3)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(5)
-        print(self.serial.read(50))
-        self.serial.flush()
+                return "Serial port can't be opened"
+        
+        serinput = ""
+        attempts = 0
+        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
+            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x0d".encode("utf-8"))
+            time.sleep(1)
+            serinput += self.serial.read(100)
+            attempts+=1
+        if attempts > 2:
+            return "Failed to open options menu 1 : " + serinput
+
+        print(serinput)
+
+        serinput = ""
+        attempts = 0
+        while serinput.find("MTT4B Alpha v0.3 (1284)\r\nOptions Menu") == -1 or attempts > 2:
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(3)
+            serinput += self.serial.read(100)
+            attempts += 1
+        if attempts > 2:
+            return "Failed to open options menu 2 : " + serinput
 
         self.serial.write("MYCALL".encode("utf-8"))
         time.sleep(.2)
@@ -66,13 +72,17 @@ class APRS:
 
         result = self.serial.read(50)
         print(result)
-        if result == b"":
-            return False
+        
+        if result.find("MYCALL") == -1:
+            return "Port broken"
+        if result.find("MYCALL is NOCALL") == -1:
+            return "APRS unresponsive"
             
         self.serial.write("QUIT".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x0d".encode("utf-8"))
         time.sleep(.5)
+        print(self.serial.read(100))
         return True
 
     def clear_data_lines(self) -> None:
