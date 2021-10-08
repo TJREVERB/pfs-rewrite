@@ -158,9 +158,7 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
-        a = self.aprs.functional()
-        print(a)
-        """self.sfr.START_TIME = time.time()
+        self.sfr.START_TIME = time.time()
         try:
             if self.sfr.MODE == "STARTUP":  # Run only once
                 self.on_start()
@@ -175,4 +173,4 @@ class MainControlLoop:
         except KeyboardInterrupt:
             print("quitting...")
             self.sfr.reset()
-            exit(0)"""
+            exit(0)
