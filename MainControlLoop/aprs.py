@@ -42,7 +42,7 @@ class APRS:
         time.sleep(.2)
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(.2)
-        self.serial.write("\n".encode("utf-8"))
+        self.serial.write("\x0d".encode("utf-8"))
         time.sleep(1)
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(.2)
@@ -53,7 +53,7 @@ class APRS:
 
         self.serial.write("MYCALL".encode("utf-8"))
         time.sleep(.2)
-        self.serial.write("\n".encode("utf-8"))
+        self.serial.write("\x0d".encode("utf-8"))
         time.sleep(1)
 
         result = self.serial.read()
@@ -63,7 +63,7 @@ class APRS:
             
         self.serial.write("QUIT".encode("utf-8"))
         time.sleep(.2)
-        self.serial.write("\n".encode("utf-8"))
+        self.serial.write("\x0d".encode("utf-8"))
         time.sleep(.5)
         return True
 
@@ -87,7 +87,7 @@ class APRS:
         :return: (bool) whether or not the write worked
         """
         try:
-            self.serial.write((message + "\n").encode("utf-8"))
+            self.serial.write((message + "\x0d").encode("utf-8"))
             self.serial.flush()
             return True
         except:
