@@ -23,59 +23,67 @@ class APRS:
         """
         Checks the state of the serial port (initializing it if needed)
         Calls powered_on() to check whether APRS is on and working
-        TODO: EXCEPTION HANDLING TO DIFFERENTIATE BETWEEEN SERIAL FAILURE (which is likely mission end) AND APRS FAILURE (possibly recoverable)
+        TODO: EXCEPTION HANDLING INSTEAD OF STRING ERROR MESSAGE RETURNS
         :return: (bool) APRS and serial connection are working
         """
         if self.serial is None:
             try:
                 self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
             except:
-                return False
+                return "Serial port can't be created"
         if not self.serial.is_open:
             try:
                 self.serial.open()
             except:
-                return False
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(5)
-        self.serial.flush()
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(5)
-        self.serial.flush()
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x1b".encode("utf-8"))
-        time.sleep(.5)
+                return "Serial port can't be opened"
+        
+        serinput = ""
+        attempts = 0
+        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
+            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x0d".encode("utf-8"))
+            time.sleep(1)
+            serinput += str(self.serial.read(100))
+            print(serinput)
+            attempts+=1
+        if attempts > 2:
+            return "Failed to open options menu 1 : " + serinput
+
+        serinput = ""
+        attempts = 0
+        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 or attempts > 2:
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(3)
+            serinput += str(self.serial.read(100))
+            print(serinput)
+            attempts += 1
+        if attempts > 2:
+            return "Failed to open options menu 2 : " + serinput
 
         self.serial.write("MYCALL".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x0d".encode("utf-8"))
         time.sleep(1)
 
-        result = self.serial.read()
+        result = str(self.serial.read(50))
         print(result)
-        if result == b"":
-            return False
+        
+        if result.find("MYCALL") == -1:
+            return "Port broken"
+        if result.find("MYCALL is NOCALL") == -1:
+            return "APRS unresponsive"
             
         self.serial.write("QUIT".encode("utf-8"))
         time.sleep(.2)
         self.serial.write("\x0d".encode("utf-8"))
         time.sleep(.5)
-        return True
+        print(self.serial.read(100))
+        return "SUCCESS"
 
     def clear_data_lines(self) -> None:
         """

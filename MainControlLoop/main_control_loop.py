@@ -35,7 +35,7 @@ class MainControlLoop:
                 lambda: time.sleep(.5),
                 lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
             ]],  # Reset power to the entire satellite (!!!!)
-            "IRI": self.iridium.wave,  
+            #"IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
             "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
@@ -158,7 +158,9 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
-        self.sfr.START_TIME = time.time()
+        a = self.aprs.functional()
+        print(a)
+        """self.sfr.START_TIME = time.time()
         try:
             if self.sfr.MODE == "STARTUP":  # Run only once
                 self.on_start()
@@ -173,4 +175,4 @@ class MainControlLoop:
         except KeyboardInterrupt:
             print("quitting...")
             self.sfr.reset()
-            exit(0)
+            exit(0)"""
