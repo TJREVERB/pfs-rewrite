@@ -52,7 +52,7 @@ class APRS:
 
         serinput = ""
         attempts = 0
-        while serinput.find("MTT4B Alpha v0.3 (1284)\r\nOptions Menu") == -1 or attempts > 2:
+        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)\r\nOptions Menu") == -1 or attempts > 2:
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x1b".encode("utf-8"))
