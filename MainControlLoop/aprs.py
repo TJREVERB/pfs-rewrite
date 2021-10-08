@@ -44,7 +44,7 @@ class APRS:
             time.sleep(.2)
             self.serial.write("\x0d".encode("utf-8"))
             time.sleep(1)
-            serinput += self.serial.read(100)
+            serinput += str(self.serial.read(100))
             attempts+=1
         if attempts > 2:
             return "Failed to open options menu 1 : " + serinput
@@ -60,7 +60,7 @@ class APRS:
             time.sleep(.2)
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(3)
-            serinput += self.serial.read(100)
+            serinput += str(self.serial.read(100))
             attempts += 1
         if attempts > 2:
             return "Failed to open options menu 2 : " + serinput
