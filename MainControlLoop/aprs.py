@@ -56,6 +56,8 @@ class APRS:
         time.sleep(.2)
         self.serial.write("\x1b".encode("utf-8"))
         time.sleep(5)
+        print(self.serial.read(50))
+        self.serial.flush()
 
         self.serial.write("MYCALL".encode("utf-8"))
         time.sleep(.2)
