@@ -73,10 +73,10 @@ class APRS:
         This addresses problem with data lines becoming clogged.
         Equivalent of tester.sh
         """
-        with open("/sys/devices/platform/soc/20980000.usb/buspower", "w") as f:
+        with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
         time.sleep(15)
-        with open("/sys/devices/platform/soc/20980000.usb/buspower", "w") as f:
+        with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)
 
