@@ -112,6 +112,7 @@ class MainControlLoop:
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
         self.eps.commands["Pin On"]("APRS")  # Enable power to APRS
         # Wait for battery to charge to upper threshold
+        print(self.aprs.functional())
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
             print("test")
             self.aprs.read()  # Listen for and execute ground station commands
