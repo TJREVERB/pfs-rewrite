@@ -3,7 +3,6 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
-from functools import partial
 
 class EPS:
     """
