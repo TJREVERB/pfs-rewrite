@@ -10,6 +10,13 @@ try:
 except ImportError:
     import ustruct as struct
 
+def _twos_comp(val, bits):
+    # Convert an unsigned integer in 2's compliment form of the specified bit
+    # length to its signed integer value and return it.
+    if val & (1 << (bits - 1)) != 0:
+        return val - (1 << bits)
+    return val
+
 class IMU:
     """
     Class for LSM9DS1 IMU Breakout Board
@@ -119,6 +126,174 @@ class IMU:
         self.accel_range = IMU.ACCELRANGE_2G
         self.mag_gain = IMU.MAGGAIN_4GAUSS
         self.gyro_scale = IMU.GYROSCALE_245DPS
+    
+    def accel_range(self):
+        """The accelerometer range.  Must be a value of:
+        - ACCELRANGE_2G
+        - ACCELRANGE_4G
+        - ACCELRANGE_8G
+        - ACCELRANGE_16G
+        """
+        reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL)
+        return (reg & 0b00011000) & 0xFF
+
+    def accel_range(self, val):
+        assert val in (IMU.ACCELRANGE_2G, IMU.ACCELRANGE_4G, IMU.ACCELRANGE_8G, IMU.ACCELRANGE_16G)
+        reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL)
+        reg = (reg & ~(0b00011000)) & 0xFF
+        reg |= val
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL, reg)
+        if val == IMU.ACCELRANGE_2G:
+            self._accel_mg_lsb = IMU.ACCEL_MG_LSB_2G
+        elif val == IMU.ACCELRANGE_4G:
+            self._accel_mg_lsb = IMU.ACCEL_MG_LSB_4G
+        elif val == IMU.ACCELRANGE_8G:
+            self._accel_mg_lsb = IMU.ACCEL_MG_LSB_8G
+        elif val == IMU.ACCELRANGE_16G:
+            self._accel_mg_lsb = IMU.ACCEL_MG_LSB_16G
+    
+    def mag_gain(self):
+        """The magnetometer gain.  Must be a value of:
+        - MAGGAIN_4GAUSS
+        - MAGGAIN_8GAUSS
+        - MAGGAIN_12GAUSS
+        - MAGGAIN_16GAUSS
+        """
+        reg = self._read_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M)
+        return (reg & 0b01100000) & 0xFF
+
+    def mag_gain(self, val):
+        assert val in (IMU.MAGGAIN_4GAUSS, IMU.MAGGAIN_8GAUSS, IMU.MAGGAIN_12GAUSS, IMU.MAGGAIN_16GAUSS)
+        reg = self._read_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M)
+        reg = (reg & ~(0b01100000)) & 0xFF
+        reg |= val
+        self._write_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M, reg)
+        if val == IMU.MAGGAIN_4GAUSS:
+            self._mag_mgauss_lsb = IMU.MAG_MGAUSS_4GAUSS
+        elif val == IMU.MAGGAIN_8GAUSS:
+            self._mag_mgauss_lsb = IMU.MAG_MGAUSS_8GAUSS
+        elif val == IMU.MAGGAIN_12GAUSS:
+            self._mag_mgauss_lsb = IMU.MAG_MGAUSS_12GAUSS
+        elif val == IMU.MAGGAIN_16GAUSS:
+            self._mag_mgauss_lsb = IMU.MAG_MGAUSS_16GAUSS
+
+    def gyro_scale(self):
+        """The gyroscope scale.  Must be a value of:
+        * GYROSCALE_245DPS
+        * GYROSCALE_500DPS
+        * GYROSCALE_2000DPS
+        """
+        reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G)
+        return (reg & 0b00011000) & 0xFF
+
+    def gyro_scale(self, val):
+        assert val in (IMU.GYROSCALE_245DPS, IMU.GYROSCALE_500DPS, IMU.GYROSCALE_2000DPS)
+        reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G)
+        reg = (reg & ~(0b00011000)) & 0xFF
+        reg |= val
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G, reg)
+        if val == IMU.GYROSCALE_245DPS:
+            self._gyro_dps_digit = IMU.GYRO_DPS_DIGIT_245DPS
+        elif val == IMU.GYROSCALE_500DPS:
+            self._gyro_dps_digit = IMU.GYRO_DPS_DIGIT_500DPS
+        elif val == IMU.GYROSCALE_2000DPS:
+            self._gyro_dps_digit = IMU.GYRO_DPS_DIGIT_2000DPS
+
+    def read_accel_raw(self):
+        """Read the raw accelerometer sensor values and return it as a
+        3-tuple of X, Y, Z axis values that are 16-bit unsigned values.  If you
+        want the acceleration in nice units you probably want to use the
+        accelerometer property!
+        """
+        # Read the accelerometer
+        self._read_bytes(IMU.XGTYPE, 0x80 | IMU.REGISTER_OUT_XLXL, 6, self._BUFFER)
+        raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
+        return (raw_x, raw_y, raw_z)
+
+    def acceleration(self):
+        """The accelerometer X, Y, Z axis values as a 3-tuple of
+        :math:`m/s^2` values.
+        """
+        raw = self.read_accel_raw()
+        return map(
+            lambda x: x * self._accel_mg_lsb / 1000.0 * IMU.SENSORS_GRAVITY_STANDARD, raw
+        )
+
+    def read_mag_raw(self):
+        """Read the raw magnetometer sensor values and return it as a
+        3-tuple of X, Y, Z axis values that are 16-bit unsigned values.  If you
+        want the magnetometer in nice units you probably want to use the
+        magnetometer property!
+        """
+        # Read the magnetometer
+        self._read_bytes(IMU.MAGTYPE, 0x80 | IMU.REGISTER_OUT_X_L_M, 6, self._BUFFER)
+        raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
+        return (raw_x, raw_y, raw_z)
+    
+    def magnetic(self):
+        """The magnetometer X, Y, Z axis values as a 3-tuple of
+        gauss values.
+        """
+        raw = self.read_mag_raw()
+        return map(lambda x: x * self._mag_mgauss_lsb / 1000.0, raw)
+
+    def read_gyro_raw(self):
+        """Read the raw gyroscope sensor values and return it as a
+        3-tuple of X, Y, Z axis values that are 16-bit unsigned values.  If you
+        want the gyroscope in nice units you probably want to use the
+        gyroscope property!
+        """
+        # Read the gyroscope
+        self._read_bytes(IMU.XGTYPE, 0x80 | IMU.REGISTER_OUT_X_L_G, 6, self._BUFFER)
+        raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
+        return (raw_x, raw_y, raw_z)
+
+    def gyro(self):
+        """The gyroscope X, Y, Z axis values as a 3-tuple of
+        rad/s values.
+        """
+        raw = self.read_gyro_raw()
+        return map(lambda x: radians(x * self._gyro_dps_digit), raw)
+
+    def read_temp_raw(self):
+        """Read the raw temperature sensor value and return it as a 12-bit
+        signed value.  If you want the temperature in nice units you probably
+        want to use the temperature property!
+        """
+        # Read temp sensor
+        self._read_bytes(IMU.XGTYPE, 0x80 | IMU.REGISTER_TEMP_OUT_L, 2, self._BUFFER)
+        temp = ((self._BUFFER[1] << 8) | self._BUFFER[0]) >> 4
+        return _twos_comp(temp, 12)
+
+    def temperature(self):
+        """The temperature of the sensor in degrees Celsius."""
+        # This is just a guess since the starting point (21C here) isn't documented :(
+        # See discussion from:
+        #  https://github.com/kriswiner/LSM9DS1/issues/3
+        temp = self.read_temp_raw()
+        temp = 27.5 + temp / 16
+        return temp
+
+    def _read_u8(self, sensor_type, address):
+        # Read an 8-bit unsigned value from the specified 8-bit address.
+        # The sensor_type boolean should be _MAGTYPE when talking to the
+        # magnetometer, or _XGTYPE when talking to the accel or gyro.
+        # MUST be implemented by subclasses!
+        raise NotImplementedError()
+
+    def _read_bytes(self, sensor_type, address, count, buf):
+        # Read a count number of bytes into buffer from the provided 8-bit
+        # register address.  The sensor_type boolean should be _MAGTYPE when
+        # talking to the magnetometer, or _XGTYPE when talking to the accel or
+        # gyro.  MUST be implemented by subclasses!
+        raise NotImplementedError()
+
+    def _write_u8(self, sensor_type, address, val):
+        # Write an 8-bit unsigned value to the specified 8-bit address.
+        # The sensor_type boolean should be _MAGTYPE when talking to the
+        # magnetometer, or _XGTYPE when talking to the accel or gyro.
+        # MUST be implemented by subclasses!
+        raise NotImplementedError()
 
 class LSM9DS1_I2C(IMU):
     """Driver for the LSM9DS1 connect over I2C.
@@ -151,12 +326,12 @@ class LSM9DS1_I2C(IMU):
     def __init__(
         self,
         i2c,
-        mag_address=_LSM9DS1_ADDRESS_MAG,
-        xg_address=_LSM9DS1_ADDRESS_ACCELGYRO,
+        mag_address=IMU.ADDRESS_MAG,
+        xg_address=IMU.ADDRESS_ACCELGYRO,
     ):
         if mag_address in (0x1C, 0x1E) and xg_address in (0x6A, 0x6B):
-            self._mag_device = i2c_device.I2CDevice(i2c, mag_address)
-            self._xg_device = i2c_device.I2CDevice(i2c, xg_address)
+            self.mag_address = mag_address
+            self.xg_address = xg_address
             super().__init__()
         else:
             raise ValueError(
@@ -166,28 +341,38 @@ class LSM9DS1_I2C(IMU):
             )
 
     def _read_u8(self, sensor_type, address):
-        if sensor_type == _MAGTYPE:
-            device = self._mag_device
+        if sensor_type == IMU.MAGTYPE:
+            device = self.mag_address
         else:
-            device = self._xg_device
-        with device as i2c:
+            device = self.xg_address
+        with SMBusWrapper(1) as bus:
+            bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
+            time.sleep(.25)
+            result = bus.read_i2c_block_data(device, 0, 2)
+            time.sleep(.25) 
+
+        """with device as i2c:
             self._BUFFER[0] = address & 0xFF
             i2c.write_then_readinto(
                 self._BUFFER, self._BUFFER, out_end=1, in_start=1, in_end=2
             )
-        return self._BUFFER[1]
+        return self._BUFFER[1]"""
 
     def _read_bytes(self, sensor_type, address, count, buf):
-        if sensor_type == _MAGTYPE:
-            device = self._mag_device
+        if sensor_type == IMU.MAGTYPE:
+            device = self.mag_address
         else:
-            device = self._xg_device
+            device = self.xg_address
+        with SMBusWrapper(1) as bus:
+            bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
+            time.sleep(.25)
+        
         with device as i2c:
             buf[0] = address & 0xFF
             i2c.write_then_readinto(buf, buf, out_end=1, in_end=count)
 
     def _write_u8(self, sensor_type, address, val):
-        if sensor_type == _MAGTYPE:
+        if sensor_type == IMU.MAGTYPE:
             device = self._mag_device
         else:
             device = self._xg_device

@@ -167,9 +167,9 @@ class EPS:
         """
         with SMBusWrapper(1) as bus:
             bus.write_i2c_block_data(self.EPS_ADDRESS, register, data)
-            time.sleep(.5)
+            time.sleep(.25)
             result = bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
-            time.sleep(.5)
+            time.sleep(.25)
         return result
 
     def command(self, register, data) -> bool:
