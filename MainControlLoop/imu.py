@@ -94,7 +94,105 @@ class IMU:
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
+        # soft reset & reboot accel/gyro
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG8, 0x05)
+        # soft reset & reboot magnetometer
+        self._write_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M, 0x0C)
+        time.sleep(0.01)
+        # Check ID registers.
+        if (
+            self._read_u8(IMU.XGTYPE, IMU.REGISTER_WHOAMI_XG) != IMU.XG_ID
+            or self._read_u8(IMU.MAGTYPE, IMU.REGISTER_WHOAMI_M) != IMU.MAG_ID
+        ):
+            raise RuntimeError("Could not find LSM9DS1, check wiring!")
+        # enable gyro continuous
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G, 0xC0)  # on XYZ
+        # Enable the accelerometer continous
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG5_XL, 0x38)
+        self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL, 0xC0)
+        # enable mag continuous
+        self._write_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG3_M, 0x00)
+        # Set default ranges for the various sensors
+        self._accel_mg_lsb = None
+        self._mag_mgauss_lsb = None
+        self._gyro_dps_digit = None
+        self.accel_range = IMU.ACCELRANGE_2G
+        self.mag_gain = IMU.MAGGAIN_4GAUSS
+        self.gyro_scale = IMU.GYROSCALE_245DPS
 
+class LSM9DS1_I2C(IMU):
+    """Driver for the LSM9DS1 connect over I2C.
+    :param ~busio.I2C i2c: The I2C bus the device is connected to
+    :param int mag_address: A 8-bit integer that represents the i2c address of the
+        LSM9DS1's magnetometer. Options are limited to :const:`0x1C` or :const:`0x1E`
+        Defaults to :const:`0x1E`.
+    :param int xg_address: A 8-bit integer that represents the i2c address of the
+        LSM9DS1's accelerometer and gyroscope. Options are limited to :const:`0x6A`
+        or :const:`0x6B`. Defaults to :const:`0x6B`.
+    **Quickstart: Importing and using the device**
+        Here is an example of using the :class:`LSM9DS1` class.
+        First you will need to import the libraries to use the sensor
+        .. code-block:: python
+            import board
+            import adafruit_lsm9ds1
+        Once this is done you can define your `board.I2C` object and define your sensor object
+        .. code-block:: python
+            i2c = board.I2C()  # uses board.SCL and board.SDA
+            sensor = adafruit_lsm9ds1.LSM9DS1_I2C(i2c)
+        Now you have access to the :attr:`acceleration`, :attr:`magnetic`
+        :attr:`gyro` and :attr:`temperature` attributes
+        .. code-block:: python
+            acc_x, acc_y, acc_z = sensor.acceleration
+            mag_x, mag_y, mag_z = sensor.magnetic
+            gyro_x, gyro_y, gyro_z = sensor.gyro
+            temp = sensor.temperature
+    """
 
+    def __init__(
+        self,
+        i2c,
+        mag_address=_LSM9DS1_ADDRESS_MAG,
+        xg_address=_LSM9DS1_ADDRESS_ACCELGYRO,
+    ):
+        if mag_address in (0x1C, 0x1E) and xg_address in (0x6A, 0x6B):
+            self._mag_device = i2c_device.I2CDevice(i2c, mag_address)
+            self._xg_device = i2c_device.I2CDevice(i2c, xg_address)
+            super().__init__()
+        else:
+            raise ValueError(
+                "address parmeters are incorrect. Read the docs at "
+                "circuitpython.rtfd.io/projects/lsm9ds1/en/latest"
+                "/api.html#adafruit_lsm9ds1.LSM9DS1_I2C"
+            )
 
+    def _read_u8(self, sensor_type, address):
+        if sensor_type == _MAGTYPE:
+            device = self._mag_device
+        else:
+            device = self._xg_device
+        with device as i2c:
+            self._BUFFER[0] = address & 0xFF
+            i2c.write_then_readinto(
+                self._BUFFER, self._BUFFER, out_end=1, in_start=1, in_end=2
+            )
+        return self._BUFFER[1]
+
+    def _read_bytes(self, sensor_type, address, count, buf):
+        if sensor_type == _MAGTYPE:
+            device = self._mag_device
+        else:
+            device = self._xg_device
+        with device as i2c:
+            buf[0] = address & 0xFF
+            i2c.write_then_readinto(buf, buf, out_end=1, in_end=count)
+
+    def _write_u8(self, sensor_type, address, val):
+        if sensor_type == _MAGTYPE:
+            device = self._mag_device
+        else:
+            device = self._xg_device
+        with device as i2c:
+            self._BUFFER[0] = address & 0xFF
+            self._BUFFER[1] = val & 0xFF
+            i2c.write(self._BUFFER, end=2)
         

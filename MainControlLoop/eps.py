@@ -17,6 +17,7 @@ class EPS:
             "Iridium": [0x03],
             "Antenna Deployer": [0x06],
             "Iridium Serial Converter": [0x08],
+            "IMU": [0x09],
         }
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
@@ -202,4 +203,7 @@ class EPS:
             self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() + \
             self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() + \
             self.telemetry["ISW3"]() * self.telemetry["VSW3"]() + \
-            self.telemetry["ISW4"]() * self.telemetry["VSW4"]()
+            self.telemetry["ISW4"]() * self.telemetry["VSW4"]() + \
+            self.telemetry["ISW6"]() * self.telemetry["VSW6"]() + \
+            self.telemetry["ISW8"]() * self.telemetry["VSW8"]() + \
+            self.telemetry["ISW9"]() * self.telemetry["VSW9"]()
