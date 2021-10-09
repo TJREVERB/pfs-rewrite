@@ -295,7 +295,7 @@ class IMU:
         # MUST be implemented by subclasses!
         raise NotImplementedError()
 
-class LSM9DS1_I2C(IMU):
+class IMU_I2C(IMU):
     """Driver for the LSM9DS1 connect over I2C.
     :param ~busio.I2C i2c: The I2C bus the device is connected to
     :param int mag_address: A 8-bit integer that represents the i2c address of the
@@ -350,6 +350,7 @@ class LSM9DS1_I2C(IMU):
             time.sleep(.25)
             result = bus.read_i2c_block_data(device, 0, 2)
             time.sleep(.25) 
+        return result
 
         """with device as i2c:
             self._BUFFER[0] = address & 0xFF
@@ -366,18 +367,26 @@ class LSM9DS1_I2C(IMU):
         with SMBusWrapper(1) as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
             time.sleep(.25)
+            result = bus.read_i2c_block_data(device, 0, 2)
+            time.sleep(.25)
+        return result
         
+        """
         with device as i2c:
             buf[0] = address & 0xFF
-            i2c.write_then_readinto(buf, buf, out_end=1, in_end=count)
+            i2c.write_then_readinto(buf, buf, out_end=1, in_end=count)"""
 
     def _write_u8(self, sensor_type, address, val):
         if sensor_type == IMU.MAGTYPE:
-            device = self._mag_device
+            device = self.mag_address
         else:
-            device = self._xg_device
-        with device as i2c:
+            device = self.xg_address
+        with SMBusWrapper(1) as bus:
+            return bus.write_i2c_block_data(device, address&0xFF, val)#will this work? no idea
+
+
+        """with device as i2c:
             self._BUFFER[0] = address & 0xFF
             self._BUFFER[1] = val & 0xFF
-            i2c.write(self._BUFFER, end=2)
+            i2c.write(self._BUFFER, end=2)"""
         
