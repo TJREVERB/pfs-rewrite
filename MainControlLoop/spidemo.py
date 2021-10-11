@@ -88,16 +88,16 @@ class SC16IS752:
         :return: (bytes) data
         """
         result = 0
-        self.spi.xfer([0x80 | (address << 3 | channel << 1)])
-        result = self.spi.xfer([0xFF])
+        self.spi.xfer2([0x80 | (address << 3 | channel << 1)], SC16IS752.BAUDRATE)
+        result = self.spi.xfer2([0xFF], SC16IS752.BAUDRATE)
         return result
 
     def writeRegister(self, channel, address, val):
         """
         Writes data to selected register using SPI
         """
-        self.spi.xfer([(address << 3 | channel << 1)])
-        self.spi.xfer(val)
+        self.spi.xfer2([(address << 3 | channel << 1)], SC16IS752.BAUDRATE)
+        self.spi.xfer2(val, SC16IS752.BAUDRATE)
 
     def setBaud(self, channel) -> float:
         """
