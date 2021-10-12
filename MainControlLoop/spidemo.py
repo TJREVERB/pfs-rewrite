@@ -6,7 +6,7 @@ class SC16IS752:
     BAUDRATE = 19200
     BUS = 0 #SPI bus, only bus 0 is available
     DEVICE = 0 #Chip select pin
-    CRYSTAL_FREQ = 1843200
+    CRYSTAL_FREQ = 1843200 #Crystal freq for SC16IS752
 
     #Device address
     ADDRESS_AA: hex = 0x90
@@ -95,6 +95,7 @@ class SC16IS752:
     def writeRegister(self, channel, address, val):
         """
         Writes data to selected register using SPI
+        :return: None
         """
         self.spi.xfer2([(address << 3 | channel << 1)], SC16IS752.BAUDRATE)
         self.spi.xfer2(val, SC16IS752.BAUDRATE)
@@ -202,6 +203,7 @@ class SC16IS752:
     def begin(self):
         """
         start transmission, set baud rate
+        :return: None
         """
         self.FIFOEnable(SC16IS752.CHANNEL_A, 1)
         self.setBaud(SC16IS752.CHANNEL_A)
