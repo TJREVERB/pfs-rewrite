@@ -23,28 +23,28 @@ class MainControlLoop:
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
         self.limited_command_registry = {
-            "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
+            #"PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
-            "TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
-            "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            #"TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
+            #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "CHG": self.charging_mode,  # Enters charging mode
-            "SCI": self.science_mode,  # Enters science mode
-            "OUT": self.outreach_mode(),  # Enters outreach mode
-            "U": partial(setattr, obj=self, name="UPPER_THRESHOLD"),  # Set upper threshold
-            "L": partial(setattr, obj=self, name="LOWER_THRESHOLD"),  # Set lower threshold
-            "RST": lambda: [i() for i in [
-                lambda: self.eps.commands["All Off"],
-                lambda: time.sleep(.5),
-                lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
-            ]],  # Reset power to the entire satellite (!!!!)
+            #"CHG": self.charging_mode,  # Enters charging mode
+            #"SCI": self.science_mode,  # Enters science mode
+            #"OUT": self.outreach_mode(),  # Enters outreach mode
+            #"U": partial(setattr, obj=self, name="UPPER_THRESHOLD"),  # Set upper threshold
+            #"L": partial(setattr, obj=self, name="LOWER_THRESHOLD"),  # Set lower threshold
+            #"RST": lambda: [i() for i in [
+                #lambda: self.eps.commands["All Off"],
+                #lambda: time.sleep(.5),
+                #lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
+            #]],  # Reset power to the entire satellite (!!!!)
             #"IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
+            #"PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
         }
 
@@ -111,7 +111,7 @@ class MainControlLoop:
         """
         self.sfr.MODE = "OUTREACH"
         self.eps.commands["All On"]()
-        while self.eps.telemetry["VBCROUT"] > self.LOWER_THRESHOLD:
+        while self.eps.telemetry["VBCROUT"]() > self.LOWER_THRESHOLD:
             self.iridium.listen()
             self.aprs.read()
             self.command_interpreter()
@@ -207,10 +207,16 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
+        #iridium_msg = self.iridium.listen()
+        #print(iridium_msg)
         self.sfr.START_TIME = time.time()
+        print("Run started")
         try:
             while True:
-                self.execute()
+                #self.execute()
+                iridium_msg = self.iridium.listen()
+                print(iridium_msg)
+                time.sleep(1)
         except KeyboardInterrupt:
             print("quitting...")
             self.sfr.reset()

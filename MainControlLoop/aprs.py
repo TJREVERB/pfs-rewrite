@@ -18,6 +18,7 @@ class APRS:
     
     def __del__(self):
         self.serial.close()
+        #pass
 
     def functional(self) -> bool:
         """
