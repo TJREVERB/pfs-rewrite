@@ -4,11 +4,14 @@ from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 
+
 class EPS:
     """
     Class for EPS
     """
     EPS_ADDRESS: hex = 0x2b
+    SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
+    # ARBITRARY VALUE!!!
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
@@ -16,22 +19,29 @@ class EPS:
             "APRS": [0x04],
             "Iridium": [0x03],
             "Antenna Deployer": [0x06],
-            "Iridium Serial Converter": [0x08],
+            "UART-RS232": [0x08],  # Iridium Serial Converter
+            "SPI-UART": [0x10],  # APRS Serial Converter
+            "USB-UART": [0x07],  # Alternate APRS Serial Converter
             "IMU": [0x09],
         }
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
         self.commands = {
             # Board info commands: Basic board info
-            "Board Status": partial(self.request, register=0x01, data=[0x00], length=2),  # Reads and returns board status
+            "Board Status": partial(self.request, register=0x01, data=[0x00], length=2),
+            # Reads and returns board status
             "Last Error": partial(self.request, register=0x01, data=[0x00], length=2),  # Reads and returns last error
-            "Firmware Version": partial(self.request, register=0x04, data=[0x00], length=2),  # Reads and returns firmware version
-            "Checksum": partial(self.request, register=0x05, data=[0x00], length=2),  # Reads and returns generated checksum of ROM contents
-            "Firmware Revision": partial(self.request, register=0x06, data=[0x00], length=2),  # Reads and returns firmware revision number
+            "Firmware Version": partial(self.request, register=0x04, data=[0x00], length=2),
+            # Reads and returns firmware version
+            "Checksum": partial(self.request, register=0x05, data=[0x00], length=2),
+            # Reads and returns generated checksum of ROM contents
+            "Firmware Revision": partial(self.request, register=0x06, data=[0x00], length=2),
+            # Reads and returns firmware revision number
 
             # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
             # with no commands received.
-            "Watchdog Period": partial(self.request, register=0x20, data=[0x00], length=2),  # Reads and returns current watchdog period
+            "Watchdog Period": partial(self.request, register=0x20, data=[0x00], length=2),
+            # Reads and returns current watchdog period
             "Reset Watchdog": partial(self.command, register=0x22, data=[0x00]),  # Resets communications watchdog timer
             # Any command will reset the timer, this command can be used if no action from the EPS is needed
             "Set Watchdog Period": lambda period: self.command(0x21, period),
@@ -40,10 +50,14 @@ class EPS:
             # Reset count commands: EPS will be reset under various conditions,
             # these functions check how many times have been caused by each condition.
             # Counts roll over from 255 to 0.
-            "Brownout Resets": partial(self.request, register=0x31, data=[0x00], length=2),  # Reads and returns number of brownout resets
-            "Software Resets": partial(self.request, register=0x32, data=[0x00], length=2),  # Reads and returns number of software resets
-            "Manual Resets": partial(self.request, register=0x33, data=[0x00], length=2),  # Reads and returns number of manual resets
-            "Watchdog Resets": partial(self.request, register=0x34, data=[0x00], length=2),  # Reads and returns number of watchdog resets
+            "Brownout Resets": partial(self.request, register=0x31, data=[0x00], length=2),
+            # Reads and returns number of brownout resets
+            "Software Resets": partial(self.request, register=0x32, data=[0x00], length=2),
+            # Reads and returns number of software resets
+            "Manual Resets": partial(self.request, register=0x33, data=[0x00], length=2),
+            # Reads and returns number of manual resets
+            "Watchdog Resets": partial(self.request, register=0x34, data=[0x00], length=2),
+            # Reads and returns number of watchdog resets
 
             # PDM Control: Get information about PDMs and switch PDMs on and off to power on or off components
             "All Actual States": partial(self.request, register=0x42, data=[0x00], length=4),
@@ -55,7 +69,7 @@ class EPS:
             "All Initial States": partial(self.request, register=0x44, data=[0x00], length=4),
             # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
-            "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2),
+            "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2)[1],
             # Reads and returns actual state of one PDM
             "All On": partial(self.command, 0x40, [0x00]),  # Turn all PDMs on
             "All Off": partial(self.command, 0x41, [0x00]),  # Turn all PDMs off
@@ -90,7 +104,7 @@ class EPS:
             "VBCROUT": partial(self.telemetry_request, [0xE2, 0x80], 0.008993157),  # BCR Output voltage in V
             "I3V3DRW": partial(self.telemetry_request, [0xE2, 0x05], 0.001327547),  # 3V3 Current draw of EPS in A
             "I5VDRW": partial(self.telemetry_request, [0xE2, 0x15], 0.001327547),  # 5V Current draw of EPS in A
-            "I12VBUS": partial(self.telemetry_request, [0xE2, 0x34], 0.00207),   # 12V Bus output current in A
+            "I12VBUS": partial(self.telemetry_request, [0xE2, 0x34], 0.00207),  # 12V Bus output current in A
             "V12VBUS": partial(self.telemetry_request, [0xE2, 0x30], 0.01349),  # 12V Bus output voltage in V
             "IBATBUS": partial(self.telemetry_request, [0xE2, 0x24], 0.005237),  # Batt Bus output current in A
             "VBATBUS": partial(self.telemetry_request, [0xE2, 0x20], 0.008978),  # Batt Bus output voltage in V
@@ -98,9 +112,9 @@ class EPS:
             "V5VBUS": partial(self.telemetry_request, [0xE2, 0x10], 0.005865),  # 5V Bus output voltage in V
             "I3V3BUS": partial(self.telemetry_request, [0xE2, 0x04], 0.005237),  # 3V3 Bus output current in A
             "V3V3BUS": partial(self.telemetry_request, [0xE2, 0x00], 0.004311),  # 3V3 Bus output voltage in V
-            "VSW1": partial(self.telemetry_request, [0xE4, 0x10], 0.01349),   # SW1 output voltage in V
+            "VSW1": partial(self.telemetry_request, [0xE4, 0x10], 0.01349),  # SW1 output voltage in V
             "ISW1": partial(self.telemetry_request, [0xE4, 0x14], 0.001328),  # SW1 output current in A
-            "VSW2": partial(self.telemetry_request, [0xE4, 0x20], 0.01349),   # SW2 output voltage in V
+            "VSW2": partial(self.telemetry_request, [0xE4, 0x20], 0.01349),  # SW2 output voltage in V
             "ISW2": partial(self.telemetry_request, [0xE4, 0x24], 0.001328),  # SW2 output current in A
             "VSW3": partial(self.telemetry_request, [0xE4, 0x30], 0.008993),  # SW3 output voltage in V
             "ISW3": partial(self.telemetry_request, [0xE4, 0x34], 0.006239),  # SW3 output current in A
@@ -120,7 +134,7 @@ class EPS:
             "ISW10": partial(self.telemetry_request, [0xE4, 0xA4], 0.001328),  # SW10 output current in A
             "TBRD": partial(self.telemetry_request, [0xE3, 0x08], 0.372434),  # Motherboard temperature in K
 
-            #Telemetry unique to 25-02452 and 01-02453 (CHECK THIS LATER) 
+            # Telemetry unique to 25-02452 and 01-02453 (CHECK THIS LATER)
             "VBCR1": partial(self.telemetry_request, [0xE1, 0x10], 0.0322581),  # Voltage feeding BCR1 in V
             "IBCR1A": partial(self.telemetry_request, [0xE1, 0x14], 0.0009775),  # Current BCR1 connector SA1A in A
             "IBCR1B": partial(self.telemetry_request, [0xE1, 0x15], 0.0009775),  # Current BCR1 connector SA1B in B
@@ -128,7 +142,7 @@ class EPS:
             "TBCR1B": partial(self.telemetry_request, [0xE1, 0x19], 0.4963),  # Array temperature connector SA1B in K
             "SDBCR1A": partial(self.telemetry_request, [0xE1, 0x1C], 1.59725),  # Sun detector connector SA1A in W/m^2
             "SDBCR1B": partial(self.telemetry_request, [0xE1, 0x1D], 1.59725),  # Sun detector connector SA1B in W/m^2
-            
+
             "VBCR2": partial(self.telemetry_request, [0xE1, 0x20], 0.0322581),  # Voltage feeding BCR2 in V
             "IBCR2A": partial(self.telemetry_request, [0xE1, 0x24], 0.0009775),  # Current BCR2 connector SA2A in A
             "IBCR2B": partial(self.telemetry_request, [0xE1, 0x25], 0.0009775),  # Current BCR2 connector SA2B in B
@@ -197,13 +211,20 @@ class EPS:
         Returns total power draw based on EPS telemetry
         :return: (float) power draw in W
         """
-        return self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() + \
-            self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() + \
-            self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() + \
-            self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() + \
-            self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() + \
-            self.telemetry["ISW3"]() * self.telemetry["VSW3"]() + \
-            self.telemetry["ISW4"]() * self.telemetry["VSW4"]() + \
-            self.telemetry["ISW6"]() * self.telemetry["VSW6"]() + \
-            self.telemetry["ISW8"]() * self.telemetry["VSW8"]() + \
-            self.telemetry["ISW9"]() * self.telemetry["VSW9"]()
+        return (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
+                self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
+                self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
+                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
+                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
+                self.telemetry["ISW3"]() * self.telemetry["VSW3"]() +
+                self.telemetry["ISW4"]() * self.telemetry["VSW4"]() +
+                self.telemetry["ISW6"]() * self.telemetry["VSW6"]() +
+                self.telemetry["ISW8"]() * self.telemetry["VSW8"]() +
+                self.telemetry["ISW9"]() * self.telemetry["VSW9"]())
+
+    def sun_detected(self) -> bool:
+        """
+        :return: (bool) Whether sun is detected
+        """
+        return self.telemetry["SDBCR1A"]() + self.telemetry["SDBCR2A"]() + self.telemetry["SDBCR1B"]() + \
+               self.telemetry["SDBCR2B"]() > EPS.SUN_DETECTION_THRESHOLD
