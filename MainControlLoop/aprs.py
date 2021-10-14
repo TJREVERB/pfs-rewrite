@@ -131,5 +131,5 @@ class APRS:
             if next_byte == '\n'.encode('utf-8'):
                 break
         message = output.decode('utf-8')
-        self.sfr.RECEIVED_COMMAND = message  # store message in statefield
+        self.sfr.APRS_RECEIVED_COMMAND = message  # store message in statefield
         return message

@@ -22,6 +22,12 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
+        self.limited_command_registry = {
+            "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            # Reads and transmits battery voltage
+            "PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
+            # Transmit total power draw of connected components
+        }
         self.command_registry = {
             "TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
             "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
@@ -71,8 +77,8 @@ class MainControlLoop:
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         self.eps.commands["Pin On"]("UART-RS232")
         self.eps.commands["Pin On"]("APRS")  # DEBUG
-        self.eps.commands["Pin On"]("SPI-UART")
-        self.eps.commands["Pin On"]("USB-UART")
+        self.eps.commands["Pin On"]("SPI-UART")  # DEBUG
+        self.eps.commands["Pin On"]("USB-UART")  # DEBUG
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
             print("test")
@@ -146,15 +152,8 @@ class MainControlLoop:
         # run the state_field_logger; commented out during testing
         self.sfr.dump()
         return
-
-    def command_interpreter(self) -> bool:
-        """
-        This will take whatever is read, parse it, and then execute it
-        :return: (bool) whether the control ran without error
-        """
-        raw_command: str = self.sfr.RECEIVED_COMMAND
-        self.sfr.RECEIVED_COMMAND = ""
-        # If no command was received, don't do anything
+    
+    def exec_command(self, raw_command) -> bool:
         if raw_command == "":
             return True
         # Attempts to execute command
@@ -173,6 +172,17 @@ class MainControlLoop:
             return True
         except Exception:
             return False
+
+    def command_interpreter(self) -> bool:
+        """
+        This will take whatever is read, parse it, and then execute it
+        :return: (bool) whether the control ran without error
+        """
+        raw_command: str = self.sfr.IRIDIUM_RECEIVED_COMMAND
+        raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
+        self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
+        self.sfr.APRS_RECEIVED_COMMAND = ""
+        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)  # if one of them is False, return False
 
     def execute(self):
         # Automatic mode switching
