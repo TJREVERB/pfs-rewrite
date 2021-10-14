@@ -34,8 +34,7 @@ class Iridium:
         }
     
     def __del__(self):
-        #self.serial.close()
-        pass
+        self.serial.close()
 
     def functional(self) -> bool:
         """
