@@ -23,9 +23,9 @@ class MainControlLoop:
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
         self.limited_command_registry = {
-            #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            #"PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
+            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
