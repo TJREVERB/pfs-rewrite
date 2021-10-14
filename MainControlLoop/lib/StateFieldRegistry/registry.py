@@ -53,7 +53,10 @@ class StateFieldRegistry:
     def dump(self):
         with open(self.LOG_PATH, "w") as f:
             for key, val in self.to_dict().items():
-                f.write(f"{key}:{val}\n")  # Save the variables in the log
+                if(self.type_dict[key] == bool and val == False):
+                    f.write(f"{key}:\n")
+                else:
+                    f.write(f"{key}:{val}\n")  # Save the variables in the log
 
     def reset(self):
         with open(self.LOG_PATH, "w") as f:
