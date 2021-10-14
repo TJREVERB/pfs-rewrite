@@ -30,21 +30,23 @@ class MainControlLoop:
         }
         self.command_registry = {
             #"TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
+            "TST": lambda: self.aprs.write("TJ;Hello"),
             #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            #"CHG": self.charging_mode,  # Enters charging mode
-            #"SCI": self.science_mode,  # Enters science mode
-            #"OUT": self.outreach_mode(),  # Enters outreach mode
-            #"U": partial(setattr, obj=self, name="UPPER_THRESHOLD"),  # Set upper threshold
-            #"L": partial(setattr, obj=self, name="LOWER_THRESHOLD"),  # Set lower threshold
-            #"RST": lambda: [i() for i in [
-                #lambda: self.eps.commands["All Off"],
-                #lambda: time.sleep(.5),
-                #lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
-            #]],  # Reset power to the entire satellite (!!!!)
-            #"IRI": self.iridium.wave,  
+            "CHG": self.charging_mode,  # Enters charging mode
+            "SCI": self.science_mode,  # Enters science mode
+            "OUT": self.outreach_mode(),  # Enters outreach mode
+            "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
+            "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
+            "RST": lambda: [i() for i in [
+                lambda: self.eps.commands["All Off"],
+                lambda: time.sleep(.5),
+                lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
+            ]],  # Reset power to the entire satellite (!!!!)
+            "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            #"PWR": partial(self.aprs.write, "TJ;" + str(self.eps.total_power())),
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
         }
 
