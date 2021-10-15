@@ -10,13 +10,15 @@ class StateFieldRegistry:
         Defines all the StateFields present in the state registry
         """
         self.defaults = {
-            "RECEIVED_COMMAND": "\"\"",
+            "APRS_RECEIVED_COMMAND": "\"\"",
+            "IRIDIUM_RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
         }
         self.type_dict = {
-            "RECEIVED_COMMAND": str,
+            "APRS_RECEIVED_COMMAND": str,
+            "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
             "MODE": str,

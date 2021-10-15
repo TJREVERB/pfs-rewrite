@@ -106,3 +106,9 @@ class Iridium:
                 break
             output += next_byte
         return output.decode("utf-8")
+
+    def listen(self):
+        """
+        Reads in received message (if any) and adds it to StateFieldRegistry
+        """
+        pass
