@@ -5,6 +5,7 @@ from smbus2 import SMBus
 import time
 from math import radians
 from math import pi
+from math import degrees
 
 try:
     import struct
@@ -254,7 +255,7 @@ class IMU:
         rad/s values.
         """
         raw = self.read_gyro_raw()
-        return map(lambda x: radians(x * self._gyro_dps_digit), raw)
+        return map(lambda x: degrees(x * self._gyro_dps_digit), raw)
 
     def getTumble(self):
         """
@@ -266,9 +267,9 @@ class IMU:
 
         for x in range(3):
             gyroValues[x] = abs(gyroValues[x]) #set all rotation values to positive
-            gyroValues[x] = min(gyroValues[x], 30) #clamp values to some value that we will decide on later
+            gyroValues[x] = min(gyroValues[x], 100) #clamp values to some value that we will decide on later in case we don't want a huge spin in one direction to affect the calculation
             
-        temp = gyroValues[0] + gyroValues[1] + gyroValues[2] #sum angle values
+        temp = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 3 #average angle values
         return temp
 
     def read_temp_raw(self):
