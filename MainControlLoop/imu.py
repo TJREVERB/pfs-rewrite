@@ -4,6 +4,7 @@ from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 from math import radians
+from math import pi
 
 try:
     import struct
@@ -255,6 +256,21 @@ class IMU:
         raw = self.read_gyro_raw()
         return map(lambda x: radians(x * self._gyro_dps_digit), raw)
 
+    def getTumble(self):
+        """
+        Gives a value representing how much we're tumbling
+        Specifics will be decided on later
+        """
+
+        gyroValues = self.gyro() #read the gyroscope, get values in
+
+        for x in range(3):
+            gyroValues[x] = abs(gyroValues[x]) #set all rotation values to positive
+            gyroValues[x] = min(gyroValues[x], 30) #clamp values to some value that we will decide on later
+            
+        temp = gyroValues[0] + gyroValues[1] + gyroValues[2] #sum angle values
+        return temp
+
     def read_temp_raw(self):
         """Read the raw temperature sensor value and return it as a 12-bit
         signed value.  If you want the temperature in nice units you probably
@@ -279,21 +295,24 @@ class IMU:
         # The sensor_type boolean should be _MAGTYPE when talking to the
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
-        raise NotImplementedError()
+
+        IMU_I2C._read_u8(sensor_type, address) #interface using I2C
 
     def _read_bytes(self, sensor_type, address, count, buf):
         # Read a count number of bytes into buffer from the provided 8-bit
         # register address.  The sensor_type boolean should be _MAGTYPE when
         # talking to the magnetometer, or _XGTYPE when talking to the accel or
         # gyro.  MUST be implemented by subclasses!
-        raise NotImplementedError()
+
+        IMU_I2C._read_bytes(sensor_type, address, count, buf) #interface using I2C
 
     def _write_u8(self, sensor_type, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
         # The sensor_type boolean should be _MAGTYPE when talking to the
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
-        raise NotImplementedError()
+        
+        IMU_I2C._write_u8(sensor_type, address, val)
 
 class IMU_I2C(IMU):
     """Driver for the LSM9DS1 connect over I2C.
