@@ -263,13 +263,12 @@ class IMU:
         Specifics will be decided on later
         """
 
-        gyroValues = self.gyro() #read the gyroscope, get values in
+        gyroValues = self.gyro() #read the gyroscope
 
         for x in range(3):
-            gyroValues[x] = abs(gyroValues[x]) #set all rotation values to positive
             gyroValues[x] = min(gyroValues[x], 100) #clamp values to some value that we will decide on later in case we don't want a huge spin in one direction to affect the calculation
             
-        temp = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 3 #average angle values
+        temp = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 3 #average DPS values
         return temp
 
     def read_temp_raw(self):
