@@ -6,6 +6,7 @@ from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
 from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.iridium import Iridium
+from MainControlLoop.imu import IMU
 
 
 class MainControlLoop:
@@ -22,6 +23,7 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
+        self.imu = IMU()
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
@@ -48,6 +50,7 @@ class MainControlLoop:
             # Transmit message through Iridium to ground station
             "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
             # Transmit total power draw of connected components
+            "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble()) #Test method, transmits tumble value
         }
 
     def antenna(self):
