@@ -15,21 +15,21 @@ class Iridium:
             time.sleep(0.5)
         self.commands = {
             "Test": self.functional,  # Tests connection to Iridium
-            "Geolocation": partial(self.request, "AT-MSGEO"),  # Current geolocation
-            "Active Config": partial(self.request, "AT+V"),
-            "Check Registration": partial(self.request, "AT+SBDREG"),
-            "Phone Model": partial(self.request, "AT+CGMM"),
-            "Phone Revision": partial(self.request, "AT+CGMR"),
-            "Phone IMEI": partial(self.request, "AT+CSGN"),
-            "Check Network": partial(self.request, "AT-MSSTM"),
-            "Shut Down": partial(self.write, "AT*F"),
-            "Signal Quality": partial(self.request, "AT+SCQ"),  # Returns strength of satellite connection
+            "Geolocation": lambda: self.request("AT-MSGEO"),  # Current geolocation
+            "Active Config": lambda: self.request("AT+V"),
+            "Check Registration": lambda: self.request("AT+SBDREG"),
+            "Phone Model": lambda: self.request("AT+CGMM"),
+            "Phone Revision": lambda: self.request("AT+CGMR"),
+            "Phone IMEI": lambda: self.request("AT+CSGN"),
+            "Check Network": lambda: self.request("AT-MSSTM"),
+            "Shut Down": lambda: self.write("AT*F"),
+            "Signal Quality": lambda: self.request("AT+SCQ"),  # Returns strength of satellite connection
             "Send SMS": lambda message: self.write("AT+CMGS=" + message),
-            "SBD Ring Alert On": partial(self.write, "AT+SBDMTA=1"),
-            "SBD Ring Alert Off": partial(self.write, "AT+SBDMTA=0"),
-            "Battery Check": partial(self.request, "AT+CBC=?"),
-            "Call Status": partial(self.request, "AT+CLCC=?"), 
-            "Soft Reset": partial(self.write, "ATZn"),
+            "SBD Ring Alert On": lambda: self.write("AT+SBDMTA=1"),
+            "SBD Ring Alert Off": lambda: self.write("AT+SBDMTA=0"),
+            "Battery Check": lambda: self.request("AT+CBC=?"),
+            "Call Status": lambda: self.request("AT+CLCC=?"), 
+            "Soft Reset": lambda: self.write("ATZn"),
             "Transmit": lambda message: self.write("AT+SBDWT=" + message)
         }
     
