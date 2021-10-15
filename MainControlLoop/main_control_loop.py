@@ -83,9 +83,8 @@ class MainControlLoop:
         self.eps.commands["Pin On"]("USB-UART")  # DEBUG
         # Wait for battery to charge to upper threshold
         while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
-            print("test")
             self.iridium.listen()  # Listen for and execute ground station commands
-            self.aprs.read()  # DEBUG
+            self.aprs.read()  # DEBUG; APRS WILL BE OFF IN REAL
             self.command_interpreter()
         self.sfr.MODE = "SCIENCE"  # Enter IOC mode to test initial functionality
         self.log()  # Log mode switch
@@ -99,6 +98,7 @@ class MainControlLoop:
         time.sleep(5)
         print("iridium.functional: " + str(self.iridium.functional()))  # Debugging
         self.iridium.wave()  # Test Iridium
+        # TODO: implement code to test Iridium over the orbit
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
             self.charging_mode()
@@ -155,7 +155,7 @@ class MainControlLoop:
         self.sfr.dump()
         return
     
-    def exec_command(self, raw_command) -> bool:
+    def exec_command(self, raw_command, registry) -> bool:
         if raw_command == "":
             return True
         # Attempts to execute command
@@ -166,9 +166,9 @@ class MainControlLoop:
             with open("log.txt", "a") as f:
                 # Executes command
                 if command[1:].isdigit():
-                    result = self.command_registry[command[0]](int(command[1]) + float(command[2]) / 10)
+                    result = self.registry[command[0]](int(command[1]) + float(command[2]) / 10)
                 else:
-                    result = self.command_registry[command]()
+                    result = self.registry[command]()
                 # Timestamp + tab + code + tab + result of command execution + newline
                 f.write(str(time.time()) + "\t" + command + "\t" + result + "\n")
             return True
@@ -184,7 +184,7 @@ class MainControlLoop:
         raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
         self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
         self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)  # if one of them is False, return False
+        return self.exec_command(raw_command, self.command_registry) and self.exec_command(raw_limited_command, self.limited_command_registry)  # if one of them is False, return False
 
     def execute(self):
         # Automatic mode switching
