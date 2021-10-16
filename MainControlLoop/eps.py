@@ -242,6 +242,7 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
+            print(ls)
             return (buspower + sum(ls), time.perf_counter()-t)
         if mode == 2:
             raw = self.commands["All Actual States"]()
@@ -253,6 +254,7 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
+            print(ls)
             return (buspower + sum(ls), time.perf_counter()-t)
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
