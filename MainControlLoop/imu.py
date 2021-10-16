@@ -3,9 +3,6 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
-from math import radians
-from math import pi
-from math import degrees
 
 try:
     import struct
@@ -255,7 +252,7 @@ class IMU:
         rad/s values.
         """
         raw = self.read_gyro_raw()
-        return map(lambda x: degrees(x * self._gyro_dps_digit), raw)
+        return map(lambda x: (x * self._gyro_dps_digit), raw)
 
     def getTumble(self):
         """
