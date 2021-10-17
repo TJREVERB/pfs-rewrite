@@ -219,11 +219,11 @@ class EPS:
         if mode == 0:
             return buspower
         if mode == 1:
-            expectedOn = self.commands["All Expected States"]()
+            expectedOn = self.commands["All Expected States"]()[0]
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
                                     for i in range(1, 11) if expectedOn & i == i])
         if mode == 2:
-            actualOn = self.commands["All Actual States"]()
+            actualOn = self.commands["All Actual States"]()[0]
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
                                     for i in range(1,11) if actualOn & i == i])
         if mode == 3:
