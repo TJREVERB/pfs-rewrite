@@ -17,30 +17,30 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
-        self.previous_time = 0    # previous time in seconds for integrating battery charge
+        self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         self.aprs = APRS(self.sfr)
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
-        #If battery capacity is default value, recalculate based on Vbatt
+        # If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
-            #"TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
+            # "TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
             "TST": lambda: self.aprs.write("TJ;Hello"),
-            #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            # "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            #"CHG": self.charging_mode(),  # Enters charging mode
-            #"SCI": self.science_mode(),  # Enters science mode
-            #"OUT": self.outreach_mode,  # Enters outreach mode
+            # "CHG": self.charging_mode(),  # Enters charging mode
+            # "SCI": self.science_mode(),  # Enters science mode
+            # "OUT": self.outreach_mode,  # Enters outreach mode
             "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
             "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
             "RST": lambda: [i() for i in [
@@ -48,7 +48,7 @@ class MainControlLoop:
                 lambda: time.sleep(.5),
                 lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
             ]],  # Reset power to the entire satellite (!!!!)
-            "IRI": self.iridium.wave,  
+            "IRI": self.iridium.wave,
             # Transmit message through Iridium to ground station
             "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
@@ -133,7 +133,7 @@ class MainControlLoop:
             self.log()
         self.sfr.MODE = "CHARGING"
         self.log()
-    
+
     def charging_mode(self):
         """
         Satellite's control flow in CHARGING mode.
@@ -142,9 +142,9 @@ class MainControlLoop:
         """
         initial_mode = self.sfr.MODE
         self.sfr.MODE = "CHARGING"
-        #self.eps.commands["Pin Off"]("APRS")  # Powers off APRS
-        #self.eps.commands["Pin Off"]("SPI-UART")
-        #self.eps.commands["Pin Off"]("USB-UART")
+        # self.eps.commands["Pin Off"]("APRS")  # Powers off APRS
+        # self.eps.commands["Pin Off"]("SPI-UART")
+        # self.eps.commands["Pin Off"]("USB-UART")
         self.eps.commands["Pin On"]("APRS")  # DEBUG
         self.eps.commands["Pin On"]("SPI-UART")
         self.eps.commands["Pin On"]("USB-UART")
@@ -162,12 +162,12 @@ class MainControlLoop:
             self.log()  # Log changes
         self.sfr.MODE = initial_mode
         self.log()
-    
+
     def log(self):
         # run the state_field_logger; commented out during testing
         self.sfr.dump()
         return
-    
+
     def exec_command(self, raw_command, registry) -> bool:
         if raw_command == "":
             return True
@@ -179,9 +179,9 @@ class MainControlLoop:
             with open("log.txt", "a") as f:
                 # Executes command
                 if command[1:].isdigit():
-                    result = self.registry[command[0]](int(command[1]) + float(command[2]) / 10)
+                    result = registry[command[0]](int(command[1]) + float(command[2]) / 10)
                 else:
-                    result = self.registry[command]()
+                    result = registry[command]()
                 # Timestamp + tab + code + tab + result of command execution + newline
                 f.write(str(time.time()) + "\t" + command + "\t" + result + "\n")
             return True
@@ -197,7 +197,8 @@ class MainControlLoop:
         raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
         self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
         self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command, self.command_registry) and self.exec_command(raw_limited_command, self.limited_command_registry)
+        return self.exec_command(raw_command, self.command_registry) and \
+               self.exec_command(raw_limited_command, self.limited_command_registry)
         # if one of them is False, return False
 
     def execute(self):
@@ -220,17 +221,17 @@ class MainControlLoop:
         if self.sfr.MODE == "OUTREACH":
             self.outreach_mode()
         self.log()  # On every iteration, run sfr.dump to log changes
-        self.integrate_charge() # Integrate charge
+        self.integrate_charge()  # Integrate charge
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
-        #iridium_msg = self.iridium.listen()
-        #print(iridium_msg)
+        # iridium_msg = self.iridium.listen()
+        # print(iridium_msg)
         self.sfr.START_TIME = time.time()
         print("Run started")
         try:
             while True:
-                #self.execute()
+                # self.execute()
                 iridium_msg = self.iridium.listen()
                 print(iridium_msg)
                 time.sleep(1)
