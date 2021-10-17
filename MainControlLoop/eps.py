@@ -227,8 +227,9 @@ class EPS:
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
                                     for i in range(1,11) if actualOn & i == i])
         if mode == 3:
-            return buspower + sum([self.telemetry[self.bitsToTelem[i][0][0]]() * self.telemetry[self.bitsToTelem[i][0][1]]()
-                                    for i in self.components.values()])
+            ls = list(self.components.values())
+            return buspower + sum([self.telemetry[self.bitsToTelem[ls[i][0]][0]]() * self.telemetry[self.bitsToTelem[ls[i][0]][1]]()
+                                    for i in range(len(ls))])
         if mode == 4:
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
                                     for i in range(1,11)])
