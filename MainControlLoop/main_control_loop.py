@@ -24,8 +24,8 @@ class MainControlLoop:
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
         #If battery capacity is default value, recalculate based on Vbatt
-        if self.sfr.BATTERY_CAPACITY_INT == 80*3600:
-            self.sfr.BATTERY_CAPACITY_INT = self.volt_to_charge(self.eps.telemetry["VBCROUT"]())
+        if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
+            self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
@@ -62,12 +62,6 @@ class MainControlLoop:
         gain = self.eps.solar_power()
         self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
         self.previous_time = time.perf_counter()
-
-    def volt_to_charge(self, voltage):
-        """
-        Map volts to remaining battery capacity in Joules
-        """
-        return 80*3600  # placeholder
 
     def antenna(self):
         """
@@ -203,7 +197,8 @@ class MainControlLoop:
         raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
         self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
         self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)  # if one of them is False, return False
+        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)
+        # if one of them is False, return False
 
     def execute(self):
         # Automatic mode switching
@@ -225,7 +220,7 @@ class MainControlLoop:
         if self.sfr.MODE == "OUTREACH":
             self.outreach_mode()
         self.log()  # On every iteration, run sfr.dump to log changes
-        self.integrate_charge() #Integrate charge
+        self.integrate_charge() # Integrate charge
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran

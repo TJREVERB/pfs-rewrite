@@ -13,18 +13,27 @@ class EPS:
     EPS_ADDRESS: hex = 0x2b
     SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
     # ARBITRARY VALUE!!!
+    COMPONENTS = {
+        "APRS": [0x04],
+        "Iridium": [0x03],
+        "Antenna Deployer": [0x06],
+        "UART-RS232": [0x08],  # Iridium Serial Converter
+        "SPI-UART": [0x0A],  # APRS Serial Converter
+        "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
+        "IMU": [0x09],
+    }
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
-        self.components = {  # List of components and their associated pins
-            "APRS": [0x04],
-            "Iridium": [0x03],
-            "Antenna Deployer": [0x06],
-            "UART-RS232": [0x08],  # Iridium Serial Converter
-            "SPI-UART": [0x0A],  # APRS Serial Converter
-            "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
-            "IMU": [0x09],
-        }
+        # self.components = {  # List of components and their associated pins
+        #     "APRS": [0x04],
+        #     "Iridium": [0x03],
+        #     "Antenna Deployer": [0x06],
+        #     "UART-RS232": [0x08],  # Iridium Serial Converter
+        #     "SPI-UART": [0x0A],  # APRS Serial Converter
+        #     "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
+        #     "IMU": [0x09],
+        # }
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"), ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"), ("VSW10", "ISW10")]
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
@@ -71,31 +80,31 @@ class EPS:
             "All Initial States": lambda: self.request(0x44, [0x00], 4),
             # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
-            "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2)[1],
+            "Pin Actual State": lambda component: self.request(0x54, self.COMPONENTS[component], 2)[1],
             # Reads and returns actual state of one PDM
             "All On": lambda:  self.command(0x40, [0x00]),  # Turn all PDMs on
             "All Off": lambda:  self.command(0x41, [0x00]),  # Turn all PDMs off
             "Set All Initial": lambda:  self.command(0x45, [0x00]),  # Set all PDMs to their initial state
-            "Pin On": lambda component: self.command(0x50, self.components[component]),  # Enable component
+            "Pin On": lambda component: self.command(0x50, self.COMPONENTS[component]),  # Enable component
             "Pin On Raw": lambda component: self.command(0x50, component),  # Turn PDM on, pass in raw PDM number
-            "Pin Off": lambda component: self.command(0x51, self.components[component]),  # Disable component
+            "Pin Off": lambda component: self.command(0x51, self.COMPONENTS[component]),  # Disable component
             "Pin Off Raw": lambda component: self.command(0x51, component),  # Turn PDM off, pass in raw PDM number
-            "Pin Init On": lambda component: self.command(0x52, self.components[component]),
+            "Pin Init On": lambda component: self.command(0x52, self.COMPONENTS[component]),
             # Set initial state of component to "on"
             "Pin Init On Raw": lambda component: self.command(0x52, component),
             # Set initial state of PDM on, pass in raw PDM number
-            "Pin Init Off": lambda component: self.command(0x53, self.components[component]),
+            "Pin Init Off": lambda component: self.command(0x53, self.COMPONENTS[component]),
             # Set initial state of component to "off"
             "Pin Init Off Raw": lambda component: self.command(0x53, component),
             # Set initial state of PDM off, pass in raw PDM number
 
             # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
             # By default each PDM does not have restrictions
-            "PDM Timer Limit": lambda component: self.request(0x61, self.components[component], 2),
+            "PDM Timer Limit": lambda component: self.request(0x61, self.COMPONENTS[component], 2),
             # Reads and returns timer limit for given PDM
-            "PDM Timer Value": lambda component: self.request(0x62, self.components[component], 2),
+            "PDM Timer Value": lambda component: self.request(0x62, self.COMPONENTS[component], 2),
             # Reads and returns passed time since PDM timer was enabled
-            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.components[component][0]]),
+            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.COMPONENTS[component][0]]),
             # Sets timer limit for given PDM
 
             # PCM bus control
@@ -246,7 +255,7 @@ class EPS:
                     time.perf_counter()-t)
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
-                self.bitsToTelem[i[0]][1]]() for i in self.components.values()]
+                self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
             pdm_states = []
             raw = self.commands["Pin Actual States"]()
             data = raw[2] << 8 | raw[3]

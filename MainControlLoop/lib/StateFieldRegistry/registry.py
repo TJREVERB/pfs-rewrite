@@ -67,6 +67,12 @@ class StateFieldRegistry:
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
 
+    def volt_to_charge(self, voltage):
+        """
+        Map volts to remaining battery capacity in Joules
+        """
+        return 80*3600  # placeholder
+
     def log_pwr(self, pdm_states, pwr):
         """
         Logs the power draw of every pdm
