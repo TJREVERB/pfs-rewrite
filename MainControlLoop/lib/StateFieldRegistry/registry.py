@@ -13,6 +13,7 @@ class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
     PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
     VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
+    ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
 
     # after how many iterations should the state field logger save the state field
 
@@ -27,6 +28,9 @@ class StateFieldRegistry:
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
             "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
+            "LAST_DAYLIGHT_ENTRY": None,
+            "LAST_ECLIPSE_ENTRY": None,
+            "ORBITAL_PERIOD": 90 * 60,
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -35,6 +39,9 @@ class StateFieldRegistry:
             "ANTENNA_DEPLOYED": bool,
             "MODE": str,
             "BATTERY_CAPACITY_INT": float,
+            "LAST_DAYLIGHT_ENTRY": int,
+            "LAST_ECLIPSE_PERIOD": int,
+            "ORBITAL_PERIOD": int,
         }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)
@@ -103,13 +110,12 @@ class StateFieldRegistry:
     def log_pwr(self, pdm_states, pwr) -> None:
         """
         Logs the power draw of every pdm
+        :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
+        :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
-        data = np.stack((np.array(pdm_states), np.array(pwr)), axis=1)  # Convert arrays into 2D array
-        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from 2D array
-        df["timestamp"] = [time.time()]  # Add timestamp to dataframe
-        cols = df.columns.tolist()  # Move last "timestamp" column to beginning
-        cols = cols[-1:] + cols[:-1]
-        df = df[cols]
+        data = np.concatenate((pdm_states, pwr))  # Concatenate arrays
+        np.insert(data, 0, time.time())  # Add timestamp
+        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from array
         df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
 
     def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
@@ -146,6 +152,40 @@ class StateFieldRegistry:
         consumption = pwr_draw * duration  # pwr_draw in W, duration in s, consumption in J
         stdev = pow(total_variance, .5)  # Standard deviation from total variance
         return consumption, stdev, oldest_data_point
+
+    def enter_sunlight(self) -> None:
+        """
+        Update LAST_DAYLIGHT_ENTRY and log new data
+        """
+        self.LAST_DAYLIGHT_ENTRY = time.time()
+        # Add data to dataframe
+        df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "sunlight"], columns=["timestamp", "phase"])
+        df.to_csv(self.ORBIT_LOG_PATH, mode="a", header=False)  # Append data to log
+
+    def enter_eclipse(self) -> None:
+        """
+        Update LAST_ECLIPSE_ENTRY and log new data
+        """
+        self.LAST_ECLIPSE_ENTRY = time.time()
+        # Add data to dataframe
+        df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "eclipse"], columns=["timestamp", "phase"])
+        df.to_csv(self.ORBIT_LOG_PATH, mode="a", header=False)  # Append data to log
+
+    def calc_orbital_period(self) -> int:
+        """
+        Calculate orbital period over last 50 orbits
+        :return: average orbital period over last 50 orbits
+        """
+        df = pd.read_csv(self.ORBIT_LOG_PATH, header=0)  # Reads in data
+        # Calculates on either last 50 points or whole dataset
+        sunlight = df.loc[df["phase"] == "sunlight"]
+        deltas = np.array([sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)])
+        eclipse = df.loc[df["phase"] == "eclipse"]
+        deltas = np.concatenate((deltas,  # Appends eclipse data to deltas
+                                 np.array([eclipse[i + 1] - eclipse[i] for i in range(
+                                     -2, -1 * min([len(eclipse), 50]), -1)])))
+        self.ORBITAL_PERIOD = np.sum(deltas) / np.shape(deltas)[0]
+        return self.ORBITAL_PERIOD
 
     def reset(self):
         """
