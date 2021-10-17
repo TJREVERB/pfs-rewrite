@@ -236,6 +236,21 @@ class EPS:
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
                                     for i in range(1,11)])
         return -1
+    
+    def total_power_old(self) -> float:
+        """
+        Returns total power draw based on EPS telemetry
+        :return: (float) power draw in W
+        """
+        return (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
+                self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
+                self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
+                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
+                self.telemetry["ISW3"]() * self.telemetry["VSW3"]() +
+                self.telemetry["ISW4"]() * self.telemetry["VSW4"]() +
+                self.telemetry["ISW6"]() * self.telemetry["VSW6"]() +
+                self.telemetry["ISW8"]() * self.telemetry["VSW8"]() +
+                self.telemetry["ISW9"]() * self.telemetry["VSW9"]())
 
     def solar_power(self) -> float:
         """
