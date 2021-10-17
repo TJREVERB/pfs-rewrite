@@ -25,7 +25,7 @@ class MainControlLoop:
         self.iridium = Iridium(self.sfr)
         #If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == 80*3600:
-            self.sfr.BATTERY_CAPACITY_INT = self.volt_to_charge(self.eps.telemetry["VBCROUT"]()))
+            self.sfr.BATTERY_CAPACITY_INT = self.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
