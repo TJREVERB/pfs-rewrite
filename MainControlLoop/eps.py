@@ -213,28 +213,29 @@ class EPS:
         Returns total power draw based on EPS telemetry
         :return: (float) power draw in W
         """
+        t = time.perf_counter()
         buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
                     self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
                     self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
                     self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]())
         if mode == 0:
-            return buspower
+            return (buspower, time.perf_counter()-t)
         if mode == 1:
             raw = self.commands["All Expected States"]()
             expectedOn = raw[2] << 8 | raw[3]
-            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1, 11) if expectedOn & int(math.pow(2, i)) == int(math.pow(2, i))])
+            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1, 11) if expectedOn & int(math.pow(2, i)) == int(math.pow(2, i))]), time.perf_counter()-t)
         if mode == 2:
             raw = self.commands["All Actual States"]()
             actualOn = raw[2] << 8 | raw[3]
-            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1,11) if actualOn & int(math.pow(2, i)) == int(math.pow(2, i))])
+            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1,11) if actualOn & int(math.pow(2, i)) == int(math.pow(2, i))]), time.perf_counter()-t)
         if mode == 3:
-            return buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[self.bitsToTelem[i[0]][1]]()
-                                    for i in self.components.values()])
+            return (buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[self.bitsToTelem[i[0]][1]]()
+                                    for i in self.components.values()]), time.perf_counter()-t)
         if mode == 4:
-            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1,11)])
+            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1,11)]), time.perf_counter()-t)
         return -1
 
     def solar_power(self) -> float:
