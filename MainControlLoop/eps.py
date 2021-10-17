@@ -244,15 +244,25 @@ class EPS:
         if mode == 1:
             raw = self.commands["All Expected States"]()
             expected_on = raw[2] << 8 | raw[3]
-            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1, 11) if expected_on & int(math.pow(2, i)) == int(math.pow(2, i))]),
-                    time.perf_counter()-t)
+            ls = []
+            for i in range(1, 11):
+                b = expected_on & int(math.pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            return (buspower + sum(ls), time.perf_counter()-t)
         if mode == 2:
             raw = self.commands["All Actual States"]()
             actual_on = raw[2] << 8 | raw[3]
-            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1,11) if actual_on & int(math.pow(2, i)) == int(math.pow(2, i))]),
-                    time.perf_counter()-t)
+            ls = []
+            for i in range(1, 11):
+                b = actual_on & int(math.pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            return (buspower + sum(ls), time.perf_counter()-t)
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
