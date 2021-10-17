@@ -44,7 +44,7 @@ class EPS:
             # with no commands received.
             "Watchdog Period": lambda: self.request(0x20, [0x00], 2),
             # Reads and returns current watchdog period
-            "Reset Watchdog":  lambda: self.command(0x22, [0x00]),  # Resets communications watchdog timer
+            "Reset Watchdog": lambda: self.command(0x22, [0x00]),  # Resets communications watchdog timer
             # Any command will reset the timer, this command can be used if no action from the EPS is needed
             "Set Watchdog Period": lambda period: self.command(0x21, period),
             # Sets communications timeout watchdog period, minimum 1 minute maximum 90 minutes
@@ -52,38 +52,42 @@ class EPS:
             # Reset count commands: EPS will be reset under various conditions,
             # these functions check how many times have been caused by each condition.
             # Counts roll over from 255 to 0.
-            "Brownout Resets":  lambda: self.request(0x31, [0x00], 2),
+            "Brownout Resets": lambda: self.request(0x31, [0x00], 2),
             # Reads and returns number of brownout resets
-            "Software Resets":  lambda: self.request(0x32, [0x00], 2),
+            "Software Resets": lambda: self.request(0x32, [0x00], 2),
             # Reads and returns number of software resets
-            "Manual Resets":  lambda: self.request(0x33,  [0x00], 2),
+            "Manual Resets": lambda: self.request(0x33,  [0x00], 2),
             # Reads and returns number of manual resets
-            "Watchdog Resets":  lambda: self.request(0x34, [0x00], 2),
+            "Watchdog Resets": lambda: self.request(0x34, [0x00], 2),
             # Reads and returns number of watchdog resets
 
             # PDM Control: Get information about PDMs and switch PDMs on and off to power on or off components
-            "All Actual States":  lambda: self.request(0x42, [0x00], 4),
+            "All Actual States": lambda: self.request(0x42, [0x00], 4),
             # Reads and returns actual state of all PDMs in byte form
             # PDMs may be shut off due to protections, and this command shows the actual state of all PDMs
-            "All Expected States":  lambda: self.request(0x43, [0x00], 4),
+            "All Expected States": lambda: self.request(0x43, [0x00], 4),
             # Reads and returns expected state of all PDMs in byte form
             # These depend on whether they have been commanded on or off, regardless of protection trips
-            "All Initial States":  lambda: self.request(0x44, [0x00], 4),
+            "All Initial States": lambda: self.request(0x44, [0x00], 4),
             # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
             "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2)[1],
             # Reads and returns actual state of one PDM
-            "All On":  lambda:  self.command(0x40, [0x00]),  # Turn all PDMs on
-            "All Off":  lambda:  self.command(0x41, [0x00]),  # Turn all PDMs off
-            "Set All Initial":  lambda:  self.command(0x45, [0x00]),  # Set all PDMs to their initial state
+            "All On": lambda:  self.command(0x40, [0x00]),  # Turn all PDMs on
+            "All Off": lambda:  self.command(0x41, [0x00]),  # Turn all PDMs off
+            "Set All Initial": lambda:  self.command(0x45, [0x00]),  # Set all PDMs to their initial state
             "Pin On": lambda component: self.command(0x50, self.components[component]),  # Enable component
-            "Pin On Raw": lambda component: self.command(0x50, component), # Turn PDM on, pass in raw PDM number
+            "Pin On Raw": lambda component: self.command(0x50, component),  # Turn PDM on, pass in raw PDM number
             "Pin Off": lambda component: self.command(0x51, self.components[component]),  # Disable component
-            "Pin Off Raw": lambda component: self.command(0x51, component), # Turn PDM off, pass in raw PDM number
-            "Pin Init On": lambda component: self.command(0x52, self.components[component]), # Set initial state of component to "on"
-            "Pin Init On Raw": lambda component: self.command(0x52, component), # Set initial state of PDM on, pass in raw PDM number
-            "Pin Init Off": lambda component: self.command(0x53, self.components[component]), # Set initial state of component to "off"
-            "Pin Init Off Raw": lambda component: self.command(0x53, component), # Set initial state of PDM off, pass in raw PDM number
+            "Pin Off Raw": lambda component: self.command(0x51, component),  # Turn PDM off, pass in raw PDM number
+            "Pin Init On": lambda component: self.command(0x52, self.components[component]),
+            # Set initial state of component to "on"
+            "Pin Init On Raw": lambda component: self.command(0x52, component),
+            # Set initial state of PDM on, pass in raw PDM number
+            "Pin Init Off": lambda component: self.command(0x53, self.components[component]),
+            # Set initial state of component to "off"
+            "Pin Init Off Raw": lambda component: self.command(0x53, component),
+            # Set initial state of PDM off, pass in raw PDM number
 
             # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
             # By default each PDM does not have restrictions
@@ -104,34 +108,34 @@ class EPS:
         # Format: self.eps.telemetry["REQUESTED TELEMETRY"]()
         # Refer to EPS Manual Table 11.8-10
         self.telemetry = {
-            "IBCROUT":  lambda:  self.telemetry_request([0xE2, 0x84], 14.662757),  # BCR Output current in mA
-            "VBCROUT":  lambda:  self.telemetry_request([0xE2, 0x80], 0.008993157),  # BCR Output voltage in V
-            "I3V3DRW":  lambda:  self.telemetry_request([0xE2, 0x05], 0.001327547),  # 3V3 Current draw of EPS in A
-            "I5VDRW":  lambda:  self.telemetry_request([0xE2, 0x15], 0.001327547),  # 5V Current draw of EPS in A
-            "I12VBUS":  lambda:  self.telemetry_request([0xE2, 0x34], 0.00207),  # 12V Bus output current in A
-            "V12VBUS":  lambda:  self.telemetry_request([0xE2, 0x30], 0.01349),  # 12V Bus output voltage in V
-            "IBATBUS":  lambda:  self.telemetry_request([0xE2, 0x24], 0.005237),  # Batt Bus output current in A
-            "VBATBUS":  lambda:  self.telemetry_request([0xE2, 0x20], 0.008978),  # Batt Bus output voltage in V
-            "I5VBUS":  lambda:  self.telemetry_request([0xE2, 0x14], 0.005237),  # 5V Bus output current in A
-            "V5VBUS":  lambda:  self.telemetry_request([0xE2, 0x10], 0.005865),  # 5V Bus output voltage in V
-            "I3V3BUS":  lambda:  self.telemetry_request([0xE2, 0x04], 0.005237),  # 3V3 Bus output current in A
-            "V3V3BUS":  lambda:  self.telemetry_request([0xE2, 0x00], 0.004311),  # 3V3 Bus output voltage in V
-            "VSW1":  lambda:  self.telemetry_request([0xE4, 0x10], 0.01349),  # SW1 output voltage in V
-            "ISW1":  lambda:  self.telemetry_request([0xE4, 0x14], 0.001328),  # SW1 output current in A
-            "VSW2":  lambda:  self.telemetry_request([0xE4, 0x20], 0.01349),  # SW2 output voltage in V
-            "ISW2":  lambda:  self.telemetry_request([0xE4, 0x24], 0.001328),  # SW2 output current in A
-            "VSW3":  lambda:  self.telemetry_request([0xE4, 0x30], 0.008993),  # SW3 output voltage in V
-            "ISW3":  lambda:  self.telemetry_request([0xE4, 0x34], 0.006239),  # SW3 output current in A
-            "VSW4":  lambda:  self.telemetry_request([0xE4, 0x40], 0.008993),  # SW4 output voltage in V
-            "ISW4":  lambda:  self.telemetry_request([0xE4, 0x44], 0.006239),  # SW4 output current in A
-            "VSW5":  lambda:  self.telemetry_request([0xE4, 0x50], 0.005865),  # SW5 output voltage in V
-            "ISW5":  lambda:  self.telemetry_request([0xE4, 0x54], 0.001328),  # SW5 output current in A
-            "VSW6":  lambda:  self.telemetry_request([0xE4, 0x60], 0.005865),  # SW6 output voltage in V
-            "ISW6":  lambda:  self.telemetry_request([0xE4, 0x64], 0.001328),  # SW6 output current in A
-            "VSW7":  lambda:  self.telemetry_request([0xE4, 0x70], 0.005865),  # SW7 output voltage in V
-            "ISW7":  lambda:  self.telemetry_request([0xE4, 0x74], 0.001328),  # SW7 output current in A
-            "VSW8":  lambda:  self.telemetry_request([0xE4, 0x80], 0.004311),  # SW8 output voltage in V
-            "ISW8":  lambda:  self.telemetry_request([0xE4, 0x84], 0.001328),  # SW8 output current in A
+            "IBCROUT": lambda:  self.telemetry_request([0xE2, 0x84], 14.662757),  # BCR Output current in mA
+            "VBCROUT": lambda:  self.telemetry_request([0xE2, 0x80], 0.008993157),  # BCR Output voltage in V
+            "I3V3DRW": lambda:  self.telemetry_request([0xE2, 0x05], 0.001327547),  # 3V3 Current draw of EPS in A
+            "I5VDRW": lambda:  self.telemetry_request([0xE2, 0x15], 0.001327547),  # 5V Current draw of EPS in A
+            "I12VBUS": lambda:  self.telemetry_request([0xE2, 0x34], 0.00207),  # 12V Bus output current in A
+            "V12VBUS": lambda:  self.telemetry_request([0xE2, 0x30], 0.01349),  # 12V Bus output voltage in V
+            "IBATBUS": lambda:  self.telemetry_request([0xE2, 0x24], 0.005237),  # Batt Bus output current in A
+            "VBATBUS": lambda:  self.telemetry_request([0xE2, 0x20], 0.008978),  # Batt Bus output voltage in V
+            "I5VBUS": lambda:  self.telemetry_request([0xE2, 0x14], 0.005237),  # 5V Bus output current in A
+            "V5VBUS": lambda:  self.telemetry_request([0xE2, 0x10], 0.005865),  # 5V Bus output voltage in V
+            "I3V3BUS": lambda:  self.telemetry_request([0xE2, 0x04], 0.005237),  # 3V3 Bus output current in A
+            "V3V3BUS": lambda:  self.telemetry_request([0xE2, 0x00], 0.004311),  # 3V3 Bus output voltage in V
+            "VSW1": lambda:  self.telemetry_request([0xE4, 0x10], 0.01349),  # SW1 output voltage in V
+            "ISW1": lambda:  self.telemetry_request([0xE4, 0x14], 0.001328),  # SW1 output current in A
+            "VSW2": lambda:  self.telemetry_request([0xE4, 0x20], 0.01349),  # SW2 output voltage in V
+            "ISW2": lambda:  self.telemetry_request([0xE4, 0x24], 0.001328),  # SW2 output current in A
+            "VSW3": lambda:  self.telemetry_request([0xE4, 0x30], 0.008993),  # SW3 output voltage in V
+            "ISW3": lambda:  self.telemetry_request([0xE4, 0x34], 0.006239),  # SW3 output current in A
+            "VSW4": lambda:  self.telemetry_request([0xE4, 0x40], 0.008993),  # SW4 output voltage in V
+            "ISW4": lambda:  self.telemetry_request([0xE4, 0x44], 0.006239),  # SW4 output current in A
+            "VSW5": lambda:  self.telemetry_request([0xE4, 0x50], 0.005865),  # SW5 output voltage in V
+            "ISW5": lambda:  self.telemetry_request([0xE4, 0x54], 0.001328),  # SW5 output current in A
+            "VSW6": lambda:  self.telemetry_request([0xE4, 0x60], 0.005865),  # SW6 output voltage in V
+            "ISW6": lambda:  self.telemetry_request([0xE4, 0x64], 0.001328),  # SW6 output current in A
+            "VSW7": lambda:  self.telemetry_request([0xE4, 0x70], 0.005865),  # SW7 output voltage in V
+            "ISW7": lambda:  self.telemetry_request([0xE4, 0x74], 0.001328),  # SW7 output current in A
+            "VSW8": lambda:  self.telemetry_request([0xE4, 0x80], 0.004311),  # SW8 output voltage in V
+            "ISW8": lambda:  self.telemetry_request([0xE4, 0x84], 0.001328),  # SW8 output current in A
             "VSW9": lambda:  self.telemetry_request([0xE4, 0x90], 0.004311),  # SW9 output voltage in V
             "ISW9": lambda:  self.telemetry_request([0xE4, 0x94], 0.001328),  # SW9 output current in A
             "VSW10": lambda:  self.telemetry_request([0xE4, 0xA0], 0.004311),  # SW10 output voltage in V
@@ -232,14 +236,17 @@ class EPS:
             raw = self.commands["All Expected States"]()
             expected_on = raw[2] << 8 | raw[3]
             return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1, 11) if expected_on & int(math.pow(2, i)) == int(math.pow(2, i))]), time.perf_counter()-t)
+                                    for i in range(1, 11) if expected_on & int(math.pow(2, i)) == int(math.pow(2, i))]),
+                    time.perf_counter()-t)
         if mode == 2:
             raw = self.commands["All Actual States"]()
             actual_on = raw[2] << 8 | raw[3]
             return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1,11) if actual_on & int(math.pow(2, i)) == int(math.pow(2, i))]), time.perf_counter()-t)
+                                    for i in range(1,11) if actual_on & int(math.pow(2, i)) == int(math.pow(2, i))]),
+                    time.perf_counter()-t)
         if mode == 3:
-            return (buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[self.bitsToTelem[i[0]][1]]()
+            return (buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
+                self.bitsToTelem[i[0]][1]]()
                                     for i in self.components.values()]), time.perf_counter()-t)
         if mode == 4:
             return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 

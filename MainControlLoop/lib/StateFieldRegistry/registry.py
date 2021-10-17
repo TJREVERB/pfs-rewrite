@@ -15,7 +15,7 @@ class StateFieldRegistry:
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
-            "BATTERY_CAPACITY_INT": 80*3600, #Integral estimate of remaining battery capacity
+            "BATTERY_CAPACITY_INT": 80*3600,  # Integral estimate of remaining battery capacity
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
