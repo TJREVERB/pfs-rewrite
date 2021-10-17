@@ -25,15 +25,6 @@ class EPS:
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
-        # self.components = {  # List of components and their associated pins
-        #     "APRS": [0x04],
-        #     "Iridium": [0x03],
-        #     "Antenna Deployer": [0x06],
-        #     "UART-RS232": [0x08],  # Iridium Serial Converter
-        #     "SPI-UART": [0x0A],  # APRS Serial Converter
-        #     "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
-        #     "IMU": [0x09],
-        # }
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"), ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"), ("VSW10", "ISW10")]
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
