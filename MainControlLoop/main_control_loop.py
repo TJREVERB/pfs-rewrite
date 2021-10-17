@@ -17,15 +17,19 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
+        self.previous_time = 0    # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         self.aprs = APRS(self.sfr)
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
+        #If battery capacity is default value, recalculate based on Vbatt
+        if self.sfr.BATTERY_CAPACITY_INT == 80*3600:
+            self.sfr.BATTERY_CAPACITY_INT = self.volt_to_charge(self.eps.telemetry("VBCROUT"))
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power())),
+            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power(3))),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
@@ -46,9 +50,24 @@ class MainControlLoop:
             ]],  # Reset power to the entire satellite (!!!!)
             "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3))),
             # Transmit total power draw of connected components
         }
+
+    def integrate_charge(self):
+        """
+        Integrate charge in Joules
+        """
+        draw = self.eps.total_power(4)
+        gain = self.eps.solar_power()
+        self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
+        self.previous_time = time.perf_counter()
+
+    def volt_to_charge(self):
+        """
+        Map volts to remaining battery capacity in Joules
+        """
+        return 80*3600 #placeholder
 
     def antenna(self):
         """
@@ -206,6 +225,7 @@ class MainControlLoop:
         if self.sfr.MODE == "OUTREACH":
             self.outreach_mode()
         self.log()  # On every iteration, run sfr.dump to log changes
+        self.integrate_charge() #Integrate charge
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran

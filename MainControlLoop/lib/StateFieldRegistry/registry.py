@@ -15,6 +15,7 @@ class StateFieldRegistry:
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
+            "BATTERY_CAPACITY_INT": 80*3600, #Integral estimate of remaining battery capacity
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -22,6 +23,7 @@ class StateFieldRegistry:
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
             "MODE": str,
+            "BATTERY_CAPACITY_INT": float,
         }
         try:
             f = open(self.LOG_PATH, "r")

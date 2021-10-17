@@ -21,9 +21,10 @@ class EPS:
             "Antenna Deployer": [0x06],
             "UART-RS232": [0x08],  # Iridium Serial Converter
             "SPI-UART": [0x10],  # APRS Serial Converter
-            "USB-UART": [0x07],  # Alternate APRS Serial Converter
+            "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
             "IMU": [0x09],
         }
+        self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"), ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"), ("VSW10", "ISW10")]
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
         self.commands = {
@@ -206,21 +207,39 @@ class EPS:
         raw = self.request(0x10, tle, 2)
         return (raw[0] << 8 | raw[1]) * multiplier
 
-    def total_power(self) -> float:
+    def total_power(self, mode) -> float: #modes: 0: BUS only, 1: Expected ON PDMs + BUS only, 2: Actual ON PDMs + BUS only, 3: All defined components, 4: Comprehensive
         """
         Returns total power draw based on EPS telemetry
         :return: (float) power draw in W
         """
-        return (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
-                self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
-                self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
-                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
-                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
-                self.telemetry["ISW3"]() * self.telemetry["VSW3"]() +
-                self.telemetry["ISW4"]() * self.telemetry["VSW4"]() +
-                self.telemetry["ISW6"]() * self.telemetry["VSW6"]() +
-                self.telemetry["ISW8"]() * self.telemetry["VSW8"]() +
-                self.telemetry["ISW9"]() * self.telemetry["VSW9"]())
+        buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
+                    self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
+                    self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
+                    self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]())
+        if mode == 0:
+            return buspower
+        if mode == 1:
+            expectedOn = self.commands["All Expected States"]()
+            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1, 11) if expectedOn & i == i])
+        if mode == 2:
+            actualOn = self.commands["All Actual States"]()
+            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1,11) if actualOn & i == i])
+        if mode == 3:
+            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]()
+                                    for i in self.components.keys()])
+        if mode == 4:
+            return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
+                                    for i in range(1,11)])
+        return -1
+
+    def solar_power(self) -> float:
+        """
+        Returns net solar power gain
+        :return: (float) power gain in W
+        """
+        return sum([self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]() for j in ["A", "B"]]) for i in range(1, 4)])
 
     def sun_detected(self) -> bool:
         """
