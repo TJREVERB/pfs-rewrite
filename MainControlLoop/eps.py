@@ -3,6 +3,7 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
+import math
 
 
 class EPS:
@@ -222,12 +223,12 @@ class EPS:
             raw = self.commands["All Expected States"]()
             expectedOn = raw[2] << 8 | raw[3]
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1, 11) if expectedOn & i == i])
+                                    for i in range(1, 11) if expectedOn & math.pow(2, i) == i])
         if mode == 2:
             raw = self.commands["All Actual States"]()
             actualOn = raw[2] << 8 | raw[3]
             return buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1,11) if actualOn & i == i])
+                                    for i in range(1,11) if actualOn & math.pow(2, i) == i])
         if mode == 3:
             return buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[self.bitsToTelem[i[0]][1]]()
                                     for i in self.components.values()])
