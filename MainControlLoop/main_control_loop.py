@@ -63,7 +63,7 @@ class MainControlLoop:
         self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
         self.previous_time = time.perf_counter()
 
-    def volt_to_charge(self):
+    def volt_to_charge(self, voltage):
         """
         Map volts to remaining battery capacity in Joules
         """
