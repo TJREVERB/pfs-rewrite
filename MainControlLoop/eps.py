@@ -12,18 +12,27 @@ class EPS:
     EPS_ADDRESS: hex = 0x2b
     SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
     # ARBITRARY VALUE!!!
+    COMPONENTS = {
+        "APRS": [0x04],
+        "Iridium": [0x03],
+        "Antenna Deployer": [0x06],
+        "UART-RS232": [0x08],  # Iridium Serial Converter
+        "SPI-UART": [0x0A],  # APRS Serial Converter
+        "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
+        "IMU": [0x09],
+    }
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
-        self.components = {  # List of components and their associated pins
-            "APRS": [0x04],
-            "Iridium": [0x03],
-            "Antenna Deployer": [0x06],
-            "UART-RS232": [0x08],  # Iridium Serial Converter
-            "SPI-UART": [0x10],  # APRS Serial Converter
-            "USB-UART": [0x07],  # Alternate APRS Serial Converter
-            "IMU": [0x09],
-        }
+        # self.components = {  # List of components and their associated pins
+        #     "APRS": [0x04],
+        #     "Iridium": [0x03],
+        #     "Antenna Deployer": [0x06],
+        #     "UART-RS232": [0x08],  # Iridium Serial Converter
+        #     "SPI-UART": [0x10],  # APRS Serial Converter
+        #     "USB-UART": [0x07],  # Alternate APRS Serial Converter
+        #     "IMU": [0x09],
+        # }
         # Refer to EPS manual pages 40-50 for info on EPS commands
         # Format: self.eps.commands["COMMAND"](ARGS)
         self.commands = {
@@ -69,25 +78,25 @@ class EPS:
             "All Initial States": partial(self.request, register=0x44, data=[0x00], length=4),
             # Reads and returns initial states of all PDMs in byte form
             # These are the states the PDMs will be in after a reset
-            "Pin Actual State": lambda component: self.request(0x54, self.components[component], 2)[1],
+            "Pin Actual State": lambda component: self.request(0x54, self.COMPONENTS[component], 2)[1],
             # Reads and returns actual state of one PDM
             "All On": partial(self.command, 0x40, [0x00]),  # Turn all PDMs on
             "All Off": partial(self.command, 0x41, [0x00]),  # Turn all PDMs off
             "Set All Initial": partial(self.command, 0x45, [0x00]),  # Set all PDMs to their initial state
-            "Pin On": lambda component: self.command(0x50, self.components[component]),  # Enable component
-            "Pin Off": lambda component: self.command(0x51, self.components[component]),  # Disable component
-            "Pin Init On": lambda component: self.command(0x52, self.components[component]),
+            "Pin On": lambda component: self.command(0x50, self.COMPONENTS[component]),  # Enable component
+            "Pin Off": lambda component: self.command(0x51, self.COMPONENTS[component]),  # Disable component
+            "Pin Init On": lambda component: self.command(0x52, self.COMPONENTS[component]),
             # Set initial state of component to "on"
-            "Pin Init Off": lambda component: self.command(0x53, self.components[component]),
+            "Pin Init Off": lambda component: self.command(0x53, self.COMPONENTS[component]),
             # Set initial state of component to "off"
 
             # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
             # By default each PDM does not have restrictions
-            "PDM Timer Limit": lambda component: self.request(0x61, self.components[component], 2),
+            "PDM Timer Limit": lambda component: self.request(0x61, self.COMPONENTS[component], 2),
             # Reads and returns timer limit for given PDM
-            "PDM Timer Value": lambda component: self.request(0x62, self.components[component], 2),
+            "PDM Timer Value": lambda component: self.request(0x62, self.COMPONENTS[component], 2),
             # Reads and returns passed time since PDM timer was enabled
-            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.components[component][0]]),
+            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.COMPONENTS[component][0]]),
             # Sets timer limit for given PDM
 
             # PCM bus control
@@ -206,21 +215,75 @@ class EPS:
         raw = self.request(0x10, tle, 2)
         return (raw[0] << 8 | raw[1]) * multiplier
 
-    def total_power(self) -> float:
+    def total_power(self, mode) -> tuple:
         """
         Returns total power draw based on EPS telemetry
-        :return: (float) power draw in W
+        :param mode: See below for list of modes
+        0: BUS only
+        1: Expected ON PDMs + BUS only
+        2: Actual ON PDMs + BUS only
+        3: All defined components
+        4: Comprehensive
+        :return: (tuple) power draw in W, time to poll
         """
-        return (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
-                self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
-                self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
-                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
-                self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]() +
-                self.telemetry["ISW3"]() * self.telemetry["VSW3"]() +
-                self.telemetry["ISW4"]() * self.telemetry["VSW4"]() +
-                self.telemetry["ISW6"]() * self.telemetry["VSW6"]() +
-                self.telemetry["ISW8"]() * self.telemetry["VSW8"]() +
-                self.telemetry["ISW9"]() * self.telemetry["VSW9"]())
+        t = time.perf_counter()
+        buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
+                    self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
+                    self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
+                    self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]())
+        if mode == 0:
+            return buspower, time.perf_counter()-t
+        if mode == 1:
+            raw = self.commands["All Expected States"]()
+            expected_on = raw[2] << 8 | raw[3]
+            pdm_states = []
+            for pdm in range(1, 11):
+                pdm_states.append(expected_on & int(pow(2, pdm)) >> pdm)
+            ls = []
+            for i in range(1, 11):
+                b = expected_on & int(pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter()-t
+        if mode == 2:
+            raw = self.commands["All Actual States"]()
+            actual_on = raw[2] << 8 | raw[3]
+            pdm_states = []
+            for pdm in range(1, 11):
+                pdm_states.append(actual_on & int(pow(2, pdm)) >> pdm)
+            ls = []
+            for i in range(1, 11):
+                b = actual_on & int(pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter()-t
+        if mode == 3:
+            ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
+                self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
+            pdm_states = []
+            raw = self.commands["Pin Actual States"]()
+            data = raw[2] << 8 | raw[3]
+            for pdm in range(1, 11):
+                pdm_states.append(data & int(pow(2, pdm)) >> pdm)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter()-t
+        if mode == 4:
+            ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
+            return buspower + sum(ls), time.perf_counter()-t
+        return -1, -1
+
+    def solar_power(self) -> float:
+        """
+        Returns net solar power gain
+        :return: (float) power gain in W
+        """
+        return sum([self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]() for j in ["A", "B"]]) for i in range(1, 4)])
 
     def sun_detected(self) -> bool:
         """
