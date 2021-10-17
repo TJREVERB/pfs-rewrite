@@ -219,7 +219,7 @@ class EPS:
         2: Actual ON PDMs + BUS only
         3: All defined components
         4: Comprehensive
-        :return: (float) power draw in W
+        :return: (tuple) power draw in W, time to poll
         """
         t = time.perf_counter()
         buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
