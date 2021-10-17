@@ -67,7 +67,7 @@ class MainControlLoop:
         """
         Map volts to remaining battery capacity in Joules
         """
-        return 80*3600 #placeholder
+        return 80*3600  # placeholder
 
     def antenna(self):
         """

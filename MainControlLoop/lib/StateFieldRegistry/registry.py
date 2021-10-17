@@ -1,8 +1,11 @@
 import time
+import pandas as pd
+import numpy as np
 
 
 class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
+    PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
 
     # after how many iterations should the state field logger save the state field
 
@@ -26,6 +29,7 @@ class StateFieldRegistry:
             "MODE": str,
             "BATTERY_CAPACITY_INT": float,
         }
+        self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH).columns
         try:
             f = open(self.LOG_PATH, "r")
             if len(f.readlines()) != len(self.defaults):
@@ -62,6 +66,14 @@ class StateFieldRegistry:
                     f.write(f"{key}:\n")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
+
+    def log_pwr(self, pdm_states, pwr):
+        """
+        Logs the power draw of every pdm
+        """
+        data = np.stack(np.array(pdm_states, pwr))
+        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)
+        df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)
 
     def reset(self):
         with open(self.LOG_PATH, "w") as f:

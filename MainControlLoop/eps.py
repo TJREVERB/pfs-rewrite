@@ -247,10 +247,16 @@ class EPS:
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.components.values()]
-            return (buspower + sum(ls), time.perf_counter()-t)
+            pdm_states = []
+            raw = self.commands["Pin Actual States"]()
+            data = raw[2] << 8 | raw[3]
+            for pdm in range(1, 11):
+                pdm_states.append(data & int(math.pow(2, pdm)) >> pdm)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter()-t
         if mode == 4:
             ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
-            return (buspower + sum(ls), time.perf_counter()-t)
+            return buspower + sum(ls), time.perf_counter()-t
         return -1, -1
 
     def solar_power(self) -> float:
