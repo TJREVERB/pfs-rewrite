@@ -20,7 +20,7 @@ class EPS:
             "Iridium": [0x03],
             "Antenna Deployer": [0x06],
             "UART-RS232": [0x08],  # Iridium Serial Converter
-            "SPI-UART": [0x10],  # APRS Serial Converter
+            "SPI-UART": [0x0A],  # APRS Serial Converter
             "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
             "IMU": [0x09],
         }
