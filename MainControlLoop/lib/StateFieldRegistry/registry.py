@@ -3,6 +3,7 @@ import time
 
 class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
+
     # after how many iterations should the state field logger save the state field
 
     def __init__(self):
@@ -15,7 +16,7 @@ class StateFieldRegistry:
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
-            "BATTERY_CAPACITY_INT": 80*3600, #Integral estimate of remaining battery capacity
+            "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -43,7 +44,7 @@ class StateFieldRegistry:
         except FileNotFoundError:
             self.load_defaults()  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
-    
+
     def load_defaults(self):
         for key, val in self.defaults.items():
             exec(f"self.{key} = {val}")  # Create default fields
@@ -57,7 +58,7 @@ class StateFieldRegistry:
     def dump(self):
         with open(self.LOG_PATH, "w") as f:
             for key, val in self.to_dict().items():
-                if(self.type_dict[key] == bool and val == False):
+                if self.type_dict[key] == bool and not val:
                     f.write(f"{key}:\n")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
