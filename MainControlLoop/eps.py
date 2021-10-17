@@ -77,11 +77,13 @@ class EPS:
             "All Off":  lambda:  self.command(0x41, [0x00]),  # Turn all PDMs off
             "Set All Initial":  lambda:  self.command(0x45, [0x00]),  # Set all PDMs to their initial state
             "Pin On": lambda component: self.command(0x50, self.components[component]),  # Enable component
+            "Pin On Raw": lambda component: self.command(0x50, component), # Turn PDM on, pass in raw PDM number
             "Pin Off": lambda component: self.command(0x51, self.components[component]),  # Disable component
-            "Pin Init On": lambda component: self.command(0x52, self.components[component]),
-            # Set initial state of component to "on"
-            "Pin Init Off": lambda component: self.command(0x53, self.components[component]),
-            # Set initial state of component to "off"
+            "Pin Off Raw": lambda component: self.command(0x51, component), # Turn PDM off, pass in raw PDM number
+            "Pin Init On": lambda component: self.command(0x52, self.components[component]), # Set initial state of component to "on"
+            "Pin Init On Raw": lambda component: self.command(0x52, component), # Set initial state of PDM on, pass in raw PDM number
+            "Pin Init Off": lambda component: self.command(0x53, self.components[component]), # Set initial state of component to "off"
+            "Pin Init Off Raw": lambda component: self.command(0x53, component), # Set initial state of PDM off, pass in raw PDM number
 
             # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
             # By default each PDM does not have restrictions

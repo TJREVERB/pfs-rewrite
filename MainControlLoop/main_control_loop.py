@@ -29,7 +29,7 @@ class MainControlLoop:
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power(3))),
+            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
@@ -50,7 +50,7 @@ class MainControlLoop:
             ]],  # Reset power to the entire satellite (!!!!)
             "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3))),
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
         }
 
@@ -58,7 +58,7 @@ class MainControlLoop:
         """
         Integrate charge in Joules
         """
-        draw = self.eps.total_power(4)
+        draw = self.eps.total_power(4)[0]
         gain = self.eps.solar_power()
         self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
         self.previous_time = time.perf_counter()
