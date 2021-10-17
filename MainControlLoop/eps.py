@@ -245,12 +245,11 @@ class EPS:
                                     for i in range(1,11) if actual_on & int(math.pow(2, i)) == int(math.pow(2, i))]),
                     time.perf_counter()-t)
         if mode == 3:
-            return (buspower + sum([self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
-                self.bitsToTelem[i[0]][1]]()
-                                    for i in self.components.values()]), time.perf_counter()-t)
+            ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[self.bitsToTelem[i[0]][1]]() for i in self.components.values()]
+            return (buspower + sum(ls), time.perf_counter()-t)
         if mode == 4:
-            return (buspower + sum([self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() 
-                                    for i in range(1, 11)]), time.perf_counter()-t)
+            ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
+            return (buspower + sum(ls), time.perf_counter()-t)
         return -1, -1
 
     def solar_power(self) -> float:
