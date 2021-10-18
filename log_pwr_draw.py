@@ -207,8 +207,7 @@ class EPS:
         return (raw[0] << 8 | raw[1]) * multiplier
 
     def total_power(self):
-        ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
-            self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
+        ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
         return ls
 
 
