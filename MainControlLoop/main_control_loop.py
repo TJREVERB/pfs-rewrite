@@ -23,9 +23,17 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
-        #If battery capacity is default value, recalculate based on Vbatt
+        # If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
+        # If orbital data is default, set based on current position
+        if self.sfr.LAST_DAYLIGHT_ENTRY is None:
+            if self.eps.sun_detected():  # If we're in sunlight
+                self.sfr.LAST_DAYLIGHT_ENTRY = time.time()  # Pretend we just entered sunlight
+                self.sfr.LAST_ECLIPSE_ENTRY = time.time() - 45 * 60
+            else:  # If we're in eclipse
+                self.sfr.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60  # Pretend we just entered eclipse
+                self.sfr.LAST_ECLIPSE_ENTRY = time.time()
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
@@ -209,6 +217,13 @@ class MainControlLoop:
         # Enter outreach mode if battery has charged > upper threshold
         elif battery_voltage > self.UPPER_THRESHOLD and self.sfr.MODE == "CHARGING":
             self.sfr.MODE = "OUTREACH"  # Set MODE to OUTREACH
+
+        # Orbit Updates
+        if self.eps.sun_detected():
+            if self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
+                self.sfr.enter_sunlight()
+        elif self.sfr.LAST_ECLIPSE_ENTRY < self.sfr.LAST_DAYLIGHT_ENTRY:
+            self.sfr.enter_eclipse()
 
         # Control satellite depending on mode
         if self.sfr.MODE == "STARTUP":  # Run only once
