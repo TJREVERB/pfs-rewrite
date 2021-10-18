@@ -260,13 +260,8 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
-<<<<<<< HEAD
-            print(ls)
-            return (buspower + sum(ls), time.perf_counter()-t)
-=======
             self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter()-t
->>>>>>> cf2cf88e41d65f00eb03101f6c7aaefd47de69d5
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
