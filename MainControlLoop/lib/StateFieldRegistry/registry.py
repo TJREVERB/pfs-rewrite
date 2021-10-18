@@ -140,8 +140,8 @@ class StateFieldRegistry:
         for i in pdms:
             if pdm_states[pdms.index(i)] == 0:  # Skip if pdm is intended to be off
                 continue
-            filtered_data = df.loc[df[i + "_state"] == "1"]  # Filters out data where pdm is powered off
-            if len(filtered_data[i + "_state"]) == "0":  # If no data exists with pdm powered on
+            filtered_data = df.loc[df[i + "_state"] == 1]  # Filters out data where pdm is powered off
+            if len(filtered_data[i + "_state"]) == 0:  # If no data exists with pdm powered on
                 # TODO: implement default power draw values for each pdm to use in calculations
                 continue
             filtered_data[i + "_pwr"] = filtered_data[i + "_pwr"].astype(float)  # Convert strings to floats
@@ -153,7 +153,7 @@ class StateFieldRegistry:
             # Variances are added when distributions are added, refer to RS2 course material
             total_variance += filtered_data.var()[i + "_pwr"]
             # Updates oldest data point
-            oldest_data_point = min([oldest_data_point, filtered_data["timestamp"][-1 * length]])
+            oldest_data_point = min([oldest_data_point, filtered_data["timestamp"].min()])
         consumption = pwr_draw * duration  # pwr_draw in W, duration in s, consumption in J
         stdev = pow(total_variance, .5)  # Standard deviation from total variance
         return consumption, stdev, oldest_data_point
