@@ -13,6 +13,7 @@ class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
     PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
     VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
+    IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
     # after how many iterations should the state field logger save the state field
 
@@ -105,12 +106,9 @@ class StateFieldRegistry:
         """
         Logs the power draw of every pdm
         """
-        data = np.stack((np.array(pdm_states), np.array(pwr)), axis=1)  # Convert arrays into 2D array
-        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from 2D array
-        df["timestamp"] = [time.time()]  # Add timestamp to dataframe
-        cols = df.columns.tolist()  # Move last "timestamp" column to beginning
-        cols = cols[-1:] + cols[:-1]
-        df = df[cols]
+        data = np.concatenate((pdm_states, pwr))  # Concatenate arrays
+        np.insert(data, 0, time.time())  # Add timestamp
+        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from array
         df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
 
     def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
@@ -147,6 +145,18 @@ class StateFieldRegistry:
         consumption = pwr_draw * duration  # pwr_draw in W, duration in s, consumption in J
         stdev = pow(total_variance, .5)  # Standard deviation from total variance
         return consumption, stdev, oldest_data_point
+
+    def log_iridium(self, location, signal, t=time.time()):
+        """
+        Logs iridium data
+        :param location: current geolocation
+        :param signal: iridium signal strength
+        :param t: time to log, defaults to time method is called
+        """
+        data = np.array(t, location, signal)  # Concatenate arrays
+        np.insert(data, 0, time.time())  # Add timestamp
+        df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
+        df.to_csv(path_or_buf=self.IRIDIUM_DATA_PATH, mode="a", header=False)  # Append data to log
 
     def reset(self):
         """
