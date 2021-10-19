@@ -9,18 +9,6 @@ def line_eq(a: tuple, b: tuple) -> callable:
     return lambda x: slope * x + y_int
 
 
-def int_cast(num: str): return int(num)
-
-
-def str_cast(string: str): return str(string)
-
-
-def float_cast(num: str): return float(num)
-
-
-def bool_cast(val: str): return bool(val)
-
-
 class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
     PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
@@ -205,6 +193,14 @@ class StateFieldRegistry:
         np.insert(data, 0, time.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.IRIDIUM_DATA_PATH, mode="a", header=False)  # Append data to log
+    
+    def signal_strength_variability(self) -> float:
+        """
+        Calculates and returns signal strength variability based on Iridium data
+        :return: (float) standard deviation of signal strength
+        """
+        df = pd.read_csv(self.IRIDIUM_DATA_PATH, header=0)
+        return np.std(df["signal"])
 
     def reset(self):
         """
