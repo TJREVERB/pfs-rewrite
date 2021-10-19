@@ -38,32 +38,40 @@ class MainControlLoop:
                 self.sfr.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60  # Pretend we just entered eclipse
                 self.sfr.LAST_ECLIPSE_ENTRY = time.time()
         self.limited_command_registry = {
-            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
+            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Transmit total power draw of connected components
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
+            # Calculate and transmit Iridium signal strength variability
+            "SSV": lambda: self.aprs.write("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
+            # Transmit current solar panel production
+            "SOL": lambda: self.aprs.write("TJ;SOL:" + str(self.eps.solar_power())),
         }
         self.command_registry = {
             "TST": lambda: self.iridium.commands["Transmit"]("TJ;Hello"),  # Test method, transmits "Hello"
-            # "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
-            "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
+            "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             "CHG": self.charging_mode(),  # Enters charging mode
             "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
             "OUT": self.outreach_mode,  # Enters outreach mode
             "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
             "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
+            # Reset power to the entire satellite (!!!!)
             "RST": lambda: [i() for i in [
                 lambda: self.eps.commands["All Off"],
                 lambda: time.sleep(.5),
                 lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
-            ]],  # Reset power to the entire satellite (!!!!)
-            "IRI": self.iridium.wave,  # Transmit proof of life through Iridium to ground station
-            # TODO: Update "IRI" to properly send proof of life data
-            "PWR": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.total_power(3)[0])),
+            ]],
+            # Transmit proof of life through Iridium to ground station
+            "IRI": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
+                                            self.eps.solar_power(),
+                                            self.eps.total_power()),
             # Transmit total power draw of connected components
-            "SSV": lambda: self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability()))
+            "PWR": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.total_power(3)[0])),
             # Calculate and transmit Iridium signal strength variability
+            "SSV": lambda: self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
+            # Transmit current solar panel production
+            "SOL": lambda: self.iridium.commands["Transmit"]("TJ;SOL:" + str(self.eps.solar_power())),
         }
 
     def integrate_charge(self):
