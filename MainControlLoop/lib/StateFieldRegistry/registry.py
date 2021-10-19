@@ -27,6 +27,7 @@ class StateFieldRegistry:
             "ANTENNA_DEPLOYED": False,
             "MODE": "\"STARTUP\"",
             "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
+            "FAILURES": [],
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -34,6 +35,7 @@ class StateFieldRegistry:
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
             "MODE": str,
+            "FAILURES": list,
         }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)

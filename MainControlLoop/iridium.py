@@ -71,12 +71,18 @@ class Iridium:
         index = result.find(":")+1
         return result[index:result[index:].find("\n")+len(result[:index])].lstrip(" ")
     
-    def wave(self) -> bool:
+    def wave(self, battery_voltage, solar_generation, current_output) -> bool:
         """
-        Transmits test message to ground station to verify Iridium works in space
+        Attempts to establish first contact with ground station
+        :param battery_voltage: battery voltage
+        :param solar_generation: solar panel power generation
+        :param current_output: total current output of EPS
+        :param failures: component failures
         :return: (bool) Whether write worked
         """
-        return self.commands["Transmit"]("TJ;Hello from outer space!")
+        return self.commands["Transmit"](f"TJ;Hello from space! BVT:{battery_voltage},"
+                                         f"SOL:{solar_generation},CUR:{current_output},"
+                                         f"FAI:{chr(59).join(self.sfr.FAILURES)}")  # Component failures, sep by ;
 
     def write(self, command: str) -> bool:
         """

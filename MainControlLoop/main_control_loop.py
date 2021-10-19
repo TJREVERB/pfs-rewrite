@@ -17,6 +17,7 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
+        self.ACKNOWLEDGEMENT = "Hello from TJ!"
         self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         self.aprs = APRS(self.sfr)
@@ -80,26 +81,53 @@ class MainControlLoop:
                 self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
 
+    def systems_check(self) -> list:
+        """
+        Performs a complete systems check and returns a list of component failures
+        DOES NOT SWITCH ON PDMS!!! SWITCH ON PDMS BEFORE RUNNING!!!
+        TODO: implement system check of antenna deployer
+        :return: list of component failures
+        """
+        result = []
+        if not self.aprs.functional: result.append("APRS")
+        if not self.iridium.functional: result.append("Iridium")
+        return result
+
     def startup_mode(self):
         """
         Runs as soon as deployment switch is depressed.
         Only runs once.
         """
+        # Systems check
+        self.eps.commands["All On"]()
+        self.sfr.FAILURES = self.systems_check()
         # Switch off all PDMs
         self.eps.commands["All Off"]()
         # Consider changing thread to asyncio later
         threading.Thread(target=self.antenna).start()  # Start timer to deploy antenna
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         self.eps.commands["Pin On"]("UART-RS232")
-        self.eps.commands["Pin On"]("APRS")  # DEBUG
-        self.eps.commands["Pin On"]("SPI-UART")  # DEBUG
-        self.eps.commands["Pin On"]("USB-UART")  # DEBUG
-        # Wait for battery to charge to upper threshold
-        while self.eps.telemetry["VBCROUT"]() < self.UPPER_THRESHOLD:
-            self.iridium.listen()  # Listen for and execute ground station commands
-            self.aprs.read()  # DEBUG; APRS WILL BE OFF IN REAL
-            self.command_interpreter()
-        self.sfr.MODE = "SCIENCE"  # Enter IOC mode to test initial functionality
+        # Fields for iridium.wave()
+        solar_generation = self.eps.solar_power()
+        battery_voltage = self.eps.commands["VBCROUT"]()
+        current_output = self.eps.total_power(4)
+        last_contact_attempt = time.time()
+        # Attempt to establish contact with ground
+        self.iridium.wave(battery_voltage, solar_generation, current_output)
+        # Repeat until acknowledgement is received
+        while not self.sfr.IRIDIUM_RECEIVED_COMMAND.contains(self.ACKNOWLEDGEMENT):
+            if self.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD:  # If battery is drained
+                self.charging_mode()  # Recharge battery and then continue trying to establish contact
+            # Attempt first contact every 2 minutes
+            if time.time() - last_contact_attempt >= 60 * 2:
+                # Attempt to establish contact with ground
+                solar_generation = self.eps.solar_power()
+                battery_voltage = self.eps.commands["VBCROUT"]()
+                current_output = self.eps.total_power(4)
+                last_contact_attempt = time.time()
+                self.iridium.wave(battery_voltage, solar_generation, current_output)
+            self.iridium.listen()  # Listen for ground station response
+        self.sfr.MODE = "SCIENCE"  # Enter SCIENCE mode to do research
         self.log()  # Log mode switch
 
     def science_mode(self):
@@ -108,9 +136,6 @@ class MainControlLoop:
         """
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         self.eps.commands["Pin On"]("UART-RS232")  # Switch on Iridium serial converter
-        time.sleep(5)
-        print("iridium.functional: " + str(self.iridium.functional()))  # Debugging
-        self.iridium.wave()  # Test Iridium
         # TODO: implement code to test Iridium over the orbit
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
