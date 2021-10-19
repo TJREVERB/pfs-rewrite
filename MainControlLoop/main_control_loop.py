@@ -88,7 +88,7 @@ class MainControlLoop:
         Deploy the antenna asynchronously with the rest of the pfs
         """
         while not self.sfr.ANTENNA_DEPLOYED:
-            self.log()
+            self.sfr.dump()
             # if 30 minutes have elapsed
             if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
@@ -97,7 +97,7 @@ class MainControlLoop:
                 self.antenna_deployer.deploy()  # Deploy antenna
                 print("deployed")
                 self.sfr.ANTENNA_DEPLOYED = True
-                self.log()  # Log state field registry change
+                self.sfr.dump()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
 
     def systems_check(self) -> list:
@@ -105,6 +105,7 @@ class MainControlLoop:
         Performs a complete systems check and returns a list of component failures
         DOES NOT SWITCH ON PDMS!!! SWITCH ON PDMS BEFORE RUNNING!!!
         TODO: implement system check of antenna deployer
+        TODO: account for different exceptions in .functional() and attempt to troubleshoot
         :return: list of component failures
         """
         result = []
@@ -147,7 +148,7 @@ class MainControlLoop:
                 self.iridium.wave(battery_voltage, solar_generation, current_output)
             self.iridium.listen()  # Listen for ground station response
         self.sfr.MODE = "SCIENCE"  # Enter SCIENCE mode to do research
-        self.log()  # Log mode switch
+        self.sfr.dump()  # Log mode switch
 
     def science_mode(self, measurements: int, orbits: int):
         """
@@ -171,6 +172,7 @@ class MainControlLoop:
             self.sfr.MODE = "CHARGING"
         else:
             self.sfr.MODE = "OUTREACH"
+        self.sfr.dump()  # Log mode switch
 
     def outreach_mode(self):
         """
@@ -184,9 +186,9 @@ class MainControlLoop:
             self.iridium.listen()
             self.aprs.read()
             self.command_interpreter()
-            self.log()
+            self.sfr.dump()
         self.sfr.MODE = "CHARGING"
-        self.log()
+        self.sfr.dump()  # Log mode switch
 
     def charging_mode(self):
         """
@@ -209,14 +211,9 @@ class MainControlLoop:
             else:
                 self.eps.commands["Pin Off"]("Iridium")  # Switches off Iridium if in eclipse
                 self.eps.commands["Pin Off"]("UART-RS232")
-            self.log()  # Log changes
+            self.sfr.dump()  # Log changes
         self.sfr.MODE = initial_mode
-        self.log()
-
-    def log(self):
-        # run the state_field_logger; commented out during testing
         self.sfr.dump()
-        return
 
     def exec_command(self, raw_command, registry) -> bool:
         if raw_command == "":
@@ -277,7 +274,7 @@ class MainControlLoop:
             self.charging_mode()
         if self.sfr.MODE == "OUTREACH":
             self.outreach_mode()
-        self.log()  # On every iteration, run sfr.dump to log changes
+        self.sfr.dump()  # On every iteration, run sfr.dump to log changes
         self.integrate_charge()  # Integrate charge
 
     def run(self):  # Repeat main control loop forever
