@@ -17,7 +17,9 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
-        self.ACKNOWLEDGEMENT = "Hello from TJ!"
+        self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
+        self.NUM_DATA_POINTS = 90  # How many measurements to take in SCIENCE mode per orbit
+        self.NUM_SCIENCE_MODE_ORBITS = 3  # Number of orbits to measure in SCIENCE mode
         self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         self.aprs = APRS(self.sfr)
@@ -42,14 +44,13 @@ class MainControlLoop:
             # Transmit total power draw of connected components
         }
         self.command_registry = {
-            # "TST": partial(self.aprs.write, "TJ;Hello"),  # Test method, transmits "Hello"
-            "TST": lambda: self.aprs.write("TJ;Hello"),
+            "TST": lambda: self.iridium.commands["Transmit"]("TJ;Hello"),  # Test method, transmits "Hello"
             # "BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
-            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            # "CHG": self.charging_mode(),  # Enters charging mode
-            # "SCI": self.science_mode(),  # Enters science mode
-            # "OUT": self.outreach_mode,  # Enters outreach mode
+            "CHG": self.charging_mode(),  # Enters charging mode
+            "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
+            "OUT": self.outreach_mode,  # Enters outreach mode
             "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
             "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
             "RST": lambda: [i() for i in [
@@ -57,10 +58,12 @@ class MainControlLoop:
                 lambda: time.sleep(.5),
                 lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
             ]],  # Reset power to the entire satellite (!!!!)
-            "IRI": self.iridium.wave,
-            # Transmit message through Iridium to ground station
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
+            "IRI": self.iridium.wave,  # Transmit proof of life through Iridium to ground station
+            # TODO: Update "IRI" to properly send proof of life data
+            "PWR": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
+            "SSV": lambda: self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability()))
+            # Calculate and transmit Iridium signal strength variability
         }
 
     def integrate_charge(self):
@@ -138,18 +141,28 @@ class MainControlLoop:
         self.sfr.MODE = "SCIENCE"  # Enter SCIENCE mode to do research
         self.log()  # Log mode switch
 
-    def science_mode(self):
+    def science_mode(self, measurements: int, orbits: int):
         """
-        Code to test initial operational capability of satellite.
+        Measures Iridium signal strength over 3 orbits and transmits results
+        :param measurements: number of measurements to take per orbit
+        :param orbits: number of orbits to run for
         """
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         self.eps.commands["Pin On"]("UART-RS232")  # Switch on Iridium serial converter
-        # TODO: implement code to test Iridium over the orbit
+        last_measurement = time.time()
+        measurement_sep = self.sfr.ORBITAL_PERIOD / measurements  # Time between each measurement
+        for orbit in range(orbits):  # Iterate through orbits
+            for measurement in range(measurements):  # Iterate through measurements
+                if time.time() - last_measurement >= measurement_sep:  # If enough time has passed to measure again
+                    self.sfr.log_iridium(self.iridium.commands["Geolocation"](),
+                    self.iridium.commands["Signal Quality"]())  # Log Iridium data
+        # Transmit signal strength variability
+        self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability()))
         # Switch mode to either CHARGING or SCIENCE on exiting STARTUP, depending on battery voltage
         if self.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD:
-            self.charging_mode()
+            self.sfr.MODE = "CHARGING"
         else:
-            self.outreach_mode()
+            self.sfr.MODE = "OUTREACH"
 
     def outreach_mode(self):
         """
@@ -251,7 +264,7 @@ class MainControlLoop:
         if self.sfr.MODE == "STARTUP":  # Run only once
             self.startup_mode()
         if self.sfr.MODE == "SCIENCE":
-            self.science_mode()
+            self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS)
         if self.sfr.MODE == "CHARGING":
             self.charging_mode()
         if self.sfr.MODE == "OUTREACH":

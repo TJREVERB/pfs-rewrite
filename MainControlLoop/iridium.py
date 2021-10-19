@@ -23,7 +23,7 @@ class Iridium:
             "Phone IMEI": lambda: self.request("AT+CSGN"),
             "Check Network": lambda: self.request("AT-MSSTM"),
             "Shut Down": lambda: self.write("AT*F"),
-            "Signal Quality": lambda: self.request("AT+SCQ"),  # Returns strength of satellite connection
+            "Signal Quality": lambda: self.request("AT+CSQ"),  # Returns strength of satellite connection
             "Send SMS": lambda message: self.write("AT+CMGS=" + message),
             "SBD Ring Alert On": lambda: self.write("AT+SBDMTA=1"),
             "SBD Ring Alert Off": lambda: self.write("AT+SBDMTA=0"),
