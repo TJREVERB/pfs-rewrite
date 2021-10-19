@@ -175,19 +175,15 @@ class MainControlLoop:
         """
         initial_mode = self.sfr.MODE
         self.sfr.MODE = "CHARGING"
-        # self.eps.commands["Pin Off"]("APRS")  # Powers off APRS
-        # self.eps.commands["Pin Off"]("SPI-UART")
-        # self.eps.commands["Pin Off"]("USB-UART")
-        self.eps.commands["Pin On"]("APRS")  # DEBUG
-        self.eps.commands["Pin On"]("SPI-UART")
-        self.eps.commands["Pin On"]("USB-UART")
+        self.eps.commands["Pin Off"]("APRS")  # Powers off APRS
+        self.eps.commands["Pin Off"]("SPI-UART")
+        self.eps.commands["Pin Off"]("USB-UART")
         while self.eps.telemetry["VBCROUT"] < self.UPPER_THRESHOLD:
             # Iridium power controls
             if self.eps.sun_detected():
                 self.eps.commands["Pin On"]("Iridium")  # Switches on Iridium if in sunlight
                 self.eps.commands["Pin On"]("UART-RS232")
                 self.iridium.listen()  # Read and store received message
-                self.aprs.read()  # DEBUG
                 self.command_interpreter()  # Execute command (if any)
             else:
                 self.eps.commands["Pin Off"]("Iridium")  # Switches off Iridium if in eclipse
