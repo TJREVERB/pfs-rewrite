@@ -1,7 +1,7 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
-from MainControlLoop.lib.devices import Device
+from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 
 
 class AntennaDeployerCommand(Enum):
@@ -38,7 +38,7 @@ class AntennaDeployerCommand(Enum):
     GET_UPTIME_4 = 0xB7
 
 
-class AntennaDeployer(Device):
+class AntennaDeployer():
     BUS_NUMBER = 1
     PRIMARY_ADDRESS = 0x31
     SECONDARY_ADDRESS = 0x32
@@ -76,8 +76,8 @@ class AntennaDeployer(Device):
         AntennaDeployerCommand.GET_UPTIME_4: 2,
     }
 
-    def __init__(self):
-        super().__init__("AntennaDeployer")
+    def __init__(self, sfr: StateFieldRegistry):
+        self.sfr = sfr
         self.bus = SMBus()
 
     def write(self, command: AntennaDeployerCommand, parameter: int) -> bool or None:
@@ -164,3 +164,17 @@ class AntennaDeployer(Device):
             return True
         except:
             return False
+    
+    def deploy(self) -> bool:
+        success = self.enable()
+        if not success:
+            return False
+
+        success = self.write(AntennaDeployerCommand.DEPLOY_1, 0x0A)
+        success &= self.write(AntennaDeployerCommand.DEPLOY_2, 0x0A)
+        success &= self.write(AntennaDeployerCommand.DEPLOY_3, 0x0A)
+        success &= self.write(AntennaDeployerCommand.DEPLOY_4, 0x0A)
+
+        if not success:
+            return False
+        return True

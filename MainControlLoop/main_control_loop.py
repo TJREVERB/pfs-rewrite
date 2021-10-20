@@ -4,7 +4,8 @@ import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
-from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+#from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+from MainControlLoop.antenna_deployer.AntennaDeployer import AntennaDeployer, AntennaDeployerCommand
 from MainControlLoop.iridium import Iridium
 
 
@@ -82,9 +83,11 @@ class MainControlLoop:
                 # Enable power to antenna deployer
                 self.eps.commands["Pin On"]("Antenna Deployer")
                 time.sleep(5)
-                self.antenna_deployer.deploy()  # Deploy antenna
-                print("deployed")
-                self.sfr.ANTENNA_DEPLOYED = True
+                if self.antenna_deployer.deploy():  # Deploy antenna
+                    print("deployed")
+                    self.sfr.ANTENNA_DEPLOYED = True
+                else:
+                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
 
