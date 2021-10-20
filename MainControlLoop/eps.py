@@ -1,6 +1,5 @@
 from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 import math
@@ -187,7 +186,7 @@ class EPS:
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        with SMBusWrapper(1) as bus:
+        with SMBus(1) as bus:
             bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
             time.sleep(.1)
             result = bus.read_i2c_block_data(EPS.EPS_ADDRESS, 0, length)
@@ -201,7 +200,7 @@ class EPS:
         :param data: data
         :return: (bool) whether command was successful
         """
-        with SMBusWrapper(1) as bus:
+        with SMBus(1) as bus:
             return bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
 
     def telemetry_request(self, tle, multiplier) -> float:
@@ -260,13 +259,8 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
-<<<<<<< HEAD
-            print(ls)
-            return (buspower + sum(ls), time.perf_counter()-t)
-=======
             self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter()-t
->>>>>>> cf2cf88e41d65f00eb03101f6c7aaefd47de69d5
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
