@@ -1,6 +1,5 @@
 from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 from math import radians
@@ -345,7 +344,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
             time.sleep(.25)
             result = bus.read_i2c_block_data(device, 0, 2)
@@ -364,7 +363,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
             time.sleep(.25)
             result = bus.read_i2c_block_data(device, 0, 2)
@@ -381,7 +380,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             return bus.write_i2c_block_data(device, address&0xFF, val)#will this work? no idea
 
 
