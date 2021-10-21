@@ -1,6 +1,5 @@
 from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 import math
@@ -187,7 +186,7 @@ class EPS:
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
             time.sleep(.1)
             result = bus.read_i2c_block_data(EPS.EPS_ADDRESS, 0, length)
@@ -201,7 +200,7 @@ class EPS:
         :param data: data
         :return: (bool) whether command was successful
         """
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             return bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
 
     def telemetry_request(self, tle, multiplier) -> float:

@@ -1,3 +1,5 @@
+import pyximport
+pyximport.install()
 from MainControlLoop.antenna_deployer import isisants
 import time
 
