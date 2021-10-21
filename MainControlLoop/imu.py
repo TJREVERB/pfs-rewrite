@@ -1,6 +1,5 @@
 from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from smbus2 import SMBusWrapper
 from smbus2 import SMBus
 import time
 
@@ -293,7 +292,9 @@ class IMU:
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
 
-        IMU_I2C._read_u8(sensor_type, address) #interface using I2C
+        raise NotImplementedError()
+
+        #return IMU_I2C._read_u8(sensor_type, address) #interface using I2C
 
     def _read_bytes(self, sensor_type, address, count, buf):
         # Read a count number of bytes into buffer from the provided 8-bit
@@ -301,15 +302,19 @@ class IMU:
         # talking to the magnetometer, or _XGTYPE when talking to the accel or
         # gyro.  MUST be implemented by subclasses!
 
-        IMU_I2C._read_bytes(sensor_type, address, count, buf) #interface using I2C
+        raise NotImplementedError()
+
+        #return IMU_I2C._read_bytes(sensor_type, address, count, buf) #interface using I2C
 
     def _write_u8(self, sensor_type, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
         # The sensor_type boolean should be _MAGTYPE when talking to the
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
+
+        raise NotImplementedError()
         
-        IMU_I2C._write_u8(sensor_type, address, val)
+        #return IMU_I2C._write_u8(sensor_type, address, val)
 
 class IMU_I2C(IMU):
     """Driver for the LSM9DS1 connect over I2C.
@@ -361,7 +366,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
             time.sleep(.25)
             result = bus.read_i2c_block_data(device, 0, 2)
@@ -380,7 +385,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
             time.sleep(.25)
             result = bus.read_i2c_block_data(device, 0, 2)
@@ -397,7 +402,7 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBusWrapper(1) as bus:
+        with SMBus() as bus:
             return bus.write_i2c_block_data(device, address&0xFF, val)#will this work? no idea
 
 
