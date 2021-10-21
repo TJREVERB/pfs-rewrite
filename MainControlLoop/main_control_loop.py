@@ -7,6 +7,7 @@ from MainControlLoop.eps import EPS
 #from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.antenna_deployer.AntennaDeployer import AntennaDeployer, AntennaDeployerCommand
 from MainControlLoop.iridium import Iridium
+from MainControlLoop.imu import IMU, IMU_I2C
 
 
 class MainControlLoop:
@@ -24,6 +25,7 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
+        self.imu = IMU_I2C() 
         # If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
@@ -61,6 +63,7 @@ class MainControlLoop:
             # Transmit message through Iridium to ground station
             "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
+            "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble()) #Test method, transmits tumble value
         }
 
     def integrate_charge(self):

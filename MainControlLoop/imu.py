@@ -2,7 +2,9 @@ from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBus
 import time
-from math import radians
+from math import atan
+from math import degrees
+import numpy as np
 
 try:
     import struct
@@ -249,10 +251,31 @@ class IMU:
 
     def gyro(self):
         """The gyroscope X, Y, Z axis values as a 3-tuple of
-        rad/s values.
+        degree/s values.
         """
         raw = self.read_gyro_raw()
-        return map(lambda x: radians(x * self._gyro_dps_digit), raw)
+        return map(lambda x: (x * self._gyro_dps_digit), raw)
+
+    def getTumble(self):
+        """
+        Returns tumble taken from gyro and magnetometer, in degrees/s
+        :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
+        """
+        interval = 0.2 #Time interval for magnetometer readings
+
+        gyroValues = self.gyro() #read the gyroscope
+
+        magValues = []
+        magValues.append(np.array(self.magnetic())) #read the magnetometer
+        time.sleep(interval)
+        magValues.append(np.array(self.magnetic()))
+
+        magV = (magValues[1]-magValues[2])/interval #mag values velocity
+
+        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
+        #from https://forum.sparkfun.com/viewtopic.php?t=22252
+
+        return (gyroValues, magRot)
 
     def read_temp_raw(self):
         """Read the raw temperature sensor value and return it as a 12-bit
@@ -278,21 +301,30 @@ class IMU:
         # The sensor_type boolean should be _MAGTYPE when talking to the
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
+
         raise NotImplementedError()
+
+        #return IMU_I2C._read_u8(sensor_type, address) #interface using I2C
 
     def _read_bytes(self, sensor_type, address, count, buf):
         # Read a count number of bytes into buffer from the provided 8-bit
         # register address.  The sensor_type boolean should be _MAGTYPE when
         # talking to the magnetometer, or _XGTYPE when talking to the accel or
         # gyro.  MUST be implemented by subclasses!
+
         raise NotImplementedError()
+
+        #return IMU_I2C._read_bytes(sensor_type, address, count, buf) #interface using I2C
 
     def _write_u8(self, sensor_type, address, val):
         # Write an 8-bit unsigned value to the specified 8-bit address.
         # The sensor_type boolean should be _MAGTYPE when talking to the
         # magnetometer, or _XGTYPE when talking to the accel or gyro.
         # MUST be implemented by subclasses!
+
         raise NotImplementedError()
+        
+        #return IMU_I2C._write_u8(sensor_type, address, val)
 
 class IMU_I2C(IMU):
     """Driver for the LSM9DS1 connect over I2C.
@@ -324,7 +356,6 @@ class IMU_I2C(IMU):
 
     def __init__(
         self,
-        i2c,
         mag_address=IMU.ADDRESS_MAG,
         xg_address=IMU.ADDRESS_ACCELGYRO,
     ):
@@ -346,9 +377,9 @@ class IMU_I2C(IMU):
             device = self.xg_address
         with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
-            time.sleep(.25)
+            time.sleep(.1)
             result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.25) 
+            time.sleep(.1) 
         return result
 
         """with device as i2c:
@@ -365,9 +396,9 @@ class IMU_I2C(IMU):
             device = self.xg_address
         with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
-            time.sleep(.25)
+            time.sleep(.1)
             result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.25)
+            time.sleep(.1)
         return result
         
         """
