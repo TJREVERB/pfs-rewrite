@@ -214,7 +214,7 @@ class MainControlLoop:
         # if one of them is False, return False
 
     def execute(self):
-        antenna()
+        self.antenna()
         # Automatic mode switching
         battery_voltage = self.eps.telemetry["VBCROUT"]()  # Reads battery voltage from EPS
         # Enter charging mode if battery voltage < lower threshold
