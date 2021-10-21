@@ -5,6 +5,6 @@ from MainControlLoop.eps import EPS
 sfr = StateFieldRegistry()
 antenna = AntennaDeployer(sfr)
 eps = EPS(sfr)
-eps.commands["Pin On"]("Antenna Deployer")
+eps.commands["All On"]()
 print("Enabled:",antenna.enable())
 print("Deployed:",antenna.deploy())
