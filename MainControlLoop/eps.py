@@ -272,7 +272,8 @@ class EPS:
             self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter()-t
         if mode == 4:
-            ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
+            ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[
+                self.bitsToTelem[i][1]]() for i in range(1, 11)]
             return buspower + sum(ls), time.perf_counter()-t
         return -1, -1
 
@@ -281,7 +282,10 @@ class EPS:
         Returns net solar power gain
         :return: (float) power gain in W
         """
-        return sum([self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]() for j in ["A", "B"]]) for i in range(1, 4)])
+        generation = [self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]()
+                                                                for j in ["A", "B"]]) for i in range(1, 4)]
+        sfr.
+        return sum(generation)
 
     def sun_detected(self) -> bool:
         """

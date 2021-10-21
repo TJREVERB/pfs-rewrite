@@ -19,6 +19,54 @@ class APRS:
     def __del__(self):
         self.serial.close()
         #pass
+    
+    def enter_firmware_menu(self) -> bool:
+        """
+        Enter APRS firmware menu
+        :return: (bool) whether entering menu was successful
+        """
+        serinput = ""
+        attempts = 0
+        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
+            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x0d".encode("utf-8"))
+            time.sleep(1)
+            serinput += str(self.serial.read(100))
+            print(serinput)
+            attempts+=1
+        if attempts > 2:
+            return False
+
+        serinput = ""
+        attempts = 0
+        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 or attempts > 2:
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(.2)
+            self.serial.write("\x1b".encode("utf-8"))
+            time.sleep(3)
+            serinput += str(self.serial.read(100))
+            print(serinput)
+            attempts += 1
+        if attempts > 2:
+            return False
+        return True
+    
+    def exit_firmware_menu(self) -> bool:
+        """
+        Exit APRS firmware menu
+        :return: whether exit was successful
+        """
+        self.serial.write("QUIT".encode("utf-8"))
+        time.sleep(.2)
+        self.serial.write("\x0d".encode("utf-8"))
+        time.sleep(.5)
+        result = str(self.serial.read(100))
+        if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
+            return False
+        return True
 
     def functional(self) -> bool:
         """
@@ -37,33 +85,8 @@ class APRS:
             except:
                 raise RuntimeError("Serial port can't be opened")
         
-        serinput = ""
-        attempts = 0
-        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
-            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(1)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts+=1
-        if attempts > 2:
-            raise RuntimeError("Failed to open options menu", serinput)
-
-        serinput = ""
-        attempts = 0
-        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 or attempts > 2:
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(3)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts += 1
-        if attempts > 2:
-            raise RuntimeError("Failed to open options menu", serinput)
+        if not self.enter_firmware_menu():
+            raise RuntimeError("Failed to open options menu")
 
         self.serial.write("MYCALL".encode("utf-8"))
         time.sleep(.2)
@@ -77,16 +100,28 @@ class APRS:
             raise RuntimeError("Port broken during write")
         if result.find("MYCALL is NOCALL") == -1:
             raise RuntimeError("APRS unresponsive")
-            
-        self.serial.write("QUIT".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(.5)
-        result = str(self.serial.read(100))
-        if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
+        
+        if not self.exit_firmware_menu():
             raise RuntimeError("Failed to exit firmware menu")
         
         return True
+    
+    def request_setting(self, setting) -> str:
+        """
+        Requests and returns value of given firmware setting
+        :param setting: firmware setting to request
+        :return: (str) text that APRS returns
+        """
+        pass  # TODO: IMPLEMENT
+
+    def change_setting(self, setting, value) -> bool:
+        """
+        Changes value of given setting
+        :param setting: setting to change
+        :param value: value to change setting to
+        :return: (bool) whether process worked
+        """
+        pass  # TODO: IMPLEMENT
 
     def clear_data_lines(self) -> None:
         """

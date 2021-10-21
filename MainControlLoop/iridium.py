@@ -23,12 +23,12 @@ class Iridium:
             "Phone IMEI": lambda: self.request("AT+CSGN"),
             "Check Network": lambda: self.request("AT-MSSTM"),
             "Shut Down": lambda: self.write("AT*F"),
-            "Signal Quality": lambda: self.request("AT+SCQ"),  # Returns strength of satellite connection
+            "Signal Quality": lambda: self.request("AT+CSQ"),  # Returns strength of satellite connection
             "Send SMS": lambda message: self.write("AT+CMGS=" + message),
             "SBD Ring Alert On": lambda: self.write("AT+SBDMTA=1"),
             "SBD Ring Alert Off": lambda: self.write("AT+SBDMTA=0"),
             "Battery Check": lambda: self.request("AT+CBC=?"),
-            "Call Status": lambda: self.request("AT+CLCC=?"), 
+            "Call Status": lambda: self.request("AT+CLCC=?"),
             "Soft Reset": lambda: self.write("ATZn"),
             "Transmit": lambda message: self.write("AT+SBDWT=" + message)
         }
@@ -71,12 +71,18 @@ class Iridium:
         index = result.find(":")+1
         return result[index:result[index:].find("\n")+len(result[:index])].lstrip(" ")
     
-    def wave(self) -> bool:
+    def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
         """
-        Transmits test message to ground station to verify Iridium works in space
+        Attempts to establish first contact with ground station
+        :param battery_voltage: battery voltage
+        :param solar_generation: solar panel power generation
+        :param current_output: total current output of EPS
+        :param failures: component failures
         :return: (bool) Whether write worked
         """
-        return self.commands["Transmit"]("TJ;Hello from outer space!")
+        return self.commands["Transmit"](f"TJ;Hello from space! BVT:{battery_voltage},"
+                                         f"SOL:{solar_generation},PWR:{power_draw},"
+                                         f"FAI:{chr(59).join(self.sfr.FAILURES)}")  # Component failures, sep by ;
 
     def write(self, command: str) -> bool:
         """
