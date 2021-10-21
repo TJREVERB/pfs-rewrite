@@ -6,7 +6,7 @@ from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
 from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.iridium import Iridium
-from MainControlLoop.imu import IMU
+from MainControlLoop.imu import IMU, IMU_I2C
 
 
 class MainControlLoop:
@@ -23,7 +23,7 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
-        self.imu = IMU()
+        self.imu = IMU_I2C()
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage

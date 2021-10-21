@@ -259,6 +259,8 @@ class IMU:
         Specifics will be decided on later
         """
 
+        #REWORK THIS TO INCLUDE MAGNETOMETER MEASUREMENTS, AND RETURN LIST, NOT SUM
+
         gyroValues = self.gyro() #read the gyroscope
 
         for x in range(3):
