@@ -4,6 +4,7 @@ from smbus2 import SMBus
 import time
 from math import atan
 from math import degrees
+import numpy as np
 
 try:
     import struct
@@ -250,40 +251,31 @@ class IMU:
 
     def gyro(self):
         """The gyroscope X, Y, Z axis values as a 3-tuple of
-        rad/s values.
+        degree/s values.
         """
         raw = self.read_gyro_raw()
         return map(lambda x: (x * self._gyro_dps_digit), raw)
 
     def getTumble(self):
         """
-        Gives a value representing how much we're tumbling
-        Specifics will be decided on later
+        Returns tumble taken from gyro and magnetometer, in degrees/s
+        :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
         """
-
-        #REWORK THIS TO INCLUDE MAGNETOMETER MEASUREMENTS, AND RETURN LIST, NOT SUM
+        interval = 0.2 #Time interval for magnetometer readings
 
         gyroValues = self.gyro() #read the gyroscope
 
-        for x in range(3):
-            gyroValues[x] = min(gyroValues[x], 100) #clamp values to some value that we will decide on later in case we don't want a huge spin in one direction to affect the calculation
-            
-        temp = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 3 #average DPS values
+        magValues = []
+        magValues.append(np.array(self.magnetic())) #read the magnetometer
+        time.sleep(interval)
+        magValues.append(np.array(self.magnetic()))
 
-        magValuesOne = self.magnetic() #read the magnetometer
-        time.sleep(1)
-        magValuesTwo = self.magnetic()
+        magV = (magValues[1]-magValues[2])/interval #mag values velocity
 
-        mvv = magValuesTwo - magValuesOne #mag values velocity
-
-        magValuesTemp = (degrees(atan(mvv[1]/mvv[0])), degrees(atan(mvv[2]/mvv[1])), degrees(mvv[0]/mvv[2])) #xy, yz, xz
+        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
         #from https://forum.sparkfun.com/viewtopic.php?t=22252
 
-        for x in range(3):
-            magValuesTemp[x] = min(magValuesTemp[x], 100)  
-
-        temptwo = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 2
-        return (temp, temptwo)
+        return (gyroValues, magRot)
 
     def read_temp_raw(self):
         """Read the raw temperature sensor value and return it as a 12-bit
@@ -364,7 +356,6 @@ class IMU_I2C(IMU):
 
     def __init__(
         self,
-        i2c,
         mag_address=IMU.ADDRESS_MAG,
         xg_address=IMU.ADDRESS_ACCELGYRO,
     ):
@@ -386,9 +377,9 @@ class IMU_I2C(IMU):
             device = self.xg_address
         with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
-            time.sleep(.25)
+            time.sleep(.1)
             result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.25) 
+            time.sleep(.1) 
         return result
 
         """with device as i2c:
@@ -405,9 +396,9 @@ class IMU_I2C(IMU):
             device = self.xg_address
         with SMBus() as bus:
             bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
-            time.sleep(.25)
+            time.sleep(.1)
             result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.25)
+            time.sleep(.1)
         return result
         
         """
