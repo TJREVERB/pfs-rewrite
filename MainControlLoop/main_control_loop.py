@@ -79,7 +79,7 @@ class MainControlLoop:
         """
         Deploy the antenna asynchronously with the rest of the pfs
         """
-        while not self.sfr.ANTENNA_DEPLOYED:
+        if not self.sfr.ANTENNA_DEPLOYED:
             self.log()
             # if 30 minutes have elapsed
             if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
@@ -88,7 +88,6 @@ class MainControlLoop:
                 time.sleep(5)
                 if self.antenna_deployer.deploy():  # Deploy antenna
                     print("deployed")
-                    self.sfr.ANTENNA_DEPLOYED = True
                 else:
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.log()  # Log state field registry change
@@ -215,6 +214,7 @@ class MainControlLoop:
         # if one of them is False, return False
 
     def execute(self):
+        antenna()
         # Automatic mode switching
         battery_voltage = self.eps.telemetry["VBCROUT"]()  # Reads battery voltage from EPS
         # Enter charging mode if battery voltage < lower threshold
