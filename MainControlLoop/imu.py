@@ -354,11 +354,10 @@ class IMU_I2C(IMU):
             temp = sensor.temperature
     """
 
-    def __init__(
-        self,
+    def __init__(self,
         mag_address=IMU.ADDRESS_MAG,
-        xg_address=IMU.ADDRESS_ACCELGYRO,
-    ):
+        xg_address=IMU.ADDRESS_ACCELGYRO):
+        self.bus = SMBus()
         if mag_address in (0x1C, 0x1E) and xg_address in (0x6A, 0x6B):
             self.mag_address = mag_address
             self.xg_address = xg_address
@@ -375,11 +374,15 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBus() as bus:
-            bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
+        try:
+            self.bus.open(1)
+            self.bus.write_i2c_block_data(device, address&0xFF, [0x00])
             time.sleep(.1)
-            result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.1) 
+            result = self.bus.read_i2c_block_data(device, 0, 2)
+            self.bus.close()
+        except:
+            return False
+        time.sleep(.1) 
         return result
 
         """with device as i2c:
@@ -394,11 +397,15 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBus() as bus:
-            bus.write_i2c_block_data(device, address&0xFF, [0x00]) #will this work? no idea
+        try:
+            self.bus.open(1)
+            self.bus.write_word_data(device, address&0xFF, [0x00])
             time.sleep(.1)
-            result = bus.read_i2c_block_data(device, 0, 2)
-            time.sleep(.1)
+            result = self.bus.read_i2c_block_data(device, 0, 2)
+            self.bus.close()
+        except:
+            return False
+        time.sleep(.1)
         return result
         
         """
@@ -411,8 +418,14 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
-        with SMBus() as bus:
-            return bus.write_i2c_block_data(device, address&0xFF, val)#will this work? no idea
+        try:
+            self.bus.open(1)
+            result = self.bus.write_i2c_block_data(device, address&0xFF, val)
+            self.bus.close()
+        except:
+            return False
+        time.sleep(0.1)
+        return result
 
 
         """with device as i2c:
