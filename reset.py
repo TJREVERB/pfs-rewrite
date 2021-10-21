@@ -1,10 +1,6 @@
 # DO NOT RUN!!!
 # Use exec(open("reset.py").read()) in python shell to avoid corrupting file
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from MainControlLoop.eps import EPS
+from smbus2 import SMBus
 
-
-sfr = StateFieldRegistry()
-eps = EPS(sfr)
-sfr.reset()
-eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
+with SMBus() as bus:
+    bus.write_i2c_block_data(0x2B, 0x70, [0x0F])

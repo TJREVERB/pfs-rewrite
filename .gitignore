@@ -19,4 +19,4 @@ __pycache__/
 backup_tle.txt
 
 # StateFieldRegistry log
-MainControlLoop/lib/StateFieldRegistry/data/
+MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt

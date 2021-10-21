@@ -4,7 +4,8 @@ import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.aprs import APRS
 from MainControlLoop.eps import EPS
-from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+#from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
+from MainControlLoop.antenna_deployer.AntennaDeployer import AntennaDeployer, AntennaDeployerCommand
 from MainControlLoop.iridium import Iridium
 from MainControlLoop.imu import IMU, IMU_I2C
 
@@ -18,16 +19,28 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
+        self.previous_time = 0    # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         self.aprs = APRS(self.sfr)
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
         self.imu = IMU_I2C() 
+        # If battery capacity is default value, recalculate based on Vbatt
+        if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
+            self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
+        # If orbital data is default, set based on current position
+        if self.sfr.LAST_DAYLIGHT_ENTRY is None:
+            if self.eps.sun_detected():  # If we're in sunlight
+                self.sfr.LAST_DAYLIGHT_ENTRY = time.time()  # Pretend we just entered sunlight
+                self.sfr.LAST_ECLIPSE_ENTRY = time.time() - 45 * 60
+            else:  # If we're in eclipse
+                self.sfr.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60  # Pretend we just entered eclipse
+                self.sfr.LAST_ECLIPSE_ENTRY = time.time()
         self.limited_command_registry = {
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power())),
+            "PWR": lambda : self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
         }
         self.command_registry = {
@@ -36,9 +49,9 @@ class MainControlLoop:
             #"BVT": partial(self.aprs.write, "TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # Reads and transmits battery voltage
-            "CHG": self.charging_mode(),  # Enters charging mode
-            "SCI": self.science_mode(),  # Enters science mode
-            "OUT": self.outreach_mode(),  # Enters outreach mode
+            #"CHG": self.charging_mode(),  # Enters charging mode
+            #"SCI": self.science_mode(),  # Enters science mode
+            #"OUT": self.outreach_mode(),  # Enters outreach mode
             "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
             "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
             "RST": lambda: [i() for i in [
@@ -48,10 +61,19 @@ class MainControlLoop:
             ]],  # Reset power to the entire satellite (!!!!)
             "IRI": self.iridium.wave,  
             # Transmit message through Iridium to ground station
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power())),
+            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
             # Transmit total power draw of connected components
             "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble()) #Test method, transmits tumble value
         }
+
+    def integrate_charge(self):
+        """
+        Integrate charge in Joules
+        """
+        draw = self.eps.total_power(4)[0]
+        gain = self.eps.solar_power()
+        self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
+        self.previous_time = time.perf_counter()
 
     def antenna(self):
         """
@@ -64,9 +86,11 @@ class MainControlLoop:
                 # Enable power to antenna deployer
                 self.eps.commands["Pin On"]("Antenna Deployer")
                 time.sleep(5)
-                self.antenna_deployer.deploy()  # Deploy antenna
-                print("deployed")
-                self.sfr.ANTENNA_DEPLOYED = True
+                if self.antenna_deployer.deploy():  # Deploy antenna
+                    print("deployed")
+                    self.sfr.ANTENNA_DEPLOYED = True
+                else:
+                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.log()  # Log state field registry change
         self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
 
@@ -187,7 +211,8 @@ class MainControlLoop:
         raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
         self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
         self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)  # if one of them is False, return False
+        return self.exec_command(raw_command) and self.exec_command(raw_limited_command)
+        # if one of them is False, return False
 
     def execute(self):
         # Automatic mode switching
@@ -199,6 +224,13 @@ class MainControlLoop:
         elif battery_voltage > self.UPPER_THRESHOLD and self.sfr.MODE == "CHARGING":
             self.sfr.MODE = "OUTREACH"  # Set MODE to OUTREACH
 
+        # Orbit Updates
+        if self.eps.sun_detected():
+            if self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
+                self.sfr.enter_sunlight()
+        elif self.sfr.LAST_ECLIPSE_ENTRY < self.sfr.LAST_DAYLIGHT_ENTRY:
+            self.sfr.enter_eclipse()
+
         # Control satellite depending on mode
         if self.sfr.MODE == "STARTUP":  # Run only once
             self.startup_mode()
@@ -209,6 +241,7 @@ class MainControlLoop:
         if self.sfr.MODE == "OUTREACH":
             self.outreach_mode()
         self.log()  # On every iteration, run sfr.dump to log changes
+        self.integrate_charge() # Integrate charge
 
     def run(self):  # Repeat main control loop forever
         # set the time that the pi first ran
