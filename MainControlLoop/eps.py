@@ -201,7 +201,9 @@ class EPS:
         :return: (bool) whether command was successful
         """
         with SMBus() as bus:
-            return bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+            result = bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+            time.sleep(0.1)
+            return result
 
     def telemetry_request(self, tle, multiplier) -> float:
         """
