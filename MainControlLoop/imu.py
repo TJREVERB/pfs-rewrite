@@ -2,6 +2,8 @@ from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBus
 import time
+from math import atan
+from math import degrees
 
 try:
     import struct
@@ -267,7 +269,21 @@ class IMU:
             gyroValues[x] = min(gyroValues[x], 100) #clamp values to some value that we will decide on later in case we don't want a huge spin in one direction to affect the calculation
             
         temp = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 3 #average DPS values
-        return temp
+
+        magValuesOne = self.magnetic() #read the magnetometer
+        time.sleep(1)
+        magValuesTwo = self.magnetic()
+
+        mvv = magValuesTwo - magValuesOne #mag values velocity
+
+        magValuesTemp = (degrees(atan(mvv[1]/mvv[0])), degrees(atan(mvv[2]/mvv[1])), degrees(mvv[0]/mvv[2])) #xy, yz, xz
+        #from https://forum.sparkfun.com/viewtopic.php?t=22252
+
+        for x in range(3):
+            magValuesTemp[x] = min(magValuesTemp[x], 100)  
+
+        temptwo = (gyroValues[0] + gyroValues[1] + gyroValues[2]) / 2
+        return (temp, temptwo)
 
     def read_temp_raw(self):
         """Read the raw temperature sensor value and return it as a 12-bit
