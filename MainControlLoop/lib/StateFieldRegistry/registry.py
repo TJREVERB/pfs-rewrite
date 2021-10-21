@@ -174,7 +174,7 @@ class StateFieldRegistry:
         orbits = pd.read_csv(self.ORBIT_LOG_PATH, header=0).tail(51)  # Read orbits log
         # Filters orbits to those where we enter given phase
         create_deltas = lambda df: pd.concat([df["timestamp"].iloc[i + 1] - \
-                                              df["timestamp"].iloc[i] for i in range(df.size(), 2)])
+                                              df["timestamp"].iloc[i] for i in range(0, df.size(), 2)])
         sunlight_period = create_deltas(filter_orbits(orbits)).mean()  # Calculate sunlight period
         # Calculate orbital period
         orbital_period = sunlight_period + create_deltas(filter_orbits(orbits)).mean()
