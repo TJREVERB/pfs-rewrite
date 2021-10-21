@@ -12,6 +12,7 @@ def line_eq(a: tuple, b: tuple) -> callable:
 class StateFieldRegistry:
     LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
     PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
+    SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
     VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
     ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
     IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
@@ -46,6 +47,7 @@ class StateFieldRegistry:
             "ORBITAL_PERIOD": int,
         }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
+        self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)
         with open(self.LOG_PATH, "r") as f:
             lines = f.readlines()
@@ -102,16 +104,28 @@ class StateFieldRegistry:
                        (self.voltage_energy_map["voltage"][max_index], self.voltage_energy_map["energy"][max_index]))
         return line(voltage)
 
-    def log_pwr(self, pdm_states, pwr) -> None:
+    def log_pwr(self, pdm_states, pwr, t=time.time()) -> None:
         """
         Logs the power draw of every pdm
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
+        :param t: time to log data, defaults to time method is called
         """
         data = np.concatenate((pdm_states, pwr))  # Concatenate arrays
-        np.insert(data, 0, time.time())  # Add timestamp
+        np.insert(data, 0, t)  # Add timestamp
         df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from array
         df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
+    
+    def log_solar(self, gen, t=time.time()) -> None:
+        """
+        Logs the solar power generation from each panel (sum of A and B)
+        :param gen: array of power inputs from each panel, in W.
+        :param t: time to log data, defaults to time method is called
+        """
+        data = np.array(gen)
+        np.insert(data, 0, t)  # Add timestamp to data
+        df = pd.DataFrame(data, columns=self.solar_generation_log_headers)  # Create dataframe from array
+        df.to_csv(path_or_buf=self.SOLAR_LOG_PATH, mode="a", header=False)  # Append data to log
 
     def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
         """
@@ -120,33 +134,44 @@ class StateFieldRegistry:
         Accounts for change over time in power draw of components.
         :param pdm_states: list containing states of all pdms as 1 or 0
         :param duration: time, in seconds, to remain in state
-        :return: (tuple) (predicted amount of energy consumed, standard deviation, oldest data point)
+        :return: (tuple) (predicted amount of energy consumed, standard deviation)
         """
-        df = pd.read_csv(self.PWR_LOG_PATH, header=0)
+        df = pd.read_csv(self.PWR_LOG_PATH, header=0).tail(50)
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
-        pwr_draw = 0
-        total_variance = 0
-        oldest_data_point = time.time()
-        for i in pdms:
-            if pdm_states[pdms.index(i)] == 0:  # Skip if pdm is intended to be off
-                continue
-            filtered_data = df.loc[df[i + "_state"] == 1]  # Filters out data where pdm is powered off
-            if len(filtered_data[i + "_state"]) == 0:  # If no data exists with pdm powered on
-                # TODO: implement default power draw values for each pdm to use in calculations
-                continue
-            filtered_data[i + "_pwr"] = filtered_data[i + "_pwr"].astype(float)  # Convert strings to floats
-            # Last 50 data points or whole dataset, whichever is smaller
-            length = min([len(filtered_data[i + "_pwr"]), 50])
-            # Calculates average power draw of selected data
-            pwr_draw += filtered_data[i + "_pwr"][-1 * length:-1].sum() / length
-            # Calculates variance of selected data
-            # Variances are added when distributions are added, refer to RS2 course material
-            total_variance += filtered_data.var()[i + "_pwr"]
-            # Updates oldest data point
-            oldest_data_point = min([oldest_data_point, filtered_data["timestamp"].min()])
-        consumption = pwr_draw * duration  # pwr_draw in W, duration in s, consumption in J
-        stdev = pow(total_variance, .5)  # Standard deviation from total variance
-        return consumption, stdev, oldest_data_point
+        pdms_on = [i for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
+        # Add either the last 50 datapoints or entire dataset for each pdm which is on
+        total = [df.loc([df[i + "_state"] == 1]).astype(float) for i in pdms_on].sum(axis=1)
+        return total.mean() * duration, total.stdev()
+
+    def predicted_generation(self, duration) -> tuple:
+        """
+        Predict how much power will be generated by solar panels over given duration
+        Assumes simulation will start at current orbital position
+        :param duration: time in s to simulate for
+        :return: (tuple) (estimated power generation, standard deviation of data, oldest data point)
+        """
+        current_time = time.time()  # Set current time
+        panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
+        solar = pd.read_csv(self.SOLAR_LOG_PATH, header=0).tail(51)  # Read solar power log
+        orbits = pd.read_csv(self.ORBIT_LOG_PATH, header=0).tail(51)  # Read orbits log
+        # Filters orbits to those where we enter given phase
+        filter_orbits = lambda phase: orbits.loc[orbits["phase"] == phase]
+        # Calculate deltas for timestamps
+        create_deltas = lambda df: pd.concat([df["timestamp"].iloc[i + 1] - \
+            df["timestamp"].iloc[i] for i in range(df.size())])
+        sunlight_period = create_deltas(filter_orbits("sunlight")).mean()  # Calculate sunlight period
+        # Calculate orbital period
+        orbital_period = avg_sunlight_period + create_deltas(filter_orbits("eclipse")).mean()
+        in_sun = pd.concat([solar.iloc[i]  # Filter out all data points which weren't taken in sunlight
+            for i in range(solar["timestamp"].size())
+            if orbits.loc[solar["timestamp"].iloc[i] - orbits["timestamp"] > 0].iloc[-1] == "sunlight"])
+        solar_gen = sum([in_sun[i] for i in panels]).mean()  # Calculate average solar power generation
+        # Function to calculate energy generation over a given time since entering sunlight
+        energy_over_time = lambda time: int(time / orbital_period) * sunlight_period * solar_gen + \
+            min([time % orbital_period, solar_time]) * solar_gen
+        start = current_time - filter_orbits("sunlight").iloc[-1]  # Set start time for simulation
+        # Calculate and return total energy production over duration
+        return energy_over_time(start + duration) - energy_over_time(start)
 
     def enter_sunlight(self) -> None:
         """
