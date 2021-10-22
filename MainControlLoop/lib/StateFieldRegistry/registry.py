@@ -152,20 +152,12 @@ class StateFieldRegistry:
         :param duration: time in s to simulate for
         :return: (tuple) (estimated power generation, standard deviation of data, oldest data point)
         """
-        def _find_first_sunlight(df) -> int:
-            new_df = df.loc["sunlight"]
-            for x in range(new_df.size()):
-                if new_df.iloc[x] == "sunlight":
-                    return x
-
-        def _find_last_eclipse(df) -> int:
-            new_df = df.loc["eclipse"]
-            for x in range(new_df.size(), -1, -1):
-                if new_df.iloc[x] == "eclipse":
-                    return x
 
         def filter_orbits(df) -> pd.DataFrame:
-            new_df = df.iloc[_find_first_sunlight(df), _find_last_eclipse(df)]
+            if df.loc[:, "phase":"phase"].iloc[0] == "solar":
+                new_df = df.iloc[0:df.size()-1]
+            else:
+                new_df = df.iloc[1:df.size()]
             return new_df
 
         current_time = time.time()  # Set current time
