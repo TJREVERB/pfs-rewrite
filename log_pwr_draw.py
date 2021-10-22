@@ -1,3 +1,4 @@
+from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBusWrapper
 import time
 
@@ -14,7 +15,8 @@ class EPS:
         "IMU": [0x09],
     }
 
-    def __init__(self):
+    def __init__(self, state_field_registry: StateFieldRegistry):
+        self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"),
                             ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"),
                             ("VSW10", "ISW10")]
@@ -212,13 +214,14 @@ class EPS:
         return ls
 
 
-eps = EPS()
+sfr = StateFieldRegistry()
+eps = EPS(sfr)
 eps.commands["All On"]()
 data = []
 for i in range(50):
     print(i)
     data.append(eps.total_power())
-print("writing to file...")
+'''print("writing to file...")
 with open("output.csv", "w") as f:
     f.write("timestamp,0x01_state,0x02_state,0x03_state,0x04_state,0x05_state,0x06_state,"
             "0x07_state,0x08_state,0x09_state,0x0A_state,0x01_pwr,0x02_pwr,0x03_pwr,0x04_pwr,"
@@ -227,4 +230,6 @@ with open("output.csv", "w") as f:
         f.write(str(time.time()) + ",1,1,1,1,1,1,1,1,1,1")
         for j in i:
             f.write("," + str(j))
-        f.write("\n")
+        f.write("\n")'''
+print(str(data))
+print("prediction:" + str(sfr.predicted_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 5400)))
