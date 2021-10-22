@@ -295,7 +295,7 @@ class EPS:
         """
         generation = [self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]()
                                                                 for j in ["A", "B"]]) for i in range(1, 4)]
-        sfr.
+        self.sfr.log_solar(generation)
         return sum(generation)
 
     def sun_detected(self) -> bool:
