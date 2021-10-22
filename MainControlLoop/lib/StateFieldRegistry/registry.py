@@ -158,17 +158,23 @@ class StateFieldRegistry:
         # Calculate deltas for timestamps
         create_deltas = lambda df: pd.concat([df["timestamp"].iloc[i + 1] - \
             df["timestamp"].iloc[i] for i in range(df.size())])
-        sunlight_period = create_deltas(filter_orbits("sunlight")).mean()  # Calculate sunlight period
+        # Calculate sunlight period
+        sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - orbits["timestamp"].iloc[i] \
+            for i in range(orbits.shape[0] - 1) if orbits["phase"].iloc[i] == "sunlight"]).mean()
         # Calculate orbital period
-        orbital_period = avg_sunlight_period + create_deltas(filter_orbits("eclipse")).mean()
-        in_sun = pd.concat([solar.iloc[i]  # Filter out all data points which weren't taken in sunlight
-            for i in range(solar["timestamp"].size())
-            if orbits.loc[solar["timestamp"].iloc[i] - orbits["timestamp"] > 0].iloc[-1] == "sunlight"])
-        solar_gen = sum([in_sun[i] for i in panels]).mean()  # Calculate average solar power generation
+        orbital_period = sunlight_period + pd.Series([orbits["timestamp"].iloc[i + 1] - \
+            orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1) \
+                if orbits["phase"].iloc[i] == "eclipse"]).mean()
+        # Filter out all data points which weren't taken in sunlight
+        in_sun = pd.DataFrame([solar.iloc[i] for i in range(solar.shape[0])
+            if orbits.loc[solar["timestamp"].iloc[i] - \
+                orbits["timestamp"] > 0]["phase"].iloc[-1] == "sunlight"])
+        solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda time: int(time / orbital_period) * sunlight_period * solar_gen + \
-            min([time % orbital_period, solar_time]) * solar_gen
-        start = current_time - filter_orbits("sunlight").iloc[-1]  # Set start time for simulation
+            min([time % orbital_period, sunlight_period]) * solar_gen
+        # Set start time for simulation
+        start = current_time - filter_orbits("sunlight")["timestamp"].iloc[-1]
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
