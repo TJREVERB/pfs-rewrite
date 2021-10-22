@@ -131,9 +131,7 @@ class MainControlLoop:
         if modeName == "OUTREACH":
             self.eps.commands["All On"]()
         if modeName == "CHARGING":
-
-            
-
+            pass  # WTF WHO WROTE THIS FIX IT
 
     def startup_mode(self):
         """
