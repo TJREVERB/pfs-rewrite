@@ -208,6 +208,7 @@ class EPS:
 
     def total_power(self):
         ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
+        self.sfr.log_pwr([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], ls)
         return ls
 
 
