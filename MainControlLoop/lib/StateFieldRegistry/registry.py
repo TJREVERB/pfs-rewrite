@@ -137,9 +137,9 @@ class StateFieldRegistry:
         """
         df = pd.read_csv(self.PWR_LOG_PATH, header=0).tail(50)
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
-        pdms_on = [i for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
+        pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
         # Add either the last 50 datapoints or entire dataset for each pdm which is on
-        total = [df.loc([df[i + "_state"] == 1]).astype(float) for i in pdms_on].sum(axis=1)
+        total = pd.DataFrame([df.loc[df[i + "_state"] == 1][i + "_pwr"].astype(float) for i in pdms_on]).sum(axis=1)
         return total.mean() * duration, total.stdev()
 
     def predicted_generation(self, duration) -> tuple:
