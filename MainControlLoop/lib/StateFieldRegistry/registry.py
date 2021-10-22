@@ -111,9 +111,9 @@ class StateFieldRegistry:
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         :param t: time to log data, defaults to time method is called
         """
-        data = np.concatenate((pdm_states, pwr))  # Concatenate arrays
-        np.insert(data, 0, t)  # Add timestamp
-        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from array
+        # Format data into pandas series
+        data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
+        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from series
         df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
     
     def log_solar(self, gen, t=time.time()) -> None:
