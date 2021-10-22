@@ -77,6 +77,12 @@ class MainControlLoop:
             "SOL": lambda: self.iridium.commands["Transmit"]("TJ;SOL:" + str(self.eps.solar_power())),
             "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble()) #Test method, transmits tumble value
         }
+        # self.mode_devices = {  #this could be a dict containing which devices to turn on in each mode, all other devices will be turned off
+        #     "STARTUP":
+        #     "SCIENCE":
+        #     "OUTREACH":
+        #     "CHARGING":
+        # }
 
     def integrate_charge(self):
         """
@@ -117,6 +123,17 @@ class MainControlLoop:
         if not self.aprs.functional: result.append("APRS")
         if not self.iridium.functional: result.append("Iridium")
         return result
+
+    def initiate_mode(self, modeName):
+        if modeName == "SCIENCE":
+            self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
+            self.eps.commands["Pin On"]("UART-RS232")  # Switch on Iridium serial converter
+        if modeName == "OUTREACH":
+            self.eps.commands["All On"]()
+        if modeName == "CHARGING":
+
+            
+
 
     def startup_mode(self):
         """
