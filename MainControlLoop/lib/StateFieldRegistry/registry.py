@@ -138,10 +138,10 @@ class StateFieldRegistry:
         """
         df = pd.read_csv(self.PWR_LOG_PATH, header=0).tail(50)
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
-        pdms_on = [i for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
+        pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
         # Add either the last 50 datapoints or entire dataset for each pdm which is on
-        total = [df.loc([df[i + "_state"] == 1]).astype(float) for i in pdms_on].sum(axis=1)
-        return total.mean() * duration, total.stdev()
+        filtered = pd.DataFrame([df.loc[df[i + "_state"] == 1][i + "_pwr"].astype(float) for i in pdms_on])
+        return filtered.mean(axis=1).sum() * duration, filtered.sum(axis=0).std()
 
     def predicted_generation(self, duration) -> tuple:
         """
@@ -156,20 +156,23 @@ class StateFieldRegistry:
         orbits = pd.read_csv(self.ORBIT_LOG_PATH, header=0).tail(51)  # Read orbits log
         # Filters orbits to those where we enter given phase
         filter_orbits = lambda phase: orbits.loc[orbits["phase"] == phase]
-        # Calculate deltas for timestamps
-        create_deltas = lambda df: pd.concat([df["timestamp"].iloc[i + 1] - \
-            df["timestamp"].iloc[i] for i in range(df.size())])
-        sunlight_period = create_deltas(filter_orbits("sunlight")).mean()  # Calculate sunlight period
+        # Calculate sunlight period
+        sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - \
+            orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1) \
+                if orbits["phase"].iloc[i] == "sunlight"]).mean()
         # Calculate orbital period
-        orbital_period = avg_sunlight_period + create_deltas(filter_orbits("eclipse")).mean()
-        in_sun = pd.concat([solar.iloc[i]  # Filter out all data points which weren't taken in sunlight
-            for i in range(solar["timestamp"].size())
-            if orbits.loc[solar["timestamp"].iloc[i] - orbits["timestamp"] > 0].iloc[-1] == "sunlight"])
-        solar_gen = sum([in_sun[i] for i in panels]).mean()  # Calculate average solar power generation
+        orbital_period = sunlight_period + \
+            pd.Series([orbits["timestamp"].iloc[i + 1] - \
+            orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1) \
+                if orbits["phase"].iloc[i] == "eclipse"]).mean()
+        in_sun = pd.DataFrame([solar.iloc[i]  # Filter out all data points which weren't taken in sunlight
+            for i in range(solar.shape[0])
+            if orbits.loc[solar["timestamp"].iloc[i] - orbits["timestamp"] > 0]["phase"].iloc[-1] == "sunlight"])
+        solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda time: int(time / orbital_period) * sunlight_period * solar_gen + \
-            min([time % orbital_period, solar_time]) * solar_gen
-        start = current_time - filter_orbits("sunlight").iloc[-1]  # Set start time for simulation
+            min([time % orbital_period, sunlight_period]) * solar_gen
+        start = current_time - filter_orbits("sunlight")["timestamp"].iloc[-1]  # Set start time for simulation
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
