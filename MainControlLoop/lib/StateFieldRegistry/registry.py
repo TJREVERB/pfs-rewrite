@@ -113,8 +113,7 @@ class StateFieldRegistry:
         """
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
-        df = pd.DataFrame(data, columns=self.pwr_draw_log_headers)  # Create dataframe from series
-        df.to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
+        data.to_frame().to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
     
     def log_solar(self, gen, t=time.time()) -> None:
         """
