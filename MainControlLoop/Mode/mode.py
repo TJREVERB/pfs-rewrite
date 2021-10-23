@@ -3,6 +3,7 @@ class MODE:
     #initialization: turn on any necessary devices using EPS, initialize any instance variables, etc.
     # Turns off any power-intensive devices not needed by this mode (just in case)
     def __init__(self):
+
         pass
 
     #checks the conditions this mode requires, for example a minimum battery voltage
@@ -32,4 +33,4 @@ class MODE:
     #RETURN: True if it was able to be terminated to a safe extent, False otherwise (safe extent meaning it's safe to switch to another mode)
     #NOTE: This should be standalone, so it can be called by itself on a mode object, but it should also be used in switch_modes
     def terminate_mode(self):
-        pass  
+        pass
