@@ -10,19 +10,16 @@ def line_eq(a: tuple, b: tuple) -> callable:
 
 
 class StateFieldRegistry:
-    LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
-    PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
-    SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
-    VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
-    ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
-    IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
-
-    # after how many iterations should the state field logger save the state field
-
     def __init__(self):
         """
         Defines all the StateFields present in the state registry
         """
+        self.LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
+        self.PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
+        self.SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
+        self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
+        self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
+        self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
