@@ -1,6 +1,10 @@
 import time
 import pandas as pd
 import numpy as np
+from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Mode.startup import Startup
+from MainControlLoop.Mode.charging import Charging
+from MainControlLoop.Mode.science import Science
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -10,25 +14,22 @@ def line_eq(a: tuple, b: tuple) -> callable:
 
 
 class StateFieldRegistry:
-    LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
-    PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
-    SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
-    VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
-    ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
-    IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
-
-    # after how many iterations should the state field logger save the state field
-
     def __init__(self):
         """
         Defines all the StateFields present in the state registry
         """
+        self.LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
+        self.PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
+        self.SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
+        self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
+        self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
+        self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
-            "MODE": "\"STARTUP\"",
+            "MODE": Startup,
             "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
             "FAILURES": [],
             "LAST_DAYLIGHT_ENTRY": None,
@@ -40,11 +41,16 @@ class StateFieldRegistry:
             "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
-            "MODE": str,
+            "MODE": Mode,
             "FAILURES": list,
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
+        }
+        self.modes_list = {
+            "STARTUP": Startup,
+            "CHARGING": Charging,
+            "SCIENCE": Science,
         }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
@@ -114,7 +120,7 @@ class StateFieldRegistry:
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
         data.to_frame().to_csv(path_or_buf=self.PWR_LOG_PATH, mode="a", header=False)  # Append data to log
-    
+
     def log_solar(self, gen, t=time.time()) -> None:
         """
         Logs the solar power generation from each panel (sum of A and B)
@@ -153,28 +159,24 @@ class StateFieldRegistry:
         panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
         solar = pd.read_csv(self.SOLAR_LOG_PATH, header=0).tail(51)  # Read solar power log
         orbits = pd.read_csv(self.ORBIT_LOG_PATH, header=0).tail(51)  # Read orbits log
-        # Filters orbits to those where we enter given phase
-        filter_orbits = lambda phase: orbits.loc[orbits["phase"] == phase]
-        # Calculate deltas for timestamps
-        create_deltas = lambda df: pd.concat([df["timestamp"].iloc[i + 1] - \
-            df["timestamp"].iloc[i] for i in range(df.size())])
         # Calculate sunlight period
-        sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - orbits["timestamp"].iloc[i] \
-            for i in range(orbits.shape[0] - 1) if orbits["phase"].iloc[i] == "sunlight"]).mean()
+        sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - orbits["timestamp"].iloc[i]
+                                     for i in range(orbits.shape[0] - 1)
+                                     if orbits["phase"].iloc[i] == "sunlight"]).mean()
         # Calculate orbital period
-        orbital_period = sunlight_period + pd.Series([orbits["timestamp"].iloc[i + 1] - \
-            orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1) \
-                if orbits["phase"].iloc[i] == "eclipse"]).mean()
+        orbital_period = sunlight_period + pd.Series([orbits["timestamp"].iloc[i + 1] -
+                                                      orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1)
+                                                      if orbits["phase"].iloc[i] == "eclipse"]).mean()
         # Filter out all data points which weren't taken in sunlight
         in_sun = pd.DataFrame([solar.iloc[i] for i in range(solar.shape[0])
-            if orbits.loc[solar["timestamp"].iloc[i] - \
-                orbits["timestamp"] > 0]["phase"].iloc[-1] == "sunlight"])
+                               if orbits.loc[solar["timestamp"].iloc[i] -
+                                             orbits["timestamp"] > 0]["phase"].iloc[-1] == "sunlight"])
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         # Function to calculate energy generation over a given time since entering sunlight
-        energy_over_time = lambda time: int(time / orbital_period) * sunlight_period * solar_gen + \
-            min([time % orbital_period, sunlight_period]) * solar_gen
+        energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
+                                     min([t % orbital_period, sunlight_period]) * solar_gen
         # Set start time for simulation
-        start = current_time - filter_orbits("sunlight")["timestamp"].iloc[-1]
+        start = current_time - orbits.loc[orbits["phase"] == "sunlight"]["timestamp"].iloc[-1]
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
@@ -223,14 +225,14 @@ class StateFieldRegistry:
         np.insert(data, 0, time.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.IRIDIUM_DATA_PATH, mode="a", header=False)  # Append data to log
-    
+
     def signal_strength_variability(self) -> float:
         """
         Calculates and returns signal strength variability based on Iridium data
         :return: (float) standard deviation of signal strength
         """
         df = pd.read_csv(self.IRIDIUM_DATA_PATH, header=0)
-        return np.std(df["signal"])
+        return df["signal"].std()
 
     def reset(self):
         """
