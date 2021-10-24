@@ -3,18 +3,10 @@ import gc
 
 
 class Charging(Mode):
-    def __init__(self, eps, aprs, sfr, iridium):
+    def __init__(self, sfr):
         super().__init__(sfr, conditions={
 
         })
-        # constants
-        self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
-
-        # Module Objects
-        self.eps = eps
-        self.aprs = aprs
-        self.sfr = sfr
-        self.iridium = iridium
 
         # init action sequence
         self.eps.commands["Pin Off"]("APRS")  # Powers off APRS
