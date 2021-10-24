@@ -1,8 +1,7 @@
-from mode import Mode
+from mode import MODE
 import gc
 
-
-class ChargingMode(Mode):
+class ChargingMode(MODE):
     def __init__(self, eps, aprs, sfr, iridium):
         super().__init__()
         # constants
