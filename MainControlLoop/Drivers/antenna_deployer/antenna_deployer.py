@@ -1,6 +1,5 @@
 from MainControlLoop.lib.StateFieldRegistry import registry
-from MainControlLoop.antenna_deployer.antenna_deploy import isisants
-import time
+from MainControlLoop.Drivers.antenna_deployer.antenna_deploy import isisants
 
 
 class AntennaDeployer:

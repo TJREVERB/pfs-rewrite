@@ -1,13 +1,12 @@
-from functools import partial
 import time
 import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from MainControlLoop.aprs import APRS
-from MainControlLoop.eps import EPS
+from MainControlLoop.Drivers.aprs import APRS
+from MainControlLoop.Drivers.eps import EPS
 #from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
-from MainControlLoop.antenna_deployer.AntennaDeployer import AntennaDeployer, AntennaDeployerCommand
-from MainControlLoop.iridium import Iridium
-from MainControlLoop.imu import IMU, IMU_I2C
+from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
+from MainControlLoop.Drivers.iridium import Iridium
+from MainControlLoop.Drivers.imu import IMU_I2C
 
 
 class MainControlLoop:
@@ -131,7 +130,7 @@ class MainControlLoop:
         if modeName == "OUTREACH":
             self.eps.commands["All On"]()
         if modeName == "CHARGING":
-            pass  # WTF WHO WROTE THIS FIX IT
+            pass
 
     def startup_mode(self):
         """
@@ -302,15 +301,21 @@ class MainControlLoop:
         # set the time that the pi first ran
         # iridium_msg = self.iridium.listen()
         # print(iridium_msg)
-        self.sfr.START_TIME = time.time()
-        print("Run started")
-        try:
-            while True:
-                # self.execute()
-                iridium_msg = self.iridium.listen()
-                print(iridium_msg)
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("quitting...")
-            self.sfr.reset()
-            exit(0)
+        # self.sfr.START_TIME = time.time()
+        # print("Run started")
+        # try:
+        #     while True:
+        #         # self.execute()
+        #         iridium_msg = self.iridium.listen()
+        #         print(iridium_msg)
+        #         time.sleep(1)
+        # except KeyboardInterrupt:
+        #     print("quitting...")
+        #     self.sfr.reset()
+        #     exit(0)
+        while True:  # Iterate forever
+            mode = self.sfr.MODE()  # Instantiate mode object based on sfr
+            while mode.check_conditions():  # Iterate while we're supposed to be in this mode
+                mode.execute_cycle()  # Execute single cycle of mode
+            mode.switch_modes()  # Switch to next mode (update sfr)
+            mode.terminate_mode()  # Delete memory-intensive objects

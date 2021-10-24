@@ -1,6 +1,10 @@
 import time
 import pandas as pd
 import numpy as np
+from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Mode.startup import Startup
+from MainControlLoop.Mode.charging import Charging
+from MainControlLoop.Mode.science import Science
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -25,7 +29,7 @@ class StateFieldRegistry:
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
-            "MODE": "\"STARTUP\"",
+            "MODE": Startup,
             "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
             "FAILURES": [],
             "LAST_DAYLIGHT_ENTRY": None,
@@ -37,11 +41,16 @@ class StateFieldRegistry:
             "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
-            "MODE": str,
+            "MODE": Mode,
             "FAILURES": list,
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
+        }
+        self.modes_list = {
+            "STARTUP": Startup,
+            "CHARGING": Charging,
+            "SCIENCE": Science,
         }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
