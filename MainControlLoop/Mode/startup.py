@@ -8,6 +8,7 @@ class Startup(Mode):
         """
 
         """
+        # constants
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.ANTENNA_WAIT_TIME = 120 # 120 seconds in 2 minutes
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
@@ -15,8 +16,9 @@ class Startup(Mode):
             "BATTERY_DRAINED": False,
             "CONTACT_ESTABLISHED": False,
         })
-        # Systems check
+        # variable to check last time beacon was called
         self.last_beacon_time = time.time()
+        # Systems check
         self.eps.commands["All On"]()
         self.sfr.FAILURES = self.systems_check()
         # Switch off all PDMs
@@ -48,18 +50,29 @@ class Startup(Mode):
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.sfr.dump()  # Log state field registry change
 
-    def execute_cycle(self):
-        super(Startup, self).execute_cycle()  # Run execute_cycle of superclass
-        if(time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME):  # wait for antenna_wait_time to not spam beacons
-            self.antenna()  # Antenna deployment, doesn't run if antenna is already deployed
+    def execute_cycle_normal(self):
+
         # Fields for iridium.wave()
         solar_generation = self.eps.solar_power()
         battery_voltage = self.eps.commands["VBCROUT"]()
         current_output = self.eps.total_power(4)
+        if(time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME):  # wait for antenna_wait_time to not spam beacons
+            self.antenna()  # Antenna deployment, doesn't run if antenna is already deployed
         self.last_contact_attempt = time.time()
         # Attempt to establish contact with ground
         self.iridium.wave(battery_voltage, solar_generation, current_output)
         # time.sleep(120)  # TODO: DON'T USE TIME.SLEEP, ITERATE AND CHECK FOR ELAPSED TIME SINCE LAST ATTEMPT
+
+    def execute_cycle_low_battery(self):
+        pass
+  
+    def execute_cycle(self):
+        super(Startup, self).execute_cycle()  # Run execute_cycle of superclass
+        if(self.battery_low):
+            self.execute_cycle_low_battery()
+        else:
+            self.execute_cycle_normal()
+ 
 
     def check_conditions(self):
         """
@@ -68,17 +81,37 @@ class Startup(Mode):
         super(Startup, self).check_conditions()  # Run check_conditions of superclass
         self.conditions["BATTERY_DRAINED"] = self.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
         self.conditions["CONTACT_ESTABLISHED"] = self.sfr.IRIDIUM_RECEIVED_COMMAND.contains(self.ACKNOWLEDGEMENT)
-        if self.conditions["BATTERY_DRAINED"] or self.conditions["CONTACT_ESTABLISHED"]:
-            return False  # Return false if either battery has drained or contact is established
+        if self.conditions["CONTACT_ESTABLISHED"]:
+            return False  # Return false contact is established; if battery drained, it will execute exeute_cycle_low_battery
         return True
+
+    def startup_complete(self):
+        # boolean method to check if start up is complete
+        return self.conditions["CONTACT_ESTABLISHED"]
+
+    def battery_low(self):
+        # boolean method to check if the battery is low
+        return self.conditions["BATTERY_DRAINED"]
 
     def switch_modes(self):
         super(Startup, self).switch_modes()  # Run switch_modes of superclass
         # TODO: FIX THIS LOGIC
-        if self.conditions["CONTACT_ESTABLISHED"]:
-            if self.conditions["BATTERY_DRAINED"]:
-                self.sfr.MODE = self.sfr.modes_list["CHARGING"]
-            else:
-                self.sfr.MODE = self.sfr.modes_list["SCIENCE"]
-        else:
-            self.sfr.MODE = self.sfr.modes_list["CHARGING"]
+
+        if(self.startup_complete()):  # if start up complete, can successfully exit startup
+            if self.conditions["CONTACT_ESTABLISHED"]:
+                if self.conditions["BATTERY_DRAINED"]:
+                    self.sfr.MODE = self.sfr.modes_list["CHARGING"]
+                else:
+                    self.sfr.MODE = self.sfr.modes_list["SCIENCE"]
+        # else, just stay in start up, even if battery is drained, because it will execute the low battery execute method
+        
+
+
+        # Nikhil's old code
+        # if self.conditions["CONTACT_ESTABLISHED"]:
+        #     if self.conditions["BATTERY_DRAINED"]:
+        #         self.sfr.MODE = self.sfr.modes_list["CHARGING"]
+        #     else:
+        #         self.sfr.MODE = self.sfr.modes_list["SCIENCE"]
+        # else:
+        #     self.sfr.MODE = self.sfr.modes_list["CHARGING"]
