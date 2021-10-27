@@ -300,7 +300,7 @@ class MainControlLoop:
     def run(self):  # Repeat main control loop forever
         while True:  # Iterate forever
             mode = self.sfr.MODE()  # Instantiate mode object based on sfr
-            while mode == self.sfr.defaults["MODE"] and mode.check_conditions():  # Iterate while we're supposed to be in this mode
+            while mode == self.sfr.MODE and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
             #exits while loop if we get a message that says exit mode or if the conditions are not satisfied
             if(mode == self.sfr.defaults["MODE"]):  # if we exited the mode because we got a command, we can't call mode.switch_modes
