@@ -51,7 +51,6 @@ class Startup(Mode):
                 self.sfr.dump()  # Log state field registry change
 
     def execute_cycle_normal(self):
-
         # Fields for iridium.wave()
         solar_generation = self.eps.solar_power()
         battery_voltage = self.eps.commands["VBCROUT"]()
@@ -68,7 +67,7 @@ class Startup(Mode):
   
     def execute_cycle(self):
         super(Startup, self).execute_cycle()  # Run execute_cycle of superclass
-        if(self.battery_low):
+        if(self.battery_low()):
             self.execute_cycle_low_battery()
         else:
             self.execute_cycle_normal()

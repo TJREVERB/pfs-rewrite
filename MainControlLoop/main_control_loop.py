@@ -315,7 +315,10 @@ class MainControlLoop:
         #     exit(0)
         while True:  # Iterate forever
             mode = self.sfr.MODE()  # Instantiate mode object based on sfr
-            while mode.check_conditions():  # Iterate while we're supposed to be in this mode
+            while mode == self.sfr.defaults["MODE"] and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
-            mode.switch_modes()  # Switch to next mode (update sfr)
+            if(mode == self.sfr.defaults["MODE"]):
+                pass
+            else:
+                mode.switch_modes()  # Switch to next mode (update sfr)
             mode.terminate_mode()  # Delete memory-intensive objects
