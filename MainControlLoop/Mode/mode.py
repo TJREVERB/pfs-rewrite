@@ -81,6 +81,7 @@ class Mode:
     #RETURN: True if it was able to be terminated to a safe extent, False otherwise (safe extent meaning it's safe to switch to another mode)
     #NOTE: This should be standalone, so it can be called by itself on a mode object, but it should also be used in switch_modes
     def terminate_mode(self):
+        self.eps.commands["All Off"]()
         del self.eps
         del self.aprs
         del self.iridium
