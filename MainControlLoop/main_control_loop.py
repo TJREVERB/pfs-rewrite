@@ -298,26 +298,12 @@ class MainControlLoop:
         self.integrate_charge()  # Integrate charge
 
     def run(self):  # Repeat main control loop forever
-        # set the time that the pi first ran
-        # iridium_msg = self.iridium.listen()
-        # print(iridium_msg)
-        # self.sfr.START_TIME = time.time()
-        # print("Run started")
-        # try:
-        #     while True:
-        #         # self.execute()
-        #         iridium_msg = self.iridium.listen()
-        #         print(iridium_msg)
-        #         time.sleep(1)
-        # except KeyboardInterrupt:
-        #     print("quitting...")
-        #     self.sfr.reset()
-        #     exit(0)
         while True:  # Iterate forever
             mode = self.sfr.MODE()  # Instantiate mode object based on sfr
             while mode == self.sfr.defaults["MODE"] and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
-            if(mode == self.sfr.defaults["MODE"]):
+            #exits while loop if we get a message that says exit mode or if the conditions are not satisfied
+            if(mode == self.sfr.defaults["MODE"]):  # if we exited the mode because we got a command, we can't call mode.switch_modes
                 pass
             else:
                 mode.switch_modes()  # Switch to next mode (update sfr)
