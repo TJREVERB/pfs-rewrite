@@ -6,7 +6,7 @@ from MainControlLoop.Mode.mode import Mode
 class Startup(Mode):
     def __init__(self, sfr):
         """
-
+        Sets up variables, runs a systems check, turns on the components used in start up, calls iridium.wave()
         """
         # constants
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
@@ -21,10 +21,7 @@ class Startup(Mode):
         # Systems check
         self.eps.commands["All On"]()
         self.sfr.FAILURES = self.systems_check()
-        # Switch off all PDMs
-        self.eps.commands["All Off"]()
-        # Consider changing thread to asyncio later
-        threading.Thread(target=self.antenna).start()  # TODO: REMOVE
+        self.eps.commands["All Off"]() # Switch off all PDMs
         self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
         self.eps.commands["Pin On"]("UART-RS232")
         # Fields for iridium.wave()
@@ -60,7 +57,6 @@ class Startup(Mode):
         self.last_contact_attempt = time.time()
         # Attempt to establish contact with ground
         self.iridium.wave(battery_voltage, solar_generation, current_output)
-        # time.sleep(120)  # TODO: DON'T USE TIME.SLEEP, ITERATE AND CHECK FOR ELAPSED TIME SINCE LAST ATTEMPT
 
     def execute_cycle_low_battery(self):
         pass
