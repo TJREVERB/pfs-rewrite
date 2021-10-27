@@ -9,12 +9,14 @@ class Startup(Mode):
 
         """
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
+        self.ANTENNA_WAIT_TIME = 120 # 120 seconds in 2 minutes
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
         super().__init__(sfr=sfr, conditions={
             "BATTERY_DRAINED": False,
             "CONTACT_ESTABLISHED": False,
         })
         # Systems check
+        self.last_beacon_time = time.time()
         self.eps.commands["All On"]()
         self.sfr.FAILURES = self.systems_check()
         # Switch off all PDMs
@@ -48,7 +50,8 @@ class Startup(Mode):
 
     def execute_cycle(self):
         super(Startup, self).execute_cycle()  # Run execute_cycle of superclass
-        self.antenna()  # Antenna deployment, doesn't run if antenna is already deployed
+        if(time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME):  # wait for antenna_wait_time to not spam beacons
+            self.antenna()  # Antenna deployment, doesn't run if antenna is already deployed
         # Fields for iridium.wave()
         solar_generation = self.eps.solar_power()
         battery_voltage = self.eps.commands["VBCROUT"]()
@@ -56,9 +59,12 @@ class Startup(Mode):
         self.last_contact_attempt = time.time()
         # Attempt to establish contact with ground
         self.iridium.wave(battery_voltage, solar_generation, current_output)
-        time.sleep(120)  # TODO: DON'T USE TIME.SLEEP, ITERATE AND CHECK FOR ELAPSED TIME SINCE LAST ATTEMPT
+        # time.sleep(120)  # TODO: DON'T USE TIME.SLEEP, ITERATE AND CHECK FOR ELAPSED TIME SINCE LAST ATTEMPT
 
     def check_conditions(self):
+        """
+        Checks whether we should be in this mode
+        """
         super(Startup, self).check_conditions()  # Run check_conditions of superclass
         self.conditions["BATTERY_DRAINED"] = self.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
         self.conditions["CONTACT_ESTABLISHED"] = self.sfr.IRIDIUM_RECEIVED_COMMAND.contains(self.ACKNOWLEDGEMENT)
