@@ -55,6 +55,7 @@ class Mode:
     #store any mode conditions as instance variables so that you only have to retrieve them once, and can then use them in switch_modes right after if necessary
     #RETURN: True if conditions are met, False otherwise
     # DO NOT SWITCH MODES IF FALSE - this is up to the main control loop to decide
+    # implemented for the seach specific mode
     def check_conditions(self):
         pass
     
@@ -62,6 +63,7 @@ class Mode:
     #this method should take care of reading from the radio and executing commands (which is happening in basically all of the modes)
     #NOTE: receiving and executing commmands is not up to the main control loop because different modes might do this in different manners
     #save any values to instance varaibles if they may be necessary in future execute_cycle calls
+    #this method is called in each specific mode before specific execute_cycle for that code
     def execute_cycle(self):
         self.integrate_charge()
 
@@ -69,6 +71,7 @@ class Mode:
     #THIS SHOULD ONLY BE CALLED FROM MAIN CONTROL LOOP
     #This is a mode specific switch, meaning the current mode chooses which new mode to switch to based only on the current mode's conditions.
     #This method does not handle manual override commands from the groundstation to switch to specific modes, that's handled by the Main Control Loop.
+    # implemented for the specific modes
     def switch_modes(self):
         pass
 
