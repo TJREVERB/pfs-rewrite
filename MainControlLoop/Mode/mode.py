@@ -8,8 +8,7 @@ from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDepl
 
 class Mode:
 
-    #initialization: turn on any necessary devices using EPS, initialize any instance variables, etc.
-    # Turns off any power-intensive devices not needed by this mode (just in case)
+    # initialization: turn on any necessary devices using EPS, initialize any instance variables, etc.
     def __init__(self, sfr, conditions):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
@@ -25,6 +24,7 @@ class Mode:
             # Reads and transmits battery voltage
             "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
             # TODO: MANUAL MODE SWITCHING
+            # POSSIBLY IMPLEMENT THESE MANUAL SWITCHES IN SPECIFIC MODES?
             "CHG": self.charging_mode(),  # Enters charging mode
             "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
             "OUT": self.outreach_mode,  # Enters outreach mode
@@ -51,35 +51,36 @@ class Mode:
         # Dictionary storing conditions for switch, updated via check_conditions
         self.conditions = conditions
 
-    #checks the conditions this mode requires, for example a minimum battery voltage
-    #store any mode conditions as instance variables so that you only have to retrieve them once, and can then use them in switch_modes right after if necessary
-    #RETURN: True if conditions are met, False otherwise
-    # DO NOT SWITCH MODES IF FALSE - this is up to the main control loop to decide
-    # implemented for the seach specific mode
+    # checks the conditions this mode requires, for example a minimum battery voltage store any mode conditions as
+    # instance variables so that you only have to retrieve them once, and can then use them in switch_modes right
+    # after if necessary RETURN: True if conditions are met, False otherwise DO NOT SWITCH MODES IF FALSE - this is
+    # up to the main control loop to decide implemented for the seach specific mode
     def check_conditions(self):
         pass
-    
-    #execute one iteration of this mode, for example: read from the radio and retrieve EPS telemtry one time
-    #this method should take care of reading from the radio and executing commands (which is happening in basically all of the modes)
-    #NOTE: receiving and executing commmands is not up to the main control loop because different modes might do this in different manners
-    #save any values to instance varaibles if they may be necessary in future execute_cycle calls
-    #this method is called in each specific mode before specific execute_cycle for that code
+
+    # execute one iteration of this mode, for example: read from the radio and retrieve EPS telemtry one time this
+    # method should take care of reading from the radio and executing commands (which is happening in basically all
+    # of the modes) NOTE: receiving and executing commmands is not up to the main control loop because different
+    # modes might do this in different manners save any values to instance varaibles if they may be necessary in
+    # future execute_cycle calls this method is called in each specific mode before specific execute_cycle for that
+    # code
     def execute_cycle(self):
         self.integrate_charge()
 
-    #If conditions (from the check_conditions method) for a running mode are not met, it will choose which new mode to switch to. 
-    #THIS SHOULD ONLY BE CALLED FROM MAIN CONTROL LOOP
-    #This is a mode specific switch, meaning the current mode chooses which new mode to switch to based only on the current mode's conditions.
-    #This method does not handle manual override commands from the groundstation to switch to specific modes, that's handled by the Main Control Loop.
-    # implemented for the specific modes
+    # If conditions (from the check_conditions method) for a running mode are not met, it will choose which new mode
+    # to switch to. THIS SHOULD ONLY BE CALLED FROM MAIN CONTROL LOOP This is a mode specific switch, meaning the
+    # current mode chooses which new mode to switch to based only on the current mode's conditions. This method does
+    # not handle manual override commands from the groundstation to switch to specific modes, that's handled by the
+    # Main Control Loop. implemented for the specific modes
     def switch_modes(self):
         pass
 
-    #Safely terminates the current mode:
-    #Turns off any non-essential devices that were turned on (non-essential meaning devices that other modes might not need, so don't turn off the flight pi...)
-    #delete (using del) any memory-expensive instance variables so that we don't have to wait for python garbage collector to clear them out
-    #RETURN: True if it was able to be terminated to a safe extent, False otherwise (safe extent meaning it's safe to switch to another mode)
-    #NOTE: This should be standalone, so it can be called by itself on a mode object, but it should also be used in switch_modes
+    # Safely terminates the current mode: Turns off any non-essential devices that were turned on (non-essential
+    # meaning devices that other modes might not need, so don't turn off the flight pi...) delete (using del) any
+    # memory-expensive instance variables so that we don't have to wait for python garbage collector to clear them
+    # out RETURN: True if it was able to be terminated to a safe extent, False otherwise (safe extent meaning it's
+    # safe to switch to another mode) NOTE: This should be standalone, so it can be called by itself on a mode
+    # object, but it should also be used in switch_modes
     def terminate_mode(self):
         self.eps.commands["All Off"]()
         del self.eps

@@ -21,7 +21,7 @@ class Charging(Mode):
 
     def execute_cycle(self) -> None:
         # Iridium power controls
-        if self.eps.sun_detected(): #do we really need to run this every single loop
+        if self.eps.sun_detected():  # do we really need to run this every single loop
             self.eps.commands["Pin On"]("Iridium")  # Switches on Iridium if in sunlight
             self.eps.commands["Pin On"]("UART-RS232")
             self.iridium.listen()  # Read and store received message
