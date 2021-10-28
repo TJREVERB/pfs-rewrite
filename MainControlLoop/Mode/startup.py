@@ -9,6 +9,13 @@ class Startup(Mode):
         Sets up variables, runs a systems check, turns on the components used in start up, calls iridium.wave()
         """
         # constants
+        """
+        CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
+        Also:
+        THIRTY_MINUTES 
+        should be:
+        thirtyMinutes
+        """
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.ANTENNA_WAIT_TIME = 120  # 120 seconds in 2 minutes
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
@@ -44,7 +51,7 @@ class Startup(Mode):
                     print("deployed")
                     self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
                 else:
-                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
+                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow. But how? If this doesnt work we die
                 self.sfr.dump()  # Log state field registry change
 
     def execute_cycle_normal(self):

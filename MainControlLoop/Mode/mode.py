@@ -51,6 +51,11 @@ class Mode:
         # Dictionary storing conditions for switch, updated via check_conditions
         self.conditions = conditions
 
+    # turns on and off devices for specific mode
+    def start(self):
+        pass
+
+
     # checks the conditions this mode requires, for example a minimum battery voltage store any mode conditions as
     # instance variables so that you only have to retrieve them once, and can then use them in switch_modes right
     # after if necessary RETURN: True if conditions are met, False otherwise DO NOT SWITCH MODES IF FALSE - this is
@@ -110,3 +115,7 @@ class Mode:
         if not self.aprs.functional: result.append("APRS")
         if not self.iridium.functional: result.append("Iridium")
         return result
+
+    # same logic as terminate_modes, BUT can be called from child classes
+    def turn_devices_off(self):
+        self.eps.commands["All Off"]()
