@@ -28,7 +28,7 @@ class MainControlLoop:
         self.eps = EPS(self.sfr)
         self.antenna_deployer = AntennaDeployer(self.sfr)
         self.iridium = Iridium(self.sfr)
-        self.imu = IMU_I2C() 
+        self.imu = IMU_I2C(self.sfr) 
         # If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())

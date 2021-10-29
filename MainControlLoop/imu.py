@@ -354,14 +354,14 @@ class IMU_I2C(IMU):
             temp = sensor.temperature
     """
 
-    def __init__(self,
+    def __init__(self, state_field_registry,
         mag_address=IMU.ADDRESS_MAG,
         xg_address=IMU.ADDRESS_ACCELGYRO):
         self.bus = SMBus()
         if mag_address in (0x1C, 0x1E) and xg_address in (0x6A, 0x6B):
             self.mag_address = mag_address
             self.xg_address = xg_address
-            super().__init__()
+            super().__init__(state_field_registry)
         else:
             raise ValueError(
                 "address parmeters are incorrect. Read the docs at "
