@@ -16,6 +16,7 @@ class Charging(Mode):
 
         self.eps.commands["Pin On"]("Iridium")  # Switches on Iridium
         self.eps.commands["Pin On"]("UART-RS232")
+        self.devices["Iridium"] = True
 
     def check_conditions(self) -> bool:
         current_voltage = self.eps.telemetry["VBCROUT"]()

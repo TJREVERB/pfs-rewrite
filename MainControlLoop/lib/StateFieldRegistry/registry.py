@@ -52,6 +52,15 @@ class StateFieldRegistry:
             "CHARGING": Charging,
             "SCIENCE": Science,
         }
+        self.devices = {  # False if device is off, True if device is on
+            "Iridium": False,
+            "APRS": False,
+            "IMU": False,
+            "Antenna Deployer": False,
+            "UART-RS232": False,  # Iridium Serial Converter
+            "SPI-UART": False,  # APRS Serial Converter
+            "USB-UART": False,  # Alternate APRS Serial Converter
+        }
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)

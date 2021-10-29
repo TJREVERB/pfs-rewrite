@@ -116,6 +116,13 @@ class Mode:
         if not self.iridium.functional: result.append("Iridium")
         return result
 
+    # executes most recent command, then removes them
+    def execute_commands(self):
+        pass
+
+
     # same logic as terminate_modes, BUT can be called from child classes
     def turn_devices_off(self):
         self.eps.commands["All Off"]()
+
+
