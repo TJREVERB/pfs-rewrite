@@ -357,7 +357,7 @@ class IMU_I2C(IMU):
     def __init__(self, state_field_registry,
         mag_address=IMU.ADDRESS_MAG,
         xg_address=IMU.ADDRESS_ACCELGYRO):
-        self.bus = SMBus()
+        self.bus = SMBus(1)
         if mag_address in (0x1C, 0x1E) and xg_address in (0x6A, 0x6B):
             self.mag_address = mag_address
             self.xg_address = xg_address
@@ -374,16 +374,17 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
+        self._BUFFER[0] = address & 0xFF
         try:
-            self.bus.open(1)
-            self.bus.write_i2c_block_data(device, address&0xFF, [0x00])
+            #self.bus.open(1)
+            self.bus.write_byte(device, self._BUFFER[0])
             time.sleep(.1)
-            result = self.bus.read_i2c_block_data(device, 0, 2)
-            self.bus.close()
+            self._BUFFER[1] = self.bus.read_byte(device)
+            #self.bus.close()
         except:
             return False
-        time.sleep(.1) 
-        return result
+        time.sleep(.1)
+        return self._BUFFER[1]
 
         """with device as i2c:
             self._BUFFER[0] = address & 0xFF
@@ -397,15 +398,18 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
+        buf[0] = address & 0xFF
         try:
-            self.bus.open(1)
-            self.bus.write_word_data(device, address&0xFF, [0x00])
-            time.sleep(.1)
-            result = self.bus.read_i2c_block_data(device, 0, 2)
-            self.bus.close()
+            #self.bus.open(1)
+            #self.bus.write_word_data(device, address&0xFF, [0x00])
+            #time.sleep(.1)
+            result = self.bus.read_i2c_block_data(device, address&0xFF, count-1)
+            #self.bus.close()
         except:
             return False
         time.sleep(.1)
+        for i in range(1, count):
+            buf[i] = result[i-1]
         return result
         
         """
@@ -418,10 +422,12 @@ class IMU_I2C(IMU):
             device = self.mag_address
         else:
             device = self.xg_address
+        self._BUFFER[0] = address & 0xFF
+        self._BUFFER[1] = val & 0xFF
         try:
-            self.bus.open(1)
-            result = self.bus.write_i2c_block_data(device, address&0xFF, val)
-            self.bus.close()
+            #self.bus.open(1)
+            result = self.bus.write_i2c_block_data(device, self._BUFFER[0], [self._BUFFER[1]])
+            #self.bus.close()
         except:
             return False
         time.sleep(0.1)
