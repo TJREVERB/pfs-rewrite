@@ -24,6 +24,8 @@ class StateFieldRegistry:
         self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
         self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
+        
+        self.PRIMARY_RADIO = "Iridium" 
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
