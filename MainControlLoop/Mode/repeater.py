@@ -9,6 +9,9 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         })
         self.voltage = None
 
+    def __str__(self):
+        return "Repeater"
+
     def start(self) -> None:
         # turn off all devices
         Mode.turn_devices_off()

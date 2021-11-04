@@ -35,3 +35,6 @@ class Outreach(Mode):  # TODO: IMPLEMENT
             # Transmit current solar panel production
             "SOL": lambda: self.aprs.write("TJ;SOL:" + str(self.eps.solar_power())),
         }
+
+    def __str__(self):
+        return "Outreach"

@@ -15,11 +15,19 @@ class APRS:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
+
+        self.commands = {
+            #"Transmit": TODO: Implement
+        }
+
     
     def __del__(self):
         self.serial.close()
         #pass
-    
+
+    def __str__(self):
+        return "APRS"
+
     def enter_firmware_menu(self) -> bool:
         """
         Enter APRS firmware menu

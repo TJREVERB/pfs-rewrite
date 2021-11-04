@@ -10,6 +10,9 @@ class Charging(Mode):
         })
         self.voltage = None
 
+    def __str__(self):
+        return "Charging"
+
     def start(self) -> None:
         # turn off all devices
         Mode.turn_devices_off()
@@ -33,9 +36,4 @@ class Charging(Mode):
     def switch_modes(self) -> None:
         pass
 
-    def terminate_mode(self) -> bool:
-        gc.collect()  # calls garbage collector
-        del self.voltage
-        self.eps.commands["Pin Off"]("Iridium") # turn off Iridium
-        self.eps.commands["Pin Off"]("UART-RS232")
-        return True
+

@@ -1,3 +1,10 @@
+from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Mode.startup import Startup
+from MainControlLoop.Mode.charging import Charging
+from MainControlLoop.Mode.science import Science
+from MainControlLoop.Mode.outreach import Outreach
+from MainControlLoop.Mode.repeater import Repeater
+import datetime
 
 
 class CommandExecutor:
@@ -28,7 +35,73 @@ class CommandExecutor:
         "SOL": lambda: self.iridium.commands["Transmit"]("TJ;SOL:" + str(self.eps.solar_power())),
         "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble())  # Test method, transmits tumble value
     }
+
     def __init__(self):
         pass
 
-    def TST():
+    def transmit(self, current_mode, message: str):
+        """
+        Transmits time + message string from primary radio to ground station
+        """
+        current_mode.sfr.devices["PRIMARY_RADIO"].commands["Transmit"](str(datetime.datetime.now()) + ";" + message)
+
+    def TST(self, current_mode: Mode):
+        """
+        Tries to transmit proof of life back to ground station.
+        TODO: error checking (if iridum doesn't work etc)
+        """
+        self.transmit(current_mode, "TJ;Hello")
+
+    def BVT(self, current_mode: Mode):
+        """
+        Reads and Transmits Battery Voltage
+        """
+        self.transmit(current_mode, "TJ;" + str(current_mode.eps.telemetry["VBCROUT"]()))
+
+    def CHG(self, current_mode: Mode):
+        """
+        Switches current mode to charging mode
+        """
+        if str(current_mode) == "Charging":
+            self.transmit(current_mode, "Already in charging mode, no mode switch executed")
+        else:
+            current_mode.sfr.defaults["MODE"] = Charging(current_mode.sfr)
+            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to charging mode")
+
+    def SCI(self, current_mode: Mode):
+        """
+        Switches current mode to science mode
+        """
+        if str(current_mode) == "Science":
+            self.transmit(current_mode, "Already in science mode, no mode switch executed")
+        else:
+            current_mode.sfr.defaults["MODE"] = Science(current_mode.sfr)
+            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to science mode")
+
+    def OUT(self, current_mode: Mode):
+        """
+        Switches current mode to outreach mode
+        """
+        if str(current_mode) == "Outreach":
+            self.transmit(current_mode, "Already in outreach mode, no mode switch executed")
+        else:
+            current_mode.sfr.defaults["MODE"] = Outreach(current_mode.sfr)
+            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to outreach mode")
+
+    def U(self):  #TODO: Implement
+        pass
+
+    def L(self):  #TODO: Implement
+        pass
+
+    def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
+        pass
+
+    def IRI(self, current_mode: Mode):
+        """
+        Transmits proof of life via Iridium, along with critical component data
+        using iridium.wave (not transmit function)
+        """
+        current_mode.sfr.iridium.wave(current_mode.eps.telemetry["VBCROUT"](), current_mode.eps.solar_power(),
+                                      current_mode.eps.total_power(4))
+

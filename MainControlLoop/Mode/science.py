@@ -31,4 +31,7 @@ class Science(Mode):  # TODO: IMPLEMENT
 
         })
 
+    def __str__(self):
+        return "Science"
+
     def start(self) -> None:

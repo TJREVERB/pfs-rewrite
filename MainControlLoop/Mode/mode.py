@@ -1,4 +1,5 @@
 import time
+import gc
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
@@ -16,7 +17,7 @@ class Mode:
         self.sfr = sfr
         self.eps = EPS(sfr)
         self.aprs = APRS(sfr)
-        self.iridium = Iridium(sfr)
+        self.iridium = sfr.defaults["PRIMARY_RADIO"]
         self.antenna_deployer = AntennaDeployer(sfr)
         self.imu = IMU(sfr)
         self.command_registry = {
@@ -51,6 +52,9 @@ class Mode:
         # Dictionary storing conditions for switch, updated via check_conditions
         self.conditions = conditions
 
+
+    def __str__(self):  # returns mode name as string
+        pass
     # turns on and off devices for specific mode
     def start(self):
         pass
@@ -77,6 +81,7 @@ class Mode:
     # current mode chooses which new mode to switch to based only on the current mode's conditions. This method does
     # not handle manual override commands from the groundstation to switch to specific modes, that's handled by the
     # Main Control Loop. implemented for the specific modes
+    # returns Mode object to switch to
     def switch_modes(self):
         pass
 
@@ -93,6 +98,7 @@ class Mode:
         del self.iridium
         del self.antenna_deployer
         del self.imu
+
 
     def integrate_charge(self):
         """

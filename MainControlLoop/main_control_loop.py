@@ -154,19 +154,6 @@ class MainControlLoop:
         except Exception:
             return False
 
-    def command_interpreter(self) -> bool:
-        """
-        This will take whatever is read, parse it, and then execute it
-        :return: (bool) whether the control ran without error
-        """
-        raw_command: str = self.sfr.IRIDIUM_RECEIVED_COMMAND
-        raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
-        self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
-        self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command, self.command_registry) and \
-               self.exec_command(raw_limited_command, self.limited_command_registry)
-        # if one of them is False, return False
-
     def execute(self):
         self.antenna()
         # Automatic mode switching
@@ -199,12 +186,14 @@ class MainControlLoop:
 
     def run(self):  # Repeat main control loop forever
         while True:  # Iterate forever
-            mode = self.sfr.MODE()  # Instantiate mode object based on sfr
-            while mode == self.sfr.MODE and mode.check_conditions():  # Iterate while we're supposed to be in this mode
+            mode = self.sfr.defaults["MODE"]  # Instantiate mode object based on sfr
+            mode.start()
+            while mode == self.sfr.defaults["MODE"] and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
-            #exits while loop if we get a message that says exit mode or if the conditions are not satisfied
-            if(mode == self.sfr.defaults["MODE"]):  # if we exited the mode because we got a command, we can't call mode.switch_modes
-                pass
+            # exits while loop if we get a message that says exit mode or if the conditions are not satisfied
+            if mode != self.sfr.defaults["MODE"]:  # if we exited the mode because we got a command, we can't call mode.switch_modes
+                mode.terminate_mode()  # Delete memory-intensive objects
             else:
-                mode.switch_modes()  # Switch to next mode (update sfr)
-            mode.terminate_mode()  # Delete memory-intensive objects
+                new_mode = mode.switch_modes()  # decides which mode to switch to; returns mode object
+                mode.terminate_mode()
+                self.sfr.defaults["MODE"] = new_mode

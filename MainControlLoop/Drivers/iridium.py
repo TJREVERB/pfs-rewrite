@@ -1,4 +1,5 @@
 import time
+import datetime
 from serial import Serial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from functools import partial
@@ -35,6 +36,9 @@ class Iridium:
     
     def __del__(self):
         self.serial.close()
+
+    def __str__(self):
+        return "Iridium"
 
     def functional(self) -> bool:
         """
@@ -80,9 +84,8 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Whether write worked
         """
-        return self.commands["Transmit"](f"TJ;Hello from space! BVT:{battery_voltage},"
-                                         f"SOL:{solar_generation},PWR:{power_draw},"
-                                         f"FAI:{chr(59).join(self.sfr.FAILURES)}")  # Component failures, sep by ;
+        self.commands["Transmit"](f"TJ;Hello from space! BVT:{battery_voltage},SOL:{solar_generation},PWR:{power_draw},FAI:{chr(59).join(self.sfr.FAILURES)}")  # Component failures, sep by ;
+        #TODO: fix weird error here
 
     def write(self, command: str) -> bool:
         """
