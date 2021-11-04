@@ -1,5 +1,5 @@
 from MainControlLoop.Mode.mode import Mode
-import gc
+import time
 
 
 """
@@ -30,8 +30,36 @@ class Science(Mode):  # TODO: IMPLEMENT
         super().__init__(sfr, conditions={
 
         })
+        self.last_ping = time.time()
+        self.pings_performed = 0
+        self.DATAPOINT_SPACING = 60 # in seconds
+        self.NUMBER_OF_REQUIRED_PINGS = (90*60)/self.DATAPOINT_SPACING # number of pings to do to complete orbit
 
-    def __str__(self):
-        return "Science"
+    def start(self):
+        Mode.turn_devices_off()
+        self.eps.commands["Pin On"]("Iridium")
+        self.eps.commands["Pin On"]("UART-RS232")
+        self.devices["Iridium"] = True
 
-    def start(self) -> None:
+    def check_conditions(self) -> bool:
+        if self.eps.telemetry["VBCROUT"]() > self.LOWER_THRESHOLD and self.pings_performed <= self.NUMBER_OF_REQUIRED_PINGS:  # if voltage greater than lower thres
+            # TODO: SET CUSTOM LOWER THRESHOLD
+            return True
+        else:
+            return False
+
+    def execute_cycle(self):
+        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
+            #send data back
+            #when successful
+            #do pings_peformed++
+        elif time.time() - self.last_ping >= self.datapoint_spacing:
+            #check signal strength
+            #save data
+            #pings_performed++
+
+    def switch_modes(self):
+        pass
+
+
+

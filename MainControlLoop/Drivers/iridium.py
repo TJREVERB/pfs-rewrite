@@ -121,3 +121,7 @@ class Iridium:
         Reads in received message (if any) and adds it to StateFieldRegistry
         """
         pass
+
+
+    def check_signal_strength(self): #TODO: Implement
+        pass

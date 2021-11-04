@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
@@ -24,6 +25,8 @@ class StateFieldRegistry:
         self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
         self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
+        
+        self.PRIMARY_RADIO = "Iridium" 
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
@@ -35,17 +38,19 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
+            "PRIMARY_RADIO": Iridium
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
             "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
-            "MODE": Mode,
             "FAILURES": list,
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
+            "MODE": , #TODO ADD DATATYPE FOR CLASSES 
+            "PRIMARY_RADIO": #TODO ADD DATATYPE FOR CLASSES 
         }
         self.modes_list = {
             "STARTUP": Startup,
@@ -71,7 +76,7 @@ class StateFieldRegistry:
                     line = line.strip("\n ").split(":")
                     if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
                         line[1] = "\"\""
-                    exec(f"self.{line[0]} = {self.type_dict[line[0]](line[1])}")
+                    setattr(self, line[0], self.type_dict[line[0]](line[1])) #assigns the instance variable with name line[0] to have value of everything else on that line
             else:
                 self.load_defaults()  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early

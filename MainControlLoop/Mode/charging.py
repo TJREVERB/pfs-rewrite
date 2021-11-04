@@ -8,7 +8,6 @@ class Charging(Mode):
         super().__init__(sfr, conditions={
 
         })
-        self.voltage = None
 
     def __str__(self):
         return "Charging"
@@ -22,11 +21,9 @@ class Charging(Mode):
         self.devices["Iridium"] = True
 
     def check_conditions(self) -> bool:
-        current_voltage = self.eps.telemetry["VBCROUT"]()
-        if current_voltage <= self.UPPER_THRESHOLD:  # if voltage is less than upper limit
+        if self.eps.telemetry["VBCROUT"]() <= self.UPPER_THRESHOLD:  # if voltage is less than upper limit
             return True
         else:
-            self.voltage = current_voltage
             return False
 
     def execute_cycle(self) -> None:
