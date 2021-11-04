@@ -71,7 +71,7 @@ class StateFieldRegistry:
                     line = line.strip("\n ").split(":")
                     if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
                         line[1] = "\"\""
-                    exec(f"self.{line[0]} = {self.type_dict[line[0]](line[1])}")
+                    setattr(self, line[0], self.type_dict[line[0]](line[1])) #assigns the instance variable with name line[0] to have value of everything else on that line
             else:
                 self.load_defaults()  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early

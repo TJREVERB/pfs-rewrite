@@ -14,11 +14,14 @@ class Mode:
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
-        self.eps = EPS(sfr)
-        self.aprs = APRS(sfr)
-        self.iridium = Iridium(sfr)
-        self.antenna_deployer = AntennaDeployer(sfr)
-        self.imu = IMU(sfr)
+
+        self.primary_radio = None
+
+        self.eps = None
+        self.aprs = None
+        self.iridium = None
+        self.antenna_deployer = None
+        self.imu = None
         self.command_registry = {
             "TST": lambda: self.iridium.commands["Transmit"]("TJ;Hello"),  # Test method, transmits "Hello"
             # Reads and transmits battery voltage
