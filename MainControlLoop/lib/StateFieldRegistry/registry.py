@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
@@ -37,17 +38,19 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
+            "PRIMARY_RADIO": Iridium
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
             "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
-            "MODE": Mode,
             "FAILURES": list,
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
+            "MODE": , #TODO ADD DATATYPE FOR CLASSES 
+            "PRIMARY_RADIO": #TODO ADD DATATYPE FOR CLASSES 
         }
         self.modes_list = {
             "STARTUP": Startup,
