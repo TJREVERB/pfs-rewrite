@@ -120,6 +120,11 @@ class Mode:
     def execute_commands(self):
         pass
 
+    # makes sure all mode variables agree with sfr
+    # (like if ground station command changed,
+    # must update instance variables in current mode running)
+    def update_field(self):
+        pass
 
     # same logic as terminate_modes, BUT can be called from child classes
     def turn_devices_off(self):

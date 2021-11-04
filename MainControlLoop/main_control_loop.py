@@ -123,16 +123,6 @@ class MainControlLoop:
         if not self.iridium.functional: result.append("Iridium")
         return result
 
-    def initiate_mode(self, modeName):
-        if modeName == "SCIENCE":
-            self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
-            self.eps.commands["Pin On"]("UART-RS232")  # Switch on Iridium serial converter
-        if modeName == "OUTREACH":
-            self.eps.commands["All On"]()
-        if modeName == "CHARGING":
-            pass
-
-
 
     def exec_command(self, raw_command, registry) -> bool:
         if raw_command == "":
@@ -154,57 +144,17 @@ class MainControlLoop:
         except Exception:
             return False
 
-    def command_interpreter(self) -> bool:
-        """
-        This will take whatever is read, parse it, and then execute it
-        :return: (bool) whether the control ran without error
-        """
-        raw_command: str = self.sfr.IRIDIUM_RECEIVED_COMMAND
-        raw_limited_command: str = self.sfr.APRS_RECEIVED_COMMAND
-        self.sfr.IRIDIUM_RECEIVED_COMMAND = ""
-        self.sfr.APRS_RECEIVED_COMMAND = ""
-        return self.exec_command(raw_command, self.command_registry) and \
-               self.exec_command(raw_limited_command, self.limited_command_registry)
-        # if one of them is False, return False
-
-    def execute(self):
-        self.antenna()
-        # Automatic mode switching
-        battery_voltage = self.eps.telemetry["VBCROUT"]()  # Reads battery voltage from EPS
-        # Enter charging mode if battery voltage < lower threshold
-        if battery_voltage < self.LOWER_THRESHOLD and self.sfr.MODE == "OUTREACH":
-            self.sfr.MODE = "CHARGING"  # Set MODE to CHARGING
-        # Enter outreach mode if battery has charged > upper threshold
-        elif battery_voltage > self.UPPER_THRESHOLD and self.sfr.MODE == "CHARGING":
-            self.sfr.MODE = "OUTREACH"  # Set MODE to OUTREACH
-
-        # Orbit Updates
-        if self.eps.sun_detected():
-            if self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
-                self.sfr.enter_sunlight()
-        elif self.sfr.LAST_ECLIPSE_ENTRY < self.sfr.LAST_DAYLIGHT_ENTRY:
-            self.sfr.enter_eclipse()
-
-        # Control satellite depending on mode
-        if self.sfr.MODE == "STARTUP":  # Run only once
-            self.startup_mode()
-        if self.sfr.MODE == "SCIENCE":
-            self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS)
-        if self.sfr.MODE == "CHARGING":
-            self.charging_mode()
-        if self.sfr.MODE == "OUTREACH":
-            self.outreach_mode()
-        self.sfr.dump()  # On every iteration, run sfr.dump to log changes
-        self.integrate_charge()  # Integrate charge
-
     def run(self):  # Repeat main control loop forever
         while True:  # Iterate forever
             mode = self.sfr.MODE()  # Instantiate mode object based on sfr
             while mode == self.sfr.MODE and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
+            # command_execute
             #exits while loop if we get a message that says exit mode or if the conditions are not satisfied
-            if(mode == self.sfr.defaults["MODE"]):  # if we exited the mode because we got a command, we can't call mode.switch_modes
-                pass
+            if(mode != self.sfr.defaults["MODE"]):  # if we exited the mode because we got a command, we can't call mode.switch_modes
+                mode.terminate_mode()
             else:
-                mode.switch_modes()  # Switch to next mode (update sfr)
-            mode.terminate_mode()  # Delete memory-intensive objects
+                new_mode = mode.switch_modes()  # Switch to next mode (update sfr)
+                mode.terminate_mode()
+                del mode
+            #mode.terminate_mode()  # Delete memory-intensive objects
