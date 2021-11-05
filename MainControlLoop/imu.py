@@ -100,6 +100,9 @@ class IMU:
     SENSORS_GRAVITY_STANDARD = 9.80665
     SPI_AUTO_INCR: hex = 0x40
 
+    _BUFFER = bytearray(6)
+
+
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         # soft reset & reboot accel/gyro
