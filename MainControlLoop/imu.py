@@ -230,7 +230,7 @@ class IMU:
         magnetometer property!
         """
         # Read the magnetometer
-        self._read_bytes(IMU.MAGTYPE, 0x80 | IMU.REGISTER_OUT_X_L_M, 6, self._BUFFER)
+        self._read_bytes(IMU.MAGTYPE, 0x80 | IMU.REGISTER_OUT_XLM, 6, self._BUFFER)
         raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
         return (raw_x, raw_y, raw_z)
     
@@ -248,7 +248,7 @@ class IMU:
         gyroscope property!
         """
         # Read the gyroscope
-        self._read_bytes(IMU.XGTYPE, 0x80 | IMU.REGISTER_OUT_X_L_G, 6, self._BUFFER)
+        self._read_bytes(IMU.XGTYPE, 0x80 | IMU.REGISTER_OUT_XLG, 6, self._BUFFER)
         raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
         return (raw_x, raw_y, raw_z)
 
