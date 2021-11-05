@@ -131,6 +131,7 @@ class IMU:
         self.mag_gain = IMU.MAGGAIN_4GAUSS
         self.gyro_scale = IMU.GYROSCALE_245DPS
     
+    @property
     def accel_range(self):
         """The accelerometer range.  Must be a value of:
         - ACCELRANGE_2G
@@ -141,6 +142,7 @@ class IMU:
         reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL)
         return (reg & 0b00011000) & 0xFF
 
+    @accel_range.setter
     def accel_range(self, val):
         assert val in (IMU.ACCELRANGE_2G, IMU.ACCELRANGE_4G, IMU.ACCELRANGE_8G, IMU.ACCELRANGE_16G)
         reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG6_XL)
@@ -156,6 +158,7 @@ class IMU:
         elif val == IMU.ACCELRANGE_16G:
             self._accel_mg_lsb = IMU.ACCEL_MG_LSB_16G
     
+    @property
     def mag_gain(self):
         """The magnetometer gain.  Must be a value of:
         - MAGGAIN_4GAUSS
@@ -166,6 +169,7 @@ class IMU:
         reg = self._read_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M)
         return (reg & 0b01100000) & 0xFF
 
+    @mag_gain.setter
     def mag_gain(self, val):
         assert val in (IMU.MAGGAIN_4GAUSS, IMU.MAGGAIN_8GAUSS, IMU.MAGGAIN_12GAUSS, IMU.MAGGAIN_16GAUSS)
         reg = self._read_u8(IMU.MAGTYPE, IMU.REGISTER_CTRL_REG2_M)
@@ -181,6 +185,7 @@ class IMU:
         elif val == IMU.MAGGAIN_16GAUSS:
             self._mag_mgauss_lsb = IMU.MAG_MGAUSS_16GAUSS
 
+    @property
     def gyro_scale(self):
         """The gyroscope scale.  Must be a value of:
         * GYROSCALE_245DPS
@@ -190,6 +195,7 @@ class IMU:
         reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G)
         return (reg & 0b00011000) & 0xFF
 
+    @gyro_scale.setter
     def gyro_scale(self, val):
         assert val in (IMU.GYROSCALE_245DPS, IMU.GYROSCALE_500DPS, IMU.GYROSCALE_2000DPS)
         reg = self._read_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G)
@@ -214,6 +220,7 @@ class IMU:
         raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
         return (raw_x, raw_y, raw_z)
 
+    @property
     def acceleration(self):
         """The accelerometer X, Y, Z axis values as a 3-tuple of
         :math:`m/s^2` values.
@@ -234,6 +241,7 @@ class IMU:
         raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
         return (raw_x, raw_y, raw_z)
     
+    @property
     def magnetic(self):
         """The magnetometer X, Y, Z axis values as a 3-tuple of
         gauss values.
@@ -252,6 +260,7 @@ class IMU:
         raw_x, raw_y, raw_z = struct.unpack_from("<hhh", self._BUFFER[0:6])
         return (raw_x, raw_y, raw_z)
 
+    @property
     def gyro(self):
         """The gyroscope X, Y, Z axis values as a 3-tuple of
         degree/s values.
@@ -290,6 +299,7 @@ class IMU:
         temp = ((self._BUFFER[1] << 8) | self._BUFFER[0]) >> 4
         return _twos_comp(temp, 12)
 
+    @property
     def temperature(self):
         """The temperature of the sensor in degrees Celsius."""
         # This is just a guess since the starting point (21C here) isn't documented :(
