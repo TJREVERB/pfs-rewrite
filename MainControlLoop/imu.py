@@ -282,7 +282,7 @@ class IMU:
         time.sleep(interval)
         magValues.append(np.array(self.magnetic))
 
-        magV = (magValues[1]-magValues[2])/interval #mag values velocity
+        magV = (magValues[1]-magValues[0])/interval #mag values velocity
 
         magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
         #from https://forum.sparkfun.com/viewtopic.php?t=22252
