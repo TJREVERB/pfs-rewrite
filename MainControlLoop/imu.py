@@ -275,12 +275,12 @@ class IMU:
         """
         interval = 0.2 #Time interval for magnetometer readings
 
-        gyroValues = self.gyro() #read the gyroscope
+        gyroValues = self.gyro #read the gyroscope
 
         magValues = []
-        magValues.append(np.array(self.magnetic())) #read the magnetometer
+        magValues.append(np.array(self.magnetic)) #read the magnetometer
         time.sleep(interval)
-        magValues.append(np.array(self.magnetic()))
+        magValues.append(np.array(self.magnetic))
 
         magV = (magValues[1]-magValues[2])/interval #mag values velocity
 
