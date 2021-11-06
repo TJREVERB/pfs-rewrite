@@ -115,7 +115,7 @@ class IMU:
             self._read_u8(IMU.XGTYPE, IMU.REGISTER_WHOAMI_XG) != IMU.XG_ID
             or self._read_u8(IMU.MAGTYPE, IMU.REGISTER_WHOAMI_M) != IMU.MAG_ID
         ):
-            raise RuntimeError("Could not find LSM9DS1, check wiring!")
+            raise RuntimeError("LSM9DS1 unresponsive") #check wiring/power
         # enable gyro continuous
         self._write_u8(IMU.XGTYPE, IMU.REGISTER_CTRL_REG1_G, 0xC0)  # on XYZ
         # Enable the accelerometer continous
@@ -376,11 +376,7 @@ class IMU_I2C(IMU):
             self.xg_address = xg_address
             super().__init__(state_field_registry)
         else:
-            raise ValueError(
-                "address parmeters are incorrect. Read the docs at "
-                "circuitpython.rtfd.io/projects/lsm9ds1/en/latest"
-                "/api.html#adafruit_lsm9ds1.LSM9DS1_I2C"
-            )
+            raise ValueError("address parmeters incorrect")
 
     def _read_u8(self, sensor_type, address):
         if sensor_type == IMU.MAGTYPE:
@@ -398,13 +394,6 @@ class IMU_I2C(IMU):
             return False
         time.sleep(.1)
         return self._BUFFER[1]
-
-        """with device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            i2c.write_then_readinto(
-                self._BUFFER, self._BUFFER, out_end=1, in_start=1, in_end=2
-            )
-        return self._BUFFER[1]"""
 
     def _read_bytes(self, sensor_type, address, count, buf):
         if sensor_type == IMU.MAGTYPE:
@@ -424,11 +413,6 @@ class IMU_I2C(IMU):
         for i in range(1, count):
             buf[i] = result[i-1]
         return result
-        
-        """
-        with device as i2c:
-            buf[0] = address & 0xFF
-            i2c.write_then_readinto(buf, buf, out_end=1, in_end=count)"""
 
     def _write_u8(self, sensor_type, address, val):
         if sensor_type == IMU.MAGTYPE:
@@ -445,10 +429,3 @@ class IMU_I2C(IMU):
             return False
         time.sleep(0.1)
         return result
-
-
-        """with device as i2c:
-            self._BUFFER[0] = address & 0xFF
-            self._BUFFER[1] = val & 0xFF
-            i2c.write(self._BUFFER, end=2)"""
-        
