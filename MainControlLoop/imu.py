@@ -273,7 +273,7 @@ class IMU:
         Returns tumble taken from gyro and magnetometer, in degrees/s
         :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
         """
-        interval = 0.2 #Time interval for magnetometer readings
+        interval = 1 #Time interval for magnetometer readings
 
         gyroValues = tuple(self.gyro) #read the gyroscope
 
@@ -387,12 +387,12 @@ class IMU_I2C(IMU):
         try:
             #self.bus.open(1)
             self.bus.write_byte(device, self._BUFFER[0])
-            time.sleep(.1)
+            time.sleep(.3)
             self._BUFFER[1] = self.bus.read_byte(device)
             #self.bus.close()
         except:
             return False
-        time.sleep(.1)
+        time.sleep(.3)
         return self._BUFFER[1]
 
     def _read_bytes(self, sensor_type, address, count, buf):
@@ -409,7 +409,7 @@ class IMU_I2C(IMU):
             #self.bus.close()
         except:
             return False
-        time.sleep(.1)
+        time.sleep(.3)
         for i in range(1, count):
             buf[i] = result[i-1]
         return result
@@ -427,5 +427,5 @@ class IMU_I2C(IMU):
             #self.bus.close()
         except:
             return False
-        time.sleep(0.1)
+        time.sleep(0.3)
         return result
