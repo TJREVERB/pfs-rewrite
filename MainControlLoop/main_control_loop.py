@@ -7,7 +7,8 @@ from MainControlLoop.eps import EPS
 #from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.antenna_deployer.AntennaDeployer import AntennaDeployer, AntennaDeployerCommand
 from MainControlLoop.iridium import Iridium
-from MainControlLoop.imu import IMU, IMU_I2C
+from MainControlLoop.lsm9ds1 import IMU, IMU_I2C
+#from MainControlLoop.bno055 import IMU, IMU_I2C
 
 
 class MainControlLoop:

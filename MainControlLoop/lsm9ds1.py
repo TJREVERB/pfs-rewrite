@@ -1,4 +1,3 @@
-from functools import partial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBus
 import time
@@ -385,11 +384,9 @@ class IMU_I2C(IMU):
             device = self.xg_address
         self._BUFFER[0] = address & 0xFF
         try:
-            #self.bus.open(1)
             self.bus.write_byte(device, self._BUFFER[0])
             time.sleep(.1)
             self._BUFFER[1] = self.bus.read_byte(device)
-            #self.bus.close()
         except:
             return False
         time.sleep(.1)
@@ -402,11 +399,7 @@ class IMU_I2C(IMU):
             device = self.xg_address
         buf[0] = address & 0xFF
         try:
-            #self.bus.open(1)
-            #self.bus.write_word_data(device, address&0xFF, [0x00])
-            #time.sleep(.1)
             result = self.bus.read_i2c_block_data(device, address&0xFF, count-1)
-            #self.bus.close()
         except:
             return False
         time.sleep(.1)
@@ -422,9 +415,7 @@ class IMU_I2C(IMU):
         self._BUFFER[0] = address & 0xFF
         self._BUFFER[1] = val & 0xFF
         try:
-            #self.bus.open(1)
             result = self.bus.write_i2c_block_data(device, self._BUFFER[0], [self._BUFFER[1]])
-            #self.bus.close()
         except:
             return False
         time.sleep(0.1)
