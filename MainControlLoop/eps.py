@@ -23,7 +23,7 @@ class EPS:
     }
 
     def __init__(self, state_field_registry):
-        self.bus = SMBus()
+        self.bus = SMBus(1)
         self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"), ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"), ("VSW10", "ISW10")]
         # Refer to EPS manual pages 40-50 for info on EPS commands
@@ -188,11 +188,9 @@ class EPS:
         :return: (byte) response from EPS
         """
         try:
-            self.bus.open(1)
             self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
             time.sleep(.1)
             result = self.bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
-            self.bus.close()
         except:
             return False
         time.sleep(.1)
@@ -206,9 +204,7 @@ class EPS:
         :return: (bool) whether command was successful
         """
         try:
-            self.bus.open(1)
             result = self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
-            self.bus.close()
         except:
             return False
         time.sleep(0.1)
