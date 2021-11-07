@@ -387,12 +387,12 @@ class IMU_I2C(IMU):
         try:
             #self.bus.open(1)
             self.bus.write_byte(device, self._BUFFER[0])
-            time.sleep(.3)
+            time.sleep(.1)
             self._BUFFER[1] = self.bus.read_byte(device)
             #self.bus.close()
         except:
             return False
-        time.sleep(.3)
+        time.sleep(.1)
         return self._BUFFER[1]
 
     def _read_bytes(self, sensor_type, address, count, buf):
@@ -409,7 +409,7 @@ class IMU_I2C(IMU):
             #self.bus.close()
         except:
             return False
-        time.sleep(.3)
+        time.sleep(.1)
         for i in range(1, count):
             buf[i] = result[i-1]
         return result
@@ -427,5 +427,5 @@ class IMU_I2C(IMU):
             #self.bus.close()
         except:
             return False
-        time.sleep(0.3)
+        time.sleep(0.1)
         return result
