@@ -267,27 +267,6 @@ class IMU:
         raw = self.read_gyro_raw()
         return map(lambda x: (x * self._gyro_dps_digit), raw)
 
-    def getTumble(self):
-        """
-        Returns tumble taken from gyro and magnetometer, in degrees/s
-        :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
-        """
-        interval = 1 #Time interval for magnetometer readings
-
-        gyroValues = tuple(self.gyro) #read the gyroscope
-
-        magValues = []
-        magValues.append(np.array(tuple(self.magnetic))) #read the magnetometer
-        time.sleep(interval)
-        magValues.append(np.array(tuple(self.magnetic)))
-
-        magV = (magValues[1]-magValues[0])/interval #mag values velocity
-
-        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
-        #from https://forum.sparkfun.com/viewtopic.php?t=22252
-
-        return (gyroValues, magRot)
-
     def read_temp_raw(self):
         """Read the raw temperature sensor value and return it as a 12-bit
         signed value.  If you want the temperature in nice units you probably
@@ -307,6 +286,27 @@ class IMU:
         temp = self.read_temp_raw()
         temp = 27.5 + temp / 16
         return temp
+
+    def getTumble(self):
+        """
+        Returns tumble taken from gyro and magnetometer, in degrees/s
+        :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
+        """
+        interval = .5 #Time interval for magnetometer readings
+
+        gyroValues = tuple(self.gyro) #read the gyroscope
+
+        magValues = []
+        magValues.append(np.array(tuple(self.magnetic))) #read the magnetometer
+        time.sleep(interval)
+        magValues.append(np.array(tuple(self.magnetic)))
+
+        magV = (magValues[1]-magValues[0])/interval #mag values velocity
+
+        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
+        #from https://forum.sparkfun.com/viewtopic.php?t=22252
+
+        return (gyroValues, magRot)
 
     def _read_u8(self, sensor_type, address):
         # Read an 8-bit unsigned value from the specified 8-bit address.

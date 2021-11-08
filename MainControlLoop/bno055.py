@@ -18,6 +18,8 @@ from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBus
 import time
 import numpy as np
+from math import atan
+from math import degrees
 try:
     import struct
 except ImportError:
@@ -747,6 +749,27 @@ class IMU:
         self._write_register(IMU._AXIS_MAP_SIGN_REGISTER, sign_config)
         # Go back to normal operation mode.
         self._write_register(IMU._MODE_REGISTER, current_mode)
+
+    def getTumble(self):
+        """
+        Returns tumble taken from gyro and magnetometer, in degrees/s
+        :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
+        """
+        interval = .5 #Time interval for magnetometer readings
+
+        gyroValues = self.gyro #read the gyroscope
+
+        magValues = []
+        magValues.append(np.array(self.magnetic)) #read the magnetometer
+        time.sleep(interval)
+        magValues.append(np.array(self.magnetic))
+
+        magV = (magValues[1]-magValues[0])/interval #mag values velocity
+
+        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
+        #from https://forum.sparkfun.com/viewtopic.php?t=22252
+
+        return (gyroValues, magRot)
 
 
 class IMU_I2C(IMU):
