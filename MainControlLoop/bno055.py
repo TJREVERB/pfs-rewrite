@@ -814,20 +814,20 @@ class IMU_I2C(IMU):
     def _write_register(self, register, value):
         self.buffer[0] = register
         self.buffer[1] = value
-        try:
-            result = self.bus.write_i2c_block_data(self.address, self.buffer[0], self.buffer[1:])
-        except:
-            return False
+        #try:
+        result = self.bus.write_i2c_block_data(self.address, self.buffer[0], self.buffer[1:])
+        #except:
+            #return False
         time.sleep(.1)
         return result
 
     def _read_register(self, register):
         self.buffer[0] = register
-        try:
-            self.bus.write_byte(self.address, self.buffer[0])
-            time.sleep(.1)
-            self.buffer[1:] = self.bus.read_i2c_block_data(self.address, 0, len(self.buffer)-1)
-        except:
-            return False
+        #try:
+        self.bus.write_byte(self.address, self.buffer[0])
+        time.sleep(.1)
+        self.buffer[1:] = self.bus.read_i2c_block_data(self.address, 0, len(self.buffer)-1)
+        #except:
+            #return False
         time.sleep(.1)
         return self.buffer[1]
