@@ -40,14 +40,21 @@ class Struct:
         self.buffer[0] = register_address
 
     def __get__(self, obj, objtype=None):
-        with obj.i2c_device as i2c:
-            i2c.write_then_readinto(self.buffer, self.buffer, out_end=1, in_start=1)
+        obj.bus.write_byte(obj.address, self.buffer[0])
+        time.sleep(.1)
+        self.buffer[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(self.buffer)-1)
         return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
+
+        #with obj.i2c_device as i2c:
+        #    i2c.write_then_readinto(self.buffer, self.buffer, out_end=1, in_start=1)
+        #return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
 
     def __set__(self, obj, value):
         struct.pack_into(self.format, self.buffer, 1, *value)
-        with obj.i2c_device as i2c:
-            i2c.write(self.buffer)
+        obj.bus.write_i2c_block_data(obj.address, self.buffer[0], self.buffer[1:])
+
+        #with obj.i2c_device as i2c:
+        #    i2c.write(self.buffer)
 
 
 class UnaryStruct:
@@ -66,16 +73,16 @@ class UnaryStruct:
     def __get__(self, obj, objtype=None):
         buf = bytearray(1 + struct.calcsize(self.format))
         buf[0] = self.address
-        with obj.i2c_device as i2c:
-            i2c.write_then_readinto(buf, buf, out_end=1, in_start=1)
+        obj.bus.write_byte(obj.address, buf[0])
+        time.sleep(.1)
+        buf[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(buf)-1)
         return struct.unpack_from(self.format, buf, 1)[0]
 
     def __set__(self, obj, value):
         buf = bytearray(1 + struct.calcsize(self.format))
         buf[0] = self.address
         struct.pack_into(self.format, buf, 1, value)
-        with obj.i2c_device as i2c:
-            i2c.write(buf)
+        obj.bus.write_i2c_block_data(obj.address, buf[0], buf[1:])
 
 
 class _ScaledReadOnlyStruct(Struct):  # pylint: disable=too-few-public-methods
@@ -819,7 +826,7 @@ class IMU_I2C(IMU):
         try:
             self.bus.write_byte(self.address, self.buffer[0])
             time.sleep(.1)
-            self.buffer[1] = self.bus.read_byte(self.address)
+            self.buffer[1:] = self.bus.read_i2c_block_data(self.address, 0, len(self.buffer)-1)
         except:
             return False
         time.sleep(.1)
