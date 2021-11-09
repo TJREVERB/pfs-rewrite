@@ -58,6 +58,10 @@ class StateFieldRegistry:
             "ORBITAL_PERIOD": int,
             "PRIMARY_RADIO": str
         }
+        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
+            "Iridium": "UART-RS232",
+            "APRS": "SPI-UART"
+        }
         self.modes_list = {
             "Startup": Startup,
             "Charging": Charging,

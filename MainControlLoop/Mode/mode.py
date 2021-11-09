@@ -22,10 +22,6 @@ class Mode:
             "All On": self.__turn_all_on,
             "All Off": self.__turn_all_off,
         }
-        self.component_to_serial = {
-            "Iridium": "UART-RS232",
-            "APRS": "SPI-UART"
-        }
 
         self.component_to_object = {  # returns object from component name
             "Iridium": Iridium,
@@ -145,8 +141,8 @@ class Mode:
 
         self.sfr.devices[component] = self.component_to_object[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
-        if component in self.component_to_serial:  # see if component has a serial converter to open
-            serial_converter = self.component_to_serial[component]  # gets serial converter name of component
+        if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
+            serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
             self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
             self.sfr.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
 
@@ -170,8 +166,8 @@ class Mode:
             return None
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
-        if component in self.component_to_serial:  # see if component has a serial converter to close
-            serial_converter = self.component_to_serial[component]  # get serial converter name for component
+        if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
+            serial_converter = self.sfr.component_to_serial[component]  # get serial converter name for component
             self.sfr.eps.commands["Pin Off"](serial_converter)  # turn off serial converter
             self.sfr.serial_converters[serial_converter] = False  # sets serial converter status to False (off)
 
