@@ -21,9 +21,7 @@ import gc
 
 class Outreach(Mode):  # TODO: IMPLEMENT
     def __init__(self, sfr):
-        super().__init__(sfr, conditions={
-
-        })
+        super().__init__(sfr)
 
         self.limited_command_registry = {
             # Reads and transmits battery voltage

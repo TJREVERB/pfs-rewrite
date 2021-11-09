@@ -43,12 +43,12 @@ class CommandExecutor:
         """
         Transmits time + message string from primary radio to ground station
         """
-        current_mode.sfr.devices["PRIMARY_RADIO"].commands["Transmit"](str(datetime.datetime.now()) + ";" + message)
+        current_mode.sfr.defaults["PRIMARY_RADIO"].commands["Transmit"]("TJ;" + message)
 
     def TST(self, current_mode: Mode):
         """
         Tries to transmit proof of life back to ground station.
-        TODO: error checking (if iridum doesn't work etc)
+        TODO: error checking (if iridium doesn't work etc)
         """
         self.transmit(current_mode, "TJ;Hello")
 
@@ -56,7 +56,7 @@ class CommandExecutor:
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(current_mode, "TJ;" + str(current_mode.eps.telemetry["VBCROUT"]()))
+        self.transmit(current_mode, "TJ;" + str(current_mode.sfr.eps.telemetry["VBCROUT"]()))
 
     def CHG(self, current_mode: Mode):
         """

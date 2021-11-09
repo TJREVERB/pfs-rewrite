@@ -2,10 +2,16 @@ import time
 import pandas as pd
 import numpy as np
 from MainControlLoop.Drivers.iridium import Iridium
+from MainControlLoop.Drivers.eps import EPS
+from MainControlLoop.Drivers.imu import IMU
+from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
+from MainControlLoop.Mode.outreach import Outreach
+from MainControlLoop.Mode.repeater import Repeater
+
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -25,20 +31,21 @@ class StateFieldRegistry:
         self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
         self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
-        
-        self.PRIMARY_RADIO = "Iridium" 
+
+        self.eps = EPS(self)
+        self.mode = Startup
+
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
-            "MODE": Startup,
             "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
             "FAILURES": [],
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
-            "PRIMARY_RADIO": Iridium
+            "PRIMARY_RADIO": "Iridium"
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -49,23 +56,27 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
-            "MODE": , #TODO ADD DATATYPE FOR CLASSES 
-            "PRIMARY_RADIO": #TODO ADD DATATYPE FOR CLASSES 
+            "PRIMARY_RADIO": str
         }
         self.modes_list = {
-            "STARTUP": Startup,
-            "CHARGING": Charging,
-            "SCIENCE": Science,
+            "Startup": Startup,
+            "Charging": Charging,
+            "Science": Science,
+            "Outreach": Outreach,
+            "Repeater": Repeater,
         }
-        self.devices = {  # False if device is off, True if device is on
-            "Iridium": False,
-            "APRS": False,
-            "IMU": False,
-            "Antenna Deployer": False,
+        self.devices = {  # None if off, object if on
+            "Iridium": None,
+            "APRS": None,
+            "IMU": None,
+            "Antenna Deployer": None,
+        }
+        self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
-            "USB-UART": False,  # Alternate APRS Serial Converter
+            "USB-UART": False  # Alternate APRS Serial Converter
         }
+
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)

@@ -23,11 +23,6 @@ class MainControlLoop:
         self.NUM_SCIENCE_MODE_ORBITS = 3  # Number of orbits to measure in SCIENCE mode
         self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
-        self.aprs = APRS(self.sfr)
-        self.eps = EPS(self.sfr)
-        self.antenna_deployer = AntennaDeployer(self.sfr)
-        self.iridium = Iridium(self.sfr)
-        self.imu = IMU_I2C() 
         # If battery capacity is default value, recalculate based on Vbatt
         if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
@@ -92,24 +87,6 @@ class MainControlLoop:
         self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
         self.previous_time = time.perf_counter()
 
-    def antenna(self):
-        """
-        Deploy the antenna asynchronously with the rest of the pfs
-        """
-        if not self.sfr.ANTENNA_DEPLOYED:
-            self.log()
-            # if 30 minutes have elapsed
-            if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
-                # Enable power to antenna deployer
-                self.eps.commands["Pin On"]("Antenna Deployer")
-                time.sleep(5)
-                if self.antenna_deployer.deploy():  # Deploy antenna
-                    print("deployed")
-                else:
-                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
-                self.log()  # Log state field registry change
-        self.eps.commands["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
-
     def systems_check(self) -> list:
         """
         Performs a complete systems check and returns a list of component failures
@@ -122,17 +99,6 @@ class MainControlLoop:
         if not self.aprs.functional: result.append("APRS")
         if not self.iridium.functional: result.append("Iridium")
         return result
-
-    def initiate_mode(self, modeName):
-        if modeName == "SCIENCE":
-            self.eps.commands["Pin On"]("Iridium")  # Switch on Iridium
-            self.eps.commands["Pin On"]("UART-RS232")  # Switch on Iridium serial converter
-        if modeName == "OUTREACH":
-            self.eps.commands["All On"]()
-        if modeName == "CHARGING":
-            pass
-
-
 
     def exec_command(self, raw_command, registry) -> bool:
         if raw_command == "":
@@ -154,46 +120,16 @@ class MainControlLoop:
         except Exception:
             return False
 
-    def execute(self):
-        self.antenna()
-        # Automatic mode switching
-        battery_voltage = self.eps.telemetry["VBCROUT"]()  # Reads battery voltage from EPS
-        # Enter charging mode if battery voltage < lower threshold
-        if battery_voltage < self.LOWER_THRESHOLD and self.sfr.MODE == "OUTREACH":
-            self.sfr.MODE = "CHARGING"  # Set MODE to CHARGING
-        # Enter outreach mode if battery has charged > upper threshold
-        elif battery_voltage > self.UPPER_THRESHOLD and self.sfr.MODE == "CHARGING":
-            self.sfr.MODE = "OUTREACH"  # Set MODE to OUTREACH
-
-        # Orbit Updates
-        if self.eps.sun_detected():
-            if self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
-                self.sfr.enter_sunlight()
-        elif self.sfr.LAST_ECLIPSE_ENTRY < self.sfr.LAST_DAYLIGHT_ENTRY:
-            self.sfr.enter_eclipse()
-
-        # Control satellite depending on mode
-        if self.sfr.MODE == "STARTUP":  # Run only once
-            self.startup_mode()
-        if self.sfr.MODE == "SCIENCE":
-            self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS)
-        if self.sfr.MODE == "CHARGING":
-            self.charging_mode()
-        if self.sfr.MODE == "OUTREACH":
-            self.outreach_mode()
-        self.sfr.dump()  # On every iteration, run sfr.dump to log changes
-        self.integrate_charge()  # Integrate charge
-
     def run(self):  # Repeat main control loop forever
         while True:  # Iterate forever
-            mode = self.sfr.defaults["MODE"]  # Instantiate mode object based on sfr
+            mode = self.sfr.mode(self.sfr)  # Instantiate mode object based on sfr
             mode.start()
-            while mode == self.sfr.defaults["MODE"] and mode.check_conditions():  # Iterate while we're supposed to be in this mode
+            while str(mode) == str(self.sfr.mode) and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
             # exits while loop if we get a message that says exit mode or if the conditions are not satisfied
-            if mode != self.sfr.defaults["MODE"]:  # if we exited the mode because we got a command, we can't call mode.switch_modes
+            if str(mode) != str(self.sfr.mode):  # if we exited the mode because we got a command, we can't call mode.switch_modes
                 mode.terminate_mode()  # Delete memory-intensive objects
             else:
                 new_mode = mode.switch_modes()  # decides which mode to switch to; returns mode object
                 mode.terminate_mode()
-                self.sfr.defaults["MODE"] = new_mode
+                self.sfr.mode = new_mode
