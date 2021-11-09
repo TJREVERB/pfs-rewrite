@@ -128,7 +128,7 @@ class MainControlLoop:
                 mode.execute_cycle()  # Execute single cycle of mode
             # exits while loop if we get a message that says exit mode or if the conditions are not satisfied
             if str(mode) != str(self.sfr.mode):  # if we exited the mode because we got a command, we can't call mode.switch_modes
-                mode.terminate_mode()  # Delete memory-intensive objects
+                mode.terminate_mode()  # turns off all devices used in mode
             else:
                 new_mode = mode.switch_modes()  # decides which mode to switch to; returns mode object
                 mode.terminate_mode()

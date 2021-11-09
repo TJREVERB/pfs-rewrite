@@ -32,8 +32,8 @@ class StateFieldRegistry:
         self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
-        self.eps = EPS(self)
-        self.mode = Startup
+        self.eps = EPS(self)  # EPS never turns off
+        self.mode = Startup  # not object instance, just type (will be init in mcl)
 
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",

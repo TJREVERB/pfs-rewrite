@@ -10,7 +10,7 @@ class Charging(Mode):
         return "Charging"
 
     def start(self) -> None:
-        self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])  # turn on primary radio if
+        self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])  # turn on primary radio
 
     def check_conditions(self) -> bool:
         if self.sfr.eps.telemetry["VBCROUT"]() <= self.UPPER_THRESHOLD:  # if voltage is less than upper limit
