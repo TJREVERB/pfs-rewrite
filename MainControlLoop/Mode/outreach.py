@@ -55,7 +55,7 @@ class Outreach(Mode):  # TODO: IMPLEMENT
             
         if self.sfr.APRS_RECIEVED_COMMAND != "":  # Check if there are any commands from outreach
             raw_command = self.sfr.APRS_RECIEVED_COMMAND
-            command = raw_command[raw_command.find("TJ;") + 3:raw_command.find("TJ;") + 6]
+            command = raw_command[raw_command.find("TJ;") + 3:raw_command.find("TJ;") + 6] # TODO: Edit this to call command_executor
             self.limited_command_registry[command]()
 
     
