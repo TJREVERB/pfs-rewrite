@@ -127,6 +127,7 @@ class MainControlLoop:
             while str(mode) == str(self.sfr.mode) and mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 mode.execute_cycle()  # Execute single cycle of mode
             # exits while loop if we get a message that says exit mode or if the conditions are not satisfied
+            # There must be a more elegant way to do this...
             if str(mode) != str(self.sfr.mode):  # if we exited the mode because we got a command, we can't call mode.switch_modes
                 mode.terminate_mode()  # turns off all devices used in mode
             else:

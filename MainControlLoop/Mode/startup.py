@@ -26,11 +26,12 @@ class Startup(Mode):
         return "Startup"
 
     def start(self):
+        # Why is this line here? Shouldn't we be integrating charge in every cycle, not in start?
         self.integrate_charge()  # integrates the charge
         # variable to check last time beacon was called
         self.last_beacon_time = time.time()
 
-    def antenna(self):  # TODO: FIGURE OUT SOME WAY TO DEPLOY THE ANTENNA WITHOUT BLOCKING CODE EXECUTION
+    def antenna(self):
         if not self.sfr.ANTENNA_DEPLOYED:
             self.sfr.dump()
             # if 30 minutes have elapsed
@@ -41,17 +42,17 @@ class Startup(Mode):
                 if self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
                     self.instruct["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
                 else:
-                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow. But how? If this doesnt work we die
+                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.sfr.dump()  # Log state field registry change
 
+    # What if we just collapsed all three of these methods into execute_cycle's if statement?
     def execute_cycle_normal(self):
         self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])
         if time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME:  # wait for antenna_wait_time to not spam beacons
-            self.antenna()  # Antenna deployment, doesn't run if antenna is already deployed
+            self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
             if self.sfr.ANTENNA_DEPLOYED:  # Attempt to establish contact with ground
                 self.sfr.devices["Iridium"].wave(self.sfr.eps.commands["VBCROUT"](), self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
                 self.last_contact_attempt = time.time()
-
 
     def execute_cycle_low_battery(self):
         self.instruct["All Off"]()  # turn everything off

@@ -14,7 +14,11 @@ class Science(Mode):  # TODO: IMPLEMENT
         return "Science"
 
     def start(self):
+        # We shouldn't be looking in the defaults dictionary to find the primary radio...
+        # Use the primary radio defined after sfr instantiation
+        # i.e. self.sfr.PRIMARY_RADIO
         self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])
+        # Pin On the Iridium as well? Because we need it to conduct our measurements
 
     def check_conditions(self) -> bool:
         if self.sfr.eps.telemetry["VBCROUT"]() > self.LOWER_THRESHOLD and self.pings_performed <= self.NUMBER_OF_REQUIRED_PINGS:  # if voltage greater than lower thres
@@ -37,6 +41,3 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def terminate_mode(self):
         self.instruct["Pin Off"](self.sfr.defaults["PRIMARY_RADIO"])
-
-
-

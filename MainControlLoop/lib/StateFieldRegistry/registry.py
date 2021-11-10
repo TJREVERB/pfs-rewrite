@@ -75,6 +75,7 @@ class StateFieldRegistry:
             "IMU": None,
             "Antenna Deployer": None,
         }
+        # What is the purpose of this dictionary?
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
@@ -89,8 +90,10 @@ class StateFieldRegistry:
             if len(lines) == len(self.defaults):
                 for line in lines:
                     line = line.strip("\n ").split(":")
+                    # IS THIS STILL NECESSARY WITH SETATTR?
                     if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
                         line[1] = "\"\""
+                    # This only allows for one argument for each sfr variable
                     setattr(self, line[0], self.type_dict[line[0]](line[1])) #assigns the instance variable with name line[0] to have value of everything else on that line
             else:
                 self.load_defaults()  # Create default fields

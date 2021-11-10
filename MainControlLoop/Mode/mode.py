@@ -23,7 +23,9 @@ class Mode:
             "All Off": self.__turn_all_off,
         }
 
+        # Could replace the functionality of this dictionary pretty easily with exec, would shrink the code
         self.component_to_object = {  # returns object from component name
+                                    # FALSE! This code returns component class, not an object
             "Iridium": Iridium,
             "APRS": APRS,
             "IMU": IMU,
@@ -41,6 +43,8 @@ class Mode:
         """
         pass
 
+    # Why don't we call these methods from the subclass?
+    # We'd be able to conserve common code like integrate_charge in every run of execute_cycle
     def check_conditions(self) -> bool:
         """
         Checks whether conditions for mode to continue running are still true
@@ -142,6 +146,8 @@ class Mode:
         self.sfr.devices[component] = self.component_to_object[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
+            # SUGGESTION: Collapse the following two lines into one line
+            # Remove third line and serial_converters dictionary
             serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
             self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
             self.sfr.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
@@ -167,6 +173,7 @@ class Mode:
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
+            # Same suggestion as for __turn_on_component
             serial_converter = self.sfr.component_to_serial[component]  # get serial converter name for component
             self.sfr.eps.commands["Pin Off"](serial_converter)  # turn off serial converter
             self.sfr.serial_converters[serial_converter] = False  # sets serial converter status to False (off)
@@ -185,6 +192,7 @@ class Mode:
 
         :return: None
         """
+        # Why not put exceptions=["Antenna Deployer"] in the method header?
         if exceptions is None:
             exceptions = ["Antenna Deployer"]
         for key in self.sfr.devices:
