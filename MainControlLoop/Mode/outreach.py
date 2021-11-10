@@ -41,6 +41,7 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         return "Outreach"
 
     def start(self):
+        self.sfr.PRIMARY_RADIO = "APRS"
         self.eps.commands["All On"]()
 
     def check_conditions(self):
@@ -62,4 +63,5 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         return Charging
 
     def terminate_mode(self):
+        self.sfr.PRIMARY_RADIO = "Iridium"
         self.instruct["Pin Off"]("APRS")
