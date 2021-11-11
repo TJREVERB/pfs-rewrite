@@ -55,8 +55,8 @@ class Struct:
 
     def __set__(self, obj, value):
         struct.pack_into(self.format, self.buffer, 1, *value)
-        for i in range(len(self.buffer)):
-            obj.bus.write_byte(obj.address, self.buffer[i])
+        for i in range(1, len(self.buffer)):
+            obj.bus.write_byte_data(obj.address, self.buffer[0], self.buffer[i])
             time.sleep(.05)
         time.sleep(.1)
         #obj.bus.write_i2c_block_data(obj.address, self.buffer[0], self.buffer[1:])
@@ -93,8 +93,8 @@ class UnaryStruct:
         buf = bytearray(1 + struct.calcsize(self.format))
         buf[0] = self.address
         struct.pack_into(self.format, buf, 1, value)
-        for i in range(len(buf)):
-            obj.bus.write_byte(obj.address, buf[i])
+        for i in range(1, len(buf)):
+            obj.bus.write_byte_data(obj.address, buf[0], buf[i])
             time.sleep(.05)
         #obj.bus.write_i2c_block_data(obj.address, buf[0], buf[1:])
 
