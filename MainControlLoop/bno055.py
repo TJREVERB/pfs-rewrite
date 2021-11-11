@@ -21,121 +21,22 @@ import time
 import numpy as np
 from math import atan
 from math import degrees
-try:
-    import struct
-except ImportError:
-    import ustruct as struct
 
-class Struct:
-    """
-    Arbitrary structure register that is readable and writeable.
-    Values are tuples that map to the values in the defined struct.  See struct
-    module documentation for struct format string and its possible value types.
-    :param int register_address: The register address to read the bit from
-    :param type struct_format: The struct format string for this register.
-    """
+def _twos_comp_to_signed(val, bits):
+    # Convert an unsigned integer in 2's compliment form of the specified bit
+    # length to its signed integer value and return it.
+    if val & (1 << (bits - 1)) != 0:
+        return val - (1 << bits)
+    return val
 
-    def __init__(self, register_address, struct_format):
-        self.format = struct_format
-        self.buffer = bytearray(1 + struct.calcsize(self.format))
-        self.buffer[0] = register_address
-
-    def __get__(self, obj, objtype=None):
-        obj.bus.write_byte(obj.address, self.buffer[0])
-        time.sleep(.1)
-        for i in range(1, len(self.buffer)):
-            self.buffer[i] = obj.bus.read_byte(obj.address)
-            time.sleep(.05)
-        #self.buffer[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(self.buffer)-1)
-        return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
-
-        #with obj.i2c_device as i2c:
-        #    i2c.write_then_readinto(self.buffer, self.buffer, out_end=1, in_start=1)
-        #return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
-
-    def __set__(self, obj, value):
-        struct.pack_into(self.format, self.buffer, 1, *value)
-        for i in range(len(self.buffer)):
-            obj.bus.write_byte(obj.address, self.buffer[i])
-            time.sleep(.05)
-        time.sleep(.1)
-        #obj.bus.write_i2c_block_data(obj.address, self.buffer[0], self.buffer[1:])
-
-        #with obj.i2c_device as i2c:
-        #    i2c.write(self.buffer)
+def _signed_to_twos_comp(val, bits):
+    # Convert a signed integer to unsigned int in 2's complement form
+    # bits is number of bits, with sign bit
+    if val < 0:
+        val += (1 << (bits-1))
+    return val
 
 
-class UnaryStruct:
-    """
-    Arbitrary single value structure register that is readable and writeable.
-    Values map to the first value in the defined struct.  See struct
-    module documentation for struct format string and its possible value types.
-    :param int register_address: The register address to read the bit from
-    :param type struct_format: The struct format string for this register.
-    """
-
-    def __init__(self, register_address, struct_format):
-        self.format = struct_format
-        self.address = register_address
-
-    def __get__(self, obj, objtype=None):
-        buf = bytearray(1 + struct.calcsize(self.format))
-        buf[0] = self.address
-        obj.bus.write_byte(obj.address, buf[0])
-        time.sleep(.1)
-        for i in range(1, len(buf)):
-            buf[i] = obj.bus.read_byte(obj.address)
-            time.sleep(.05)
-        #buf[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(buf)-1)
-        return struct.unpack_from(self.format, buf, 1)[0]
-
-    def __set__(self, obj, value):
-        buf = bytearray(1 + struct.calcsize(self.format))
-        buf[0] = self.address
-        struct.pack_into(self.format, buf, 1, value)
-        for i in range(len(buf)):
-            obj.bus.write_byte(obj.address, buf[i])
-            time.sleep(.05)
-        #obj.bus.write_i2c_block_data(obj.address, buf[0], buf[1:])
-
-
-class _ScaledReadOnlyStruct(Struct):  # pylint: disable=too-few-public-methods
-    def __init__(self, register_address, struct_format, scale):
-        super().__init__(register_address, struct_format)
-        self.scale = scale
-
-    def __get__(self, obj, objtype=None):
-        result = super().__get__(obj, objtype)
-        return tuple(self.scale * v for v in result)
-
-    def __set__(self, obj, value):
-        raise NotImplementedError()
-
-class _ReadOnlyUnaryStruct(UnaryStruct):  # pylint: disable=too-few-public-methods
-    def __set__(self, obj, value):
-        raise NotImplementedError()
-
-
-class _ModeStruct(Struct):  # pylint: disable=too-few-public-methods
-    def __init__(self, register_address, struct_format, mode):
-        super().__init__(register_address, struct_format)
-        self.mode = mode
-
-    def __get__(self, obj, objtype=None):
-        last_mode = obj.mode
-        obj.mode = self.mode
-        result = super().__get__(obj, objtype)
-        obj.mode = last_mode
-        # single value comes back as a one-element tuple
-        return result[0] if isinstance(result, tuple) and len(result) == 1 else result
-
-    def __set__(self, obj, value):
-        last_mode = obj.mode
-        obj.mode = self.mode
-        # underlying __set__() expects a tuple
-        set_val = value if isinstance(value, tuple) else (value,)
-        super().__set__(obj, set_val)
-        obj.mode = last_mode
 
 class IMU:
     """
@@ -225,11 +126,6 @@ class IMU:
     _GYRO_CONFIG_0_REGISTER = const(0x0A)
     _GYRO_CONFIG_1_REGISTER = const(0x0B)
     _CALIBRATION_REGISTER = const(0x35)
-    _OFFSET_ACCEL_REGISTER = const(0x55)
-    _OFFSET_MAGNET_REGISTER = const(0x5B)
-    _OFFSET_GYRO_REGISTER = const(0x61)
-    _RADIUS_ACCEL_REGISTER = const(0x67)
-    _RADIUS_MAGNET_REGISTER = const(0x69)
     _TRIGGER_REGISTER = const(0x3F)
     _POWER_REGISTER = const(0x3E)
     _ID_REGISTER = const(0x00)
@@ -245,13 +141,13 @@ class IMU:
     #Data registers (start, end)
     #X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
     
-    ACCEL_REGISTER = (0x08, 0x0d)
-    MAG_REGISTER = (0x0e, 0x13)
+    ACCEL_REGISTER = (0x08, 0x0D)
+    MAG_REGISTER = (0x0E, 0x13)
     GYRO_REGISTER = (0x14, 0x19)
-    EULER_REGISTER = (0x1a, 0x1f)
+    EULER_REGISTER = (0x1A, 0x1F)
     QUATERNION_REGISTER = (0x20, 0x27)
-    LIA_REGISTER = (0x28, 0x2d)
-    GRAV_REGISTER = (0x2e, 0x33)
+    LIA_REGISTER = (0x28, 0x2D)
+    GRAV_REGISTER = (0x2E, 0x33)
     TEMP_REGISTER = 0x34
 
     #Scales
@@ -262,6 +158,17 @@ class IMU:
     QUATERNION_SCALE = 1 / (1 << 14)
     LIA_SCALE = 1 / 100
     GRAV_SCALE = 1 / 100
+
+    #Offset registers
+
+    #X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
+    _OFFSET_ACCEL_REGISTER = (0x55, 0x5A)
+    _OFFSET_MAGNET_REGISTER = (0x5B, 0x60)
+    _OFFSET_GYRO_REGISTER = (0x61, 0x66)
+
+    #LSB, MSB
+    _RADIUS_ACCEL_REGISTER = (0x67, 0x68)
+    _RADIUS_MAGNET_REGISTER = (0x69, 0x6A)
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
@@ -407,6 +314,25 @@ class IMU:
             self._write_register(IMU._MODE_REGISTER, new_mode)
             time.sleep(0.01)  # Table 3.6
 
+    def get_tup_data(self, registers, scale):
+        """gets and returns xyz tuple data from corresponding register range, with scale multiplied"""
+        raw = []
+        for addr in range(*registers, 2):
+            lsb = self._read_register(addr)
+            msb = self._read_register(addr+1)
+            raw.append(_twos_comp_to_signed(lsb + (msb << 8), 16))
+        return tuple(np.array(raw)*scale)
+
+    def write_tup_data(self, tup, registers, scale):
+        """sets xyz tuple data from register range, dividing by scale"""
+        i = 0
+        for addr in range(*registers, 2):
+            raw = _signed_to_twos_comp(int(tup[i]/scale), 16)
+            msb = (raw >> 8) & 0xff
+            lsb = raw & 0xff
+            self._write_register(addr, lsb)
+            self._write_register(addr + 1, msb)
+
     @property
     def calibration_status(self):
         """Tuple containing sys, gyro, accel, and mag calibration data."""
@@ -422,6 +348,98 @@ class IMU:
         """Boolean indicating calibration status."""
         sys, gyro, accel, mag = self.calibration_status
         return sys == gyro == accel == mag == 0x03
+
+    #Calibration offsets for accelerometer
+    @property
+    def offsets_accelerometer(self):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        result = self.get_tup_data(IMU._OFFSET_ACCEL_REGISTER, IMU.ACCEL_SCALE)
+        self.mode = old_mode
+        return result
+        
+    @offsets_accelerometer.setter
+    def offsets_accelerometer(self, new_offsets):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        self.write_tup_data(new_offsets, IMU._OFFSET_ACCEL_REGISTER, IMU.ACCEL_SCALE)
+        self.mode = old_mode
+
+    #Calibration offsets for the magnetometer
+    @property
+    def offsets_magnetometer(self):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        result = self.get_tup_data(IMU._OFFSET_MAGNET_REGISTER, 1)
+        self.mode = old_mode
+        return result
+
+    @offsets_magnetometer.setter
+    def offsets_magnetometer(self, new_offsets):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        self.write_tup_data(new_offsets, IMU._OFFSET_MAGNET_REGISTER, IMU.MAG_SCALE)
+        self.mode = old_mode
+    
+    #Calibration offsets for the gyroscope
+    @property
+    def offsets_gyroscope(self):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        result = self.get_tup_data(IMU._OFFSET_GYRO_REGISTER, 1)
+        self.mode = old_mode
+        return result
+
+    @offsets_gyroscope.setter
+    def offsets_gyroscope(self, new_offsets):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        self.write_tup_data(new_offsets, IMU._OFFSET_GYRO_REGISTER, IMU.GYRO_SCALE)
+        self.mode = old_mode
+    
+    #Radius for accelerometer (cm?)
+    @property
+    def radius_accelerometer(self):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        lsb = self._read_register(IMU._RADIUS_ACCEL_REGISTER[0])
+        msb = self._read_register(IMU._RADIUS_ACCEL_REGISTER[1])
+        self.mode = old_mode
+        data = _twos_comp_to_signed(lsb + (msb << 8), 16)
+        return data
+
+    @radius_accelerometer.setter
+    def radius_accelerometer(self, new_rad):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        raw = _signed_to_twos_comp(new_rad, 16)
+        msb = (raw >> 8) & 0xff
+        lsb = raw & 0xff
+        self._write_register(IMU._RADIUS_ACCEL_REGISTER[0], lsb)
+        self._write_register(IMU._RADIUS_ACCEL_REGISTER[1], msb)
+        self.mode = old_mode
+
+    #Radius for magnetometer (cm?)
+    @property
+    def radius_magnetometer(self):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        lsb = self._read_register(IMU._RADIUS_MAGNET_REGISTER[0])
+        msb = self._read_register(IMU._RADIUS_MAGNET_REGISTER[1])
+        self.mode = old_mode
+        data = _twos_comp_to_signed(lsb + (msb << 8), 16)
+        return data
+
+    @radius_magnetometer.setter
+    def radius_magnetometer(self, new_rad):
+        old_mode = self.mode
+        self.mode = IMU.CONFIG_MODE
+        raw = _signed_to_twos_comp(new_rad, 16)
+        msb = (raw >> 8) & 0xff
+        lsb = raw & 0xff
+        self._write_register(IMU._RADIUS_MAGNET_REGISTER[0], lsb)
+        self._write_register(IMU._RADIUS_MAGNET_REGISTER[1], msb)
+        self.mode = old_mode
 
     @property
     def external_crystal(self):
@@ -449,16 +467,8 @@ class IMU:
 
     @property
     def _temperature(self):
+        #return _twos_comp_to_signed(self._read_register(IMU.TEMP_REGISTER), 8)
         return self._read_register(IMU.TEMP_REGISTER)
-        #raise NotImplementedError("Must be implemented.")
-
-    def get_tup_data(self, registers, scale):
-        raw = []
-        for addr in range(*registers, 2):
-            lsb = self._read_register(addr)
-            msb = self._read_register(addr+1)
-            raw.append(lsb + (msb << 8))
-        return tuple(np.array(raw)*scale)
 
     @property
     def acceleration(self):
@@ -472,7 +482,6 @@ class IMU:
     @property
     def _acceleration(self):
         return self.get_tup_data(IMU.ACCEL_REGISTER, IMU.ACCEL_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def magnetic(self):
@@ -486,7 +495,6 @@ class IMU:
     @property
     def _magnetic(self):
         return self.get_tup_data(IMU.MAG_REGISTER, IMU.MAG_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def gyro(self):
@@ -500,7 +508,6 @@ class IMU:
     @property
     def _gyro(self):
         return self.get_tup_data(IMU.GYRO_REGISTER, IMU.GYRO_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def euler(self):
@@ -514,7 +521,6 @@ class IMU:
     @property
     def _euler(self):
         return self.get_tup_data(IMU.EULER_REGISTER, IMU.EULER_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def quaternion(self):
@@ -528,7 +534,6 @@ class IMU:
     @property
     def _quaternion(self):
         return self.get_tup_data(IMU.QUATERNION_REGISTER, IMU.QUATERNION_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def linear_acceleration(self):
@@ -542,7 +547,6 @@ class IMU:
     @property
     def _linear_acceleration(self):
         return self.get_tup_data(IMU.LIA_REGISTER, IMU.LIA_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def gravity(self):
@@ -556,7 +560,6 @@ class IMU:
     @property
     def _gravity(self):
         return self.get_tup_data(IMU.GRAV_REGISTER, IMU.GRAV_SCALE)
-        #raise NotImplementedError("Must be implemented.")
 
     @property
     def accel_range(self):
@@ -834,18 +837,6 @@ class IMU_I2C(IMU):
     """
     Driver for the BNO055 9DOF IMU sensor via I2C.
     """
-
-    offsets_accelerometer = _ModeStruct(IMU._OFFSET_ACCEL_REGISTER, "<hhh", IMU.CONFIG_MODE)
-    """Calibration offsets for the accelerometer"""
-    offsets_magnetometer = _ModeStruct(IMU._OFFSET_MAGNET_REGISTER, "<hhh", IMU.CONFIG_MODE)
-    """Calibration offsets for the magnetometer"""
-    offsets_gyroscope = _ModeStruct(IMU._OFFSET_GYRO_REGISTER, "<hhh", IMU.CONFIG_MODE)
-    """Calibration offsets for the gyroscope"""
-
-    radius_accelerometer = _ModeStruct(IMU._RADIUS_ACCEL_REGISTER, "<h", IMU.CONFIG_MODE)
-    """Radius for accelerometer (cm?)"""
-    radius_magnetometer = _ModeStruct(IMU._RADIUS_MAGNET_REGISTER, "<h", IMU.CONFIG_MODE)
-    """Radius for magnetometer (cm?)"""
 
     def __init__(self, state_field_registry = None, addr=0x28):
         self.buffer = bytearray(2)
