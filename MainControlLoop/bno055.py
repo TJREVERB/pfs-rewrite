@@ -805,9 +805,9 @@ class IMU_I2C(IMU):
     radius_magnetometer = _ModeStruct(IMU._RADIUS_MAGNET_REGISTER, "<h", IMU.CONFIG_MODE)
     """Radius for magnetometer (cm?)"""
 
-    def __init__(self, state_field_registry):
+    def __init__(self, state_field_registry, addr=0x28):
         self.buffer = bytearray(2)
-        self.address = 0x28
+        self.address = addr
         self.bus = SMBus(1)
         super().__init__(state_field_registry)
 
@@ -815,7 +815,7 @@ class IMU_I2C(IMU):
         self.buffer[0] = register
         self.buffer[1] = value
         #try:
-        result = self.bus.write_i2c_block_data(self.address, self.buffer[0], self.buffer[1:])
+        result = self.bus.write_i2c_block_data(self.address, self.buffer[0], [self.buffer[1]])
         #except:
             #return False
         time.sleep(.1)
@@ -826,7 +826,7 @@ class IMU_I2C(IMU):
         #try:
         self.bus.write_byte(self.address, self.buffer[0])
         time.sleep(.1)
-        self.buffer[1:] = self.bus.read_i2c_block_data(self.address, 0, len(self.buffer)-1)
+        self.buffer[1] = self.bus.read_i2c_block_data(self.address, 0, 1)[0]
         #except:
             #return False
         time.sleep(.1)
