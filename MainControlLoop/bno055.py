@@ -33,7 +33,7 @@ def _signed_to_twos_comp(val, bits):
     # Convert a signed integer to unsigned int in 2's complement form
     # bits is number of bits, with sign bit
     if val < 0:
-        val += (1 << (bits-1))
+        val += (1 << bits)
     return val
 
 
