@@ -43,7 +43,7 @@ class Struct:
     def __get__(self, obj, objtype=None):
         obj.bus.write_byte(obj.address, self.buffer[0])
         time.sleep(.1)
-        self.buffer[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(self.buffer)-1)
+        self.buffer[1:] = obj.bus.read_block_data(obj.address, 0, len(self.buffer)-1)
         return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
 
         #with obj.i2c_device as i2c:
@@ -52,7 +52,7 @@ class Struct:
 
     def __set__(self, obj, value):
         struct.pack_into(self.format, self.buffer, 1, *value)
-        obj.bus.write_i2c_block_data(obj.address, self.buffer[0], self.buffer[1:])
+        obj.bus.write_block_data(obj.address, self.buffer[0], self.buffer[1:])
 
         #with obj.i2c_device as i2c:
         #    i2c.write(self.buffer)
