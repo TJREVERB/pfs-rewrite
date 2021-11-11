@@ -806,7 +806,7 @@ class IMU_I2C(IMU):
     radius_magnetometer = _ModeStruct(IMU._RADIUS_MAGNET_REGISTER, "<h", IMU.CONFIG_MODE)
     """Radius for magnetometer (cm?)"""
 
-    def __init__(self, state_field_registry, addr=0x28):
+    def __init__(self, state_field_registry = None, addr=0x28):
         self.buffer = bytearray(2)
         self.address = addr
         self.bus = SMBus(1)
