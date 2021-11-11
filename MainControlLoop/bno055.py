@@ -848,10 +848,13 @@ class IMU_I2C(IMU):
         self.buffer[0] = register
         self.buffer[1] = value
         result = self.bus.write_byte_data(self.address, self.buffer[0], self.buffer[1])
+        time.sleep(.02)
         return result
 
     def _read_register(self, register):
         self.buffer[0] = register
         self.bus.write_byte(self.address, self.buffer[0])
+        time.sleep(.01)
         self.buffer[1] = self.bus.read_byte(self.address)
+        time.sleep(.01)
         return self.buffer[1]
