@@ -45,6 +45,7 @@ class Struct:
         time.sleep(.1)
         for i in range(1, len(self.buffer)):
             self.buffer[i] = obj.bus.read_byte(obj.address)
+            time.sleep(.05)
         #self.buffer[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(self.buffer)-1)
         return struct.unpack_from(self.format, memoryview(self.buffer)[1:])
 
@@ -56,6 +57,8 @@ class Struct:
         struct.pack_into(self.format, self.buffer, 1, *value)
         for i in range(len(self.buffer)):
             obj.bus.write_byte(obj.address, self.buffer[i])
+            time.sleep(.05)
+        time.sleep(.1)
         #obj.bus.write_i2c_block_data(obj.address, self.buffer[0], self.buffer[1:])
 
         #with obj.i2c_device as i2c:
@@ -82,6 +85,7 @@ class UnaryStruct:
         time.sleep(.1)
         for i in range(1, len(buf)):
             buf[i] = obj.bus.read_byte(obj.address)
+            time.sleep(.05)
         #buf[1:] = obj.bus.read_i2c_block_data(obj.address, 0, len(buf)-1)
         return struct.unpack_from(self.format, buf, 1)[0]
 
@@ -91,6 +95,7 @@ class UnaryStruct:
         struct.pack_into(self.format, buf, 1, value)
         for i in range(len(buf)):
             obj.bus.write_byte(obj.address, buf[i])
+            time.sleep(.05)
         #obj.bus.write_i2c_block_data(obj.address, buf[0], buf[1:])
 
 
