@@ -242,6 +242,27 @@ class IMU:
     AXIS_REMAP_POSITIVE = const(0x00)
     AXIS_REMAP_NEGATIVE = const(0x01)
 
+    #Data registers (start, end)
+    #X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
+    
+    ACCEL_REGISTER = (0x08, 0x0d)
+    MAG_REGISTER = (0x0e, 0x13)
+    GYRO_REGISTER = (0x14, 0x19)
+    EULER_REGISTER = (0x1a, 0x1f)
+    QUATERNION_REGISTER = (0x20, 0x27)
+    LIA_REGISTER = (0x28, 0x2d)
+    GRAV_REGISTER = (0x2e, 0x33)
+    TEMP_REGISTER = 0x34
+
+    #Scales
+    ACCEL_SCALE = 1 / 100
+    MAG_SCALE = 1 / 16
+    GYRO_SCALE = 0.001090830782496456
+    EULER_SCALE = 1 / 16
+    QUATERNION_SCALE = 1 / (1 << 14)
+    LIA_SCALE = 1 / 100
+    GRAV_SCALE = 1 / 100
+
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         chip_id = self._read_register(IMU._ID_REGISTER)
@@ -428,7 +449,16 @@ class IMU:
 
     @property
     def _temperature(self):
-        raise NotImplementedError("Must be implemented.")
+        return self._read_register(IMU.TEMP_REGISTER)
+        #raise NotImplementedError("Must be implemented.")
+
+    def get_tup_data(self, registers, scale):
+        raw = []
+        for addr in range(*registers, 2):
+            lsb = self._read_register(addr)
+            msb = self._read_register(addr+1)
+            raw.append(lsb + (msb << 8))
+        return tuple(np.array(raw)*scale)
 
     @property
     def acceleration(self):
@@ -441,7 +471,8 @@ class IMU:
 
     @property
     def _acceleration(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.ACCEL_REGISTER, IMU.ACCEL_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def magnetic(self):
@@ -454,7 +485,8 @@ class IMU:
 
     @property
     def _magnetic(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.MAG_REGISTER, IMU.MAG_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def gyro(self):
@@ -467,7 +499,8 @@ class IMU:
 
     @property
     def _gyro(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.GYRO_REGISTER, IMU.GYRO_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def euler(self):
@@ -480,7 +513,8 @@ class IMU:
 
     @property
     def _euler(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.EULER_REGISTER, IMU.EULER_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def quaternion(self):
@@ -493,7 +527,8 @@ class IMU:
 
     @property
     def _quaternion(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.QUATERNION_REGISTER, IMU.QUATERNION_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def linear_acceleration(self):
@@ -506,7 +541,8 @@ class IMU:
 
     @property
     def _linear_acceleration(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.LIA_REGISTER, IMU.LIA_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def gravity(self):
@@ -519,7 +555,8 @@ class IMU:
 
     @property
     def _gravity(self):
-        raise NotImplementedError("Must be implemented.")
+        return self.get_tup_data(IMU.GRAV_REGISTER, IMU.GRAV_SCALE)
+        #raise NotImplementedError("Must be implemented.")
 
     @property
     def accel_range(self):
@@ -798,15 +835,6 @@ class IMU_I2C(IMU):
     Driver for the BNO055 9DOF IMU sensor via I2C.
     """
 
-    _temperature = _ReadOnlyUnaryStruct(0x34, "b")
-    _acceleration = _ScaledReadOnlyStruct(0x08, "<hhh", 1 / 100)
-    _magnetic = _ScaledReadOnlyStruct(0x0E, "<hhh", 1 / 16)
-    _gyro = _ScaledReadOnlyStruct(0x14, "<hhh", 0.001090830782496456)
-    _euler = _ScaledReadOnlyStruct(0x1A, "<hhh", 1 / 16)
-    _quaternion = _ScaledReadOnlyStruct(0x20, "<hhhh", 1 / (1 << 14))
-    _linear_acceleration = _ScaledReadOnlyStruct(0x28, "<hhh", 1 / 100)
-    _gravity = _ScaledReadOnlyStruct(0x2E, "<hhh", 1 / 100)
-
     offsets_accelerometer = _ModeStruct(IMU._OFFSET_ACCEL_REGISTER, "<hhh", IMU.CONFIG_MODE)
     """Calibration offsets for the accelerometer"""
     offsets_magnetometer = _ModeStruct(IMU._OFFSET_MAGNET_REGISTER, "<hhh", IMU.CONFIG_MODE)
@@ -839,9 +867,7 @@ class IMU_I2C(IMU):
         self.buffer[0] = register
         #try:
         self.bus.write_byte(self.address, self.buffer[0])
-        time.sleep(.1)
         self.buffer[1] = self.bus.read_byte(self.address)
         #except:
             #return False
-        time.sleep(.1)
         return self.buffer[1]
