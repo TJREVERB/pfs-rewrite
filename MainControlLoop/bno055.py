@@ -827,7 +827,7 @@ class IMU_I2C(IMU):
         #try:
         self.bus.write_byte(self.address, self.buffer[0])
         time.sleep(.1)
-        self.buffer[1] = self.bus.read_i2c_block_data(self.address, 0, 1)
+        self.buffer[1] = self.bus.read_byte(self.address)
         #except:
             #return False
         time.sleep(.1)
