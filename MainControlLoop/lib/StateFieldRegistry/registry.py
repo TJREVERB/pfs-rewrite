@@ -45,7 +45,8 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
-            "PRIMARY_RADIO": "Iridium"
+            "PRIMARY_RADIO": "Iridium",
+            "LOWER_THRESHOLD": 5 #minimum battery needed to operate, if it's lower it should switch to charging mode
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
