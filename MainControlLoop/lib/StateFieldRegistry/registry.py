@@ -40,7 +40,8 @@ class StateFieldRegistry:
             "IRIDIUM_RECEIVED_COMMAND": "\"\"",
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
-            "BATTERY_CAPACITY_INT": 80 * 3600,  # Integral estimate of remaining battery capacity
+            # Integral estimate of remaining battery capacity
+            "BATTERY_CAPACITY_INT": self.volt_to_charge(self.eps.telemetry_request["VBCROUT"]()),
             "FAILURES": [],
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,

@@ -67,7 +67,7 @@ class Mode:
 
         :return: None
         """
-        pass
+        self.integrate_charge()
 
     def switch_modes(self) -> type:
         """
