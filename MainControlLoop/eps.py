@@ -190,10 +190,10 @@ class EPS:
         try:
             self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
             time.sleep(.05)
-            result = [self.bus.read_byte(EPS.EPS_ADDRESS) for i in range(length)]
+            result = self.bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
         except:
             return False
-        time.sleep(.05)
+        time.sleep(.1)
         return result
 
     def command(self, register, data) -> bool:
@@ -207,7 +207,7 @@ class EPS:
             result = self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
         except:
             return False
-        time.sleep(.05)
+        time.sleep(.1)
         return result
 
     def telemetry_request(self, tle, multiplier) -> float:
