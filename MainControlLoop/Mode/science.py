@@ -1,5 +1,8 @@
+from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.mode import Mode
 import time
+
+from MainControlLoop.Mode.outreach import Outreach
 
 
 class Science(Mode):  # TODO: IMPLEMENT
@@ -46,9 +49,11 @@ class Science(Mode):  # TODO: IMPLEMENT
         super(Science, self).switch_modes()  # Run switch_modes of superclass
 
         if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
-            self.sfr.MODE = self.sfr.modes_list["CHARGING"]
+            return Charging
         elif self.conditions["COLLECTION_COMPLETE"]:
-            self.sfr.MODE = self.sfr.modes_list["OUTREACH"]
+            return Outreach
+        
+        return Science #if this is called even though the conditions are met, this just returns itself
 
     def terminate_mode(self):
         self.instruct["Pin Off"](self.sfr.defaults["PRIMARY_RADIO"])
