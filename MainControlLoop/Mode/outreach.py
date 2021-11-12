@@ -44,10 +44,14 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         return "Outreach"
 
     def start(self):
+        super(Outreach, self).start() 
+
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
 
     def check_conditions(self):
+        super(Outreach, self).check_conditions() 
+
         self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
         if self.conditions["CHARGE_LOW"]:
             return False
@@ -55,6 +59,8 @@ class Outreach(Mode):  # TODO: IMPLEMENT
             return True
 
     def execute_cycle(self):
+        super(Outreach, self).execute_cycle() 
+
         self.sfr.devices["APRS"].read()
             
         if self.sfr.APRS_RECIEVED_COMMAND != "":  # Check if there are any commands from outreach
