@@ -26,6 +26,9 @@ class Outreach(Mode):  # TODO: IMPLEMENT
     def __init__(self, sfr):
         super().__init__(sfr)
 
+        self.conditions = {
+            "CHARGE_LOW": False
+        }
         self.limited_command_registry = {
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
@@ -45,10 +48,11 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         self.instruct["Pin On"]("APRS")
 
     def check_conditions(self):
-        if self.sfr.eps.telemetry["VBCROUT"]() > self.LOWER_THRESHOLD:  # if voltage greater than lower thres
-            return True
-        else:
+        self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
+        if self.conditions["CHARGE_LOW"]:
             return False
+        else:
+            return True
 
     def execute_cycle(self):
         self.sfr.devices["APRS"].read()
@@ -60,7 +64,12 @@ class Outreach(Mode):  # TODO: IMPLEMENT
 
     
     def switch_modes(self):
-        return Charging
+        super(Outreach, self).switch_modes()  # Run switch_modes of superclass
+
+        if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
+            return Charging
+        
+        return Outreach #if this is called even though the conditions are met, this just returns itself
 
     def terminate_mode(self):
         self.instruct["Pin Off"]("Iridium")

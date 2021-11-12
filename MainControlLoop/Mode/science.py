@@ -45,7 +45,6 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.pings_performed += 1
 
     def switch_modes(self):
-        pass
         super(Science, self).switch_modes()  # Run switch_modes of superclass
 
         if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
