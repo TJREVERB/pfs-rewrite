@@ -14,10 +14,10 @@ class Startup(Mode):
         """
         CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
         """
+        super().__init__(sfr)
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.ANTENNA_WAIT_TIME = 120  # 120 seconds in 2 minutes
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
-        super().__init__(sfr)
         self.contact_established = False  # boolean for if contact with ground station has been made
         self.last_beacon_time = time.time()
         self.last_contact_attempt = time.time()

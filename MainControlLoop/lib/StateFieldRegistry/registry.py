@@ -75,7 +75,7 @@ class StateFieldRegistry:
             "IMU": None,
             "Antenna Deployer": None,
         }
-        # What is the purpose of this dictionary?
+
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
