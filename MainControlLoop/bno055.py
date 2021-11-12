@@ -818,7 +818,9 @@ class IMU:
         """
         interval = .5 #Time interval for magnetometer readings
 
-        gyroValues = self.gyro #read the gyroscope
+        temp = np.array(self.gyro)
+        time.sleep(.05)
+        gyroValues = tuple((np.array(self.gyro) - temp)/2) #read the gyroscope, two readings
 
         magValues = []
         magValues.append(np.array(self.magnetic)) #read the magnetometer
