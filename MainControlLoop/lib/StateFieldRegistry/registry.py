@@ -46,7 +46,8 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
-            "PRIMARY_RADIO": "Iridium"
+            "PRIMARY_RADIO": "Iridium",
+            "LOWER_THRESHOLD": 5 #minimum battery needed to operate, if it's lower it should switch to charging mode
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -76,7 +77,7 @@ class StateFieldRegistry:
             "IMU": None,
             "Antenna Deployer": None,
         }
-        # What is the purpose of this dictionary?
+
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
