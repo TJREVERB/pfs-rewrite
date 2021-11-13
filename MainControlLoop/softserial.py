@@ -18,7 +18,7 @@ class SoftwareUART():
         self.baudrate = baud
         self.wave = None
         self.pi.set_mode(TX, pigpio.OUTPUT)
-        self.pi.bb_serial_read_open(self.RXPin)
+        self.pi.bb_serial_read_open(self.RXPin, self.baudrate)
 
     def __del__(self):
         pigpio.exceptions = False #fatal excpetions off in case bbserial doesnt exists
@@ -36,7 +36,7 @@ class SoftwareUART():
         self.wave = self.pi.wave_create()
         self.pi.wave_send_once(self.wave)
         self.pi.wave_delete(self.wave)
-        self.pi.bb_serial_read_open(self.RXPin)
+        self.pi.bb_serial_read_open(self.RXPin, self.baudrate)
         return 1
 
     def read(self, len):
