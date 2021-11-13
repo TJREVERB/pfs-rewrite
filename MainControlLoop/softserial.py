@@ -6,13 +6,13 @@ class SoftwareUART():
     """Bitbang uart driver using pigpio and interrupts"""
     
     def __init__(self, RX, TX, baud):
-        self.pi = pigpio.pi()
-        # test to see if the daemon is already running
-        if not self.pi.connected:
-            # if the daemon is not running, start it
+        try:
+            self.pi = pigpio.pi()
+        except:
             os.system("sudo pigpiod")
             time.sleep(1)
             self.pi = pigpio.pi()
+            
         self.RXPin = RX
         self.TXPin = TX
         self.baudrate = baud
