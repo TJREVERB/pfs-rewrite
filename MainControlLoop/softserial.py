@@ -6,12 +6,9 @@ class SoftwareUART():
     """Bitbang uart driver using pigpio and interrupts"""
     
     def __init__(self, RX, TX, baud):
-        try:
-            self.pi = pigpio.pi()
-        except:
-            os.system("sudo pigpiod")
-            time.sleep(1)
-            self.pi = pigpio.pi()
+        os.system("sudo pigpiod")
+        time.sleep(1)
+        self.pi = pigpio.pi()
             
         self.RXPin = RX
         self.TXPin = TX
