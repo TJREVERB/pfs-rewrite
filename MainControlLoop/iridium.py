@@ -92,10 +92,10 @@ class Iridium:
             "Buffer Transfer": lambda: self.request("AT+SBDTC"), # beamcommunications 104
 
             # Transmits contents of mobile originated buffer to GSS, transfer oldest message in GSS queuefrom GSS to ISU
-            "Initiate SBD Session": lambda: self.request("AT+SBDI"), # beamcommunications 94-95
+            "Initiate SBD Session": lambda: self.request("AT+SBDI", 10), # beamcommunications 94-95
             # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
-            # a should be "A" if in response to SBD ring alert, otherwise a = "". location is an optional param, format [+|-]DDMM.MMM, [+|-]dddmm.mmm
-            "Initiate Extended SBD Session": lambda a, location: self.request("AT+SBDIX" + a + location), #beamcommunications 95-96
+            # a should be "A" if in response to SBD ring alert, otherwise a = "". location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
+            "Initiate Extended SBD Session": lambda a, location: self.request("AT+SBDIX" + a + location, 10), #beamcommunications 95-96
 
             # Clear one or both buffers.
             # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
@@ -173,7 +173,7 @@ class Iridium:
         self.write(command)
         result = ""
         sttime = time.perf_counter()
-        while result == "" and time.perf_counter()-sttime < timeout:
+        while result.find("OK") == -1 and time.perf_counter()-sttime < timeout:
             time.sleep(.1)
             result = self.read()
         return result
@@ -195,7 +195,16 @@ class Iridium:
         msg = f"TJ;Hello from space! BVT:{battery_voltage},SOL:{solar_generation},PWR:{power_draw},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
         self.commands["Transmit Text"](msg)
         result = self.commands["Initiate SBD Session"]()
-        #TODO: decode result to give specific error messages
+        #format needs verification:
+        processed = result.split("\n")[0].split("+SBDI ")[1].strip()
+        try:
+            ls = [int(s) for s in processed.split(", ")]
+            if ls[0] == 0:
+                raise RuntimeError("Error writing to buffer")
+            if ls[0] == 2:
+                raise RuntimeError("Unable to transmit")
+        except:
+            raise RuntimeError("Serial Port malfunction")
         return True 
 
     def write(self, command: str) -> bool: 
