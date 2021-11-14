@@ -1,5 +1,5 @@
 from functools import partial
-import time
+import time, datetime
 import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.aprs import APRS

@@ -1,4 +1,4 @@
-import time
+import time, datetime
 from serial import Serial
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from functools import partial
@@ -20,14 +20,16 @@ class Iridium:
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 
+    EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp() #Set epoch date to 5 May, 2014, at 14:23:55 GMT
+
     def __init__(self, state_field_registry: StateFieldRegistry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
         self.commands = {
-            "Basic Test": self.serialTest(),  # Tests connection to Iridium
-            "Buffer Test": self.functional(), # Tests ability to use buffers
+            "Basic Test": self.serialTest,  # Tests connection to Iridium
+            "Buffer Test": self.functional, # Tests ability to use buffers
 
             "GeolocationC": lambda: self.request("AT-MSGEO"),  # Current geolocation, xyz cartesian
             # return format: <x>, <y>, <z>, <time_stamp>
@@ -103,6 +105,8 @@ class Iridium:
         }
     
     def __del__(self):
+        self.commands["Shut Down"]()
+        time.sleep(1)
         self.serial.close()
 
     def serialTest(self) -> bool:
@@ -181,6 +185,19 @@ class Iridium:
     def pollRI(self):
         """Polls RI pin to see if a ring alert message is available"""
         pass #TODO: IMPLEMENT
+
+    def processedTime(self):
+        """
+        Requests, reads, processes, and returns current system time retrieved from network
+        :return: (datetime) current time (use str() to parse to string if needed)
+        """
+        raw = self.commands["Network Time"]()
+        if raw.find("OK") != -1:
+            return None
+        if raw.find("no network service") != -1:
+            return None
+        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16)
+        return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
     
     def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
         """
