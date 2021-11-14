@@ -13,8 +13,8 @@ from functools import partial
 #ISU: Iridium Subscriber Unit: basically our radio
 #FA: Field Application: basically our flight-pi
 
-#FA <-UART Interface-> ISU - MO buffer -> Iridium Constellation <-> GSS <-> IP Socket/Email
-#                          <- MT buffer -
+#FA <-UART/RS232 Interface-> ISU - MO buffer -> Iridium Constellation <-> GSS <-> IP Socket/Email
+#                                <- MT buffer -
 
 class Iridium:
     PORT = '/dev/serial0'
@@ -49,7 +49,7 @@ class Iridium:
             # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
             "Shut Down": lambda: self.write("AT*F"),
-            "Signal Quality": lambda: self.request("AT+CSQ", 10),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
+            "RSSI": lambda: self.request("AT+CSQ", 10),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
             "Last Known Signal Quality": lambda: self.request("AT+CSQF"), # Returns last known signal strength, immediately
 
             # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI line and issues the unsolicited result code SBDRING when an SBD ring alert is received
@@ -177,19 +177,26 @@ class Iridium:
             time.sleep(.1)
             result = self.read()
         return result
+
+    def pollRI(self):
+        """Polls RI pin to see if a ring alert message is available"""
+        pass #TODO: IMPLEMENT
     
-    def wave(self, battery_voltage, solar_generation, power_draw) -> bool: #TODO: CORRECT THIS WITH PROPER SBDI
+    def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
         """
         Attempts to establish first contact with ground station
-        :param battery_voltage: battery voltage
-        :param solar_generation: solar panel power generation
-        :param current_output: total current output of EPS
+        Overwrites any message already in the MO buffer in doing so
+        :param battery_voltage: battery voltage, will be truncated to 3 digits
+        :param solar_generation: solar panel power generation, will be truncated to 3 digits
+        :param power_draw: total power output of EPS, will be truncated to 3 digits
         :param failures: component failures
         :return: (bool) Whether write worked
         """
-        return self.commands["Transmit"](f"TJ;Hello from space! BVT:{battery_voltage},"
-                                         f"SOL:{solar_generation},PWR:{power_draw},"
-                                         f"FAI:{chr(59).join(self.sfr.FAILURES)}")  # Component failures, sep by ;
+        msg = f"TJ;Hello from space! BVT:{battery_voltage},SOL:{solar_generation},PWR:{power_draw},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
+        self.commands["Transmit Text"](msg)
+        result = self.commands["Initiate SBD Session"]()
+        #TODO: decode result to give specific error messages
+        return True 
 
     def write(self, command: str) -> bool: 
         """
@@ -197,7 +204,7 @@ class Iridium:
         :param command: (str) Command to write
         :return: (bool) if the serial write worked
         """
-        command = command + "\r\n"
+        command = command + "\r\n" #may need to be replaced with \x0d
         try:
             self.serial.write(command.encode("UTF-8"))
         except:
