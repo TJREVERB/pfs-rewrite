@@ -49,7 +49,7 @@ class Iridium:
             # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
             "Shut Down": lambda: self.write("AT*F"),
-            "Signal Quality": lambda: self.request("AT+CSQ"),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
+            "Signal Quality": lambda: self.request("AT+CSQ", 10),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
             "Last Known Signal Quality": lambda: self.request("AT+CSQF"), # Returns last known signal strength, immediately
 
             "Send SMS": lambda message: self.request("AT+CMGS=" + message), # when will we ever use this?
@@ -165,7 +165,7 @@ class Iridium:
         except UnicodeDecodeError:
             return False
 
-    def request(self, command: str, timeout) -> str:
+    def request(self, command: str, timeout=0.5) -> str:
         """
         Requests information from Iridium and returns unprocessed response
         :param command: Command to send
