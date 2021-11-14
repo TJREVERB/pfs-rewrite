@@ -175,7 +175,7 @@ class Iridium:
         sttime = time.perf_counter()
         while result.find("OK") == -1 and time.perf_counter()-sttime < timeout:
             time.sleep(.1)
-            result = self.read()
+            result += self.read()
         return result
 
     def pollRI(self):
