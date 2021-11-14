@@ -52,8 +52,6 @@ class Iridium:
             "Signal Quality": lambda: self.request("AT+CSQ", 10),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
             "Last Known Signal Quality": lambda: self.request("AT+CSQF"), # Returns last known signal strength, immediately
 
-            "Send SMS": lambda message: self.request("AT+CMGS=" + message), # when will we ever use this?
-
             # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI line and issues the unsolicited result code SBDRING when an SBD ring alert is received
             # Ring alerts can only be sent after the unit is registered
             "Get SBD Ring Alert": lambda: self.request("AT+SBDMTA"),
