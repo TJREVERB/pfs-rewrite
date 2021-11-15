@@ -109,6 +109,9 @@ class Iridium:
         time.sleep(1)
         self.serial.close()
 
+    def __str__(self):
+        return "Iridium"
+
     def serialTest(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed) and verifies that AT returns OK
@@ -243,7 +246,7 @@ class Iridium:
         :return: (str) string read from iridium
         """
         output = bytes()
-        for loop in range(50):
+        for _ in range(50):
             try:
                 next_byte = self.serial.read(size=1)
             except:

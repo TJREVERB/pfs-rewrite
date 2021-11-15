@@ -1,5 +1,5 @@
 import spidev
-
+#TO BE DEPRECATED LATER
 
 class SC16IS752:
     PORT = '/dev/spidev0.0'

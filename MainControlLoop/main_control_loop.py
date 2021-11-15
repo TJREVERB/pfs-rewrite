@@ -1,4 +1,3 @@
-from functools import partial
 import time, datetime
 import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
