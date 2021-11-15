@@ -27,84 +27,86 @@ class EPS:
         self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"), ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"), ("VSW10", "ISW10")]
         # Refer to EPS manual pages 40-50 for info on EPS commands
-        # Format: self.eps.commands["COMMAND"](ARGS)
-        self.commands = {
-            # Board info commands: Basic board info
-            "Board Status": lambda: self.request(0x01, [0x00], 2),
-            # Reads and returns board status
-            "Last Error": lambda: self.request(0x01, [0x00], 2),  # Reads and returns last error
-            "Firmware Version": lambda: self.request(0x04, [0x00], 2),
-            # Reads and returns firmware version
-            "Checksum": lambda: self.request(0x05, [0x00], 2),
-            # Reads and returns generated checksum of ROM contents
-            "Firmware Revision": lambda: self.request(0x06, [0x00], 2),
-            # Reads and returns firmware revision number
 
-            # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
-            # with no commands received.
-            "Watchdog Period": lambda: self.request(0x20, [0x00], 2),
-            # Reads and returns current watchdog period
-            "Reset Watchdog": lambda: self.command(0x22, [0x00]),  # Resets communications watchdog timer
-            # Any command will reset the timer, this command can be used if no action from the EPS is needed
-            "Set Watchdog Period": lambda period: self.command(0x21, period),
-            # Sets communications timeout watchdog period, minimum 1 minute maximum 90 minutes
+        # Board info commands: Basic board info
+        self.BRD_STATUS = lambda: self.request(0x01, [0x00], 2)
+        # Reads and returns board status
+        self.LAST_ERR = lambda: self.request(0x01, [0x00], 2)  # Reads and returns last error
+        self.FIRMWARE_VER =lambda: self.request(0x04, [0x00], 2)
+        # Reads and returns firmware version
+        self.CHECKSUM = lambda: self.request(0x05, [0x00], 2)
+        # Reads and returns generated checksum of ROM contents
+        self.FIRMWARE_REV = lambda: self.request(0x06, [0x00], 2)
+        # Reads and returns firmware revision number
 
-            # Reset count commands: EPS will be reset under various conditions,
-            # these functions check how many times have been caused by each condition.
-            # Counts roll over from 255 to 0.
-            "Brownout Resets": lambda: self.request(0x31, [0x00], 2),
-            # Reads and returns number of brownout resets
-            "Software Resets": lambda: self.request(0x32, [0x00], 2),
-            # Reads and returns number of software resets
-            "Manual Resets": lambda: self.request(0x33,  [0x00], 2),
-            # Reads and returns number of manual resets
-            "Watchdog Resets": lambda: self.request(0x34, [0x00], 2),
-            # Reads and returns number of watchdog resets
+        # Watchdog commands: Watchdog will reset the EPS after a period of time (default 4 minutes)
+        # with no commands received.
+        self.WATCHDOG_PER = lambda period = -1: self.request(0x20, [0x00], 2) if period == -1 or period > 255 else self.command(0x21, [period])
+        # If param period unspecified: Reads and returns current watchdog period
+        # If param period specified: Sets communications timeout watchdog period, minimum 1 minute maximum 90 minutes
+        self.RESET_WATCHDOG = lambda: self.command(0x22, [0x00])  # Resets communications watchdog timer
+        # Any command will reset the timer, this command can be used if no action from the EPS is needed
 
-            # PDM Control: Get information about PDMs and switch PDMs on and off to power on or off components
-            "All Actual States": lambda: self.request(0x42, [0x00], 4),
-            # Reads and returns actual state of all PDMs in byte form
-            # PDMs may be shut off due to protections, and this command shows the actual state of all PDMs
-            "All Expected States": lambda: self.request(0x43, [0x00], 4),
-            # Reads and returns expected state of all PDMs in byte form
-            # These depend on whether they have been commanded on or off, regardless of protection trips
-            "All Initial States": lambda: self.request(0x44, [0x00], 4),
-            # Reads and returns initial states of all PDMs in byte form
-            # These are the states the PDMs will be in after a reset
-            "Pin Actual State": lambda component: self.request(0x54, self.COMPONENTS[component], 2)[1],
-            # Reads and returns actual state of one PDM
-            "All On": lambda:  self.command(0x40, [0x00]),  # Turn all PDMs on
-            "All Off": lambda:  self.command(0x41, [0x00]),  # Turn all PDMs off
-            "Set All Initial": lambda:  self.command(0x45, [0x00]),  # Set all PDMs to their initial state
-            "Pin On": lambda component: self.command(0x50, self.COMPONENTS[component]),  # Enable component
-            "Pin On Raw": lambda component: self.command(0x50, component),  # Turn PDM on, pass in raw PDM number
-            "Pin Off": lambda component: self.command(0x51, self.COMPONENTS[component]),  # Disable component
-            "Pin Off Raw": lambda component: self.command(0x51, component),  # Turn PDM off, pass in raw PDM number
-            "Pin Init On": lambda component: self.command(0x52, self.COMPONENTS[component]),
-            # Set initial state of component to "on"
-            "Pin Init On Raw": lambda component: self.command(0x52, component),
-            # Set initial state of PDM on, pass in raw PDM number
-            "Pin Init Off": lambda component: self.command(0x53, self.COMPONENTS[component]),
-            # Set initial state of component to "off"
-            "Pin Init Off Raw": lambda component: self.command(0x53, component),
-            # Set initial state of PDM off, pass in raw PDM number
+        # Reset count commands: EPS will be reset under various conditions,
+        # these functions check how many times have been caused by each condition.
+        # Counts roll over from 255 to 0.
+        self.NUM_BROWNOUT_RESETS = lambda: self.request(0x31, [0x00], 2)
+        # Reads and returns number of brownout resets
+        self.NUM_SOFTWARE_RESETS = lambda: self.request(0x32, [0x00], 2)
+        # Reads and returns number of software resets
+        self.NUM_MANUAL_RESETS = lambda: self.request(0x33,  [0x00], 2)
+        # Reads and returns number of manual resets
+        self.NUM_WATCHDOG_RESETS = lambda: self.request(0x34, [0x00], 2)
+        # Reads and returns number of watchdog resets
 
-            # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
-            # By default each PDM does not have restrictions
-            "PDM Timer Limit": lambda component: self.request(0x61, self.COMPONENTS[component], 2),
-            # Reads and returns timer limit for given PDM
-            "PDM Timer Value": lambda component: self.request(0x62, self.COMPONENTS[component], 2),
-            # Reads and returns passed time since PDM timer was enabled
-            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.COMPONENTS[component][0]]),
-            # Sets timer limit for given PDM
+        # PDM Control: Get information about PDMs and switch PDMs on and off to power on or off components
+        self.ALL_ACTUAL_STATES = lambda: self.request(0x42, [0x00], 4)
+        # Reads and returns actual state of all PDMs in byte form
+        # PDMs may be shut off due to protections, and this command shows the actual state of all PDMs
+        self.ALL_EXPECTED_STATES = lambda: self.request(0x43, [0x00], 4)
+        # Reads and returns expected state of all PDMs in byte form
+        # These depend on whether they have been commanded on or off, regardless of protection trips
+        self.ALL_INITIAL_STATES = lambda: self.request(0x44, [0x00], 4)
+        # Reads and returns initial states of all PDMs in byte form
+        # These are the states the PDMs will be in after a reset
+        self.COMPONENT_ACTUAL_STATE = lambda component: self.request(0x54, self.COMPONENTS[component], 2)[1]
+        self.PDM_ACTUAL_STATE = lambda pdm: self.request(0x54, [pdm], 2)[1]
+        # Reads and returns actual state of one PDM
+        self.ALL_ON = lambda:  self.command(0x40, [0x00])  # Turn all PDMs on
+        self.ALL_OFF = lambda:  self.command(0x41, [0x00])  # Turn all PDMs off
+        self.SET_ALL_INITIAL = lambda:  self.command(0x45, [0x00])  # Set all PDMs to their initial state
+        self.COMPONENT_ON = lambda component: self.command(0x50, self.COMPONENTS[component])  # Enable component
+        self.PDM_ON = lambda pdm: self.command(0x50, [pdm])  # Turn PDM on, pass in raw PDM number
+        self.COMPONENT_OFF = lambda component: self.command(0x51, self.COMPONENTS[component])  # Disable component
+        self.PDM_OFF = lambda pdm: self.command(0x51, [pdm])  # Turn PDM off, pass in raw PDM number
+        self.COMPONENT_INIT_ON = lambda component: self.command(0x52, self.COMPONENTS[component])
+        # Set initial state of component to "on"
+        self.PDM_INIT_ON = lambda pdm: self.command(0x52, [pdm])
+        # Set initial state of PDM on, pass in raw PDM number
+        self.COMPONENT_INIT_OFF = lambda component: self.command(0x53, self.COMPONENTS[component])
+        # Set initial state of component to "off"
+        self.PDM_INIT_OFF = lambda pdm: self.command(0x53, [pdm])
+        # Set initial state of PDM off, pass in raw PDM number
 
-            # PCM bus control
-            "Bus Reset": lambda pcm: self.command(0x70, [sum([self.pcm_busses[i][0] for i in pcm])]),
+        # PDM Timers: When enabled with timer restrictions, a PDM will remain on for only a set period of time.
+        # By default each PDM does not have restrictions
+        self.COMPONENT_TIMER_LIMIT = lambda component, period = -1: self.request(0x61, self.COMPONENTS[component], 2) if period == -1 or period > 255 else self.command(0x60, [int(period/30), self.COMPONENTS[component][0]])
+        # If param period unspecified: Reads and returns timer limit for given PDM
+        # If param period specified: Sets timer limit in seconds for given PDM
+        self.PDM_TIMER_LIMIT = lambda pdm, period = -1: self.request(0x61, [pdm], 2) if period == -1 or period > 255 else self.command(0x60, [int(period/30), pdm])
+        
+        self.COMPONENT_TIMER_VAL = lambda component: self.request(0x62, self.COMPONENTS[component], 2)
+        self.PDM_TIMER_VAL = lambda pdm: self.request(0x62, [pdm], 2)
+        # Reads and returns passed time since PDM timer was enabled
+        
 
-            # Manual reset
-            "Manual Reset":  lambda:  self.command(0x80, [0x00]),
-            # Manually resets EPS to initial state, and increments manual reset counter
-        }
+        # PCM bus control
+        self.BUS_RESET = lambda pcm: self.command(0x70, [sum([self.pcm_busses[i][0] for i in pcm])])
+
+        # Manual reset
+        self.MANUAL_RESET = lambda:  self.command(0x80, [0x00])
+        # Manually resets EPS to initial state, and increments manual reset counter
+        #}
         # Format: self.eps.telemetry["REQUESTED TELEMETRY"]()
         # Refer to EPS Manual Table 11.8-10
         self.telemetry = {
@@ -239,7 +241,7 @@ class EPS:
         if mode == 0:
             return buspower, time.perf_counter()-t
         if mode == 1:
-            raw = self.commands["All Expected States"]()
+            raw = self.ALL_EXPECTED_STATES()
             expected_on = raw[2] << 8 | raw[3]
             pdm_states = []
             for pdm in range(1, 11):
@@ -254,7 +256,7 @@ class EPS:
             self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter()-t
         if mode == 2:
-            raw = self.commands["All Actual States"]()
+            raw = self.ALL_ACTUAL_STATES()
             actual_on = raw[2] << 8 | raw[3]
             pdm_states = []
             for pdm in range(1, 11):
@@ -272,7 +274,7 @@ class EPS:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
             pdm_states = []
-            raw = self.commands["Pin Actual States"]()
+            raw = self.ALL_ACTUAL_STATES()
             data = raw[2] << 8 | raw[3]
             for pdm in range(1, 11):
                 pdm_states.append(data & int(math.pow(2, pdm)) >> pdm)

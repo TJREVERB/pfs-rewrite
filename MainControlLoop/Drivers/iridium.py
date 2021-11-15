@@ -27,93 +27,85 @@ class Iridium:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
-        self.commands = {
-            "Basic Test": self.serialTest,  # Tests connection to Iridium
-            "Buffer Test": self.functional, # Tests ability to use buffers
+        self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
+        # return format: <x>, <y>, <z>, <time_stamp>
+        self.GEO_S = lambda: self.request("AT-MSGEOS") # Current geolocation, spherical coordinates
+        # return format: <latitude>, <longitude>, <altitude>, <latitude_error>, <longitude_error>, <altitude_error>, <time_stamp>
+        # time_stamp uses same 32 bit format as MSSTM
 
-            "GeolocationC": lambda: self.request("AT-MSGEO"),  # Current geolocation, xyz cartesian
-            # return format: <x>, <y>, <z>, <time_stamp>
-            "GeolocationS": lambda: self.request("AT-MSGEOS"), # Current geolocation, spherical coordinates
-            # return format: <latitude>, <longitude>, <altitude>, <latitude_error>, <longitude_error>, <altitude_error>, <time_stamp>
-            # time_stamp uses same 32 bit format as MSSTM
+        # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
+        # Optional param location
+        self.REGISTER = lambda location = "": self.request("AT+SBDREG") if len(location)==0 else self.request("AT+SBDREG=" + location)
 
-            # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
-            # Optional param location
-            "Registration": lambda: self.request("AT+SBDREG"), 
-            "Registration Location": lambda location: self.request("AT+SBDREG=" + location),
+        self.MODEL = lambda: self.request("AT+CGMM")
+        self.PHONE_REV = lambda: self.request("AT+CGMR")
+        self.IMEI = lambda: self.request("AT+CSGN")
 
-            "Phone Model": lambda: self.request("AT+CGMM"),
-            "Phone Revision": lambda: self.request("AT+CGMR"),
-            "IMEI": lambda: self.request("AT+CSGN"),
+        self.NETWORK_TIME = lambda: self.request("AT-MSSTM") # System time, GMT, retrieved from satellite network (used as a network check)
+        # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals that have elapsed since the epoch
+        # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
-            "Network Time": lambda: self.request("AT-MSSTM"), # System time, GMT, retrieved from satellite network (used as a network check)
-            # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals that have elapsed since the epoch
-            # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
+        self.SHUTDOWN = lambda: self.write("AT*F")
+        self.RSSI = lambda: self.request("AT+CSQ", 10)  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
+        self.LAST_RSSI = lambda: self.request("AT+CSQF") # Returns last known signal strength, immediately
 
-            "Shut Down": lambda: self.write("AT*F"),
-            "RSSI": lambda: self.request("AT+CSQ", 10),  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
-            "Last Known Signal Quality": lambda: self.request("AT+CSQF"), # Returns last known signal strength, immediately
+        # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI line and issues the unsolicited result code SBDRING when an SBD ring alert is received
+        # Ring alerts can only be sent after the unit is registered
+        # :optional param b: set 1/0 enable/disable
+        self.RING_ALERT = lambda b="": self.request("AT+SBDMTA") if len(str(b)) == 0 else self.request("AT+SBDMTA" + str(b))
+        
+        #doesn't seem relevant to us?
+        self.BAT_CHECK = lambda: self.request("AT+CBC")
 
-            # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI line and issues the unsolicited result code SBDRING when an SBD ring alert is received
-            # Ring alerts can only be sent after the unit is registered
-            "Get SBD Ring Alert": lambda: self.request("AT+SBDMTA"),
-            "Set SBD Ring Alert": lambda b: self.request("AT+SBDMTA=" + b), #:param b: 1/0 enable/disable
-            
-            #doesn't seem relevant to us?
-            "Battery Check": lambda: self.request("AT+CBC=?"), 
-            "Call Status": lambda: self.request("AT+CLCC=?"), 
+        # Resets settings without power cycle
+        self.SOFT_RST = lambda: self.request("ATZn")
 
-            # Resets settings without power cycle
-            "Soft Reset": lambda: self.write("ATZn"),
+        # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary
+        self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
+        self.SBD_WB = lambda message: self.request("AT+SBDWB=" + message)
+        # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is contained in buffer at a time
+        self.SBD_RT = lambda: self.request("AT+SBDRT")
+        self.SBD_RB = lambda: self.request("AT+SBDRB")
 
-            # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary
-            "Transmit Text": lambda message: self.request("AT+SBDWT=" + message),
-            "Transmit Binary": lambda message: self.request("AT+SBDWB=" + message),
-            # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is contained in buffer at a time
-            "Receive Text": lambda: self.request("AT+SBDRT"),
-            "Receive Binary": lambda: self.request("AT+SBDRT"),
+        # Returns state of mobile originated and mobile terminated buffers
+        # SBDS return format: <MO flag>, <MOMSN>, <MT flag>, <MTMSN>
+        self.SBD_STATUS = lambda: self.request("AT+SBDS") # beamcommunications 101-102
+        # SBDSX return format: <MO flag>, <MOMSN>, <MT Flag>, <MTMSN>, <RA flag>, <msg waiting>
+        self.SBD_STATUS_EX = lambda: self.request("AT+SBDSX") # beamcommunications 103
+        # MO flag: (1/0) whether message in mobile originated buffer
+        # MOMSN: sequence number that will be used in the next mobile originated SBD session
+        # MT flag: (1/0) whether message in mobile terminated buffer
+        # MTMSN: sequence number in the next mobile terminated SBD session, -1 if nothing in the MT buffer
+        # RA flag: (1/0) whether an SBD ring alert has been received and needs to be answered
+        # msg waiting: how many SBD mobile terminated messages are queued at the gateway for collection by ISU
+        
+        # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS
+        self.SBD_TIMEOUT = lambda time = "": self.request("AT+SBDST") if len(str(time)) == 0 else self.request("AT+SBDST=" + str(time))
 
-            # Returns state of mobile originated and mobile terminated buffers
-            # SBDS return format: <MO flag>, <MOMSN>, <MT flag>, <MTMSN>
-            "SBD Status": lambda: self.request("AT+SBDS"), # beamcommunications 101-102
-            # SBDSX return format: <MO flag>, <MOMSN>, <MT Flag>, <MTMSN>, <RA flag>, <msg waiting>
-            "SBD Status Extended": lambda: self.request("AT+SBDSX"), # beamcommunications 103
-            # MO flag: (1/0) whether message in mobile originated buffer
-            # MOMSN: sequence number that will be used in the next mobile originated SBD session
-            # MT flag: (1/0) whether message in mobile terminated buffer
-            # MTMSN: sequence number in the next mobile terminated SBD session, -1 if nothing in the MT buffer
-            # RA flag: (1/0) whether an SBD ring alert has been received and needs to be answered
-            # msg waiting: how many SBD mobile terminated messages are queued at the gateway for collection by ISU
-            
-            # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS
-            "Get SBD Session Timeout": lambda: self.request("AT+SBDST"),
-            "Set SBD Session Timeout": lambda time: self.request("AT+SBDST=" + time),
+        # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to ISU without initiating SBD sessions with GSS/ESS
+        # returns response of the form "SBDTC: Outbound SBD copied to Inbound SBD: size = <size>" followed by "OK", where size is message length in bytes
+        self.SBD_TRANSFER_MOMT = lambda: self.request("AT+SBDTC") # beamcommunications 104
 
-            # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to ISU without initiating SBD sessions with GSS/ESS
-            # returns response of the form "SBDTC: Outbound SBD copied to Inbound SBD: size = <size>" followed by "OK", where size is message length in bytes
-            "Buffer Transfer": lambda: self.request("AT+SBDTC"), # beamcommunications 104
+        # Transmits contents of mobile originated buffer to GSS, transfer oldest message in GSS queuefrom GSS to ISU
+        self.SBD_INITIATE = lambda: self.request("AT+SBDI", 10) # beamcommunications 94-95
+        # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
+        # a should be "A" if in response to SBD ring alert, otherwise unspecified. location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
+        self.SBD_INITIATE_EX = lambda a = "", location = "": self.request("AT+SBDIX" + a, 10) if len(location) == 0 else self.request("AT+SBDIX" + a + "=" + location) #beamcommunications 95-96
+        # returns: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
+        # MO status: 0: no message to send, 1: successful send, 2: error while sending
+        # MOMSN: sequence number for next MO transmission
+        # MT status: 0: no message to receive, 1: successful receive, 2: error while receiving
+        # MTMSN: sequence number for next MT receive
+        # MT length: length in bytes of received message
+        # MT queued: number of MT messages in GSS waiting to be transferred to ISU
 
-            # Transmits contents of mobile originated buffer to GSS, transfer oldest message in GSS queuefrom GSS to ISU
-            "Initiate SBD Session": lambda: self.request("AT+SBDI", 10), # beamcommunications 94-95
-            # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
-            # a should be "A" if in response to SBD ring alert, otherwise a = "". location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
-            "Initiate Extended SBD Session": lambda a, location: self.request("AT+SBDIX" + a + location, 10), #beamcommunications 95-96
-            # returns: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
-            # MO status: 0: no message to send, 1: successful send, 2: error while sending
-            # MOMSN: sequence number for next MO transmission
-            # MT status: 0: no message to receive, 1: successful receive, 2: error while receiving
-            # MTMSN: sequence number for next MT receive
-            # MT length: length in bytes of received message
-            # MT queued: number of MT messages in GSS waiting to be transferred to ISU
-
-            # Clear one or both buffers. BUFFERS MUST BE CLEARED AFTER ANY MESSAGING ACTIVITY
-            # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
-            # returns bool if buffer wasnt cleared successfully (1 = error, 0 = successful)
-            "Clear buffers": lambda type: self.request("AT+SBDD" + type),
-        }
+        # Clear one or both buffers. BUFFERS MUST BE CLEARED AFTER ANY MESSAGING ACTIVITY
+        # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
+        # returns bool if buffer wasnt cleared successfully (1 = error, 0 = successful)
+        self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type)),
     
     def __del__(self):
-        self.commands["Shut Down"]()
+        self.SHUTDOWN()
         time.sleep(1)
         self.serial.close()
 
@@ -212,31 +204,31 @@ class Iridium:
         :param discardbuf: (bool) if False: transmit contents, if any, of MO buffer before loading new message in; if True: overwrite MO buffer contents
         :return: (bool) transmission successful
         """ #We should consider using the sequence numbers
-        stat = self.commands["SBD Status"]
+        stat = self.SBD_STATUS()
         ls = self.process(stat, "+SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.commands["Receive Text"](), "+SBDRT"), self.commands["Network Time"]))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
             except:
                 pass #whatever, not worth it
         if int(ls[0]) == 1:
             if not discardbuf: #If discardbuf false, transmit MO
                 try:
-                    self.commands["Initiate SBD Session"]()
+                    self.SBD_INITIATE()
                 except:
                     pass #whatever, not worth it
-        self.commands["Transmit Text"](message)
-        result = self.process(self.commands["Initiate SBD Session"](), "+SBDI").split(", ")
+        self.SBD_WT(message)
+        result = self.process(self.SBD_INITIATE(), "+SBDI").split(", ")
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.commands["Receive Text"](), "+SBDRT"), self.commands["Network Time"]))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
             except:
                 pass #whatever, not worth it
-        if self.commands["Clear buffers"](2).find("OK") == -1:
+        if self.SBD_CLR(2).find("OK") == -1:
             raise RuntimeError("Error clearing buffers")
         return True
 
@@ -255,7 +247,7 @@ class Iridium:
         Requests, reads, processes, and returns current system time retrieved from network
         :return: (datetime) current time (use str() to parse to string if needed)
         """
-        raw = self.commands["Network Time"]()
+        raw = self.NETWORK_TIME()
         if raw.find("OK") != -1:
             return None
         if raw.find("no network service") != -1:
@@ -274,8 +266,8 @@ class Iridium:
         :return: (bool) Whether write worked
         """
         msg = f"Hello! BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
-        self.commands["Transmit Text"](msg)
-        result = self.commands["Initiate SBD Session"]()
+        self.SBD_WT(msg)
+        result = self.SBD_INITIATE()
         #format needs verification:
         processed = result.split("\n")[0].split("+SBDI ")[1].strip()
         try:
