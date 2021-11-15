@@ -98,10 +98,18 @@ class Iridium:
             # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
             # a should be "A" if in response to SBD ring alert, otherwise a = "". location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
             "Initiate Extended SBD Session": lambda a, location: self.request("AT+SBDIX" + a + location, 10), #beamcommunications 95-96
+            # returns: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
+            # MO status: 0: no message to send, 1: successful send, 2: error while sending
+            # MOMSN: sequence number for next MO transmission
+            # MT status: 0: no message to receive, 1: successful receive, 2: error while receiving
+            # MTMSN: sequence number for next MT receive
+            # MT length: length in bytes of received message
+            # MT queued: number of MT messages in GSS waiting to be transferred to ISU
 
-            # Clear one or both buffers.
+            # Clear one or both buffers. BUFFERS MUST BE CLEARED AFTER ANY MESSAGING ACTIVITY
             # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
-            "Clear buffers": lambda type: self.request("AT+SBDD=" + type),
+            # returns bool if buffer wasnt cleared successfully (1 = error, 0 = successful)
+            "Clear buffers": lambda type: self.request("AT+SBDD" + type),
         }
     
     def __del__(self):
@@ -166,9 +174,19 @@ class Iridium:
             time.sleep(.5)
             if self.read().find("test") == -1:
                 raise RuntimeError("Error reading message from MT")
+            self.write("AT+SBDD2") #clear all buffers
             return True
         except UnicodeDecodeError:
             return False
+
+    def process(self, data, cmd):
+        """
+        Clean up data string
+        :param data: (str) to format
+        :param cmd: (str) command, do not include AT prefix
+        """
+        return data.split(cmd + ": ")[1].split("\n")[0].strip()
+
 
     def request(self, command: str, timeout=0.5) -> str:
         """
@@ -184,6 +202,49 @@ class Iridium:
             time.sleep(.1)
             result += self.read()
         return result
+
+    def transmit(self, message, discardbuf = True):
+        """
+        Loads message into MO buffer, then transmits
+        If a message has been received, read it into SFR
+        Clear buffers once done
+        :param message: (str) message to send
+        :param discardbuf: (bool) if False: transmit contents, if any, of MO buffer before loading new message in; if True: overwrite MO buffer contents
+        :return: (bool) transmission successful
+        """ #We should consider using the sequence numbers
+        stat = self.commands["SBD Status"]
+        ls = self.process(stat, "+SBDS").split(", ")
+        if int(ls[2]) == 1: #Save MT to sfr
+            try:
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.commands["Receive Text"](), "+SBDRT"), self.commands["Network Time"]))
+            except:
+                pass #whatever, not worth it
+        if int(ls[0]) == 1:
+            if not discardbuf: #If discardbuf false, transmit MO
+                try:
+                    self.commands["Initiate SBD Session"]()
+                except:
+                    pass #whatever, not worth it
+        self.commands["Transmit Text"](message)
+        result = self.process(self.commands["Initiate SBD Session"](), "+SBDI").split(", ")
+        if result[0] == 0:
+            raise RuntimeError("Error writing to buffer")
+        elif result[0] == 2:
+            raise RuntimeError("Error transmitting buffer")
+        if result[2] == 1:
+            try:
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.commands["Receive Text"](), "+SBDRT"), self.commands["Network Time"]))
+            except:
+                pass #whatever, not worth it
+        if self.commands["Clear buffers"](2).find("OK") == -1:
+            raise RuntimeError("Error clearing buffers")
+        return True
+
+    def nextMsg(self):
+        """
+        Returns next received messages (until GSS queue is empty), and stores it in sfr
+        """
+        #TODO: Implement
 
     def pollRI(self):
         """Polls RI pin to see if a ring alert message is available"""
@@ -212,7 +273,7 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Whether write worked
         """
-        msg = f"TJ;Hello from space! BVT:{battery_voltage},SOL:{solar_generation},PWR:{power_draw},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
+        msg = f"Hello! BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
         self.commands["Transmit Text"](msg)
         result = self.commands["Initiate SBD Session"]()
         #format needs verification:

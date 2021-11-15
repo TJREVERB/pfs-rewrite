@@ -18,7 +18,6 @@ class APRS:
 
     def __del__(self):
         self.serial.close()
-        #pass
 
     def __str__(self):
         return "APRS"
@@ -160,7 +159,7 @@ class APRS:
         :return: (bool) whether or not the write worked
         """
         try:
-            self.serial.write((message + "\x0d").encode("utf-8"))
+            self.serial.write(("TJ;" + message + "\x0d").encode("utf-8"))
             self.serial.flush()
             return True
         except:
@@ -184,5 +183,9 @@ class APRS:
             if next_byte == '\n'.encode('utf-8'):
                 break
         message = output.decode('utf-8')
+        if message.find("TJ;") == -1:
+            pass #TODO: Handle a garbled message
+        else:
+            message = message[message.find("TJ;") + 3 :].strip() #remove TJ; and strip
         self.sfr.APRS_RECEIVED_COMMAND = message  # store message in statefield
         return message

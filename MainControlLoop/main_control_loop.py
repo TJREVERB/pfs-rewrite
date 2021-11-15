@@ -38,18 +38,18 @@ class MainControlLoop:
                 self.sfr.LAST_ECLIPSE_ENTRY = time.time()
         self.limited_command_registry = {
             # Reads and transmits battery voltage
-            "BVT": lambda: self.aprs.write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.aprs.write(str(self.eps.telemetry["VBCROUT"]())),
             # Transmit total power draw of connected components
-            "PWR": lambda: self.aprs.write("TJ;" + str(self.eps.total_power(3)[0])),
+            "PWR": lambda: self.aprs.write(str(self.eps.total_power(3)[0])),
             # Calculate and transmit Iridium signal strength variability
-            "SSV": lambda: self.aprs.write("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
+            "SSV": lambda: self.aprs.write("SSV:" + str(self.sfr.signal_strength_variability())),
             # Transmit current solar panel production
-            "SOL": lambda: self.aprs.write("TJ;SOL:" + str(self.eps.solar_power())),
+            "SOL": lambda: self.aprs.write("SOL:" + str(self.eps.solar_power())),
         }
         self.command_registry = {
-            "TST": lambda: self.iridium.commands["Transmit"]("TJ;Hello"),  # Test method, transmits "Hello"
+            "TST": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
             # Reads and transmits battery voltage
-            "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
             "CHG": self.charging_mode(),  # Enters charging mode
             "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
             "OUT": self.outreach_mode,  # Enters outreach mode
@@ -66,12 +66,12 @@ class MainControlLoop:
                                             self.eps.solar_power(),
                                             self.eps.total_power()),
             # Transmit total power draw of connected components
-            "PWR": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.total_power(3)[0])),
+            "PWR": lambda: self.iridium.transmit(str(self.eps.total_power(3)[0])),
             # Calculate and transmit Iridium signal strength variability
-            "SSV": lambda: self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
+            "SSV": lambda: self.iridium.transmit("SSV:" + str(self.sfr.signal_strength_variability())),
             # Transmit current solar panel production
-            "SOL": lambda: self.iridium.commands["Transmit"]("TJ;SOL:" + str(self.eps.solar_power())),
-            "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble()) #Test method, transmits tumble value
+            "SOL": lambda: self.iridium.transmit("SOL:" + str(self.eps.solar_power())),
+            "TBL": lambda: self.aprs.write(str(self.imu.getTumble())) #Test method, transmits tumble value
         }
         # self.mode_devices = {  #this could be a dict containing which devices to turn on in each mode, all other devices will be turned off
         #     "STARTUP":
@@ -102,7 +102,7 @@ class MainControlLoop:
         if not self.iridium.functional: result.append("Iridium")
         return result
 
-    def exec_command(self, raw_command, registry) -> bool:
+    def exec_command(self, raw_command, registry) -> bool: #TODO: MOVE TJ; EXTRACTION TO APRS DRIVER; IRIDIUM SHOULD NOT USE THE PREFIX
         if raw_command == "":
             return True
         # Attempts to execute command

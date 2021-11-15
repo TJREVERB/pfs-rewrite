@@ -37,7 +37,7 @@ class StateFieldRegistry:
 
         self.defaults = {
             "APRS_RECEIVED_COMMAND": "\"\"",
-            "IRIDIUM_RECEIVED_COMMAND": "\"\"",
+            "IRIDIUM_RECEIVED_COMMAND": [], # tup (command, timestamp)
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             # Integral estimate of remaining battery capacity

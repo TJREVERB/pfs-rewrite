@@ -9,9 +9,9 @@ import datetime
 
 class CommandExecutor:
     # command_registry = {
-    #     "TST": lambda: self.iridium.commands["Transmit"]("TJ;Hello"),  # Test method, transmits "Hello"
+    #     "TST": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
     #     # Reads and transmits battery voltage
-    #     "BVT": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+    #     "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
     #     "CHG": self.charging_mode(),  # Enters charging mode
     #     "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
     #     "OUT": self.outreach_mode,  # Enters outreach mode
@@ -28,12 +28,12 @@ class CommandExecutor:
     #                                      self.eps.solar_power(),
     #                                      self.eps.total_power()),
     #     # Transmit total power draw of connected components
-    #     "PWR": lambda: self.iridium.commands["Transmit"]("TJ;" + str(self.eps.total_power(3)[0])),
+    #     "PWR": lambda: self.iridium.transmit(str(self.eps.total_power(3)[0])),
     #     # Calculate and transmit Iridium signal strength variability
-    #     "SSV": lambda: self.iridium.commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
+    #     "SSV": lambda: self.iridium.transmit("SSV:" + str(self.sfr.signal_strength_variability())),
     #     # Transmit current solar panel production
-    #     "SOL": lambda: self.iridium.commands["Transmit"]("TJ;SOL:" + str(self.eps.solar_power())),
-    #     "TBL": lambda: self.aprs.write("TJ;" + self.imu.getTumble())  # Test method, transmits tumble value
+    #     "SOL": lambda: self.iridium.transmit("SOL:" + str(self.eps.solar_power())),
+    #     "TBL": lambda: self.aprs.write(self.imu.getTumble())  # Test method, transmits tumble value
     # }
 
     def __init__(self):
@@ -43,20 +43,20 @@ class CommandExecutor:
         """
         Transmits time + message string from primary radio to ground station
         """
-        current_mode.sfr.defaults["PRIMARY_RADIO"].commands["Transmit"]("TJ;" + message)
+        current_mode.sfr.defaults["PRIMARY_RADIO"].transmit(message)
 
     def TST(self, current_mode: Mode):
         """
         Tries to transmit proof of life back to ground station.
         TODO: error checking (if iridium doesn't work etc)
         """
-        self.transmit(current_mode, "TJ;Hello")
+        self.transmit(current_mode, "Hello")
 
     def BVT(self, current_mode: Mode):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(current_mode, "TJ;" + str(current_mode.sfr.eps.telemetry["VBCROUT"]()))
+        self.transmit(current_mode, str(current_mode.sfr.eps.telemetry["VBCROUT"]()))
 
     def CHG(self, current_mode: Mode):
         """
