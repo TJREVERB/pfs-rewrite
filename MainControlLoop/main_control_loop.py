@@ -6,7 +6,6 @@ from MainControlLoop.Drivers.eps import EPS
 #from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.imu import IMU_I2C
 #from MainControlLoop.Drivers.lsm9ds1 import IMU, IMU_I2C
 from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
 
