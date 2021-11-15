@@ -208,7 +208,7 @@ class Iridium:
         ls = self.process(stat, "+SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if int(ls[0]) == 1:
@@ -225,7 +225,7 @@ class Iridium:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if self.SBD_CLR(2).find("OK") == -1:
@@ -234,9 +234,31 @@ class Iridium:
 
     def nextMsg(self):
         """
-        Returns next received messages (until GSS queue is empty), and stores it in sfr
+        Stores next received messages in sfr
         """
-        #TODO: Implement
+        stat = self.SBD_STATUS()
+        ls = self.process(stat, "+SBDS").split(", ")
+        if int(ls[2]) == 1: #Save MT to sfr
+            try:
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+            except:
+                pass #broken serial prolly
+        result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+        lastqueued = [result[5]]
+        while result[5] > 0:
+            if result[2] == 1:
+                try:
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                except:
+                    pass #broken serial prolly
+            elif result[2] == 0:
+                pass
+            elif result[2] == 2:
+                pass #TODO: HANDLE ERROR OR NO MESSAGE RECEIVED
+            result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+            lastqueued.append(result[5])
+            if sum(lastqueued[-3:])/3 == lastqueued[-1]:
+                pass #TODO: HANDLE GSS QUEUE NOT CHANGING
 
     def pollRI(self):
         """Polls RI pin to see if a ring alert message is available"""
