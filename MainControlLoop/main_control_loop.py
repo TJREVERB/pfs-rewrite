@@ -1,4 +1,4 @@
-import time
+import time, datetime
 import threading
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from MainControlLoop.Drivers.aprs import APRS
@@ -7,6 +7,8 @@ from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.imu import IMU_I2C
+#from MainControlLoop.Drivers.lsm9ds1 import IMU, IMU_I2C
+from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
 
 
 class MainControlLoop:

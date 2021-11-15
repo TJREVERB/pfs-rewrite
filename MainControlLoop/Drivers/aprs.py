@@ -16,11 +16,6 @@ class APRS:
         while not self.serial.is_open:
             time.sleep(0.5)
 
-        self.commands = {
-            #"Transmit": TODO: Implement
-        }
-
-    
     def __del__(self):
         self.serial.close()
         #pass
@@ -116,20 +111,34 @@ class APRS:
     
     def request_setting(self, setting) -> str:
         """
-        Requests and returns value of given firmware setting
+        Requests and returns value of given firmware setting. 
+        Assumes firmware menu has already been entered successfully. Does not exit firmware menu afterwards
         :param setting: firmware setting to request
         :return: (str) text that APRS returns
         """
-        pass  # TODO: IMPLEMENT
+        self.serial.write((setting + "\x0d").encode("utf-8"))
+        try:
+            return self.serial.read(50).decode("utf-8")
+        except:
+            raise RuntimeError("Failed to read setting")
 
     def change_setting(self, setting, value) -> bool:
         """
         Changes value of given setting
+        Assumes firmware menu has already been entered successfully. Does not exit firmware menu afterwards
         :param setting: setting to change
         :param value: value to change setting to
         :return: (bool) whether process worked
         """
-        pass  # TODO: IMPLEMENT
+        self.serial.write((setting + " " + str(value) + "\x0d").encode("utf-8"))
+        try:
+            result = self.serial.read(100).decode("utf-8")
+            if result.find("COMMAND NOT FOUND") != -1:
+                return False
+            if result.find("is") != -1 and result.find("was") != -1:
+                return True
+        except:
+            raise RuntimeError("Failed to read setting")
 
     def clear_data_lines(self) -> None:
         """
@@ -167,7 +176,7 @@ class APRS:
             try:
                 next_byte = self.serial.read(size=1)
             except:
-                return ""
+                return output
             if next_byte == bytes():
                 break
             output += next_byte  # append next_byte to output
