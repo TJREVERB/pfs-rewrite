@@ -79,7 +79,7 @@ class Iridium:
         # RA flag: (1/0) whether an SBD ring alert has been received and needs to be answered
         # msg waiting: how many SBD mobile terminated messages are queued at the gateway for collection by ISU
         
-        # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS
+        # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS, in seconds. 0 means infinite timeout
         self.SBD_TIMEOUT = lambda time = "": self.request("AT+SBDST") if len(str(time)) == 0 else self.request("AT+SBDST=" + str(time))
 
         # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to ISU without initiating SBD sessions with GSS/ESS
@@ -193,6 +193,8 @@ class Iridium:
         while result.find("OK") == -1 and time.perf_counter()-sttime < timeout:
             time.sleep(.1)
             result += self.read()
+            if result.find("ERROR") != -1:
+                return command[2:] + "ERROR" + "\n" # formatted so that process() can still decode properly
         return result
 
     def transmit(self, message, discardbuf = True):
@@ -217,6 +219,10 @@ class Iridium:
                     self.SBD_INITIATE()
                 except:
                     pass #whatever, not worth it
+        rssi = self.RSSI()
+        if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1: #check signal strength first
+            return False
+        self.SBD_TIMEOUT(90) # 90 second timeout for transmit
         self.SBD_WT(message)
         result = self.process(self.SBD_INITIATE(), "+SBDI").split(", ")
         if result[0] == 0:
@@ -228,7 +234,7 @@ class Iridium:
                 self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
-        if self.SBD_CLR(2).find("OK") == -1:
+        if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
         return True
 
@@ -308,7 +314,7 @@ class Iridium:
         :param command: (str) Command to write
         :return: (bool) if the serial write worked
         """
-        command = command + "\r\n" #may need to be replaced with \x0d
+        command = command + "\r\n" 
         try:
             self.serial.write(command.encode("UTF-8"))
         except:
