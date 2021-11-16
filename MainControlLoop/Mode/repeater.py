@@ -17,6 +17,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         return "Repeater"
 
     def start(self) -> None:
+        super(Repeater, self).start()
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
 
@@ -28,12 +29,12 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             return True
 
     def execute_cycle(self) -> None:
-
+        super(Repeater, self).execute_cycle()
         self.sfr.devices[self.sfr.defaults["PRIMARY_RADIO"]].listen()
         self.sfr.dump()  # Log changes
 
     def switch_modes(self) -> None:
-        super(Outreach, self).switch_modes()  # Run switch_modes of superclass
+        super(Repeater, self).switch_modes()  # Run switch_modes of superclass
 
         if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
             return Charging
