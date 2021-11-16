@@ -19,7 +19,7 @@ class MainControlLoop:
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
-        self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
+        self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station TODO: REPLACE THIS
         self.NUM_DATA_POINTS = 90  # How many measurements to take in SCIENCE mode per orbit
         self.NUM_SCIENCE_MODE_ORBITS = 3  # Number of orbits to measure in SCIENCE mode
         self.previous_time = 0  # previous time in seconds for integrating battery charge
@@ -56,9 +56,9 @@ class MainControlLoop:
             "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
             # Reset power to the entire satellite (!!!!)
             "RST": lambda: [i() for i in [
-                lambda: self.eps.ALL_OFF,
+                lambda: self.eps.commands["All Off"],
                 lambda: time.sleep(.5),
-                lambda: self.eps.BUS_RESET, (["Battery", "5V", "3.3V", "12V"])
+                lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
             ]],
             # Transmit proof of life through Iridium to ground station
             "IRI": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
