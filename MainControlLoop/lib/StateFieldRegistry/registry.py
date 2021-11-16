@@ -47,7 +47,8 @@ class StateFieldRegistry:
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
             "PRIMARY_RADIO": "Iridium",
-            "LOWER_THRESHOLD": 5 #minimum battery needed to operate, if it's lower it should switch to charging mode
+            "LOWER_THRESHOLD": 5, #minimum battery needed to operate, if it's lower it should switch to charging mode
+            "SIGNAL_STRENGTH_VARIABILITY": -1
         }
         self.type_dict = {
             "APRS_RECEIVED_COMMAND": str,
@@ -58,7 +59,8 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
-            "PRIMARY_RADIO": str
+            "PRIMARY_RADIO": str,
+            "SIGNAL_STRENGTH_VARIABILITY": float
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
