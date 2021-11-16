@@ -21,6 +21,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         return "Science"
 
     def start(self):
+        super(Science, self).start()
         # We shouldn't be looking in the defaults dictionary to find the primary radio...
         # Use the primary radio defined after sfr instantiation
         # i.e. self.sfr.PRIMARY_RADIO
@@ -36,6 +37,7 @@ class Science(Mode):  # TODO: IMPLEMENT
             return True
 
     def execute_cycle(self):
+        super(Science, self).execute_cycle()
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
             # Transmit signal strength variability
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability()))
