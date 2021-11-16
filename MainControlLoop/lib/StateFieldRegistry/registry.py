@@ -36,7 +36,7 @@ class StateFieldRegistry:
         self.mode = Startup  # not object instance, just type (will be init in mcl)
 
         self.defaults = {
-            "APRS_RECEIVED_COMMAND": "\"\"",
+            "APRS_RECEIVED_COMMAND": "",
             "IRIDIUM_RECEIVED_COMMAND": [], # tup (command, timestamp)
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
@@ -47,7 +47,8 @@ class StateFieldRegistry:
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
             "PRIMARY_RADIO": "Iridium",
-            "LOWER_THRESHOLD": 5, #minimum battery needed to operate, if it's lower it should switch to charging mode
+            # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
+            "LOWER_THRESHOLD": 60000, # Switch to charging mode if battery capacity (J) dips below threshold
             "SIGNAL_STRENGTH_VARIABILITY": -1
         }
         self.type_dict = {
@@ -95,8 +96,8 @@ class StateFieldRegistry:
                 for line in lines:
                     line = line.strip("\n ").split(":")
                     # IS THIS STILL NECESSARY WITH SETATTR?
-                    if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
-                        line[1] = "\"\""
+                    # if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
+                    #     line[1] = "\"\""
                     # This only allows for one argument for each sfr variable
                     setattr(self, line[0], self.type_dict[line[0]](line[1])) #assigns the instance variable with name line[0] to have value of everything else on that line
             else:

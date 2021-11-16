@@ -46,7 +46,6 @@ class Startup(Mode):
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.sfr.dump()  # Log state field registry change
 
-    # What if we just collapsed all three of these methods into execute_cycle's if statement?
     def execute_cycle_normal(self):
         self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
         if time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME:  # wait for antenna_wait_time to not spam beacons

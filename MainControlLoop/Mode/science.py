@@ -31,7 +31,7 @@ class Science(Mode):  # TODO: IMPLEMENT
     def check_conditions(self) -> bool:
         self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
         self.conditions["COLLECTION_COMPLETE"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
-        if self.conditions["CHARGE_LOW"] or self.conditions["COLLECTION_COMPLETE"]:  # if voltage greater than lower thres
+        if self.conditions["CHARGE_LOW"] or self.conditions["COLLECTION_COMPLETE"]:  # if voltage greater than lower threshold
             return False
         else:
             return True
@@ -40,10 +40,12 @@ class Science(Mode):  # TODO: IMPLEMENT
         super(Science, self).execute_cycle()
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
             # Transmit signal strength variability
-            self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" + str(self.sfr.signal_strength_variability()))
+            self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" + 
+                                                             str(self.sfr.signal_strength_variability()))
             self.pings_performed += 1
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](), self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
+            self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](), 
+                                 self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
             self.pings_performed += 1
 
     def switch_modes(self):
@@ -53,8 +55,8 @@ class Science(Mode):  # TODO: IMPLEMENT
             return Charging
         elif self.conditions["COLLECTION_COMPLETE"]:
             return Outreach
-        
-        return Science #if this is called even though the conditions are met, this just returns itself
+        else:
+            return Science #if this is called even though the conditions are met, this just returns itself
 
     def terminate_mode(self):
         self.instruct["Pin Off"](self.sfr.PRIMARY_RADIO)
