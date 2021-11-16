@@ -3,13 +3,13 @@ from MainControlLoop.Mode.mode import Mode
 
 class Charging(Mode):
     def __init__(self, sfr):
-
         super().__init__(sfr)
 
     def __str__(self):
         return "Charging"
 
     def start(self) -> None:
+        super().start()
         self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])  # turn on primary radio
 
     def check_conditions(self) -> bool:
@@ -19,6 +19,7 @@ class Charging(Mode):
             return False
 
     def execute_cycle(self) -> None:
+        super().execute_cycle()
         self.sfr.devices[self.sfr.defaults["PRIMARY_RADIO"]].listen()  # Read and store execute received message
         self.sfr.dump()  # Log changes
 
@@ -26,6 +27,7 @@ class Charging(Mode):
         pass
 
     def terminate_mode(self):
+        super().terminate_mode()
         self.instruct["Pin Off"](self.sfr.defaults["PRIMARY_RADIO"])
 
 
