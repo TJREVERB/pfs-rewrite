@@ -43,7 +43,7 @@ class CommandExecutor:
         """
         Transmits time + message string from primary radio to ground station
         """
-        current_mode.sfr.defaults["PRIMARY_RADIO"].transmit(message)
+        current_mode.sfr.PRIMARY_RADIO.transmit(message)
 
     def TST(self, current_mode: Mode):
         """
@@ -65,8 +65,8 @@ class CommandExecutor:
         if str(current_mode) == "Charging":
             self.transmit(current_mode, "Already in charging mode, no mode switch executed")
         else:
-            current_mode.sfr.defaults["MODE"] = Charging(current_mode.sfr)
-            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to charging mode")
+            current_mode.sfr.MODE = Charging(current_mode.sfr)
+            self.transmit(current_mode.sfr.MODE, "Switched to charging mode")
 
     def SCI(self, current_mode: Mode):
         """
@@ -75,8 +75,8 @@ class CommandExecutor:
         if str(current_mode) == "Science":
             self.transmit(current_mode, "Already in science mode, no mode switch executed")
         else:
-            current_mode.sfr.defaults["MODE"] = Science(current_mode.sfr)
-            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to science mode")
+            current_mode.sfr.MODE = Science(current_mode.sfr)
+            self.transmit(current_mode.sfr.MODE, "Switched to science mode")
 
     def OUT(self, current_mode: Mode):
         """
@@ -85,8 +85,8 @@ class CommandExecutor:
         if str(current_mode) == "Outreach":
             self.transmit(current_mode, "Already in outreach mode, no mode switch executed")
         else:
-            current_mode.sfr.defaults["MODE"] = Outreach(current_mode.sfr)
-            self.transmit(current_mode.sfr.defaults["MODE"], "Switched to outreach mode")
+            current_mode.sfr.MODE = Outreach(current_mode.sfr)
+            self.transmit(current_mode.sfr.MODE, "Switched to outreach mode")
 
     def U(self):  #TODO: Implement
         pass

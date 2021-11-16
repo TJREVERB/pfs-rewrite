@@ -25,7 +25,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         # We shouldn't be looking in the defaults dictionary to find the primary radio...
         # Use the primary radio defined after sfr instantiation
         # i.e. self.sfr.PRIMARY_RADIO
-        self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])
+        self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
         # Pin On the Iridium as well? Because we need it to conduct our measurements
 
     def check_conditions(self) -> bool:
@@ -57,4 +57,4 @@ class Science(Mode):  # TODO: IMPLEMENT
         return Science #if this is called even though the conditions are met, this just returns itself
 
     def terminate_mode(self):
-        self.instruct["Pin Off"](self.sfr.defaults["PRIMARY_RADIO"])
+        self.instruct["Pin Off"](self.sfr.PRIMARY_RADIO)

@@ -48,7 +48,7 @@ class Startup(Mode):
 
     # What if we just collapsed all three of these methods into execute_cycle's if statement?
     def execute_cycle_normal(self):
-        self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])
+        self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
         if time.time() > self.last_beacon_time + self.ANTENNA_WAIT_TIME:  # wait for antenna_wait_time to not spam beacons
             self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
             if self.sfr.ANTENNA_DEPLOYED:  # Attempt to establish contact with ground

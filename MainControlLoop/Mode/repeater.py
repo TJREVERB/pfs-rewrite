@@ -30,7 +30,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
 
     def execute_cycle(self) -> None:
         super(Repeater, self).execute_cycle()
-        self.sfr.devices[self.sfr.defaults["PRIMARY_RADIO"]].listen()
+        self.sfr.devices[self.sfr.PRIMARY_RADIO].listen()
         self.sfr.dump()  # Log changes
 
     def switch_modes(self) -> None:

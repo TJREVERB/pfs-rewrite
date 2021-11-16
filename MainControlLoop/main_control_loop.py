@@ -25,7 +25,7 @@ class MainControlLoop:
         self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
         # If battery capacity is default value, recalculate based on Vbatt
-        if self.sfr.BATTERY_CAPACITY_INT == self.sfr.defaults["BATTERY_CAPACITY_INT"]:
+        if self.sfr.BATTERY_CAPACITY_INT == self.sfr.BATTERY_CAPACITY_INT:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         # If orbital data is default, set based on current position
         if self.sfr.LAST_DAYLIGHT_ENTRY is None:

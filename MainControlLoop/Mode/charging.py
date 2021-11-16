@@ -15,7 +15,7 @@ class Charging(Mode):
 
     def start(self) -> None:
         super(Charging, self).start()
-        self.instruct["Pin On"](self.sfr.defaults["PRIMARY_RADIO"])  # turn on primary radio
+        self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)  # turn on primary radio
 
     def check_conditions(self) -> bool:
         self.conditions["SIGNAL_STRENGTH_VARIABILITY"] = self.sfr.SIGNAL_STRENGTH_VARIABILITY
@@ -26,7 +26,7 @@ class Charging(Mode):
 
     def execute_cycle(self) -> None:
         super(Charging, self).execute_cycle()
-        self.sfr.devices[self.sfr.defaults["PRIMARY_RADIO"]].listen()  # Read and store execute received message
+        self.sfr.devices[self.sfr.PRIMARY_RADIO].listen()  # Read and store execute received message
         self.sfr.dump()  # Log changes
 
     def switch_modes(self) -> None:
@@ -41,6 +41,6 @@ class Charging(Mode):
 
     def terminate_mode(self):
         super(Charging, self).terminate_mode()
-        self.instruct["Pin Off"](self.sfr.defaults["PRIMARY_RADIO"])
+        self.instruct["Pin Off"](self.sfr.PRIMARY_RADIO)
 
 
