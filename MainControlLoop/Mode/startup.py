@@ -26,6 +26,7 @@ class Startup(Mode):
         return "Startup"
 
     def start(self):
+        super(Startup, self).start()
         # Why is this line here? Shouldn't we be integrating charge in every cycle, not in start?
         self.integrate_charge()  # integrates the charge
         # variable to check last time beacon was called
@@ -59,6 +60,7 @@ class Startup(Mode):
         time.sleep(60*90)  # sleep for one full orbit
 
     def execute_cycle(self):
+        super(Startup, self).execute_cycle()
         if self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD:
             self.execute_cycle_low_battery()
         else:
@@ -75,6 +77,7 @@ class Startup(Mode):
             return True
 
     def switch_modes(self):
+        super(Startup, self).switch_modes()
         if self.contact_established:  # if start up complete, can successfully exit startup
             if self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD:
                 return Charging
