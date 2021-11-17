@@ -279,7 +279,7 @@ class Iridium:
             return None
         if raw.find("no network service") != -1:
             return None
-        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 1000 / 90
+        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
     
     def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
