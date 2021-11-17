@@ -1,9 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
-from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.imu import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup

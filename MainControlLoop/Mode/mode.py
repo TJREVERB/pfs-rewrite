@@ -3,7 +3,6 @@ import gc
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.imu import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 
 
