@@ -1,4 +1,3 @@
-from MainControlLoop.lib.StateFieldRegistry import registry
 from MainControlLoop.Drivers.antenna_deployer.antenna_deploy import isisants
 
 

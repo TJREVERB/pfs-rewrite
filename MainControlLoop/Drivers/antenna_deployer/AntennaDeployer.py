@@ -1,7 +1,6 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 
 
 class AntennaDeployerCommand(Enum):
