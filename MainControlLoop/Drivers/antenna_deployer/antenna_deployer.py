@@ -3,7 +3,7 @@ from MainControlLoop.Drivers.antenna_deployer.antenna_deploy import isisants
 
 class AntennaDeployer:
 
-    def __init__(self, state_field_registry: registry.StateFieldRegistry):
+    def __init__(self, state_field_registry):
         self.state_field_registry = state_field_registry
 
     def deploy(self):

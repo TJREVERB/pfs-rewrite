@@ -75,7 +75,7 @@ class AntennaDeployer():
         AntennaDeployerCommand.GET_UPTIME_4: 2,
     }
 
-    def __init__(self, sfr: StateFieldRegistry):
+    def __init__(self, sfr):
         self.sfr = sfr
         self.bus = SMBus()
 
