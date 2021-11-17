@@ -42,10 +42,12 @@ class Comms():
                     self.command_registry[message]()
                 else:
                     # error handle
+                    pass
             else:
                 if(message in self.limited_command_registry.keys()):
                     self.command_registry[message]()
                 else:
+                    pass
                     # error handle
 
     def write(self):
