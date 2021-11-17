@@ -50,8 +50,6 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         self.instruct["Pin On"]("APRS")
 
     def check_conditions(self):
-        super(Outreach, self).check_conditions()  # what if conditions fail?
-
         self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
         if self.conditions["CHARGE_LOW"]:
             return False
