@@ -1,4 +1,3 @@
-from MainControlLoop.lib.StateFieldRegistry import registry
 from serial import Serial
 import time
 

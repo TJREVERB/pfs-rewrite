@@ -1,5 +1,4 @@
 from functools import partial
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from smbus2 import SMBus
 import time
 import math
