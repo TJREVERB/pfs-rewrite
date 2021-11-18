@@ -1,8 +1,5 @@
-from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.mode import Mode
 import time
-
-from MainControlLoop.Mode.outreach import Outreach
 
 
 class Science(Mode):  # TODO: IMPLEMENT
@@ -22,22 +19,24 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def start(self):
         super(Science, self).start()
-
         self.instruct["Pin On"](self.sfr.primary_radio)
         self.instruct["All Off"](exceptions=[self.sfr.primary_radio])
-
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def check_conditions(self) -> bool:
-        if self.conditions["Collection Complete"]:
+        super(Science, self).check_conditions()
+        if self.conditions["Low Battery"]:
+            self.sfr.MODE = self.sfr.modes_list["Charging"]
             return False
-        elif self.conditions["Low Battery"]:
+        elif self.conditions["Collection Complete"]:
+            self.sfr.MODE = self.sfr.modes_list["Outreach"]
             return False
         else:
             return True
 
     def update_conditions(self):
+        super(Science, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
@@ -52,16 +51,6 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](), 
                                  self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
             self.pings_performed += 1
-
-    def switch_modes(self):
-        super(Science, self).switch_modes()  # Run switch_modes of superclass
-
-        if self.conditions["Low Battery"]:  # if the battery is low, switch to charging mode
-            return Charging(self.sfr)
-        elif self.conditions["Collection Complete"]:
-            return Outreach(self.sfr)
-        else:
-            return Charging(self.sfr)
 
     def terminate_mode(self):
         super(Science, self).terminate_mode()

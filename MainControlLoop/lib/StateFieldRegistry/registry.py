@@ -33,9 +33,7 @@ class StateFieldRegistry:
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.mode = Startup(self)  # mode object
         self.command_executor = CommandExecutor(self)
-        self.primary_radio = "Iridium"
 
         self.SIGNAL_STRENGTH_VARIABILITY = -1
         self.contact_established = False
@@ -52,16 +50,10 @@ class StateFieldRegistry:
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
-            "LOWER_THRESHOLD": 60000  # Switch to charging mode if battery capacity (J) dips below threshold
-        }
-        self.type_dict = {
-            "START_TIME": float,
-            "ANTENNA_DEPLOYED": bool,
-            "FAILURES": list,
-            "LAST_DAYLIGHT_ENTRY": int,
-            "LAST_ECLIPSE_ENTRY": int,
-            "ORBITAL_PERIOD": int,
-            "LOWER_THRESHOLD": int
+            "LOWER_THRESHOLD": 60000,  # Switch to charging mode if battery capacity (J) dips below threshold
+            "MODE": Startup,  # Stores mode class, mode is instantiated in mcl
+            "PRIMARY_RADIO": "Iridium",  # Primary radio to use for communications
+            "SIGNAL_STRENGTH_VARIABILITY": -1.0  # Science mode result
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
@@ -100,14 +92,17 @@ class StateFieldRegistry:
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)
         with open(self.LOG_PATH, "r") as f:
             lines = f.readlines()
-            if len(lines) == len(self.defaults):
+            # If every field in the log is in defaults and every key in defaults is in the log
+            # Protects against incomplete or outdated log files
+            if all([self.defaults.has_key(i.strip("\n ").split(":")[0]) for i in lines]) and \
+               all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in list(self.defaults.keys)]):
+                # Iterate through fields
                 for line in lines:
                     line = line.strip("\n ").split(":")
-                    # IS THIS STILL NECESSARY WITH SETATTR?
-                    # if self.type_dict[line[0]] == str and line[1] == "":  # Corrects empty string for exec
-                    #     line[1] = "\"\""
-                    # This only allows for one argument for each sfr variable
-                    setattr(self, line[0], self.type_dict[line[0]](line[1])) #assigns the instance variable with name line[0] to have value of everything else on that line
+                    if type(self.defaults[line[0]]) == str:  # Correct quotes for exec
+                        line[1] = "\"" + line[1] + "\""
+                    # Changed it back because this allows us to store objects other than string and int
+                    exec(f"self.{line[0]} = {line[1]}")
             else:
                 self.load_defaults()  # Create default fields
         self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
@@ -135,8 +130,8 @@ class StateFieldRegistry:
         """
         with open(self.LOG_PATH, "w") as f:
             for key, val in self.to_dict().items():
-                if self.type_dict[key] == bool and not val:
-                    f.write(f"{key}:\n")
+                if type(self.defaults[key]) == bool and not val:
+                    f.write(f"{key}:False\n")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
 

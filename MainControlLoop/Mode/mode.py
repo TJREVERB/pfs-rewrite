@@ -23,9 +23,7 @@ class Mode:
             "All Off": self.__turn_all_off,
         }
 
-        # Could replace the functionality of this dictionary pretty easily with exec, would shrink the code
-        self.component_to_object = {  # returns object from component name
-                                    # FALSE! This code returns component class, not an object
+        self.component_to_class = {  # returns class from component name
             "Iridium": Iridium,
             "APRS": APRS,
             "IMU": IMU,
@@ -38,79 +36,47 @@ class Mode:
     def start(self) -> None:
         """
         Runs initial setup for a mode. Turns on devices for a specific mode.
-
-        :return: None
         """
         pass
 
-    # Why don't we call these methods from the subclass?
-    # We'd be able to conserve common code like integrate_charge in every run of execute_cycle
     def check_conditions(self) -> bool:
         """
         Checks whether conditions for mode to continue running are still true
-
-        Checks the conditions this mode requires, for example a minimum battery voltage.
-        Returns True if conditions are met (to keep executing the mode) or False if mode is no longer applicable.
-        Does NOT switch modes, switching modes is only called in main control loop.
-
-        :return:
-            boolean: Whether conditions for specific mode is still true or not.
+        Updates state field registry with mode to switch to if necessary
+        Does not mode.terminate_mode(), mode.__init__(), or mode.start(), mcl handles this
+        :return: (bool) true to stay in mode, false to exit
         """
         pass
 
-    def update_conditions(self):
+    def update_conditions(self) -> None:
         """
-        Updates conditions dict in each mode to check whether to still run current mode.
-
-        :return: None
+        Updates conditions dict in each mode
         """
         pass
 
     def execute_cycle(self) -> None:
         """
         Executes one iteration of mode
-
-        Execute one iteration of this mode. For example: measure signal strength as the orbit location changes.
+        For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute radio commands, that is done by command_executor class.
-
-        :return: None
         """
         self.integrate_charge()
 
-    def switch_modes(self) -> type:
-        """
-        Decides which new mode to switch to based on conditions.
-
-        This method is only called from main control loop if conditions for running previous mode are not met.
-        Then it decides which new mode to switch to. This mode does not write to sfr or handle manual mode overrides.
-        Returns the CLASS OBJECT of the desired new mode (initialized in switch_modes).
-
-        :returns:
-            object: object instance of new class
-        """
-        pass
-
     def terminate_mode(self) -> None:
         """
-        Safely terminates current mode. Turns off any devices turned on by mode.
-
-        Terminates mode so that new mode knows state of satellite.
+        Safely terminates current mode.
         This DOES NOT turn off all devices, simply the ones turned on specifically for this mode.
         This is to prevent modes from turning on manually turned on or off devices.
         Also writes any relevant temporary memory stored in modules to sfr (i.e. iridium buffer).
         Does not handle memory, memory handler is responsible for insufficient memory errors.
         TODO: write memory handler in case of insufficient memory error.
-
-        :returns: None
         """
-        # TODO: store iridium buffer and other important data to sfr.
+        self.sfr.dump()
         pass
 
-    def integrate_charge(self):
+    def integrate_charge(self) -> None:
         """
         Integrate charge in Joules
-
-        :return: None
         """
         draw = self.sfr.eps.total_power(4)[0]
         gain = self.sfr.eps.solar_power()
@@ -122,8 +88,7 @@ class Mode:
         Performs a systems check of components that are on and returns a list of component failures
         TODO: implement system check of antenna deployer
         TODO: account for different exceptions in .functional() and attempt to troubleshoot
-        :return:
-            list: list of component failures
+        :return: (list) component failures
         """
         result = []
         for device in self.sfr.devices:
@@ -136,25 +101,13 @@ class Mode:
     def __turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-
-        Private method, cannot be called outside of class. Must be called using self.instruct dictionary.
-        Checks whether component is already on. If already on stop method.
-        Gets component object corresponding to component name from self.component_to_object.
-        Initializes component object passing in self.sfr.
-        Updates sfr.devices to show component name corresponding to initialized component object (shows component is on).
-        Turns component on via eps.
-        Turns on serial converter if applicable to component.
-        If previous step: Sets serial converter status to True in sfr.serial_converters to show serial converter is on.
-
-        :returns: None
+        :param component: (str) component to turn on
         """
         if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
             return None
-
         if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
             return None
-
-        self.sfr.devices[component] = self.component_to_object[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
+        self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
             # SUGGESTION: Collapse the following two lines into one line
@@ -165,29 +118,18 @@ class Mode:
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
-    def __turn_off_component(self, component: str):
+    def __turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-
-        Private method, cannot be called outside of class. Must be called using self.instruct dictionary.
-        Checks whether component is already off. If already off stop method.
-        Sets component in sfr.devices to None (to show component is off).
-        Turns component off via eps.
-        Turns off serial converter if applicable to component.
-        If previous step: Sets serial status to False in sfr.serial_converters to show serial converter is off.
-
-        :returns: None
+        :param component: (str) component to turn off
         """
         # TODO: if component iridium: copy iridium command buffer to sfr to avoid wiping commands when switching modes
         if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
             return None
-
         if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
             return None
-
         if component == "Iridium" and self.sfr.devices["Iridium"] is not None:  # if iridium is already on
             self.sfr.devices["Iridium"].SHUTDOWN()  # runs proprietary off function for iridium before pdm off
-
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
@@ -198,17 +140,11 @@ class Mode:
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
-    def __turn_all_on(self, exceptions=None):
+    def __turn_all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
-
-        Calls __turn_on_component for every key in self.devices. Except for those in exceptions list parameter.
-        Only calls __turn_on_components if device is off.
-
-        Parameters:
-            optional, list: components to not turn on, default is ["Antenna Deployer"]
-
-        :return: None
+        Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
+        :param exceptions: (list) components to not turn on, default is ["Antenna Deployer"]
         """
 
         if exceptions is None:
@@ -217,23 +153,16 @@ class Mode:
             default_exceptions = ["Antenna Deployer", "IMU"]
             for exception in exceptions:
                 default_exceptions.append(exception)
-
             exceptions = default_exceptions
         for key in self.sfr.devices:
             if not self.sfr.devices[key] and key not in exceptions:  # if device is off and not in exceptions
                 self.__turn_on_component(key)  # turn on device and serial converter if applicable
 
-    def __turn_all_off(self, exceptions=None):
+    def __turn_all_off(self, exceptions=None) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
-
-        Calls __turn_off_component for every key in self.devices. Except for those in exceptions list parameter.
-        Only calls __turn_off_components if device is on.
-
-        Parameters:
-            optional, list: components to not turn off, default is ["Antenna Deployer"]
-
-        :return: None
+        Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
+        :param exceptions: (list) components to not turn off, default is ["Antenna Deployer"]
         """
         if exceptions is None:
             exceptions = ["Antenna Deployer", "IMU"]
@@ -242,7 +171,6 @@ class Mode:
             for exception in exceptions:
                 default_exceptions.append(exception)
             exceptions = default_exceptions
-
         for key in self.sfr.devices:
             if self.sfr.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
                 self.__turn_off_component(key)  # turn off device and serial converter if applicable

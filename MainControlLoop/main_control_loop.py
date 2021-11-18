@@ -39,16 +39,13 @@ class MainControlLoop:
     def run(self):  # Repeat main control loop forever
         current_time = time.time()
         while True:  # Iterate forever
-            self.sfr.mode.start()  #TODO implement update conditions
-            while self.sfr.mode.check_conditions():  # Iterate while we're supposed to be in this mode
-                if current_time + 1 <= time.time():  # if waited 1 second or mode, update conditions dict in mode
-                    self.sfr.mode.update_conditions()
-                self.sfr.mode.execute_cycle()  # Execute single cycle of mode
-                if self.sfr.manual_mode_override:  # if mode was changed via manual command
+            mode = self.sfr.MODE(self.sfr)
+            mode.start()  #TODO implement update conditions
+            while mode.check_conditions():  # Iterate while we're supposed to be in this mode
+                if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
+                    mode.update_conditions()
+                    current_time = time.time()
+                mode.execute_cycle()  # Execute single cycle of mode
+                if self.sfr.MODE is not type(mode):  # if mode was changed via manual command
                     break
-            if self.sfr.manual_mode_override:  # new manually changed mode will already be stored in sfr.mode
-                self.sfr.manual_mode_override = False
-            else:
-                self.sfr.mode.terminate_mode()  # terminates current old mode
-                self.sfr.mode = self.sfr.mode.switch_modes()  # decides which mode to switch to; returns mode object
-
+            self.sfr.mode.terminate_mode()  # terminates current old mode

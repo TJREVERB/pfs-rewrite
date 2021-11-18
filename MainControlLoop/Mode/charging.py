@@ -1,6 +1,4 @@
 from MainControlLoop.Mode.mode import Mode
-from MainControlLoop.Mode.outreach import Outreach
-from MainControlLoop.Mode.science import Science
 
 
 class Charging(Mode):
@@ -24,12 +22,17 @@ class Charging(Mode):
         self.conditions["Science Mode Status"] = self.sfr.SIGNAL_STRENGTH_VARIABILITY > -1
 
     def check_conditions(self) -> bool:
+        super(Charging, self).check_conditions()
         if self.conditions["Low Battery"]:  # if voltage is less than upper limit
-            return True
-        else:
+            return True  # stay in charging
+        elif self.conditions["Science Mode Status"]:  # if science mode is complete
+            self.sfr.MODE = self.sfr.modes_list["Outreach"]  # go to outreach
             return False
+        else:  # science mode not done
+            self.sfr.MODE = self.sfr.modes_list["SCIENCE"]  # go back to science mode
 
     def update_conditions(self) -> None:
+        super(Charging, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() <= self.UPPER_THRESHOLD
         self.conditions["Science Mode Status"] = self.sfr.SIGNAL_STRENGTH_VARIABILITY > -1
 
@@ -37,13 +40,6 @@ class Charging(Mode):
         super(Charging, self).execute_cycle()
         self.sfr.devices[self.sfr.primary_radio].listen()  # Read and store execute received message
         self.sfr.dump()  # Log changes
-
-    def switch_modes(self):
-        super(Charging, self).switch_modes()
-        if self.conditions["Science Mode Status"]:  # science mode is complete
-            return Outreach(self.sfr)
-        else:
-            return Science(self.sfr)  # does science mode if not done
 
     def terminate_mode(self):
         super(Charging, self).terminate_mode()
