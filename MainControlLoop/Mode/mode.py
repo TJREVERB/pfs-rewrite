@@ -3,7 +3,7 @@ import gc
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.imu import IMU
+from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 
 
@@ -58,6 +58,14 @@ class Mode:
         """
         pass
 
+    def update_conditions(self):
+        """
+        Updates conditions dict in each mode to check whether to still run current mode.
+
+        :return: None
+        """
+        pass
+
     def execute_cycle(self) -> None:
         """
         Executes one iteration of mode
@@ -75,10 +83,10 @@ class Mode:
 
         This method is only called from main control loop if conditions for running previous mode are not met.
         Then it decides which new mode to switch to. This mode does not write to sfr or handle manual mode overrides.
-        Returns the CLASS NAME of the desired new mode (not initialized, this is done in MCL).
+        Returns the CLASS OBJECT of the desired new mode (initialized in switch_modes).
 
         :returns:
-            type: Class name of new mode to switch to.
+            object: object instance of new class
         """
         pass
 
@@ -143,6 +151,9 @@ class Mode:
         if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
             return None
 
+        if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
+            return None
+
         self.sfr.devices[component] = self.component_to_object[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
@@ -170,6 +181,10 @@ class Mode:
         # TODO: if component iridium: copy iridium command buffer to sfr to avoid wiping commands when switching modes
         if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
             return None
+
+        if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
+            return None
+
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
@@ -192,9 +207,15 @@ class Mode:
 
         :return: None
         """
-        # Why not put exceptions=["Antenna Deployer"] in the method header?
+
         if exceptions is None:
-            exceptions = ["Antenna Deployer"]
+            exceptions = ["Antenna Deployer", "IMU"]
+        else:
+            default_exceptions = ["Antenna Deployer", "IMU"]
+            for exception in exceptions:
+                default_exceptions.append(exception)
+
+            exceptions = default_exceptions
         for key in self.sfr.devices:
             if not self.sfr.devices[key] and key not in exceptions:  # if device is off and not in exceptions
                 self.__turn_on_component(key)  # turn on device and serial converter if applicable
@@ -212,7 +233,13 @@ class Mode:
         :return: None
         """
         if exceptions is None:
-            exceptions = ["Antenna Deployer"]
+            exceptions = ["Antenna Deployer", "IMU"]
+        else:
+            default_exceptions = ["Antenna Deployer", "IMU"]
+            for exception in exceptions:
+                default_exceptions.append(exception)
+            exceptions = default_exceptions
+
         for key in self.sfr.devices:
             if self.sfr.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
                 self.__turn_off_component(key)  # turn off device and serial converter if applicable

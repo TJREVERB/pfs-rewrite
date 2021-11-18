@@ -18,19 +18,22 @@ class Startup(Mode):
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.ANTENNA_WAIT_TIME = 120  # 120 seconds in 2 minutes
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
-        self.contact_established = False  # boolean for if contact with ground station has been made
         self.last_beacon_time = time.time()
         self.last_contact_attempt = time.time()
+
+        self.conditions = {
+            "Low Battery": False,
+        }
 
     def __str__(self):
         return "Startup"
 
     def start(self):
         super(Startup, self).start()
-        # Why is this line here? Shouldn't we be integrating charge in every cycle, not in start?
-        self.integrate_charge()  # integrates the charge
-        # variable to check last time beacon was called
-        self.last_beacon_time = time.time()
+
+        self.last_beacon_time = time.time()  # variable to check last time beacon was called
+
+        self.conditions["Low Battery"] = self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
 
     def antenna(self):
         if not self.sfr.ANTENNA_DEPLOYED:
@@ -60,27 +63,25 @@ class Startup(Mode):
 
     def execute_cycle(self):
         super(Startup, self).execute_cycle()
-        if self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD:
+        if self.conditions["Low Battery"]:
             self.execute_cycle_low_battery()
         else:
             self.execute_cycle_normal()
 
     def check_conditions(self):
-        """
-        Checks whether we should be in this mode
-        """
-        self.contact_established = self.sfr.IRIDIUM_RECEIVED_COMMAND.contains(self.ACKNOWLEDGEMENT)
-        if self.contact_established:
-            return False  # Return false contact is established
+        if not self.sfr.contact_established:  # if contact not established
+            return True  # keep being in startup mode
         else:
-            return True
+            return False  # go to different mode
+
+    def update_conditions(self):
+        self.conditions["Low Battery"] = self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
 
     def switch_modes(self):
         super(Startup, self).switch_modes()
-        if self.contact_established:  # if start up complete, can successfully exit startup
-            if self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD:
-                return Charging
-            else:
-                return Science
-        # else, just stay in start up, even if battery is drained, because it will execute the low battery execute
-        # method
+
+        if self.conditions["Low Battery"]:
+            return Charging(self.sfr)
+        else:
+            return Science(self.sfr)
+

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.imu import IMU
+from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
@@ -11,7 +11,7 @@ from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-
+from MainControlLoop.command_executor import CommandExecutor
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -33,11 +33,16 @@ class StateFieldRegistry:
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.mode = Startup  # not object instance, just type (will be init in mcl)
+        self.mode = Startup(self)  # mode object
+        self.command_executor = CommandExecutor(self)
+        self.primary_radio = "Iridium"
+
+        self.SIGNAL_STRENGTH_VARIABILITY = -1
+        self.contact_established = False
+        # override bool for mcl
+        self.manual_mode_override = False
 
         self.defaults = {
-            "APRS_RECEIVED_COMMAND": "",
-            "IRIDIUM_RECEIVED_COMMAND": [], # tup (command, timestamp)
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             # Integral estimate of remaining battery capacity
@@ -46,22 +51,17 @@ class StateFieldRegistry:
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
             "ORBITAL_PERIOD": 90 * 60,
-            "PRIMARY_RADIO": "Iridium",
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
-            "LOWER_THRESHOLD": 60000, # Switch to charging mode if battery capacity (J) dips below threshold
-            "SIGNAL_STRENGTH_VARIABILITY": -1
+            "LOWER_THRESHOLD": 60000  # Switch to charging mode if battery capacity (J) dips below threshold
         }
         self.type_dict = {
-            "APRS_RECEIVED_COMMAND": str,
-            "IRIDIUM_RECEIVED_COMMAND": str,
             "START_TIME": float,
             "ANTENNA_DEPLOYED": bool,
             "FAILURES": list,
             "LAST_DAYLIGHT_ENTRY": int,
             "LAST_ECLIPSE_ENTRY": int,
             "ORBITAL_PERIOD": int,
-            "PRIMARY_RADIO": str,
-            "SIGNAL_STRENGTH_VARIABILITY": float
+            "LOWER_THRESHOLD": int
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
@@ -86,6 +86,14 @@ class StateFieldRegistry:
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
+
+        self.locked_devices = {  # modes will not switch on or off locked devices
+            "Iridium": False,  # false if not locked, true if locked
+            "APRS": False,
+            "IMU": False,
+            "Antenna Deployer": False,
+        }
+
 
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns

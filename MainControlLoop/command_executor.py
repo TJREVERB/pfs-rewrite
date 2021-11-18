@@ -36,29 +36,31 @@ class CommandExecutor:
     #     "TBL": lambda: self.aprs.write(self.imu.getTumble())  # Test method, transmits tumble value
     # }
 
-    def __init__(self):
-        pass
+    def __init__(self, sfr):
+        self.sfr = sfr
+        self.aprs_buffer = []
+        self.iridium_buffer = []
 
-    def transmit(self, current_mode, message: str):
+    def transmit(self, message: str):
         """
         Transmits time + message string from primary radio to ground station
         """
-        current_mode.sfr.PRIMARY_RADIO.transmit(message)
+        self.sfr.PRIMARY_RADIO.transmit(message)
 
-    def TST(self, current_mode: Mode):
+    def TST(self):
         """
         Tries to transmit proof of life back to ground station.
         TODO: error checking (if iridium doesn't work etc)
         """
-        self.transmit(current_mode, "Hello")
+        self.transmit("Hello")
 
-    def BVT(self, current_mode: Mode):
+    def BVT(self):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(current_mode, str(current_mode.sfr.eps.telemetry["VBCROUT"]()))
+        self.transmit(str(current_mode.sfr.eps.telemetry["VBCROUT"]()))
 
-    def CHG(self, current_mode: Mode):
+    def CHG(self):
         """
         Switches current mode to charging mode
         """
@@ -68,7 +70,7 @@ class CommandExecutor:
             current_mode.sfr.MODE = Charging(current_mode.sfr)
             self.transmit(current_mode.sfr.MODE, "Switched to charging mode")
 
-    def SCI(self, current_mode: Mode):
+    def SCI(self):
         """
         Switches current mode to science mode
         """
@@ -78,7 +80,7 @@ class CommandExecutor:
             current_mode.sfr.MODE = Science(current_mode.sfr)
             self.transmit(current_mode.sfr.MODE, "Switched to science mode")
 
-    def OUT(self, current_mode: Mode):
+    def OUT(self):
         """
         Switches current mode to outreach mode
         """
@@ -97,7 +99,7 @@ class CommandExecutor:
     def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
         pass
 
-    def IRI(self, current_mode: Mode):
+    def IRI(self):
         """
         Transmits proof of life via Iridium, along with critical component data
         using iridium.wave (not transmit function)
@@ -105,3 +107,32 @@ class CommandExecutor:
         current_mode.sfr.iridium.wave(current_mode.eps.telemetry["VBCROUT"](), current_mode.eps.solar_power(),
                                       current_mode.eps.total_power(4))
 
+    def execute(self):
+        pass  # executes command buffers
+
+
+    def exec_command(self, raw_command, registry) -> bool: #TODO: MOVE TJ; EXTRACTION TO APRS DRIVER; IRIDIUM SHOULD NOT USE THE PREFIX
+        if raw_command == "":
+            return True
+        # Attempts to execute command
+        try:
+            # Extracts 3-letter code from raw message
+            command = raw_command[raw_command.find("TJ;") + 3:raw_command.find("TJ;") + 6]
+            # Executes command associated with code and logs result
+            with open("log.txt", "a") as f:
+                # Executes command
+                if command[1:].isdigit():
+                    result = registry[command[0]](int(command[1]) + float(command[2]) / 10)
+                else:
+                    result = registry[command]()
+                # Timestamp + tab + code + tab + result of command execution + newline
+                f.write(str(time.time()) + "\t" + command + "\t" + result + "\n")
+            return True
+        except Exception:
+            return False
+
+"""
+Dev notes:
+when manual overriding a mode, make sure to terminate previous mode first
+make sure to lock device when manually turning it on or off
+"""

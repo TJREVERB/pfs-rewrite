@@ -13,8 +13,8 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.DATAPOINT_SPACING = 60  # in seconds
         self.NUMBER_OF_REQUIRED_PINGS = (90*60)/self.DATAPOINT_SPACING # number of pings to do to complete orbit
         self.conditions = {
-            "COLLECTION_COMPLETE":False,
-            "CHARGE_LOW":False
+            "Collection Complete": False,
+            "Low Battery": False
         }
 
     def __str__(self):
@@ -22,19 +22,24 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def start(self):
         super(Science, self).start()
-        # We shouldn't be looking in the defaults dictionary to find the primary radio...
-        # Use the primary radio defined after sfr instantiation
-        # i.e. self.sfr.PRIMARY_RADIO
-        self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
-        # Pin On the Iridium as well? Because we need it to conduct our measurements
+
+        self.instruct["Pin On"](self.sfr.primary_radio)
+        self.instruct["All Off"](exceptions=[self.sfr.primary_radio])
+
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
+        self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def check_conditions(self) -> bool:
-        self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
-        self.conditions["COLLECTION_COMPLETE"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
-        if self.conditions["CHARGE_LOW"] or self.conditions["COLLECTION_COMPLETE"]:  # if voltage greater than lower threshold
+        if self.conditions["Collection Complete"]:
+            return False
+        elif self.conditions["Low Battery"]:
             return False
         else:
             return True
+
+    def update_conditions(self):
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
+        self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def execute_cycle(self):
         super(Science, self).execute_cycle()
@@ -51,12 +56,12 @@ class Science(Mode):  # TODO: IMPLEMENT
     def switch_modes(self):
         super(Science, self).switch_modes()  # Run switch_modes of superclass
 
-        if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
-            return Charging
-        elif self.conditions["COLLECTION_COMPLETE"]:
-            return Outreach
+        if self.conditions["Low Battery"]:  # if the battery is low, switch to charging mode
+            return Charging(self.sfr)
+        elif self.conditions["Collection Complete"]:
+            return Outreach(self.sfr)
         else:
-            return Science #if this is called even though the conditions are met, this just returns itself
+            return Charging(self.sfr)
 
     def terminate_mode(self):
-        self.instruct["Pin Off"](self.sfr.PRIMARY_RADIO)
+        self.instruct["Pin Off"](self.sfr.primary_radio)

@@ -29,109 +29,26 @@ class MainControlLoop:
             self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         # If orbital data is default, set based on current position
         if self.sfr.LAST_DAYLIGHT_ENTRY is None:
-            if self.eps.sun_detected():  # If we're in sunlight
+            if self.sfr.eps.sun_detected():  # If we're in sunlight
                 self.sfr.LAST_DAYLIGHT_ENTRY = time.time()  # Pretend we just entered sunlight
                 self.sfr.LAST_ECLIPSE_ENTRY = time.time() - 45 * 60
             else:  # If we're in eclipse
                 self.sfr.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60  # Pretend we just entered eclipse
                 self.sfr.LAST_ECLIPSE_ENTRY = time.time()
-        self.limited_command_registry = {
-            # Reads and transmits battery voltage
-            "BVT": lambda: self.aprs.write(str(self.eps.telemetry["VBCROUT"]())),
-            # Transmit total power draw of connected components
-            "PWR": lambda: self.aprs.write(str(self.eps.total_power(3)[0])),
-            # Calculate and transmit Iridium signal strength variability
-            "SSV": lambda: self.aprs.write("SSV:" + str(self.sfr.signal_strength_variability())),
-            # Transmit current solar panel production
-            "SOL": lambda: self.aprs.write("SOL:" + str(self.eps.solar_power())),
-        }
-        self.command_registry = {
-            "TST": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
-            # Reads and transmits battery voltage
-            "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
-            "CHG": self.charging_mode(),  # Enters charging mode
-            "SCI": self.science_mode(self.NUM_DATA_POINTS, self.NUM_SCIENCE_MODE_ORBITS),  # Enters science mode
-            "OUT": self.outreach_mode,  # Enters outreach mode
-            "U": lambda value: setattr(self, "UPPER_THRESHOLD", value),  # Set upper threshold
-            "L": lambda value: setattr(self, "LOWER_THRESHOLD", value),  # Set lower threshold
-            # Reset power to the entire satellite (!!!!)
-            "RST": lambda: [i() for i in [
-                lambda: self.eps.ALL_OFF,
-                lambda: time.sleep(.5),
-                lambda: self.eps.BUS_RESET, (["Battery", "5V", "3.3V", "12V"])
-            ]],
-            # Transmit proof of life through Iridium to ground station
-            "IRI": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
-                                            self.eps.solar_power(),
-                                            self.eps.total_power()),
-            # Transmit total power draw of connected components
-            "PWR": lambda: self.iridium.transmit(str(self.eps.total_power(3)[0])),
-            # Calculate and transmit Iridium signal strength variability
-            "SSV": lambda: self.iridium.transmit("SSV:" + str(self.sfr.signal_strength_variability())),
-            # Transmit current solar panel production
-            "SOL": lambda: self.iridium.transmit("SOL:" + str(self.eps.solar_power())),
-            "TBL": lambda: self.aprs.write(str(self.imu.getTumble())) #Test method, transmits tumble value
-        }
-        # self.mode_devices = {  #this could be a dict containing which devices to turn on in each mode, all other devices will be turned off
-        #     "STARTUP":
-        #     "SCIENCE":
-        #     "OUTREACH":
-        #     "CHARGING":
-        # }
-
-    def integrate_charge(self):
-        """
-        Integrate charge in Joules
-        """
-        draw = self.eps.total_power(4)[0]
-        gain = self.eps.solar_power()
-        self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
-        self.previous_time = time.perf_counter()
-
-    def systems_check(self) -> list:
-        """
-        Performs a complete systems check and returns a list of component failures
-        DOES NOT SWITCH ON PDMS!!! SWITCH ON PDMS BEFORE RUNNING!!!
-        TODO: implement system check of antenna deployer
-        TODO: account for different exceptions in .functional() and attempt to troubleshoot
-        :return: list of component failures
-        """
-        result = []
-        if not self.aprs.functional: result.append("APRS")
-        if not self.iridium.functional: result.append("Iridium")
-        return result
-
-    def exec_command(self, raw_command, registry) -> bool: #TODO: MOVE TJ; EXTRACTION TO APRS DRIVER; IRIDIUM SHOULD NOT USE THE PREFIX
-        if raw_command == "":
-            return True
-        # Attempts to execute command
-        try:
-            # Extracts 3-letter code from raw message
-            command = raw_command[raw_command.find("TJ;") + 3:raw_command.find("TJ;") + 6]
-            # Executes command associated with code and logs result
-            with open("log.txt", "a") as f:
-                # Executes command
-                if command[1:].isdigit():
-                    result = registry[command[0]](int(command[1]) + float(command[2]) / 10)
-                else:
-                    result = registry[command]()
-                # Timestamp + tab + code + tab + result of command execution + newline
-                f.write(str(time.time()) + "\t" + command + "\t" + result + "\n")
-            return True
-        except Exception:
-            return False
 
     def run(self):  # Repeat main control loop forever
+        current_time = time.time()
         while True:  # Iterate forever
-            mode = self.sfr.mode(self.sfr)  # Instantiate mode object based on sfr
-            mode.start()
-            while str(mode) == str(self.sfr.mode) and mode.check_conditions():  # Iterate while we're supposed to be in this mode
-                mode.execute_cycle()  # Execute single cycle of mode
-            # exits while loop if we get a message that says exit mode or if the conditions are not satisfied
-            # There must be a more elegant way to do this...
-            if str(mode) != str(self.sfr.mode):  # if we exited the mode because we got a command, we can't call mode.switch_modes
-                mode.terminate_mode()  # turns off all devices used in mode
+            self.sfr.mode.start()  #TODO implement update conditions
+            while self.sfr.mode.check_conditions():  # Iterate while we're supposed to be in this mode
+                if current_time + 1 <= time.time():  # if waited 1 second or mode, update conditions dict in mode
+                    self.sfr.mode.update_conditions()
+                self.sfr.mode.execute_cycle()  # Execute single cycle of mode
+                if self.sfr.manual_mode_override:  # if mode was changed via manual command
+                    break
+            if self.sfr.manual_mode_override:  # new manually changed mode will already be stored in sfr.mode
+                self.sfr.manual_mode_override = False
             else:
-                new_mode = mode.switch_modes()  # decides which mode to switch to; returns mode object
-                mode.terminate_mode()
-                self.sfr.mode = new_mode
+                self.sfr.mode.terminate_mode()  # terminates current old mode
+                self.sfr.mode = self.sfr.mode.switch_modes()  # decides which mode to switch to; returns mode object
+

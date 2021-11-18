@@ -27,7 +27,7 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         super().__init__(sfr)
 
         self.conditions = {
-            "CHARGE_LOW": False
+            "Low Battery": False
         }
         self.limited_command_registry = {
             # Reads and transmits battery voltage
@@ -44,38 +44,36 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         return "Outreach"
 
     def start(self):
-        super(Outreach, self).start() 
-
+        super(Outreach, self).start()
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
+        self.instruct["All Off"](exceptions=["Iridium", "APRS"])
 
     def check_conditions(self):
-        super(Outreach, self).check_conditions()  # what if conditions fail?
-
-        self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD 
-        if self.conditions["CHARGE_LOW"]:
+        super(Outreach, self).check_conditions()
+        if self.conditions["Low Battery"]:
             return False
         else:
             return True
+
+    def update_conditions(self):
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD
 
     def execute_cycle(self):
         super(Outreach, self).execute_cycle() 
 
         self.sfr.devices["APRS"].read()
-            
+
+        #TODO: FIX
         if self.sfr.APRS_RECIEVED_COMMAND != "":  # Check if there are any commands from outreach
             raw_command = self.sfr.APRS_RECIEVED_COMMAND
             command = raw_command[raw_command.find("TJ;") + 3:raw_command.find("TJ;") + 6] # TODO: Edit this to call command_executor
             self.limited_command_registry[command]()
 
-    
     def switch_modes(self):
         super(Outreach, self).switch_modes()  # Run switch_modes of superclass
-
-        if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
-            return Charging
-        
-        return Outreach #if this is called even though the conditions are met, this just returns itself
+        if self.conditions["Low Battery"]:  # if the battery is low, switch to charging mode
+            return Charging(self.sfr)
 
     def terminate_mode(self):
         self.instruct["Pin Off"]("Iridium")
