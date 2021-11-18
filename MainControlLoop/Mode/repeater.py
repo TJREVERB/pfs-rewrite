@@ -12,7 +12,6 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             "Low Battery": False
         }
 
-
     def __str__(self):
         return "Repeater"
 
@@ -24,7 +23,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
         self.instruct["All Off"](exceptions=["Iridium", "APRS"])
-        
+
     def check_conditions(self) -> bool:
         if not self.conditions["Low Battery"]:  # if not low batter
             return True  # keep in current mode
