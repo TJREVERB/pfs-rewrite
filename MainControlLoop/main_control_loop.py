@@ -1,5 +1,5 @@
 import time
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
+from MainControlLoop.lib.registry import StateFieldRegistry
 
 
 class MainControlLoop:

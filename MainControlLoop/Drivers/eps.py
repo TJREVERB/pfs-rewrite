@@ -1,4 +1,3 @@
-from functools import partial
 from smbus2 import SMBus
 import time
 import math

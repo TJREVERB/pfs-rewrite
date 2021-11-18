@@ -1,6 +1,4 @@
 from MainControlLoop.Mode.mode import Mode
-from MainControlLoop.Mode.mode import Outreach
-from MainControlLoop.Mode.mode import Charging
 
 
 class Repeater(Mode):  # TODO: IMPLEMENT
@@ -27,6 +25,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         if not self.conditions["Low Battery"]:  # if not low batter
             return True  # keep in current mode
         else:
+            self.sfr.MODE = self.sfr.modes_list["Charging"]
             return False  # switch modes
 
     def update_conditions(self):
@@ -36,10 +35,6 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         super(Repeater, self).execute_cycle()
         self.sfr.devices[self.sfr.PRIMARY_RADIO].listen()
         self.sfr.dump()  # Log changes
-
-    def switch_modes(self) -> None:
-        super(Repeater, self).switch_modes()  # Run switch_modes of superclass
-        return Charging(self.sfr)
 
     def terminate_mode(self) -> None:
         # TODO: write to APRS to turn off digipeating

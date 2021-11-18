@@ -1,5 +1,5 @@
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
+from MainControlLoop.lib.registry import StateFieldRegistry
 from MainControlLoop.Drivers.eps import EPS
 
 sfr = StateFieldRegistry()
