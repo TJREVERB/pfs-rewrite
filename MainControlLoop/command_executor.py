@@ -31,6 +31,7 @@ class CommandExecutor:
     #     "PWR": lambda: self.iridium.transmit(str(self.eps.total_power(3)[0])),
     #     # Calculate and transmit Iridium signal strength variability
     #     "SSV": lambda: self.iridium.transmit("SSV:" + str(self.sfr.signal_strength_variability())),
+    #     "SVF": None #TODO: Implement #Transmit full rssi data logs
     #     # Transmit current solar panel production
     #     "SOL": lambda: self.iridium.transmit("SOL:" + str(self.eps.solar_power())),
     #     "TBL": lambda: self.aprs.write(self.imu.getTumble())  # Test method, transmits tumble value
