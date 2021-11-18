@@ -1,7 +1,6 @@
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.mode import Outreach
 from MainControlLoop.Mode.mode import Charging
-import gc
 
 
 class Repeater(Mode):  # TODO: IMPLEMENT
