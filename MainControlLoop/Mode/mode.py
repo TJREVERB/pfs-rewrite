@@ -61,6 +61,7 @@ class Mode:
         """
         self.integrate_charge()
         self.command_executor.execute()
+        self.sfr.dump()
 
     def terminate_mode(self) -> None:
         """

@@ -1,7 +1,9 @@
+import time
+
+
 class CommandExecutor:
-    def __init__(self, sfr, mode):
+    def __init__(self, sfr):
         self.sfr = sfr
-        self.mode = mode
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
         self.aprs_primary_registry = {
@@ -128,7 +130,7 @@ class CommandExecutor:
         """
         Switches current mode to charging mode
         """
-        if str(self.mode) == "Charging":
+        if str(self.sfr.mode_obj) == "Charging":
             self.transmit("NO SWITCH")
         else:
             self.sfr.MODE = self.sfr.modes_list["Charging"]
@@ -138,7 +140,7 @@ class CommandExecutor:
         """
         Switches current mode to science mode
         """
-        if str(self.mode) == "Science":
+        if str(self.sfr.mode_obj) == "Science":
             self.transmit("Already in science mode, no mode switch executed")
         else:
             self.sfr.MODE = self.sfr.modes_list["Science"]
@@ -148,7 +150,7 @@ class CommandExecutor:
         """
         Switches current mode to outreach mode
         """
-        if str(self.mode) == "Outreach":
+        if str(self.sfr.mode_obj) == "Outreach":
             self.transmit("NO SWITCH")
         else:
             self.sfr.MODE = self.sfr.modes_list["Outreach"]
@@ -161,7 +163,7 @@ class CommandExecutor:
         self.sfr.LOWER_THRESHOLD = int(a) + float(b) / 10
 
     def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
-        self.mode.instruct["All Off"](exceptions=[])
+        self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
 
