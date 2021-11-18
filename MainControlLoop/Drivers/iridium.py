@@ -35,6 +35,18 @@ class Iridium:
         "SOL", #10, SOLAR POWER
         "TBL", #11, TUMBLE
     ]
+    ENCODED_ERRORS = [ #codes to be sent back to ground in response to commands
+        "OK", #0, Command received and executed
+        "EXEC", #1, Command received and read, but error executing
+        "GRBL", #2, Command received, but could not be decoded
+    ]
+    ENCODED_ACK = [ #codes to be sent back to satellite from ground upon receiving telemetry data
+        "RCV", #0, Data received
+        "LEN", #1, Length does not match
+        "CHK", #2, Checksum incorrect
+        "BTH", #3, Both checksum incorrect and length not matching
+        "TMO", #4, Timeout, did not receive message response in time
+    ]
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
