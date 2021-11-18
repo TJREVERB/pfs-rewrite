@@ -44,7 +44,7 @@ class Iridium:
         # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals that have elapsed since the epoch
         # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
-        self.SHUTDOWN = lambda: self.write("AT*F")
+        self.SHUTDOWN = lambda: self.request("AT*F")
         self.RSSI = lambda: self.request("AT+CSQ", 10)  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF") # Returns last known signal strength, immediately
 
