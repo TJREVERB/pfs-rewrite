@@ -21,7 +21,8 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp() #Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_COMMANDS = [
+    ENCODED_REGISTRY = [
+        #Commands to satellite, also used in specifying return values to ground
         "NOP", #0, NO OP
         "BVT", #1, BATTERY VOLTAGE
         "CHG", #2, CHARGING MODE
@@ -34,18 +35,18 @@ class Iridium:
         "SVF", #9, FULL SIGNAL VARIABILITY DATA
         "SOL", #10, SOLAR POWER
         "TBL", #11, TUMBLE
-    ]
-    ENCODED_ERRORS = [ #codes to be sent back to ground in response to commands
-        "OK", #0, Command received and executed
-        "EXEC", #1, Command received and read, but error executing
-        "GRBL", #2, Command received, but could not be decoded
-    ]
-    ENCODED_ACK = [ #codes to be sent back to satellite from ground upon receiving telemetry data
-        "RCV", #0, Data received
-        "LEN", #1, Length does not match
-        "CHK", #2, Checksum incorrect
-        "BTH", #3, Both checksum incorrect and length not matching
-        "TMO", #4, Timeout, did not receive message response in time
+
+        #codes to be sent back to ground in response to commands
+        "OK", #12, Command received and executed
+        "EXEC", #13, Command received and read, but error executing
+        "GRBL", #14, Command received, but could not be decoded
+
+        #codes to be sent back to satellite from ground upon receiving telemetry data
+        "RCV", #15, Data received
+        "LEN", #16, Length does not match
+        "CHK", #17, Checksum incorrect
+        "BTH", #18, Both checksum incorrect and length not matching
+        "TMO", #19, Timeout, did not receive message response in time
     ]
 
     def __init__(self, state_field_registry):
@@ -215,9 +216,10 @@ class Iridium:
         for m in message:
             if str(m).isnumeric():
                 #convert from float or int to twos comp half precision
+
             else:
                 for i in range(0, len(m), 3):
-                    num = Iridium.ENCODED.find(m[i:i+3])
+                    num = Iridium.ENCODED_REGISTRY.find(m[i:i+3])
                     if num == -1:
                         raise RuntimeError("Incorrect string code")
                     else:
