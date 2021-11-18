@@ -9,7 +9,7 @@ import datetime
 
 class CommandExecutor:
     # command_registry = {
-    #     "TST": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
+    #     "NOP": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
     #     # Reads and transmits battery voltage
     #     "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
     #     "CHG": self.charging_mode(),  # Enters charging mode
@@ -24,7 +24,7 @@ class CommandExecutor:
     #         lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
     #     ]],
     #     # Transmit proof of life through Iridium to ground station
-    #     "IRI": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
+    #     "WVE": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
     #                                      self.eps.solar_power(),
     #                                      self.eps.total_power()),
     #     # Transmit total power draw of connected components

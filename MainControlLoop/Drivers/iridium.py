@@ -21,6 +21,20 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp() #Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
+    ENCODED_COMMANDS = [
+        "NOP", #0, NO OP
+        "BVT", #1, BATTERY VOLTAGE
+        "CHG", #2, CHARGING MODE
+        "SCI", #3, SCIENCE MODE
+        "OUT", #4, OUTREACH MODE
+        "RST", #5, BUS RESET
+        "WVE", #6, PROOF OF LIFE
+        "PWR", #7, TOTAL POWER
+        "SSV", #8, SIGNAL VARIABILITY
+        "SOL", #9, SOLAR POWER
+        "TBL", #10, TUMBLE
+    ]
+
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
