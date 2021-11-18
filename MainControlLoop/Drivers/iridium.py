@@ -31,8 +31,9 @@ class Iridium:
         "WVE", #6, PROOF OF LIFE
         "PWR", #7, TOTAL POWER
         "SSV", #8, SIGNAL VARIABILITY
-        "SOL", #9, SOLAR POWER
-        "TBL", #10, TUMBLE
+        "SVF", #9, FULL SIGNAL VARIABILITY DATA
+        "SOL", #10, SOLAR POWER
+        "TBL", #11, TUMBLE
     ]
 
     def __init__(self, state_field_registry):
