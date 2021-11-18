@@ -1,17 +1,12 @@
 import time
 import pandas as pd
 import numpy as np
-from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-from MainControlLoop.command_executor import CommandExecutor
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -33,7 +28,6 @@ class StateFieldRegistry:
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.command_executor = CommandExecutor(self)
 
         self.SIGNAL_STRENGTH_VARIABILITY = -1
         self.contact_established = False

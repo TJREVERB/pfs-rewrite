@@ -22,7 +22,7 @@ class MainControlLoop:
         current_time = time.time()
         while True:  # Iterate forever
             mode = self.sfr.MODE(self.sfr)
-            mode.start()  #TODO implement update conditions
+            mode.start()
             while mode.check_conditions():  # Iterate while we're supposed to be in this mode
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
                     mode.update_conditions()
