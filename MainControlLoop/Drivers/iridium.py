@@ -1,4 +1,5 @@
 import time, datetime
+import math
 from serial import Serial
 from functools import partial
 
@@ -215,15 +216,36 @@ class Iridium:
         encoded = ""
         for m in message:
             if str(m).isnumeric():
-                #convert from float or int to twos comp half precision
-
+                #convert from float or int to twos comp half precision, bytes are MSB FIRST
+                flt = 0
+                exp = int(math.log10(abs(m)))
+                if exp < 0:
+                    exp = abs(exp) + 1
+                    exp &= 0xf #make sure exp is 4 bits, cut off anything past the 4th
+                    exp = (1 << 4) - exp #twos comp
+                    flt |= exp << 11
+                    flt |= 1 << 15
+                else:
+                    flt |= (exp & 0xf) << 11 #make sure exp is 4 bits, cut off anything past the 4th, shift left 11
+                num = m/(10**exp)*100 #num will always have three digits, with trailing zeros if necessary to fill it in
+                if m < 0:
+                    num &= 0x3ff #make sure num is 10 bits long
+                    num = (1 << 10) - num #twos comp
+                    flt |= num
+                    flt |= (1 << 10) #set sign bit
+                else:
+                    flt |= num & 0x3ff #make sure num is 10 bits long
+                byte1 = flt >> 8
+                byte2 = flt & 0xff
+                encoded += "\x" + hex(byte1).split("x")[1].zfill(2) #MSB FIRST
+                encoded += "\x" + hex(byte2).split("x")[1].zfill(2) #LSB LAST
             else:
                 for i in range(0, len(m), 3):
                     num = Iridium.ENCODED_REGISTRY.find(m[i:i+3])
                     if num == -1:
                         raise RuntimeError("Incorrect string code")
                     else:
-                        encoded += "\x" + str(num).zfill(2)
+                        encoded += "\x" + hex(num).split("x")[1].zfill(2)
         return encoded.encode("utf-8")
 
 
