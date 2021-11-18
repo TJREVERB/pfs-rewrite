@@ -76,5 +76,5 @@ class Outreach(Mode):  # TODO: IMPLEMENT
             return Charging(self.sfr)
 
     def terminate_mode(self):
-        self.instruct["Pin Off"]("Iridium")
-        self.instruct["Pin Off"]("APRS")
+        super(Outreach, self).terminate_mode()
+        pass

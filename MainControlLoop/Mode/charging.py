@@ -47,6 +47,6 @@ class Charging(Mode):
 
     def terminate_mode(self):
         super(Charging, self).terminate_mode()
-        self.instruct["Pin Off"](self.sfr.primary_radio)
+        pass
 
 

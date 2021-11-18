@@ -5,6 +5,7 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 
+
 class Startup(Mode):
     def __init__(self, sfr):
         """
@@ -84,4 +85,8 @@ class Startup(Mode):
             return Charging(self.sfr)
         else:
             return Science(self.sfr)
+
+    def terminate_mode(self) -> None:
+        super(Startup, self).terminate_mode()
+        pass
 

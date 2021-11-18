@@ -64,4 +64,5 @@ class Science(Mode):  # TODO: IMPLEMENT
             return Charging(self.sfr)
 
     def terminate_mode(self):
-        self.instruct["Pin Off"](self.sfr.primary_radio)
+        super(Science, self).terminate_mode()
+        pass

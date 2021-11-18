@@ -9,7 +9,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         super().__init__(sfr)
 
         self.conditions = {
-            "CHARGE_LOW": False
+            "Low Battery": False
         }
 
 
@@ -18,16 +18,22 @@ class Repeater(Mode):  # TODO: IMPLEMENT
 
     def start(self) -> None:
         super(Repeater, self).start()
+        
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
-
+        self.instruct["All Off"](exceptions=["Iridium", "APRS"])
+        
     def check_conditions(self) -> bool:
-        self.conditions["CHARGE_LOW"] = self.sfr.eps.telemetry["VBCROUT"]() > self.LOWER_THRESHOLD
-        if self.conditions["CHARGE_LOW"]:  # if voltage is less than upper limit
-            return False
+        if not self.conditions["Low Battery"]:  # if not low batter
+            return True  # keep in current mode
         else:
-            return True
+            return False  # switch modes
 
+    def update_conditions(self):
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        
     def execute_cycle(self) -> None:
         super(Repeater, self).execute_cycle()
         self.sfr.devices[self.sfr.PRIMARY_RADIO].listen()
@@ -35,15 +41,11 @@ class Repeater(Mode):  # TODO: IMPLEMENT
 
     def switch_modes(self) -> None:
         super(Repeater, self).switch_modes()  # Run switch_modes of superclass
-
-        if self.conditions["CHARGE_LOW"]:  # if the battery is low, switch to charging mode
-            return Charging
-        
-        return Outreach #if this is called even though the conditions are met, this just returns itself
+        return Charging(self.sfr)
 
     def terminate_mode(self) -> None:
         # TODO: write to APRS to turn off digipeating
-        self.instruct["Pin Off"]("Iridium")
-        self.instruct["Pin Off"]("APRS")
+        super(Repeater, self).terminate_mode()
+        pass
 
 
