@@ -220,6 +220,7 @@ class Iridium:
         :param discardbuf: (bool) if False: transmit contents, if any, of MO buffer before loading new message in; if True: overwrite MO buffer contents
         :return: (bool) transmission successful
         """ #We should consider using the sequence numbers
+        #TODO: SWITCH THIS FROM SBDWT TO SBDWB
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
@@ -256,6 +257,7 @@ class Iridium:
         """
         Stores next received messages in sfr
         """
+        #TODO: SWITCH FROM SBDRT TO SBDRB
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
