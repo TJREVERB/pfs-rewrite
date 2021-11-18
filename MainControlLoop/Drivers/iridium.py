@@ -205,6 +205,20 @@ class Iridium:
         """
         return data.split(cmd + ":")[1].split("\n")[0].strip()
 
+    def encode(self, message):
+        """
+        Encodes string for transmit using numbered codes
+        :param message: (str) to encode
+        :return: (bytes) encoded utf-8 string
+        """
+
+    def decode(self, message):
+        """
+        Decodes received string from SBDRB and converts to string
+        :param message: (str) received
+        :return: (str) decoded 3 character string
+        """
+
 
     def request(self, command: str, timeout=0.5) -> str:
         """
