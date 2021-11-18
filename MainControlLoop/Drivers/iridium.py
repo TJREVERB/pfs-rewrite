@@ -21,6 +21,33 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp() #Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
+    ENCODED_COMMANDS = [
+        "NOP", #0, NO OP
+        "BVT", #1, BATTERY VOLTAGE
+        "CHG", #2, CHARGING MODE
+        "SCI", #3, SCIENCE MODE
+        "OUT", #4, OUTREACH MODE
+        "RST", #5, BUS RESET
+        "WVE", #6, PROOF OF LIFE
+        "PWR", #7, TOTAL POWER
+        "SSV", #8, SIGNAL VARIABILITY
+        "SVF", #9, FULL SIGNAL VARIABILITY DATA
+        "SOL", #10, SOLAR POWER
+        "TBL", #11, TUMBLE
+    ]
+    ENCODED_ERRORS = [ #codes to be sent back to ground in response to commands
+        "OK", #0, Command received and executed
+        "EXEC", #1, Command received and read, but error executing
+        "GRBL", #2, Command received, but could not be decoded
+    ]
+    ENCODED_ACK = [ #codes to be sent back to satellite from ground upon receiving telemetry data
+        "RCV", #0, Data received
+        "LEN", #1, Length does not match
+        "CHK", #2, Checksum incorrect
+        "BTH", #3, Both checksum incorrect and length not matching
+        "TMO", #4, Timeout, did not receive message response in time
+    ]
+
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
@@ -44,7 +71,7 @@ class Iridium:
         # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals that have elapsed since the epoch
         # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
-        self.SHUTDOWN = lambda: self.write("AT*F")
+        self.SHUTDOWN = lambda: self.request("AT*F", 1)
         self.RSSI = lambda: self.request("AT+CSQ", 10)  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF") # Returns last known signal strength, immediately
 
@@ -57,7 +84,7 @@ class Iridium:
         self.BAT_CHECK = lambda: self.request("AT+CBC")
 
         # Resets settings without power cycle
-        self.SOFT_RST = lambda: self.request("ATZn")
+        self.SOFT_RST = lambda: self.request("ATZn", 1)
 
         # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary
         self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
@@ -86,7 +113,7 @@ class Iridium:
         self.SBD_TRANSFER_MOMT = lambda: self.request("AT+SBDTC") # beamcommunications 104
 
         # Transmits contents of mobile originated buffer to GSS, transfer oldest message in GSS queuefrom GSS to ISU
-        self.SBD_INITIATE = lambda: self.request("AT+SBDI", 10) # beamcommunications 94-95
+        self.SBD_INITIATE = lambda: self.request("AT+SBDI", 60) # beamcommunications 94-95
         # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
         # a should be "A" if in response to SBD ring alert, otherwise unspecified. location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
         self.SBD_INITIATE_EX = lambda a = "", location = "": self.request("AT+SBDIX" + a, 10) if len(location) == 0 else self.request("AT+SBDIX" + a + "=" + location) #beamcommunications 95-96
@@ -176,7 +203,21 @@ class Iridium:
         :param data: (str) to format
         :param cmd: (str) command, do not include AT prefix
         """
-        return data.split(cmd + ": ")[1].split("\n")[0].strip()
+        return data.split(cmd + ":")[1].split("\n")[0].strip()
+
+    def encode(self, message):
+        """
+        Encodes string for transmit using numbered codes
+        :param message: (str) to encode
+        :return: (bytes) encoded utf-8 string
+        """
+
+    def decode(self, message):
+        """
+        Decodes received string from SBDRB and converts to string
+        :param message: (str) received
+        :return: (str) decoded 3 character string
+        """
 
 
     def request(self, command: str, timeout=0.5) -> str:
@@ -205,11 +246,12 @@ class Iridium:
         :param discardbuf: (bool) if False: transmit contents, if any, of MO buffer before loading new message in; if True: overwrite MO buffer contents
         :return: (bool) transmission successful
         """ #We should consider using the sequence numbers
+        #TODO: SWITCH THIS FROM SBDWT TO SBDWB
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "+SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if int(ls[0]) == 1:
@@ -221,16 +263,16 @@ class Iridium:
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1: #check signal strength first
             return False
-        self.SBD_TIMEOUT(90) # 90 second timeout for transmit
+        self.SBD_TIMEOUT(60) # 60 second timeout for transmit
         self.SBD_WT(message)
-        result = self.process(self.SBD_INITIATE(), "+SBDI").split(", ")
+        result = self.process(self.SBD_INITIATE(), "SBDI").split(", ")
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
@@ -241,26 +283,27 @@ class Iridium:
         """
         Stores next received messages in sfr
         """
+        #TODO: SWITCH FROM SBDRT TO SBDRB
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "+SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
             except:
                 pass #broken serial prolly
-        result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+        result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
                 except:
                     pass #broken serial prolly
             elif result[2] == 0:
                 pass
             elif result[2] == 2:
                 pass #TODO: HANDLE ERROR OR NO MESSAGE RECEIVED
-            result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+            result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:])/3 == lastqueued[-1]:
                 pass #TODO: HANDLE GSS QUEUE NOT CHANGING
@@ -279,7 +322,7 @@ class Iridium:
             return None
         if raw.find("no network service") != -1:
             return None
-        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 90 / 1000
+        processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
     
     def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
@@ -292,11 +335,11 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Whether write worked
         """
-        msg = f"Hello! BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
+        msg = f"BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
         self.SBD_WT(msg)
         result = self.SBD_INITIATE()
         #format needs verification:
-        processed = result.split("\n")[0].split("+SBDI ")[1].strip()
+        processed = result.split("\n")[0].split("SBDI")[1].strip()
         try:
             ls = [int(s) for s in processed.split(", ")]
             if ls[0] == 0:

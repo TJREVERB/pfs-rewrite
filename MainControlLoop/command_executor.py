@@ -9,7 +9,7 @@ import datetime
 
 class CommandExecutor:
     # command_registry = {
-    #     "TST": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
+    #     "NOP": lambda: self.iridium.transmit("Hello"),  # Test method, transmits "Hello"
     #     # Reads and transmits battery voltage
     #     "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
     #     "CHG": self.charging_mode(),  # Enters charging mode
@@ -24,13 +24,14 @@ class CommandExecutor:
     #         lambda: self.eps.commands["Bus Reset"], (["Battery", "5V", "3.3V", "12V"])
     #     ]],
     #     # Transmit proof of life through Iridium to ground station
-    #     "IRI": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
+    #     "WVE": lambda: self.iridium.wave(self.eps.telemetry["VBCROUT"](),
     #                                      self.eps.solar_power(),
     #                                      self.eps.total_power()),
     #     # Transmit total power draw of connected components
     #     "PWR": lambda: self.iridium.transmit(str(self.eps.total_power(3)[0])),
     #     # Calculate and transmit Iridium signal strength variability
     #     "SSV": lambda: self.iridium.transmit("SSV:" + str(self.sfr.signal_strength_variability())),
+    #     "SVF": None #TODO: Implement #Transmit full rssi data logs
     #     # Transmit current solar panel production
     #     "SOL": lambda: self.iridium.transmit("SOL:" + str(self.eps.solar_power())),
     #     "TBL": lambda: self.aprs.write(self.imu.getTumble())  # Test method, transmits tumble value
