@@ -72,3 +72,6 @@ class Startup(Mode):
     def terminate_mode(self) -> None:
         super(Startup, self).terminate_mode()
         pass
+
+    def __str__(self):
+        return "Startup"

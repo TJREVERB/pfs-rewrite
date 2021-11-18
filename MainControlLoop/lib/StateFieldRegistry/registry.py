@@ -1,17 +1,12 @@
 import time
 import pandas as pd
 import numpy as np
-from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-from MainControlLoop.command_executor import CommandExecutor
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -33,7 +28,6 @@ class StateFieldRegistry:
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.command_executor = CommandExecutor(self)
 
         self.SIGNAL_STRENGTH_VARIABILITY = -1
         self.contact_established = False
@@ -53,7 +47,8 @@ class StateFieldRegistry:
             "LOWER_THRESHOLD": 60000,  # Switch to charging mode if battery capacity (J) dips below threshold
             "MODE": Startup,  # Stores mode class, mode is instantiated in mcl
             "PRIMARY_RADIO": "Iridium",  # Primary radio to use for communications
-            "SIGNAL_STRENGTH_VARIABILITY": -1.0  # Science mode result
+            "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
+            "MODE_LOCK": False  # Whether to lock mode switches
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
@@ -72,21 +67,17 @@ class StateFieldRegistry:
             "IMU": None,
             "Antenna Deployer": None,
         }
-
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
-
         self.locked_devices = {  # modes will not switch on or off locked devices
             "Iridium": False,  # false if not locked, true if locked
             "APRS": False,
             "IMU": False,
             "Antenna Deployer": False,
         }
-
-
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)

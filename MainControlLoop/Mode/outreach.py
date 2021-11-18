@@ -52,3 +52,6 @@ class Outreach(Mode):  # TODO: IMPLEMENT
     def terminate_mode(self):
         super(Outreach, self).terminate_mode()
         pass
+
+    def __str__(self):
+        return "Outreach"
