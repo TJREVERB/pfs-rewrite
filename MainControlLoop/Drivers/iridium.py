@@ -1,7 +1,6 @@
 import time, datetime
 import math
 from serial import Serial
-from functools import partial
 
 #https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
 #https://docs.rockblock.rock7.com/reference/sbdwt
