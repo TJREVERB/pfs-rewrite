@@ -191,7 +191,7 @@ class Iridium:
         :param data: (str) to format
         :param cmd: (str) command, do not include AT prefix
         """
-        return data.split(cmd + ": ")[1].split("\n")[0].strip()
+        return data.split(cmd + ":")[1].split("\n")[0].strip()
 
 
     def request(self, command: str, timeout=0.5) -> str:
@@ -221,10 +221,10 @@ class Iridium:
         :return: (bool) transmission successful
         """ #We should consider using the sequence numbers
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "+SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if int(ls[0]) == 1:
@@ -238,14 +238,14 @@ class Iridium:
             return False
         self.SBD_TIMEOUT(90) # 90 second timeout for transmit
         self.SBD_WT(message)
-        result = self.process(self.SBD_INITIATE(), "+SBDI").split(", ")
+        result = self.process(self.SBD_INITIATE(), "SBDI").split(", ")
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME()))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
             except:
                 pass #whatever, not worth it
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
@@ -257,25 +257,25 @@ class Iridium:
         Stores next received messages in sfr
         """
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "+SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1: #Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
             except:
                 pass #broken serial prolly
-        result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+        result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "+SBDRT"), self.NETWORK_TIME))
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
                 except:
                     pass #broken serial prolly
             elif result[2] == 0:
                 pass
             elif result[2] == 2:
                 pass #TODO: HANDLE ERROR OR NO MESSAGE RECEIVED
-            result = [int(s) for s in self.process(self.SBD_INITIATE(), "+SBDI").split(", ")]
+            result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:])/3 == lastqueued[-1]:
                 pass #TODO: HANDLE GSS QUEUE NOT CHANGING
@@ -294,7 +294,7 @@ class Iridium:
             return None
         if raw.find("no network service") != -1:
             return None
-        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 90 / 1000
+        processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
     
     def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
@@ -307,11 +307,11 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Whether write worked
         """
-        msg = f"Hello! BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
+        msg = f"BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
         self.SBD_WT(msg)
         result = self.SBD_INITIATE()
         #format needs verification:
-        processed = result.split("\n")[0].split("+SBDI ")[1].strip()
+        processed = result.split("\n")[0].split("SBDI")[1].strip()
         try:
             ls = [int(s) for s in processed.split(", ")]
             if ls[0] == 0:
