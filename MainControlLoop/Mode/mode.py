@@ -106,6 +106,12 @@ class Mode:
         # TODO: store iridium buffer and other important data to sfr.
         pass
 
+    def read_radio(self):
+        """
+        Function for each mode to implement to determine how it will use the specific radios
+        """
+        pass
+
     def integrate_charge(self):
         """
         Integrate charge in Joules
