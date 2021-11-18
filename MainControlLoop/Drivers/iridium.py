@@ -203,20 +203,33 @@ class Iridium:
         :param data: (str) to format
         :param cmd: (str) command, do not include AT prefix
         """
-        return data.split(cmd + ":")[1].split("\n")[0].strip()
+        return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
     def encode(self, message):
         """
         Encodes string for transmit using numbered codes
-        :param message: (str) to encode
+        :param message: (tuple) tup of strings and floats/ints to encode, in order
         :return: (bytes) encoded utf-8 string
         """
+        encoded = ""
+        for m in message:
+            if str(m).isnumeric():
+                #convert from float or int to twos comp half precision
+            else:
+                for i in range(0, len(m), 3):
+                    num = Iridium.ENCODED.find(m[i:i+3])
+                    if num == -1:
+                        raise RuntimeError("Incorrect string code")
+                    else:
+                        encoded += "\x" + str(num).zfill(2)
+        return encoded.encode("utf-8")
+
 
     def decode(self, message):
         """
         Decodes received string from SBDRB and converts to string
         :param message: (str) received
-        :return: (str) decoded 3 character string
+        :return: (str) decoded character string
         """
 
 
@@ -308,10 +321,6 @@ class Iridium:
             if sum(lastqueued[-3:])/3 == lastqueued[-1]:
                 pass #TODO: HANDLE GSS QUEUE NOT CHANGING
 
-    def pollRI(self):
-        """Polls RI pin to see if a ring alert message is available"""
-        pass #TODO: IMPLEMENT
-
     def processedTime(self):
         """
         Requests, reads, processes, and returns current system time retrieved from network
@@ -333,7 +342,7 @@ class Iridium:
         :param solar_generation: solar panel power generation, will be truncated to 3 digits
         :param power_draw: total power output of EPS, will be truncated to 3 digits
         :param failures: component failures
-        :return: (bool) Whether write worked
+        :return: (bool) Transmission successful
         """
         msg = f"BVT:{battery_voltage:.2f},SOL:{solar_generation:.2f},PWR:{power_draw:.2f},FAI:{chr(59).join(self.sfr.FAILURES)}"# Component failures, sep by ;
         self.SBD_WT(msg)
