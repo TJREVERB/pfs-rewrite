@@ -246,10 +246,23 @@ class Iridium:
 
     def decode(self, message):
         """
-        Decodes received string from SBDRB and converts to string
+        Decodes received and processed string from SBDRB and converts to string
+        CALL PROCESS BEFORE CALLING DECODE
         :param message: (str) received
-        :return: (str) decoded character string
+        :return: (tup) decoded character string, received length, actual length, received checksum, and actual checksum
         """
+        message.strip()
+        msg = message.encode("utf-8") #re encode message to byte list
+        length = msg[:2] #check length and checksum against message length and sum
+        length = length[1] + length[0] << 8
+        checksum = msg[-2:]
+        checksum = checksum[1] + checksum[0] << 8
+        msg = msg[2:-2]
+        actual_checksum = sum(msg) & 0xffff
+        decoded = ""
+        #TODO: decode
+        return (decoded, length, len(msg), checksum, actual_checksum)
+        
 
 
     def request(self, command: str, timeout=0.5) -> str:
