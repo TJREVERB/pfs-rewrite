@@ -71,7 +71,7 @@ class Iridium:
         # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals that have elapsed since the epoch
         # current epoch is May 11, 2014, at 14:23:55, and will change again around 2026
 
-        self.SHUTDOWN = lambda: self.request("AT*F")
+        self.SHUTDOWN = lambda: self.request("AT*F", 1)
         self.RSSI = lambda: self.request("AT+CSQ", 10)  # Returns strength of satellite connection, may take up to ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF") # Returns last known signal strength, immediately
 
@@ -84,7 +84,7 @@ class Iridium:
         self.BAT_CHECK = lambda: self.request("AT+CBC")
 
         # Resets settings without power cycle
-        self.SOFT_RST = lambda: self.request("ATZn")
+        self.SOFT_RST = lambda: self.request("ATZn", 1)
 
         # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary
         self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
@@ -113,7 +113,7 @@ class Iridium:
         self.SBD_TRANSFER_MOMT = lambda: self.request("AT+SBDTC") # beamcommunications 104
 
         # Transmits contents of mobile originated buffer to GSS, transfer oldest message in GSS queuefrom GSS to ISU
-        self.SBD_INITIATE = lambda: self.request("AT+SBDI", 10) # beamcommunications 94-95
+        self.SBD_INITIATE = lambda: self.request("AT+SBDI", 60) # beamcommunications 94-95
         # Like SBDI but it always attempts SBD registration, consisting of attach and location update. 
         # a should be "A" if in response to SBD ring alert, otherwise unspecified. location is an optional param, format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
         self.SBD_INITIATE_EX = lambda a = "", location = "": self.request("AT+SBDIX" + a, 10) if len(location) == 0 else self.request("AT+SBDIX" + a + "=" + location) #beamcommunications 95-96
@@ -249,7 +249,7 @@ class Iridium:
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1: #check signal strength first
             return False
-        self.SBD_TIMEOUT(90) # 90 second timeout for transmit
+        self.SBD_TIMEOUT(60) # 60 second timeout for transmit
         self.SBD_WT(message)
         result = self.process(self.SBD_INITIATE(), "SBDI").split(", ")
         if result[0] == 0:
