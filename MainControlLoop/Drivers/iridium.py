@@ -37,17 +37,13 @@ class Iridium:
         "SOL", #10, SOLAR POWER
         "TBL", #11, TUMBLE
 
-        #codes to be sent back to ground in response to commands
-        "OK", #12, Command received and executed
-        "EXEC", #13, Command received and read, but error executing
-        "GRBL", #14, Command received, but could not be decoded
-
-        #codes to be sent back to satellite from ground upon receiving telemetry data
-        "RCV", #15, Data received
-        "LEN", #16, Length does not match
-        "CHK", #17, Checksum incorrect
-        "BTH", #18, Both checksum incorrect and length not matching
-        "TMO", #19, Timeout, did not receive message response in time
+        #codes to be sent in response to commands or telemetry, for both ground and satellite
+        "0OK", #12, MSG received and executed
+        "EXC", #13, MSG received and read, but error executing
+        "LEN", #14, MSG received, but length did not match
+        "CHK", #15, MSG received, but checksum incorrect
+        "LCK", #16, MSG received, but both length and checksum incorrect
+        "TMO", #17, Timeout while waiting for response
     ]
 
     def __init__(self, state_field_registry):
