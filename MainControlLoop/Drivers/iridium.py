@@ -1,6 +1,5 @@
 import time, datetime
 from serial import Serial
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from functools import partial
 
 #https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
@@ -22,7 +21,7 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp() #Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    def __init__(self, state_field_registry: StateFieldRegistry):
+    def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
@@ -280,7 +279,7 @@ class Iridium:
             return None
         if raw.find("no network service") != -1:
             return None
-        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 1000 / 90
+        processed = int(raw.split("MSSTM: ")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
     
     def wave(self, battery_voltage, solar_generation, power_draw) -> bool:

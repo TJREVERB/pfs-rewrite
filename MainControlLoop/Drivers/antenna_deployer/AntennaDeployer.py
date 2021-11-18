@@ -1,7 +1,6 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 
 
 class AntennaDeployerCommand(Enum):
@@ -76,7 +75,7 @@ class AntennaDeployer():
         AntennaDeployerCommand.GET_UPTIME_4: 2,
     }
 
-    def __init__(self, sfr: StateFieldRegistry):
+    def __init__(self, sfr):
         self.sfr = sfr
         self.bus = SMBus()
 
