@@ -55,3 +55,6 @@ class Science(Mode):  # TODO: IMPLEMENT
     def terminate_mode(self):
         super(Science, self).terminate_mode()
         pass
+
+    def __str__(self):
+        return "Science"

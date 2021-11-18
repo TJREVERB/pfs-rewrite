@@ -53,7 +53,8 @@ class StateFieldRegistry:
             "LOWER_THRESHOLD": 60000,  # Switch to charging mode if battery capacity (J) dips below threshold
             "MODE": Startup,  # Stores mode class, mode is instantiated in mcl
             "PRIMARY_RADIO": "Iridium",  # Primary radio to use for communications
-            "SIGNAL_STRENGTH_VARIABILITY": -1.0  # Science mode result
+            "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
+            "MODE_LOCK": False  # Whether to lock mode switches
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
@@ -72,21 +73,17 @@ class StateFieldRegistry:
             "IMU": None,
             "Antenna Deployer": None,
         }
-
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
-
         self.locked_devices = {  # modes will not switch on or off locked devices
             "Iridium": False,  # false if not locked, true if locked
             "APRS": False,
             "IMU": False,
             "Antenna Deployer": False,
         }
-
-
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH, header=0).astype(float)

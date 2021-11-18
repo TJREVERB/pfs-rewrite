@@ -1,13 +1,5 @@
-import time, datetime
-import threading
+import time
 from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from MainControlLoop.Drivers.aprs import APRS
-from MainControlLoop.Drivers.eps import EPS
-#from MainControlLoop.antenna_deployer.antenna_deployer import AntennaDeployer
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.Drivers.iridium import Iridium
-#from MainControlLoop.Drivers.lsm9ds1 import IMU, IMU_I2C
-from MainControlLoop.Drivers.bno055 import IMU, IMU_I2C
 
 
 class MainControlLoop:
@@ -16,17 +8,7 @@ class MainControlLoop:
         Create all the objects
         Each object should take in the state field registry
         """
-        self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
-        self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
-        self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
-        self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
-        self.NUM_DATA_POINTS = 90  # How many measurements to take in SCIENCE mode per orbit
-        self.NUM_SCIENCE_MODE_ORBITS = 3  # Number of orbits to measure in SCIENCE mode
-        self.previous_time = 0  # previous time in seconds for integrating battery charge
         self.sfr = StateFieldRegistry()
-        # If battery capacity is default value, recalculate based on Vbatt
-        if self.sfr.BATTERY_CAPACITY_INT == self.sfr.BATTERY_CAPACITY_INT:
-            self.sfr.BATTERY_CAPACITY_INT = self.sfr.volt_to_charge(self.eps.telemetry["VBCROUT"]())
         # If orbital data is default, set based on current position
         if self.sfr.LAST_DAYLIGHT_ENTRY is None:
             if self.sfr.eps.sun_detected():  # If we're in sunlight

@@ -46,20 +46,25 @@ class Charging(Mode):
 
     def read_radio(self):
         """
-        Main logic for implementation to read messages from radio in Charging mode class
+        Main logic for reading messages from radio in Charging mode
         """
-        if self.sfr.primary_radio == "Iridium" :
-            if(time.time()-self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME):
-                iridium_messages = self.sfr.devices["Iridium"].listen()  # get all messages from iridium, should be in the form of a list
-                for message in iridium_messages:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(message)
-        elif(self.sfr.primary_radio == "APRS"):
-            if(time.time()-self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME):
-                if(time.time()-self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME):
-                    iridium_messages = self.sfr.devices["Iridium"].listen()  # get all messages from iridium, should be in the form of a list
-                    for message in iridium_messages:
-                        self.sfr.IRIDIUM_RECEIVED_COMMAND.append(message)  # add iridium messages to sfr
-            
+        super(Charging, self).read_radio()
+        # If primary radio is iridium and enough time has passed
+        if self.sfr.PRIMARY_RADIO == "Iridium" and \
+           time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+            # get all messages from iridium, should be in the form of a list
+            iridium_messages = self.sfr.devices["Iridium"].listen()
+            # Append messages to IRIDIUM_RECEIVED_COMMAND
+            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+        # If primary radio is aprs and enough time has passed
+        elif self.sfr.PRIMARY_RADIO == "APRS" and \
+             time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+            # get all messages from iridium, should be in the form of a list
+            iridium_messages = self.sfr.devices["Iridium"].listen()
+            # Append messages to IRIDIUM_RECEIVED_COMMAND
+            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+        # If APRS is on for whatever reason
+        if self.sfr.devices["Iridium"] is not None:
             self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS".listen()])  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executer
 
@@ -67,3 +72,5 @@ class Charging(Mode):
         super(Charging, self).terminate_mode()
         pass
 
+    def __str__(self):
+        return "Charging"
