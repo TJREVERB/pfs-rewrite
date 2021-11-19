@@ -30,15 +30,13 @@ class Charging(Mode):
         is_valid = self.conditions["Low Battery"] #Stays in charging mode as long as battery is low
 
         return is_valid and super_result 
-    
-    
+
     def switch_mode(self):
         if self.conditions["Science Mode Status"]:  # if science mode is complete
             return self.sfr.modes_list["Outreach"] #suggest outreach mode
         else:  # science mode not done
             return self.sfr.modes_list["Science"] #suggest science mode
 
-            
 
     def update_conditions(self) -> None:
         super(Charging, self).update_conditions()

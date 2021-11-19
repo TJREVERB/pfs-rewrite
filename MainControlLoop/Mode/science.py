@@ -36,14 +36,11 @@ class Science(Mode):  # TODO: IMPLEMENT
         
         return super_result and is_valid
 
-    
     def switch_mode(self):
         if self.conditions["Low Battery"]:
             return self.sfr.modes_list["Charging"]
         elif self.conditions["Collection Complete"]:
             return self.sfr.modes_list["Outreach"]
-
-
 
     def update_conditions(self) -> None:
         super(Science, self).update_conditions()
