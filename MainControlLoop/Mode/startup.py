@@ -78,10 +78,11 @@ class Startup(Mode):
         # If primary radio is aprs and enough time has passed
         elif self.sfr.PRIMARY_RADIO == "APRS" and \
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
-            # Append messages to IRIDIUM_RECEIVED_COMMAND
-            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+            # get all messages from iridium, store them in sfr
+            try:
+                self.sfr.devices["Iridium"].nextMsg()
+            except RuntimeError:
+                pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
