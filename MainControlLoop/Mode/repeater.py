@@ -68,4 +68,5 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         super(Repeater, self).terminate_mode()
         pass
 
-
+    def __str__(self):
+        return "Repeater"
