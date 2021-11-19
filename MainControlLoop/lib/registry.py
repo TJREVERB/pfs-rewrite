@@ -143,7 +143,7 @@ class StateFieldRegistry:
         """
         if t == 0:
             t = time.time()
-        print(t, gen)
+        # print(t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.solar_log_path, mode="a", header=False)  # Append data to log
 
