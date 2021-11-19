@@ -11,7 +11,7 @@ class Startup(Mode):
         # CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
         self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
         self.BEACON_WAIT_TIME = 120  # 2 minutes
-        # CHANGE TO ACCOMODATE DATA BUDGET
+        # CHANGE TO ACCOMMODATE DATA BUDGET
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
 
         self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
