@@ -25,13 +25,13 @@ class Startup(Mode):
     def __str__(self):
         return "Startup"
 
-    def start(self):
+    def start(self) -> None:
         super(Startup, self).start()
         self.instruct["Pin On"]("Iridium")
         self.instruct["All Off"](exceptions=["Iridium"])
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
-    def antenna(self):
+    def antenna(self) -> None:
         # TODO: TURNING OFF ANTENNA DEPLOYER INSTANTLY MAY PREVENT ANTENNA FROM PROPERLY DEPLOYING
         if not self.sfr.ANTENNA_DEPLOYED:
             # if 30 minutes have elapsed
@@ -45,13 +45,13 @@ class Startup(Mode):
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
                 self.sfr.dump()  # Log state field registry change
 
-    def execute_cycle(self):
+    def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
-        self.read_radio()
         if self.conditions["Low Battery"]:  # Execute cycle low battery
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
+            self.read_radio()  # only reads radio if not low battery
             self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
@@ -61,7 +61,7 @@ class Startup(Mode):
                                                  self.sfr.eps.total_power(4))
                 self.last_contact_attempt = time.time()
 
-    def read_radio(self):
+    def read_radio(self) -> None:
         """
         Main logic for reading messages from radio in Startup mode
         """

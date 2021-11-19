@@ -22,7 +22,7 @@ class Science(Mode):  # TODO: IMPLEMENT
     def __str__(self):
         return "Science"
 
-    def start(self):
+    def start(self) -> None:
         super(Science, self).start()
         self.instruct["Pin On"](self.sfr.primary_radio)
         self.instruct["All Off"](exceptions=[self.sfr.primary_radio])
@@ -40,12 +40,12 @@ class Science(Mode):  # TODO: IMPLEMENT
         else:
             return True
 
-    def update_conditions(self):
+    def update_conditions(self) -> None:
         super(Science, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
-    def execute_cycle(self):
+    def execute_cycle(self) -> None:
         super(Science, self).execute_cycle()
         self.read_radio()
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
@@ -58,7 +58,7 @@ class Science(Mode):  # TODO: IMPLEMENT
                                  self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
             self.pings_performed += 1
 
-    def read_radio(self):
+    def read_radio(self) -> None:
         """
         Main logic for reading messages from radio in Science mode
         """
@@ -84,6 +84,6 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].nextMsg())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
-    def terminate_mode(self):
+    def terminate_mode(self) -> None:
         super(Science, self).terminate_mode()
         pass
