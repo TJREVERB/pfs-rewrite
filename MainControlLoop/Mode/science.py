@@ -30,15 +30,20 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def check_conditions(self) -> bool:
-        super(Science, self).check_conditions()
+        super_result = super(Science, self).check_conditions()
+
+        is_valid = (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"]) 
+        
+        return super_result and is_valid
+
+    
+    def switch_mode(self):
         if self.conditions["Low Battery"]:
-            self.switch_mode("Charging")
-            return False
+            return self.sfr.modes_list["Charging"]
         elif self.conditions["Collection Complete"]:
-            self.switch_mode("Outreach")
-            return False
-        else:
-            return True
+            return self.sfr.modes_list["Outreach"]
+
+
 
     def update_conditions(self) -> None:
         super(Science, self).update_conditions()

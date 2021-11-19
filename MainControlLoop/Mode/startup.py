@@ -101,6 +101,8 @@ class Startup(Mode):
             return False
         else:
             return True  # If we haven't established contact, stay in startup
+    
+    def switch_mode(self):
 
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()

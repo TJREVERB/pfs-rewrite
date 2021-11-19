@@ -25,15 +25,20 @@ class Charging(Mode):
         self.conditions["Science Mode Status"] = self.sfr.SIGNAL_STRENGTH_VARIABILITY > -1
 
     def check_conditions(self) -> bool:
-        super(Charging, self).check_conditions()
-        if self.conditions["Low Battery"]:  # if voltage is less than upper limit
-            return True  # stay in charging
-        elif self.conditions["Science Mode Status"]:  # if science mode is complete
-            self.switch_mode("Outreach")
-            return False
+        super_result = super(Charging, self).check_conditions() #in case we decide to add some super conditions later
+
+        is_valid = self.conditions["Low Battery"] #Stays in charging mode as long as battery is low
+
+        return is_valid and super_result 
+    
+    
+    def switch_mode(self):
+        if self.conditions["Science Mode Status"]:  # if science mode is complete
+            return self.sfr.modes_list["Outreach"] #suggest outreach mode
         else:  # science mode not done
-            self.switch_mode("Science")  # go back to science mode
-            return False
+            return self.sfr.modes_list["Science"] #suggest science mode
+
+            
 
     def update_conditions(self) -> None:
         super(Charging, self).update_conditions()

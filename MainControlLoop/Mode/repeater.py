@@ -24,12 +24,15 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         # TODO: TURN ON DIGIPEATING
 
     def check_conditions(self) -> bool:
-        super(Repeater, self).check_conditions()
-        if not self.conditions["Low Battery"]:  # if not low battery
-            return True  # keep in current mode
-        else:
-            self.switch_mode("Charging")
-            return False  # switch modes
+        super_result = super(Repeater, self).check_conditions()
+        
+        is_valid = not self.conditions["Low Battery"] #as long as the battery is still good
+
+        return super_result and is_valid
+
+    #always returns charging. just read the comment in outreach mode's switch_mode, I don't feel like writing it here again
+    def switch_mode(self):
+        return self.sfr.modes_list["Charging"]
 
     def update_conditions(self):
         super(Repeater, self).update_conditions()

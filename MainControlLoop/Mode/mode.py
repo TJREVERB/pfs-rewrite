@@ -40,12 +40,11 @@ class Mode:
 
     def check_conditions(self) -> bool:
         """
-        Checks whether conditions for mode to continue running are still true
-        Updates state field registry with mode to switch to if necessary
-        Does not mode.terminate_mode(), mode.__init__(), or mode.start(), mcl handles this
+        Checks whether conditions for mode to continue running are still true.
+        NOTE: THIS METHOD DOES NOT SWITCH MODES OR MODIFY THE STATE FIELD REGISTRY. THAT IS DONE IN THE MCL
         :return: (bool) true to stay in mode, false to exit
         """
-        pass
+        return True
 
     def update_conditions(self) -> None:
         """
@@ -55,12 +54,9 @@ class Mode:
 
     def switch_mode(self, mode: str) -> None:
         """
-        Switch to given mode, used for mode locking
-        Does not switch if mode is locked
-        :param mode: (str) mode to switch to
+        Returns which mode to switch to
         """
-        if not self.sfr.MODE_LOCK:
-            self.sfr.MODE = self.sfr.modes_list[mode]
+        pass
 
     def execute_cycle(self) -> None:
         """
