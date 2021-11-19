@@ -311,12 +311,14 @@ class Iridium:
         self.write(command)
         result = ""
         sttime = time.perf_counter()
-        while result.find("OK") == -1 and time.perf_counter() - sttime < timeout:
+        while time.perf_counter() - sttime < timeout:
             time.sleep(.1)
             result += self.read()
             if result.find("ERROR") != -1:
                 return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly
-        return result
+            if result.find("OK") != -1:
+                return result
+        raise RuntimeError("Incomplete response")
 
     def transmit(self, message, discardbuf=True):
         """
