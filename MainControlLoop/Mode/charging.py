@@ -10,8 +10,8 @@ class Charging(Mode):
             "Science Mode Status": False,  # this is False if science mode is not complete
             "Low Battery": True  # don't want to shift out of charging prematurely
         }
-        self.PRIMARY_IRIDIUM_WAIT_TIME = 5*60
-        self.SECONDARY_IRIDIUM_WAIT_TIME = 20*60
+        self.PRIMARY_IRIDIUM_WAIT_TIME = 5*60  # wait time for iridium polling if iridium is main radio
+        self.SECONDARY_IRIDIUM_WAIT_TIME = 20*60  # wait time for iridium polling if iridium is not main radio
 
     def __str__(self):
         return "Charging"
@@ -64,9 +64,9 @@ class Charging(Mode):
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
         # If APRS is on for whatever reason
-        if self.sfr.devices["Iridium"] is not None:
-            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS".listen()])  # add aprs messages to sfr
-            # commands will be executed in the mode.py's super method for execute_cycle using a command executer
+        if self.sfr.devices["APRS"] is not None:
+            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].listen())  # add aprs messages to sfr
+            # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def terminate_mode(self):
         super(Charging, self).terminate_mode()

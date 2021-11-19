@@ -13,6 +13,10 @@ class Startup(Mode):
         self.BEACON_WAIT_TIME = 120  # 2 minutes
         # CHANGE TO ACCOMODATE DATA BUDGET
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
+
+        self.PRIMARY_IRIDIUM_WAIT_TIME = 5*60  # wait time for iridium polling if iridium is main radio
+        self.SECONDARY_IRIDIUM_WAIT_TIME = 20*60  # wait time for iridium polling if iridium is not main radio
+
         self.last_beacon_time = time.time()
         self.last_contact_attempt = time.time()
         self.conditions = {
@@ -42,6 +46,7 @@ class Startup(Mode):
 
     def execute_cycle(self):
         super(Startup, self).execute_cycle()
+        self.read_radio()
         if self.conditions["Low Battery"]:  # Execute cycle low battery
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60*90)  # sleep for one full orbit
@@ -52,6 +57,31 @@ class Startup(Mode):
                 # Attempt to establish contact with ground
                 self.sfr.devices["Iridium"].wave(self.sfr.eps.commands["VBCROUT"](), self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
                 self.last_contact_attempt = time.time()
+
+    def read_radio(self):
+        """
+        Main logic for reading messages from radio in Startup mode
+        """
+        super(Startup, self).read_radio()
+        # If primary radio is iridium and enough time has passed
+        if self.sfr.PRIMARY_RADIO == "Iridium" and \
+           time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+            # get all messages from iridium, should be in the form of a list
+            iridium_messages = self.sfr.devices["Iridium"].listen()
+            # Append messages to IRIDIUM_RECEIVED_COMMAND
+            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+        # If primary radio is aprs and enough time has passed
+        elif self.sfr.PRIMARY_RADIO == "APRS" and \
+             time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+            # get all messages from iridium, should be in the form of a list
+            iridium_messages = self.sfr.devices["Iridium"].listen()
+            # Append messages to IRIDIUM_RECEIVED_COMMAND
+            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+        # If APRS is on for whatever reason
+        if self.sfr.devices["APRS"] is not None:
+            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].listen())  # add aprs messages to sfr
+            # commands will be executed in the mode.py's super method for execute_cycle using a command executor
+
 
     def check_conditions(self):
         super(Startup, self).check_conditions()

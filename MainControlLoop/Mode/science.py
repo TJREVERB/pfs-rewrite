@@ -9,11 +9,16 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.pings_performed = 0
         self.DATAPOINT_SPACING = 60  # in seconds
         self.NUMBER_OF_REQUIRED_PINGS = (90*60)/self.DATAPOINT_SPACING # number of pings to do to complete orbit
+        self.PRIMARY_IRIDIUM_WAIT_TIME = 5*60  # wait time for iridium polling if iridium is main radio
+        self.SECONDARY_IRIDIUM_WAIT_TIME = 20*60  # wait time for iridium polling if iridium is not main radio
         self.conditions = {
             "Collection Complete": False,
             "Low Battery": False
         }
 
+        self.PRIMARY_IRIDIUM_WAIT_TIME = 5*60  # wait time for iridium polling if iridium is main radio
+        self.SECONDARY_IRIDIUM_WAIT_TIME = 20*60  # wait time for iridium polling if iridium is not main radio
+        
     def __str__(self):
         return "Science"
 
@@ -42,6 +47,7 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def execute_cycle(self):
         super(Science, self).execute_cycle()
+        self.read_radio()
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
             # Transmit signal strength variability
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" + 
@@ -51,6 +57,30 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](), 
                                  self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
             self.pings_performed += 1
+
+        def read_radio(self):
+            """
+            Main logic for reading messages from radio in Science mode
+            """
+            super(Science, self).read_radio()
+            # If primary radio is iridium and enough time has passed
+            if self.sfr.PRIMARY_RADIO == "Iridium" and \
+            time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                # get all messages from iridium, should be in the form of a list
+                iridium_messages = self.sfr.devices["Iridium"].listen()
+                # Append messages to IRIDIUM_RECEIVED_COMMAND
+                self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+            # If primary radio is aprs and enough time has passed
+            elif self.sfr.PRIMARY_RADIO == "APRS" and \
+                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+                # get all messages from iridium, should be in the form of a list
+                iridium_messages = self.sfr.devices["Iridium"].listen()
+                # Append messages to IRIDIUM_RECEIVED_COMMAND
+                self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+            # If APRS is on for whatever reason
+            if self.sfr.devices["APRS"] is not None:
+                self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].listen())  # add aprs messages to sfr
+                # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def terminate_mode(self):
         super(Science, self).terminate_mode()
