@@ -145,7 +145,6 @@ class Iridium:
 
     def __del__(self):
         self.request("AT*F", 1)  # SHUTDOWN
-        time.sleep(1)
         self.serial.close()
 
     def __str__(self):
