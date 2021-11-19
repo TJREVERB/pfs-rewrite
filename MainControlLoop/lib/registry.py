@@ -40,8 +40,8 @@ class StateFieldRegistry:
             "ORBITAL_PERIOD": 90 * 60,
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
             "LOWER_THRESHOLD": 60000,  # Switch to charging mode if battery capacity (J) dips below threshold
-            "MODE": Startup,  # Stores mode class, mode is instantiated in mcl
-            "PRIMARY_RADIO": "Iridium",  # Primary radio to use for communications
+            "MODE": "Startup",  # Stores mode class, mode is instantiated in mcl
+            "PRIMARY_RADIO": "\"Iridium\"",  # Primary radio to use for communications
             "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
             "MODE_LOCK": False,  # Whether to lock mode switches
             "CONTACT_ESTABLISHED": False,
@@ -85,10 +85,7 @@ class StateFieldRegistry:
         Loads default state field values
         """
         for key, val in self.defaults.items():
-            if key == "MODE":
-                self.MODE = val
-            else:
-                exec(f"self.{key} = {val}")  # Create default fields
+            exec(f"self.{key} = {val}")  # Create default fields
 
     def to_dict(self) -> dict:
         """
