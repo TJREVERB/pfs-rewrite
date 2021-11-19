@@ -289,8 +289,8 @@ class EPS:
         Returns net solar power gain
         :return: (float) power gain in W
         """
-        generation = [self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]()
-                                                              for j in ["A", "B"]]) for i in range(1, 4)]
+        generation = [self.telemetry["VBCR" + str(i)]() * max([self.telemetry["IBCR" + str(i) + j]()
+                                                               for j in ["A", "B"]]) for i in range(1, 4)]
         self.sfr.log_solar(generation)
         return sum(generation)
 
