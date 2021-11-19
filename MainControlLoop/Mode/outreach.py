@@ -56,10 +56,11 @@ class Outreach(Mode):
         # If primary radio is iridium and enough time has passed
         if self.sfr.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
-            # Append messages to IRIDIUM_RECEIVED_COMMAND
-            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+            # get all messages from iridium, store them in sfr
+            try:
+                self.sfr.devices["Iridium"].nextMsg()
+            except RuntimeError:
+                pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.PRIMARY_RADIO == "APRS" and \

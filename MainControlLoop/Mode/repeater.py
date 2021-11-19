@@ -48,10 +48,11 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         # If primary radio is iridium and enough time has passed
         if self.sfr.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
-            # Append messages to IRIDIUM_RECEIVED_COMMAND
-            self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
+            # get all messages from iridium, store them in sfr
+            try:
+                self.sfr.devices["Iridium"].nextMsg()
+            except RuntimeError:
+                pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.PRIMARY_RADIO == "APRS" and \
@@ -63,7 +64,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
-            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].nextMsg())  # add aprs messages to sfr
+            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].read())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def terminate_mode(self) -> None:
