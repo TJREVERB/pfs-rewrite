@@ -27,7 +27,7 @@ class Startup(Mode):
 
     def start(self):
         super(Startup, self).start()
-        self.conditions["Low Battery"] = self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"] < self.LOWER_THRESHOLD
 
     def antenna(self):
         if not self.sfr.ANTENNA_DEPLOYED:
