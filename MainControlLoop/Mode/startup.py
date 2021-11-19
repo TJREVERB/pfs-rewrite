@@ -99,12 +99,11 @@ class Startup(Mode):
         return super_result and is_valid 
     
     def switch_mode(self):
-        if self.sfr.CONTACT_ESTABLISHED and self.sfr.ANTENNA_DEPLOYED:
-            if self.conditions["Low Battery"]:  # If battery is now low
-                # We use this syntax to avoid importing other modes
-                return self.sfr.modes_list("Charging")
-            else:
-                return self.sfr.modes_list("Science")
+        if self.conditions["Low Battery"]:  # If battery is now low
+            # We use this syntax to avoid importing other modes
+            return self.sfr.modes_list("Charging")
+        else:
+            return self.sfr.modes_list("Science")
 
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
