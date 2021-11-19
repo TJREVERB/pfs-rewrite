@@ -35,14 +35,16 @@ class Iridium:
         "SVF", #9, FULL SIGNAL VARIABILITY DATA
         "SOL", #10, SOLAR POWER
         "TBL", #11, TUMBLE
+        "UVP", #12, Set Undervoltage cutoff
+        "OVP", #13, Set Overvoltage cutoff
 
         #codes to be sent in response to commands or telemetry, for both ground and satellite
-        "0OK", #12, MSG received and executed
-        "EXC", #13, MSG received and read, but error executing
-        "LEN", #14, MSG received, but length did not match
-        "CHK", #15, MSG received, but checksum incorrect
-        "LCK", #16, MSG received, but both length and checksum incorrect
-        "TMO", #17, Timeout while waiting for response
+        "0OK", #14, MSG received and executed
+        "EXC", #15, MSG received and read, but error executing
+        "LEN", #16, MSG received, but length did not match
+        "CHK", #17, MSG received, but checksum incorrect
+        "LCK", #18, MSG received, but both length and checksum incorrect
+        "TMO", #19, Timeout while waiting for response
     ]
 
     def __init__(self, state_field_registry):
