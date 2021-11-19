@@ -84,7 +84,7 @@ class Startup(Mode):
             self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].listen())  # add aprs messages to sfr
         # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
-    def check_conditions(self):
+    def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
         if self.sfr.CONTACT_ESTABLISHED:  # If contact has been established, switch mode
             if self.conditions["Low Battery"]:  # If battery is now low
@@ -96,7 +96,7 @@ class Startup(Mode):
         else:
             return True  # If we haven't established contact, stay in startup
 
-    def update_conditions(self):
+    def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
 
