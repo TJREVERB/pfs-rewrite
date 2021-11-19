@@ -78,7 +78,7 @@ class Mode:
             self.sfr.enter_sunlight()
         elif not sun and self.sfr.LAST_DAYLIGHT_ENTRY > self.sfr.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
-        self.sfr.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period
+        self.sfr.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
         self.sfr.dump()
 
     def terminate_mode(self) -> None:
