@@ -2,6 +2,7 @@ import time
 import pandas as pd
 import numpy as np
 from MainControlLoop.Drivers.eps import EPS
+from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -112,8 +113,12 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "w") as f:
             for key, val in self.to_dict().items():
-                if type(self.defaults[key]) == bool and not val:
+                if val.isinstance(bool) and not val:
                     f.write(f"{key}:False\n")
+                elif val.isinstance(Mode):
+                    f.write(f"{key}:\"{str(val)}\"")
+                elif val.isinstance(str):
+                    f.write(f"{key}:\"{val}\"")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
 
