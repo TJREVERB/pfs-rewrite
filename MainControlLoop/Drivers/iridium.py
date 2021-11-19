@@ -168,9 +168,8 @@ class Iridium:
                 return False
         self.serial.flush()
         try:
-            self.write("AT")
-            time.sleep(1)  # Give Iridium one second to respond
-            if self.read().find("OK") != -1:
+            result = self.request("AT", 1) # Give Iridium one second to respond
+            if result.find("OK") != -1:
                 return True
             return False
         except UnicodeDecodeError:
@@ -193,18 +192,14 @@ class Iridium:
                 return False
         self.serial.flush()
         try:
-            self.write("AT+SBDWT=test")
-            time.sleep(.5)
-            if self.read().find("OK") == -1:
+            result = self.request("AT+SBDWT=test")
+            if result.find("OK") == -1:
                 raise RuntimeError("Error writing to MO")
-            self.write("AT+SBDTC")
-            time.sleep(1)
-            result = self.read() + self.read()
+            result = self.request("AT+SBDTC", 1)
             if result.find("Outbound SBD Copied to Inbound SBD: size = 4") == -1:
                 raise RuntimeError("Error transferring buffers")
-            self.write("AT+SBDRT")
-            time.sleep(.5)
-            if self.read().find("test") == -1:
+            result = self.request("AT+SBDRT")
+            if result.find("test") == -1:
                 raise RuntimeError("Error reading message from MT")
             self.write("AT+SBDD2")  # clear all buffers
             return True
