@@ -415,7 +415,7 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Transmission successful
         """
-        msg = f"BVT{battery_voltage}SOL{solar_generation}PWR{power_draw:}FAI{chr(59).join(self.sfr.FAILURES)}"  # Component failures, sep by ;
+        msg = f"BVT{battery_voltage:.2f}SOL{solar_generation:.2f}PWR{power_draw[0]:.2f}FAI{chr(59).join(self.sfr.FAILURES)}"  # Component failures, sep by ;
         self.SBD_WT(msg)
         result = self.SBD_INITIATE()
         # format needs verification:
