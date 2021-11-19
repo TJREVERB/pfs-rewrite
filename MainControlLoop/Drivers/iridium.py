@@ -198,7 +198,7 @@ class Iridium:
             if self.read().find("OK") == -1:
                 raise RuntimeError("Error writing to MO")
             self.write("AT+SBDTC")
-            time.sleep(.5)
+            time.sleep(1)
             if self.read().find("Outbound SBD Copied to Inbound SBD: size = 4") == -1:
                 raise RuntimeError("Error transferring buffers")
             self.write("AT+SBDRT")
@@ -365,7 +365,7 @@ class Iridium:
             raise RuntimeError("Error clearing buffers")
         return True
 
-    def nextMsg(self):
+    def next_msg(self):
         """
         Stores next received messages in sfr
         """
@@ -394,7 +394,7 @@ class Iridium:
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
                 pass  # TODO: HANDLE GSS QUEUE NOT CHANGING
 
-    def processedTime(self):
+    def processed_time(self):
         """
         Requests, reads, processes, and returns current system time retrieved from network
         :return: (datetime) current time (use str() to parse to string if needed)
