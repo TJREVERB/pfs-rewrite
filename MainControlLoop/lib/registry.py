@@ -114,10 +114,10 @@ class StateFieldRegistry:
             for key, val in self.to_dict().items():
                 if type(val) == bool and not val:
                     f.write(f"{key}:False\n")
-                elif val.isinstance(Mode):
-                    f.write(f"{key}:\"{str(val)}\"")
                 elif type(val) == str:
                     f.write(f"{key}:\"{val}\"")
+                elif type(val) == Mode:
+                    f.write(f"{key}:\"{str(val)}\"")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
 
