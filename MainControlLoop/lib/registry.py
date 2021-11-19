@@ -47,7 +47,7 @@ class StateFieldRegistry:
             "CONTACT_ESTABLISHED": False,
             "LOCKED_DEVICES": [],
             "IRIDIUM_RECEIVED_COMMAND": [],
-            "APRS_RECEIVED_COMMAND": [],
+            "APRS_RECEIVED_COMMAND": "\"\"",
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
