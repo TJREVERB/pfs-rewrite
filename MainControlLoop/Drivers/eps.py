@@ -1,10 +1,15 @@
-from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from smbus2 import SMBusWrapper
+from smbus2 import SMBus
 import time
+import math
 
 
 class EPS:
+    """
+    Class for EPS
+    """
     EPS_ADDRESS: hex = 0x2b
+    SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
+    # ARBITRARY VALUE!!!
     COMPONENTS = {
         "APRS": [0x04],
         "Iridium": [0x03],
@@ -15,7 +20,8 @@ class EPS:
         "IMU": [0x09],
     }
 
-    def __init__(self, state_field_registry: StateFieldRegistry):
+    def __init__(self, state_field_registry):
+        self.bus = SMBus(1)
         self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"),
                             ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"),
@@ -181,11 +187,13 @@ class EPS:
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        with SMBusWrapper(1) as bus:
-            bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
-            time.sleep(.1)
-            result = bus.read_i2c_block_data(EPS.EPS_ADDRESS, 0, length)
-            time.sleep(.1)
+        try:
+            self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+            time.sleep(.05)
+            result = self.bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
+        except:
+            return False
+        time.sleep(.1)
         return result
 
     def command(self, register, data) -> bool:
@@ -195,8 +203,12 @@ class EPS:
         :param data: data
         :return: (bool) whether command was successful
         """
-        with SMBusWrapper(1) as bus:
-            return bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+        try:
+            result = self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+        except:
+            return False
+        time.sleep(.1)
+        return result
 
     def telemetry_request(self, tle, multiplier) -> float:
         """
@@ -208,28 +220,83 @@ class EPS:
         raw = self.request(0x10, tle, 2)
         return (raw[0] << 8 | raw[1]) * multiplier
 
-    def total_power(self):
-        ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]() for i in range(1, 11)]
-        self.sfr.log_pwr([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], ls)
-        return ls
+    def total_power(self, mode) -> tuple:
+        """
+        Returns total power draw based on EPS telemetry
+        :param mode: See below for list of modes
+        0: BUS only
+        1: Expected ON PDMs + BUS only
+        2: Actual ON PDMs + BUS only
+        3: All defined components
+        4: Comprehensive
+        :return: (tuple) power draw in W, time to poll
+        """
+        t = time.perf_counter()
+        buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
+                    self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
+                    self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
+                    self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]())
+        if mode == 0:
+            return buspower, time.perf_counter() - t
+        if mode == 1:
+            raw = self.commands["All Expected States"]()
+            expected_on = raw[2] << 8 | raw[3]
+            pdm_states = []
+            for pdm in range(1, 11):
+                pdm_states.append(expected_on & int(math.pow(2, pdm)) >> pdm)
+            ls = []
+            for i in range(1, 11):
+                b = expected_on & int(math.pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter() - t
+        if mode == 2:
+            raw = self.commands["All Actual States"]()
+            actual_on = raw[2] << 8 | raw[3]
+            pdm_states = []
+            for pdm in range(1, 11):
+                pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
+            ls = []
+            for i in range(1, 11):
+                b = actual_on & int(math.pow(2, i)) >> i
+                if b:
+                    ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+                else:
+                    ls.append(0)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter() - t
+        if mode == 3:
+            ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
+                self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
+            pdm_states = []
+            raw = self.commands["All Actual States"]()
+            data = raw[2] << 8 | raw[3]
+            for pdm in range(1, 11):
+                pdm_states.append(data & int(math.pow(2, pdm)) >> pdm)
+            self.sfr.log_pwr(pdm_states, ls)
+            return buspower + sum(ls), time.perf_counter() - t
+        if mode == 4:
+            ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[
+                self.bitsToTelem[i][1]]() for i in range(1, 11)]
+            return buspower + sum(ls), time.perf_counter() - t
+        return -1, -1
 
+    def solar_power(self) -> float:
+        """
+        Returns net solar power gain
+        :return: (float) power gain in W
+        """
+        generation = [self.telemetry["VSW" + str(i)]() * sum([self.telemetry["ISW" + str(i) + j]()
+                                                              for j in ["A", "B"]]) for i in range(1, 4)]
+        self.sfr.log_solar(generation)
+        return sum(generation)
 
-sfr = StateFieldRegistry()
-eps = EPS(sfr)
-eps.commands["All On"]()
-data = []
-for i in range(50):
-    print(i)
-    data.append(eps.total_power())
-'''print("writing to file...")
-with open("output.csv", "w") as f:
-    f.write("timestamp,0x01_state,0x02_state,0x03_state,0x04_state,0x05_state,0x06_state,"
-            "0x07_state,0x08_state,0x09_state,0x0A_state,0x01_pwr,0x02_pwr,0x03_pwr,0x04_pwr,"
-            "0x05_pwr,0x06_pwr,0x07_pwr,0x08_pwr,0x09_pwr,0x0A_pwr\n")
-    for i in data:
-        f.write(str(time.time()) + ",1,1,1,1,1,1,1,1,1,1")
-        for j in i:
-            f.write("," + str(j))
-        f.write("\n")'''
-print(str(data))
-print("prediction:" + str(sfr.predicted_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 5400)))
+    def sun_detected(self) -> bool:
+        """
+        :return: (bool) Whether sun is detected
+        """
+        return self.telemetry["SDBCR1A"]() + self.telemetry["SDBCR2A"]() + self.telemetry["SDBCR1B"]() + \
+               self.telemetry["SDBCR2B"]() > EPS.SUN_DETECTION_THRESHOLD

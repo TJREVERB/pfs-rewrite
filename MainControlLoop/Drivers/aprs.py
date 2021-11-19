@@ -1,4 +1,3 @@
-from MainControlLoop.lib.StateFieldRegistry import registry
 from serial import Serial
 import time
 
@@ -10,7 +9,7 @@ class APRS:
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
 
-    def __init__(self, state_field_registry: registry.StateFieldRegistry):
+    def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
