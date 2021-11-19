@@ -42,13 +42,16 @@ class MainControlLoop:
             # Iterate while we're supposed to be in this mode
             while isinstance(self.sfr.mode_obj, self.sfr.MODE):
 
+                #Update the conditions dictionary periodically for this mode:
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
                     self.sfr.mode_obj.update_conditions()
                     current_time = time.time()
 
+                #If the conditions of this mode aren't met and we are allowed to switch:
                 if self.sfr.mode_obj.check_conditions() and self.sfr.MODE_LOCK == False:
                     self.sfr.MODE = self.sfr.mode_obj.switch_mode()  # change the mode to be whatever our current mode wants to switch to
                     break
+
                 print("Cycle")
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
 
