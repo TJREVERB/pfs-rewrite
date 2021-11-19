@@ -32,4 +32,4 @@ class MainControlLoop:
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
                 if not isinstance(self.sfr.mode_obj, self.sfr.MODE):  # if mode was changed via manual command
                     break
-            self.sfr.MODE.terminate_mode()  # terminates current old mode
+            self.sfr.mode_obj.terminate_mode()  # terminates current old mode
