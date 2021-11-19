@@ -1,7 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 
 
-class Outreach(Mode):  # TODO: IMPLEMENT
+class Outreach(Mode):
     def __init__(self, sfr):
         super().__init__(sfr)
 
@@ -10,13 +10,13 @@ class Outreach(Mode):  # TODO: IMPLEMENT
         }
         self.limited_command_registry = {
             # Reads and transmits battery voltage
-            "BVT": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.sfr.eps.telemetry["VBCROUT"]())),
             # Transmit total power draw of connected components
-            "PWR": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.eps.total_power(3)[0])),
+            "PWR": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.sfr.eps.total_power(3)[0])),
             # Calculate and transmit Iridium signal strength variability
             "SSV": lambda: self.sfr.devices["APRS"].write("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
             # Transmit current solar panel production
-            "SOL": lambda: self.sfr.devices["APRS"].write("TJ;SOL:" + str(self.eps.solar_power())),
+            "SOL": lambda: self.sfr.devices["APRS"].write("TJ;SOL:" + str(self.sfr.eps.solar_power())),
         }
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Outreach(Mode):  # TODO: IMPLEMENT
     def check_conditions(self):
         super(Outreach, self).check_conditions()
         if self.conditions["Low Battery"]:
-            self.sfr.MODE = self.sfr.modes_list["Charging"]
+            self.switch_mode("Charging")
             return False
         else:
             return True
@@ -52,6 +52,3 @@ class Outreach(Mode):  # TODO: IMPLEMENT
     def terminate_mode(self):
         super(Outreach, self).terminate_mode()
         pass
-
-    def __str__(self):
-        return "Outreach"

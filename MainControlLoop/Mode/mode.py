@@ -53,6 +53,15 @@ class Mode:
         """
         pass
 
+    def switch_mode(self, mode: str) -> None:
+        """
+        Switch to given mode, used for mode locking
+        Does not switch if mode is locked
+        :param mode: (str) mode to switch to
+        """
+        if not self.sfr.MODE_LOCK:
+            self.sfr.MODE = self.sfr.modes_list[mode]
+
     def execute_cycle(self) -> None:
         """
         Executes one iteration of mode
@@ -112,7 +121,7 @@ class Mode:
         """
         if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
             return None
-        if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
+        if component in self.sfr.LOCKED_DEVICES:  # if component is locked, stop method from running further
             return None
         self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
@@ -131,7 +140,7 @@ class Mode:
         # TODO: if component iridium: copy iridium command buffer to sfr to avoid wiping commands when switching modes
         if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
             return None
-        if self.sfr.locked_devices[component]:  # if component is locked, stop method from running further
+        if component in self.sfr.LOCKED_DEVICES:  # if component is locked, stop method from running further
             return None
         if component == "Iridium" and self.sfr.devices["Iridium"] is not None:  # if iridium is already on
             self.sfr.devices["Iridium"].SHUTDOWN()  # runs proprietary off function for iridium before pdm off

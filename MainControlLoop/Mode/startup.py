@@ -47,7 +47,8 @@ class Startup(Mode):
             time.sleep(60*90)  # sleep for one full orbit
         else:  # Execute cycle normal
             self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
-            if time.time() > self.last_beacon_time + self.BEACON_WAIT_TIME:  # wait for BEACON_WAIT_TIME to not spam beacons
+            # wait for BEACON_WAIT_TIME to not spam beacons
+            if time.time() > self.last_beacon_time + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 self.sfr.devices["Iridium"].wave(self.sfr.eps.commands["VBCROUT"](), self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
@@ -58,9 +59,9 @@ class Startup(Mode):
         if self.sfr.contact_established:  # If contact has been established, switch mode
             if self.conditions["Low Battery"]:  # If battery is now low
                 # We use this syntax to avoid importing other modes
-                self.sfr.MODE = self.sfr.modes_list["Charging"]
+                self.switch_mode("Charging")
             else:
-                self.sfr.MODE = self.sfr.modes_list["Science"]
+                self.switch_mode("Science")
             return False
         else:
             return True  # If we haven't established contact, stay in startup
@@ -72,6 +73,3 @@ class Startup(Mode):
     def terminate_mode(self) -> None:
         super(Startup, self).terminate_mode()
         pass
-
-    def __str__(self):
-        return "Startup"

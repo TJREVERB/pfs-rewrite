@@ -7,7 +7,7 @@ from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-from MainControlLoop.lib import analytics
+from MainControlLoop.lib.analytics import Analytics
 
 
 class StateFieldRegistry:
@@ -23,6 +23,7 @@ class StateFieldRegistry:
         self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
+        self.analytics = Analytics(self)
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
@@ -31,7 +32,7 @@ class StateFieldRegistry:
             "START_TIME": -1,
             "ANTENNA_DEPLOYED": False,
             # Integral estimate of remaining battery capacity
-            "BATTERY_CAPACITY_INT": analytics.volt_to_charge(self.eps.telemetry_request["VBCROUT"]()),
+            "BATTERY_CAPACITY_INT": self.analytics.volt_to_charge(self.eps.telemetry["VBCROUT"]()),
             "FAILURES": [],
             "LAST_DAYLIGHT_ENTRY": None,
             "LAST_ECLIPSE_ENTRY": None,
@@ -43,6 +44,7 @@ class StateFieldRegistry:
             "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
             "MODE_LOCK": False,  # Whether to lock mode switches
             "CONTACT_ESTABLISHED": False,
+            "LOCKED_DEVICES": []
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
@@ -54,12 +56,6 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
-        }
-        self.devices = {  # None if off, object if on
-            "Iridium": None,
-            "APRS": None,
-            "IMU": None,
-            "Antenna Deployer": None,
         }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
@@ -76,8 +72,8 @@ class StateFieldRegistry:
             lines = f.readlines()
             # If every field in the log is in defaults and every key in defaults is in the log
             # Protects against incomplete or outdated log files
-            if all([self.defaults.has_key(i.strip("\n ").split(":")[0]) for i in lines]) and \
-               all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in list(self.defaults.keys)]):
+            if all([i.strip("\n ").split(":")[0] in self.defaults for i in lines]) and \
+               all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in [*self.defaults]]):
                 # Iterate through fields
                 for line in lines:
                     line = line.strip("\n ").split(":")

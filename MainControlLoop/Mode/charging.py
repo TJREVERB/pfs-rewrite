@@ -29,10 +29,11 @@ class Charging(Mode):
         if self.conditions["Low Battery"]:  # if voltage is less than upper limit
             return True  # stay in charging
         elif self.conditions["Science Mode Status"]:  # if science mode is complete
-            self.sfr.MODE = self.sfr.modes_list["Outreach"]  # go to outreach
+            self.switch_mode("Outreach")
             return False
         else:  # science mode not done
-            self.sfr.MODE = self.sfr.modes_list["SCIENCE"]  # go back to science mode
+            self.switch_mode("Science")  # go back to science mode
+            return False
 
     def update_conditions(self) -> None:
         super(Charging, self).update_conditions()
@@ -71,6 +72,3 @@ class Charging(Mode):
     def terminate_mode(self):
         super(Charging, self).terminate_mode()
         pass
-
-    def __str__(self):
-        return "Charging"

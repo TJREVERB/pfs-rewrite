@@ -27,10 +27,10 @@ class Science(Mode):  # TODO: IMPLEMENT
     def check_conditions(self) -> bool:
         super(Science, self).check_conditions()
         if self.conditions["Low Battery"]:
-            self.sfr.MODE = self.sfr.modes_list["Charging"]
+            self.switch_mode("Charging")
             return False
         elif self.conditions["Collection Complete"]:
-            self.sfr.MODE = self.sfr.modes_list["Outreach"]
+            self.switch_mode("Outreach")
             return False
         else:
             return True
@@ -55,6 +55,3 @@ class Science(Mode):  # TODO: IMPLEMENT
     def terminate_mode(self):
         super(Science, self).terminate_mode()
         pass
-
-    def __str__(self):
-        return "Science"
