@@ -30,23 +30,23 @@ class StateFieldRegistry:
         self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH)
 
         self.defaults = {
-            "START_TIME": -1,
-            "ANTENNA_DEPLOYED": False,
+            "START_TIME": "-1",
+            "ANTENNA_DEPLOYED": "False",
             # Integral estimate of remaining battery capacity
-            "BATTERY_CAPACITY_INT": self.analytics.volt_to_charge(self.eps.telemetry["VBCROUT"]()),
-            "FAILURES": [],
-            "LAST_DAYLIGHT_ENTRY": None,
-            "LAST_ECLIPSE_ENTRY": None,
-            "ORBITAL_PERIOD": 90 * 60,
+            "BATTERY_CAPACITY_INT": str(self.analytics.volt_to_charge(self.eps.telemetry["VBCROUT"]())),
+            "FAILURES": "[]",
+            "LAST_DAYLIGHT_ENTRY": "None",
+            "LAST_ECLIPSE_ENTRY": "None",
+            "ORBITAL_PERIOD": "90 * 60",
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
-            "LOWER_THRESHOLD": 60000,  # Switch to charging mode if battery capacity (J) dips below threshold
+            "LOWER_THRESHOLD": "60000",  # Switch to charging mode if battery capacity (J) dips below threshold
             "MODE": "Startup",  # Stores mode class, mode is instantiated in mcl
             "PRIMARY_RADIO": "\"Iridium\"",  # Primary radio to use for communications
-            "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
-            "MODE_LOCK": False,  # Whether to lock mode switches
-            "CONTACT_ESTABLISHED": False,
-            "LOCKED_DEVICES": [],
-            "IRIDIUM_RECEIVED_COMMAND": [],
+            "SIGNAL_STRENGTH_VARIABILITY": "-1.0",  # Science mode result
+            "MODE_LOCK": "False",  # Whether to lock mode switches
+            "CONTACT_ESTABLISHED": "False",
+            "LOCKED_DEVICES": "[]",
+            "IRIDIUM_RECEIVED_COMMAND": "[]",
             "APRS_RECEIVED_COMMAND": "\"\"",
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
@@ -70,11 +70,11 @@ class StateFieldRegistry:
             # If every field in the log is in defaults and every key in defaults is in the log
             # Protects against incomplete or outdated log files
             if all([i.strip("\n ").split(":")[0] in self.defaults for i in lines]) and \
-               all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in [*self.defaults]]):
+                    all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in [*self.defaults]]):
                 # Iterate through fields
                 for line in lines:
                     line = line.strip("\n ").split(":")
-                    if type(self.defaults[line[0]]) == str:  # Correct quotes for exec
+                    if self.defaults[line[0]].startswith("\""):
                         line[1] = "\"" + line[1] + "\""
                     # Changed it back because this allows us to store objects other than string and int
                     exec(f"self.{line[0]} = {line[1]}")
