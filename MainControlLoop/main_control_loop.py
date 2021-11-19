@@ -47,7 +47,7 @@ class MainControlLoop:
                     current_time = time.time()
 
                 if self.sfr.mode_obj.check_conditions() and self.sfr.MODE_LOCK == False:
-                    self.sfr.MODE = self.sfr.mode_obj.switch_modes()  # change the mode to be whatever our current mode wants to switch to
+                    self.sfr.MODE = self.sfr.mode_obj.switch_mode()  # change the mode to be whatever our current mode wants to switch to
                     break
                 print("Cycle")
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
