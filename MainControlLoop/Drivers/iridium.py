@@ -47,6 +47,8 @@ class Iridium:
         "TMO", #19, Timeout while waiting for response
     ]
 
+    ARG_REGISTRY = [12, 13] #Commands that require arguments from the ground
+
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
@@ -249,9 +251,10 @@ class Iridium:
     def decode(self, message):
         """
         Decodes received and processed string from SBDRB and converts to string
+        Truncates unused bits
         CALL PROCESS BEFORE CALLING DECODE
         :param message: (str) received
-        :return: (tup) decoded character string, received length, actual length, received checksum, and actual checksum
+        :return: (str) decoded character string
         """
         message.strip()
         msg = message.encode("utf-8") #re encode message to byte list
@@ -261,9 +264,34 @@ class Iridium:
         checksum = checksum[1] + checksum[0] << 8
         msg = msg[2:-2]
         actual_checksum = sum(msg) & 0xffff
-        decoded = ""
-        #TODO: decode
-        return (decoded, length, len(msg), checksum, actual_checksum)
+
+        if checksum != actual_checksum and length != len(msg):
+            raise RuntimeError("Incorrect checksum and length")
+        elif checksum != actual_checksum:
+            raise RuntimeError("Incorrect checksum")
+        elif length != len(msg):
+            raise RuntimeError("Incorrect length")
+        if msg[0] < 0 or msg[0] >= len(Iridium.ENCODED_REGISTRY):
+            raise RuntimeError("Invalid command received")
+        decoded = Iridium.ENCODED_REGISTRY[msg[0]]
+        if Iridium.ARG_REGISTRY.find(msg[0]) != -1:
+            num = msg[1] << 8 + msg[2] #msb first
+            exp = num >> 11 #extract exponent
+            if exp & (1 << 4) == 1: #convert twos comp
+                exp &= 0x10 #truncate first bit
+                exp -= (1 << 4)
+            coef = num & 0x7ff #extract coefficient
+            if coef & (1 << 10) == 1: #convert twos comp
+                coef &= 0x3ff #truncate first bit
+                coef -= (1 << 10)
+            if abs(coef) > 999:
+                coef /= 1000
+            elif abs(coef) > 99: #Ideally, only this if condition should be used
+                coef /= 100
+            elif abs(coef) > 9:
+                coef /= 10
+            decoded += str(coef * 10 ** exp)
+        return decoded
         
 
 
