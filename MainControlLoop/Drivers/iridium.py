@@ -234,8 +234,8 @@ class Iridium:
                     flt |= num & 0x3ff #make sure num is 10 bits long
                 byte1 = flt >> 8
                 byte2 = flt & 0xff
-                encoded += "\x" + hex(byte1).split("x")[1].zfill(2) #MSB FIRST
-                encoded += "\x" + hex(byte2).split("x")[1].zfill(2) #LSB LAST
+                encoded += chr(byte1) #MSB FIRST
+                encoded += chr(byte2) #LSB LAST
             else:
                 for i in range(0, len(m), 3):
                     num = Iridium.ENCODED_REGISTRY.find(m[i:i+3])
