@@ -45,7 +45,9 @@ class StateFieldRegistry:
             "SIGNAL_STRENGTH_VARIABILITY": -1.0,  # Science mode result
             "MODE_LOCK": False,  # Whether to lock mode switches
             "CONTACT_ESTABLISHED": False,
-            "LOCKED_DEVICES": []
+            "LOCKED_DEVICES": [],
+            "IRIDIUM_RECEIVED_COMMAND": [],
+            "APRS_RECEIVED_COMMAND": [],
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
