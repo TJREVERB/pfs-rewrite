@@ -242,7 +242,7 @@ class Iridium:
                     if num == -1:
                         raise RuntimeError("Incorrect string code")
                     else:
-                        encoded += "\x" + hex(num).split("x")[1].zfill(2)
+                        encoded += chr(num)
         return encoded.encode("utf-8")
 
 
