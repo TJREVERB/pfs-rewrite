@@ -70,7 +70,7 @@ class Startup(Mode):
         if self.sfr.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].listen()
+            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
             self.last_iridium_poll_time = time.time()
@@ -78,13 +78,13 @@ class Startup(Mode):
         elif self.sfr.PRIMARY_RADIO == "APRS" and \
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].listen()
+            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
-            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].listen())  # add aprs messages to sfr
+            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].nextMsg())  # add aprs messages to sfr
         # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def check_conditions(self) -> bool:
