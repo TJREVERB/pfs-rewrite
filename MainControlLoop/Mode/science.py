@@ -51,7 +51,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
             # Transmit signal strength variability
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" +
-                                                             str(self.sfr.signal_strength_variability()))
+                                                             str(self.sfr.analytics.signal_strength_variability()))
             self.pings_performed += 1
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
             self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](),

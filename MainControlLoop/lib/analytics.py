@@ -42,7 +42,7 @@ class Analytics:
         :param duration: time, in seconds, to remain in state
         :return: (tuple) (predicted amount of energy consumed, standard deviation)
         """
-        df = pd.read_csv(self.sfr.PWR_LOG_PATH, header=0).tail(50)
+        df = pd.read_csv(self.sfr.pwr_log_path, header=0).tail(50)
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
         pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
         # Add either the last 50 datapoints or entire dataset for each pdm which is on
@@ -58,8 +58,8 @@ class Analytics:
         """
         current_time = time.time()  # Set current time
         panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
-        solar = pd.read_csv(self.sfr.SOLAR_LOG_PATH, header=0).tail(51)  # Read solar power log
-        orbits = pd.read_csv(self.sfr.ORBIT_LOG_PATH, header=0).tail(51)  # Read orbits log
+        solar = pd.read_csv(self.sfr.solar_log_path, header=0).tail(51)  # Read solar power log
+        orbits = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)  # Read orbits log
         # Calculate sunlight period
         sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - orbits["timestamp"].iloc[i]
                                      for i in range(orbits.shape[0] - 1)
@@ -86,7 +86,7 @@ class Analytics:
         Calculate orbital period over last 50 orbits
         :return: average orbital period over last 50 orbits
         """
-        df = pd.read_csv(self.sfr.ORBIT_LOG_PATH, header=0)  # Reads in data
+        df = pd.read_csv(self.sfr.orbit_log_path, header=0)  # Reads in data
         # Calculates on either last 50 points or whole dataset
         sunlight = df.loc[df["phase"] == "sunlight"]
         deltas = np.array([sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)])
@@ -101,5 +101,5 @@ class Analytics:
         Calculates and returns signal strength variability based on Iridium data
         :return: (float) standard deviation of signal strength
         """
-        df = pd.read_csv(self.sfr.IRIDIUM_DATA_PATH, header=0)
+        df = pd.read_csv(self.sfr.iridium_data_path, header=0)
         return df["signal"].std()
