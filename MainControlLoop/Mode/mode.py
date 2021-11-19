@@ -71,7 +71,8 @@ class Mode:
         """
         self.integrate_charge()
         self.command_executor.execute()
-        raw = self.sfr.eps.commands["All Actual States"]()
+        self.sfr.eps.total_power(2)
+        self.sfr.eps.solar_power()
         sun = self.sfr.eps.sun_detected()
         if sun and self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
