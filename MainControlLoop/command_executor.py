@@ -34,7 +34,7 @@ class CommandExecutor:
         # IMPLEMENT FULLY
         self.aprs_secondary_registry = {
             # Reads and transmits battery voltage
-            "BVT": lambda: self.iridium.transmit(str(self.eps.telemetry["VBCROUT"]())),
+            "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
             "Arguments": {
 
             }
@@ -64,41 +64,43 @@ class CommandExecutor:
         """
         Execute all commands in buffers
         """
-        # IRIDIUM
-        for i in self.sfr.IRIDIUM_RECEIVED_COMMAND:  # Iterate through all received commands
-            if i in self.iridium_registry.keys:  # If command exists
-                self.iridium_registry[i]()  # Execute command
-            elif i[0] in self.iridium_registry["Arguments"].keys:  # If command has arguments
-                self.iridium_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
-            else:
-                self.error("Iridium", self.sfr.IRIDIUM_RECEIVED_COMMAND)  # Transmit error
-        self.sfr.IRIDIUM_RECEIVED_COMMAND = []  # Clear buffer
+        if self.sfr.devices["Iridium"] is not None:  # if iridium is on
+            # IRIDIUM
+            for i in self.sfr.IRIDIUM_RECEIVED_COMMAND:  # Iterate through all received commands
+                if i in self.iridium_registry.keys:  # If command exists
+                    self.iridium_registry[i]()  # Execute command
+                elif i[0] in self.iridium_registry["Arguments"].keys:  # If command has arguments
+                    self.iridium_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
+                else:
+                    self.error("Iridium", self.sfr.IRIDIUM_RECEIVED_COMMAND)  # Transmit error
+            self.sfr.IRIDIUM_RECEIVED_COMMAND = []  # Clear buffer
         # APRS
-        if self.sfr.APRS_RECEIVED_COMMAND is not "":  # If message was received
-            raw_command = self.sfr.APRS_RECEIVED_COMMAND
-            if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us
-                command = raw_command[raw_command.find(self.TJ_PREFIX) +  # Extract command
-                                        len(self.TJ_PREFIX):
-                                        raw_command.find(self.TJ_PREFIX) + 
-                                        len(self.TJ_PREFIX) + 3]
-                if command in self.aprs_primary_registry.keys:  # If command is real
-                    self.aprs_primary_registry[command]()  # Execute command
-                elif i[0] in self.aprs_primary_registry["Arguments"].keys:  # If command has arguments
-                    self.aprs_primary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
-                else:
-                    self.error("APRS", command)  # Transmit error message
-            elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
-                command = raw_command[raw_command.find(self.OUTREACH_PREFIX) +  # Extract command
-                                        len(self.OUTREACH_PREFIX):
-                                        raw_command.find(self.OUTREACH_PREFIX) + 
-                                        len(self.OUTREACH_PREFIX) + 3]
-                if command in self.aprs_secondary_registry.keys:  # If command is real
-                    self.aprs_secondary_registry[command]()  # Execute command
-                elif i[0] in self.aprs_secondary_registry["Arguments"].keys:  # If command has arguments
-                    self.aprs_secondary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
-                else:
-                    self.error("APRS", command)  # Transmit error message
-            self.sfr.APRS_RECEIVED_COMMAND = ""  # Clear buffer
+        if self.sfr.devices["APRS"] is not None:  # if APRS is on
+            if self.sfr.APRS_RECEIVED_COMMAND is not "":  # If message was received
+                raw_command = self.sfr.APRS_RECEIVED_COMMAND
+                if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us
+                    command = raw_command[raw_command.find(self.TJ_PREFIX) +  # Extract command
+                                            len(self.TJ_PREFIX):
+                                            raw_command.find(self.TJ_PREFIX) +
+                                            len(self.TJ_PREFIX) + 3]
+                    if command in self.aprs_primary_registry.keys:  # If command is real
+                        self.aprs_primary_registry[command]()  # Execute command
+                    elif i[0] in self.aprs_primary_registry["Arguments"].keys:  # If command has arguments
+                        self.aprs_primary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
+                    else:
+                        self.error("APRS", command)  # Transmit error message
+                elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
+                    command = raw_command[raw_command.find(self.OUTREACH_PREFIX) +  # Extract command
+                                            len(self.OUTREACH_PREFIX):
+                                            raw_command.find(self.OUTREACH_PREFIX) +
+                                            len(self.OUTREACH_PREFIX) + 3]
+                    if command in self.aprs_secondary_registry.keys:  # If command is real
+                        self.aprs_secondary_registry[command]()  # Execute command
+                    elif i[0] in self.aprs_secondary_registry["Arguments"].keys:  # If command has arguments
+                        self.aprs_secondary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
+                    else:
+                        self.error("APRS", command)  # Transmit error message
+                self.sfr.APRS_RECEIVED_COMMAND = ""  # Clear buffer
     
     def error(self, radio, command):
         """
@@ -115,6 +117,7 @@ class CommandExecutor:
         """
         Transmits time + message string from primary radio to ground station
         """
+        # TODO: how to handle if Iridium or APRS is off
         if self.sfr.PRIMARY_RADIO is "Iridium":
             self.sfr.devices["Iridium"].transmit(message)
         elif self.sfr.PRIMARY_RADIO is "APRS":
@@ -179,7 +182,7 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(str(self.eps.total_power(3)[0]))
+        self.transmit(str(self.sfr.eps.total_power(3)[0]))
     
     def SSV(self):
         """
