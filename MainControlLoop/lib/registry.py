@@ -112,11 +112,11 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "w") as f:
             for key, val in self.to_dict().items():
-                if val.isinstance(bool) and not val:
+                if type(val) == bool and not val:
                     f.write(f"{key}:False\n")
                 elif val.isinstance(Mode):
                     f.write(f"{key}:\"{str(val)}\"")
-                elif val.isinstance(str):
+                elif type(val) == str:
                     f.write(f"{key}:\"{val}\"")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
