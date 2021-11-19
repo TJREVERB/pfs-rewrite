@@ -50,7 +50,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
-                self.sfr.devices["Iridium"].nextMsg()
+                self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
@@ -59,7 +59,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
-                self.sfr.devices["Iridium"].nextMsg()
+                self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
