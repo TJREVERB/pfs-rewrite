@@ -86,7 +86,7 @@ class Startup(Mode):
 
     def check_conditions(self):
         super(Startup, self).check_conditions()
-        if self.sfr.contact_established:  # If contact has been established, switch mode
+        if self.sfr.CONTACT_ESTABLISHED:  # If contact has been established, switch mode
             if self.conditions["Low Battery"]:  # If battery is now low
                 # We use this syntax to avoid importing other modes
                 self.switch_mode("Charging")
