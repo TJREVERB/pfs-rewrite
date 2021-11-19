@@ -27,9 +27,12 @@ class Startup(Mode):
 
     def start(self):
         super(Startup, self).start()
+        self.instruct["Pin On"]("Iridium")
+        self.instruct["All Off"](exceptions=["Iridium"])
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
     def antenna(self):
+        # TODO: TURNING OFF ANTENNA DEPLOYER INSTANTLY MAY PREVENT ANTENNA FROM PROPERLY DEPLOYING
         if not self.sfr.ANTENNA_DEPLOYED:
             # if 30 minutes have elapsed
             if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
@@ -86,7 +89,8 @@ class Startup(Mode):
 
     def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
-        if self.sfr.CONTACT_ESTABLISHED:  # If contact has been established, switch mode
+        # Switch mode if contact is established and antenna is deployed
+        if self.sfr.CONTACT_ESTABLISHED and self.sfr.ANTENNA_DEPLOYED:
             if self.conditions["Low Battery"]:  # If battery is now low
                 # We use this syntax to avoid importing other modes
                 self.switch_mode("Charging")
