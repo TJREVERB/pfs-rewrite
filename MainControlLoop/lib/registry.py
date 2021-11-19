@@ -125,10 +125,8 @@ class StateFieldRegistry:
         :param gen: array of power inputs from each panel, in W.
         :param t: time to log data, defaults to time method is called
         """
-        data = np.array(gen)
-        np.insert(data, 0, t)  # Add timestamp to data
-        df = pd.DataFrame(data, columns=self.solar_generation_log_headers)  # Create dataframe from array
-        df.to_csv(path_or_buf=self.SOLAR_LOG_PATH, mode="a", header=False)  # Append data to log
+        data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
+        data.to_frame().to_csv(path_or_buf=self.SOLAR_LOG_PATH, mode="a", header=False)  # Append data to log
 
     def enter_sunlight(self) -> None:
         """
