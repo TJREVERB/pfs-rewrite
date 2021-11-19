@@ -199,7 +199,8 @@ class Iridium:
                 raise RuntimeError("Error writing to MO")
             self.write("AT+SBDTC")
             time.sleep(1)
-            if self.read().find("Outbound SBD Copied to Inbound SBD: size = 4") == -1:
+            result = self.read() + self.read()
+            if result.find("Outbound SBD Copied to Inbound SBD: size = 4") == -1:
                 raise RuntimeError("Error transferring buffers")
             self.write("AT+SBDRT")
             time.sleep(.5)
@@ -312,6 +313,7 @@ class Iridium:
         :param timeout: maximum time to wait for a response
         :return: (str) Response from Iridium
         """
+        self.serial.flush()
         self.write(command)
         result = ""
         sttime = time.perf_counter()
