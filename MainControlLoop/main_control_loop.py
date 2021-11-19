@@ -28,6 +28,6 @@ class MainControlLoop:
                     self.sfr.mode_obj.update_conditions()
                     current_time = time.time()
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
-                if self.sfr.MODE is not type(self.sfr.mode_obj):  # if mode was changed via manual command
+                if self.sfr.mode_obj.isinstance(self.sfr.MODE):  # if mode was changed via manual command
                     break
-            self.sfr.mode.terminate_mode()  # terminates current old mode
+            self.sfr.MODE.terminate_mode()  # terminates current old mode

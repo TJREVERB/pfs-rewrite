@@ -6,14 +6,15 @@ import numpy as np
 import time
 
 
+def line_eq(a: tuple, b: tuple) -> callable:
+    slope = (b[1] - a[1]) / (b[0] - a[1])
+    y_int = a[1] - slope * a[0]
+    return lambda x: slope * x + y_int
+
+
 class Analytics:
     def __init__(self, sfr):
         self.sfr = sfr
-
-    def line_eq(self, a: tuple, b: tuple) -> callable:
-        slope = (b[1] - a[1]) / (b[0] - a[1])
-        y_int = a[1] - slope * a[0]
-        return lambda x: slope * x + y_int
 
     def volt_to_charge(self, voltage: float) -> float:
         """
@@ -26,10 +27,10 @@ class Analytics:
             if self.sfr.voltage_energy_map["voltage"][i] > voltage:
                 max_index = i
         min_index = max_index - 1
-        line = self.line_eq((self.sfr.voltage_energy_map["voltage"][min_index],
-                             self.sfr.voltage_energy_map["energy"][min_index]),
-                            (self.sfr.voltage_energy_map["voltage"][max_index],
-                             self.sfr.voltage_energy_map["energy"][max_index]))
+        line = line_eq((self.sfr.voltage_energy_map["voltage"][min_index],
+                        self.sfr.voltage_energy_map["energy"][min_index]),
+                       (self.sfr.voltage_energy_map["voltage"][max_index],
+                        self.sfr.voltage_energy_map["energy"][max_index]))
         return line(voltage)
 
     def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
@@ -93,8 +94,7 @@ class Analytics:
         deltas = np.concatenate((deltas,  # Appends eclipse data to deltas
                                  np.array([eclipse[i + 1] - eclipse[i] for i in range(
                                      -2, -1 * min([len(eclipse), 50]), -1)])))
-        self.ORBITAL_PERIOD = np.sum(deltas) / np.shape(deltas)[0]
-        return self.ORBITAL_PERIOD
+        return np.sum(deltas) / np.shape(deltas)[0]
 
     def signal_strength_variability(self) -> float:
         """

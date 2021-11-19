@@ -71,6 +71,13 @@ class Mode:
         """
         self.integrate_charge()
         self.command_executor.execute()
+        self.sfr.log_pwr()
+        self.sfr.log_solar()
+        sun = self.sfr.eps.sun_detected()
+        if sun and self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
+            self.sfr.enter_sunlight()
+        elif not sun and self.sfr.LAST_DAYLIGHT_ENTRY > self.sfr.LAST_ECLIPSE_ENTRY:
+            self.sfr.enter_eclipse()
         self.sfr.dump()
 
     def terminate_mode(self) -> None:

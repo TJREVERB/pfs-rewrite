@@ -62,12 +62,6 @@ class StateFieldRegistry:
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
-        self.locked_devices = {  # modes will not switch on or off locked devices
-            "Iridium": False,  # false if not locked, true if locked
-            "APRS": False,
-            "IMU": False,
-            "Antenna Deployer": False,
-        }
         with open(self.LOG_PATH, "r") as f:
             lines = f.readlines()
             # If every field in the log is in defaults and every key in defaults is in the log
