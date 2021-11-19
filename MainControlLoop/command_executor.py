@@ -25,7 +25,7 @@ class CommandExecutor:
             "SOL": self.SOL,
             "TBL": self.TBL,  # Transmits tumble value
             "MLK": self.MLK,
-            "Arguments": {
+            "Arguments": { #this doesn't make sense, we'd have to call primary_registry["arguments"].keys() to check if a string is one of these commands
                 "U": self.U,  # Set upper threshold
                 "L": self.L,  # Set lower threshold
                 "D": self.D
@@ -35,28 +35,7 @@ class CommandExecutor:
         self.aprs_secondary_registry = {
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
-            "Arguments": {
-
-            }
-        }
-        self.iridium_registry = {
-            # Reads and transmits battery voltage
-            "0": lambda: self.transmit("Hello"),
-            "1": self.BVT,
-            "2": self.CHG,
-            "3": self.SCI,
-            "4": self.OUT,
-            "5": self.RST,
-            "6": self.WVE,
-            "7": self.PWR,
-            "8": self.SSV,
-            "9": self.SOL,
-            "10": self.TBL,
-            "11": self.MLK,
-            "Arguments": {
-                "U": self.U,
-                "L": self.L,
-                "D": self.D
+            "Arguments": { #this doesn't make sense
             }
         }
     
