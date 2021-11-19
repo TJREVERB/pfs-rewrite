@@ -85,7 +85,10 @@ class StateFieldRegistry:
         Loads default state field values
         """
         for key, val in self.defaults.items():
-            exec(f"self.{key} = {val}")  # Create default fields
+            if key == "MODE":
+                self.MODE = val
+            else:
+                exec(f"self.{key} = {val}")  # Create default fields
 
     def to_dict(self) -> dict:
         """
