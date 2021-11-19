@@ -76,8 +76,7 @@ class StateFieldRegistry:
             lines = f.readlines()
             # If every field in the log is in defaults and every key in defaults is in the log
             # Protects against incomplete or outdated log files
-            if all([i.strip("\n ").split(":")[0] in self.defaults for i in lines]) and \
-                    all([i in [j.strip("\n ").split(":")[0] for j in lines] for i in [*self.defaults]]):
+            if [i.strip("\n ").split(":")[0] for i in lines] == [*self.defaults]:
                 # Iterate through fields
                 for line in lines:
                     line = line.strip("\n ").split(":")
