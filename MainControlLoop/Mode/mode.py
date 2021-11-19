@@ -162,37 +162,43 @@ class Mode:
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
-    def __turn_all_on(self, exceptions=None) -> None:
+    def __turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
         :param exceptions: (list) components to not turn on, default is ["Antenna Deployer"]
         """
 
-        if exceptions is None:
-            exceptions = ["Antenna Deployer", "IMU"]
-        else:
+        if override_default_exceptions:  # if True no default exceptions
+            default_exceptions = []
+        else:  # normally exceptions
             default_exceptions = ["Antenna Deployer", "IMU"]
-            for exception in exceptions:
+        if exceptions is not None:
+            for exception in exceptions:  # loops through custom device exceptions and adds to exceptions list
                 default_exceptions.append(exception)
-            exceptions = default_exceptions
+
+        exceptions = default_exceptions  # sets to exceptions list
+
         for key in self.sfr.devices:
             if not self.sfr.devices[key] and key not in exceptions:  # if device is off and not in exceptions
                 self.__turn_on_component(key)  # turn on device and serial converter if applicable
 
-    def __turn_all_off(self, exceptions=None) -> None:
+    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
         :param exceptions: (list) components to not turn off, default is ["Antenna Deployer"]
         """
-        if exceptions is None:
-            exceptions = ["Antenna Deployer", "IMU"]
+        if override_default_exceptions:
+            default_exceptions = []
         else:
             default_exceptions = ["Antenna Deployer", "IMU"]
+        if exceptions is not None:
             for exception in exceptions:
                 default_exceptions.append(exception)
-            exceptions = default_exceptions
+
+        exceptions = default_exceptions
+
         for key in self.sfr.devices:
             if self.sfr.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
                 self.__turn_off_component(key)  # turn off device and serial converter if applicable

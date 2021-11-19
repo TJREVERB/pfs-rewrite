@@ -117,6 +117,7 @@ class CommandExecutor:
         """
         Transmits time + message string from primary radio to ground station
         """
+        # TODO: how to handle if Iridium or APRS is off
         if self.sfr.PRIMARY_RADIO is "Iridium":
             self.sfr.devices["Iridium"].transmit(message)
         elif self.sfr.PRIMARY_RADIO is "APRS":
@@ -181,7 +182,7 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(str(self.eps.total_power(3)[0]))
+        self.transmit(str(self.sfr.eps.total_power(3)[0]))
     
     def SSV(self):
         """
