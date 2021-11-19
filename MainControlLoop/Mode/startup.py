@@ -57,7 +57,7 @@ class Startup(Mode):
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
-                self.sfr.devices["Iridium"].wave(self.sfr.eps.commands["VBCROUT"](), self.sfr.eps.solar_power(),
+                self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
                                                  self.sfr.eps.total_power(4))
                 self.last_contact_attempt = time.time()
 
@@ -104,7 +104,7 @@ class Startup(Mode):
 
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.commands["VBCROUT"] < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"] < self.LOWER_THRESHOLD
 
     def terminate_mode(self) -> None:
         super(Startup, self).terminate_mode()
