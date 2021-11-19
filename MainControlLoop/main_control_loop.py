@@ -24,12 +24,11 @@ class MainControlLoop:
         while True:  # Iterate forever
             self.sfr.mode_obj = self.sfr.MODE(self.sfr)
             self.sfr.mode_obj.start()
-            while self.sfr.mode_obj.check_conditions():  # Iterate while we're supposed to be in this mode
+            # Iterate while we're supposed to be in this mode
+            while self.sfr.mode_obj.check_conditions() and isinstance(self.sfr.mode_obj, self.sfr.MODE):
+                print("Cycle")
+                self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
                     self.sfr.mode_obj.update_conditions()
                     current_time = time.time()
-                print("Cycle")
-                self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
-                if not isinstance(self.sfr.mode_obj, self.sfr.MODE):  # if mode was changed via manual command
-                    break
             self.sfr.mode_obj.terminate_mode()  # terminates current old mode

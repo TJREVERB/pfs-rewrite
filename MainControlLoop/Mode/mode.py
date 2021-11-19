@@ -13,7 +13,6 @@ class Mode:
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
-        self.command_executor = CommandExecutor(sfr)
         self.last_iridium_poll_time = 0
 
         self.instruct = {

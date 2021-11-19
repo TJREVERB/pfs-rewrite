@@ -9,6 +9,7 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
+from MainControlLoop.command_executor import CommandExecutor
 
 
 class StateFieldRegistry:
@@ -26,6 +27,8 @@ class StateFieldRegistry:
 
         self.eps = EPS(self)  # EPS never turns off
         self.analytics = Analytics(self)
+        self.command_executor = CommandExecutor(self)
+        
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
@@ -111,7 +114,7 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log
         """
         with open(self.log_path, "w") as f:
-            for key, val in self.to_dict().items():
+            for key, val in self.to_dict().items():  # TODO: make good
                 if type(val) == bool and not val:
                     f.write(f"{key}:False\n")
                 elif type(val) == str:
