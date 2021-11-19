@@ -115,7 +115,7 @@ class StateFieldRegistry:
                 if type(val) == bool and not val:
                     f.write(f"{key}:False\n")
                 elif type(val) == str:
-                    f.write(f"{key}:\"{val}\"")
+                    f.write(f"{key}:\"{val}\"\n")
                 elif any([type(val) == b for a, b in self.modes_list.items()]):
                     f.write(f"{key}:\"{str(val)}\"")
                 else:
