@@ -151,7 +151,7 @@ class Iridium:
     def __str__(self):
         return "Iridium"
 
-    def serialTest(self) -> bool:
+    def serial_test(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed) and verifies that AT returns OK
         :return: (bool) serial connection is working
