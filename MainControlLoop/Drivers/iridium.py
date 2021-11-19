@@ -238,8 +238,7 @@ class Iridium:
                     flt |= 1 << 15
                 else:
                     flt |= (exp & 0xf) << 11  # make sure exp is 4 bits, cut off anything past the 4th, shift left 11
-                num = m / (
-                            10 ** exp) * 100  # num will always have three digits, with trailing zeros if necessary
+                num = int(m / (10 ** exp) * 100)  # num will always have three digits, with trailing zeros if necessary
                 # to fill it in
                 if m < 0:
                     num &= 0x3ff  # make sure num is 10 bits long
@@ -288,7 +287,7 @@ class Iridium:
             raise RuntimeError("Invalid command received")
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         if Iridium.ARG_REGISTRY.find(msg[0]) != -1:
-            num = msg[1] << 8 + msg[2]  # msb first
+            num = msg[1] << 8 | msg[2]  # msb first
             exp = num >> 11  # extract exponent
             if exp & (1 << 4) == 1:  # convert twos comp
                 exp &= 0x10  # truncate first bit

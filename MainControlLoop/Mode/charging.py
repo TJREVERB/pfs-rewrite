@@ -54,7 +54,7 @@ class Charging(Mode):
         if self.sfr.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
+            iridium_messages = self.sfr.devices["Iridium"].nextMsg() #TODO: REMOVE THIS. IRIDIUM DRIVER ALREADY DOES THIS
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
             self.last_iridium_poll_time = time.time()
@@ -62,7 +62,7 @@ class Charging(Mode):
         elif self.sfr.PRIMARY_RADIO == "APRS" and \
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, should be in the form of a list
-            iridium_messages = self.sfr.devices["Iridium"].nextMsg()
+            iridium_messages = self.sfr.devices["Iridium"].nextMsg() #?? why check iridium messages in aprs
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.IRIDIUM_RECEIVED_COMMAND = self.sfr.IRIDIUM_RECEIVED_COMMAND + iridium_messages
             self.last_iridium_poll_time = time.time()
