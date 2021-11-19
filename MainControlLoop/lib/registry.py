@@ -130,11 +130,7 @@ class StateFieldRegistry:
         """
         if t == 0:
             t = time.time()
-        import inspect
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        print('caller name:', calframe[1][3])
-        print(t, pdm_states, pwr)
+        print("Power: ", t, pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
         data.to_frame().to_csv(path_or_buf=self.pwr_log_path, mode="a", header=False)  # Append data to log
@@ -147,7 +143,7 @@ class StateFieldRegistry:
         """
         if t == 0:
             t = time.time()
-        # print(t, gen)
+        print("Solar: ", t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.solar_log_path, mode="a", header=False)  # Append data to log
 
