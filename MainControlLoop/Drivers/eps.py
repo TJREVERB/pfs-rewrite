@@ -290,7 +290,7 @@ class EPS:
         :return: (float) power gain in W
         """
         generation = [self.telemetry["VBCR" + str(i)]() * max([self.telemetry["IBCR" + str(i) + j]()
-                                                               for j in ["A", "B"]]) for i in range(1, 5)]
+                                                               for j in ["A", "B"]]) for i in range(1, 4)]
         self.sfr.log_solar(generation)
         return sum(generation)
 
