@@ -19,6 +19,7 @@ class MainControlLoop:
                 self.sfr.LAST_ECLIPSE_ENTRY = time.time()
 
     def run(self):  # Repeat main control loop forever
+        print("Execution Start")
         current_time = time.time()
         while True:  # Iterate forever
             self.sfr.mode_obj = self.sfr.MODE(self.sfr)
@@ -27,6 +28,7 @@ class MainControlLoop:
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
                     self.sfr.mode_obj.update_conditions()
                     current_time = time.time()
+                print("Cycle")
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
                 if self.sfr.mode_obj.isinstance(self.sfr.MODE):  # if mode was changed via manual command
                     break
