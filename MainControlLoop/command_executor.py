@@ -76,7 +76,7 @@ class CommandExecutor:
             self.sfr.IRIDIUM_RECEIVED_COMMAND = []  # Clear buffer
         # APRS
         if self.sfr.devices["APRS"] is not None:  # if APRS is on
-            if self.sfr.APRS_RECEIVED_COMMAND is not "":  # If message was received
+            if self.sfr.APRS_RECEIVED_COMMAND != "":  # If message was received
                 raw_command = self.sfr.APRS_RECEIVED_COMMAND
                 if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us
                     command = raw_command[raw_command.find(self.TJ_PREFIX) +  # Extract command
@@ -108,9 +108,9 @@ class CommandExecutor:
         :param radio: (str) radio which received erraneous command, "Iridium" or "APRS"
         :param command: (str) command which failed
         """
-        if radio is "Iridium":
+        if radio == "Iridium":
             self.sfr.devices["Iridium"].transmit("ERR:" + command)
-        elif radio is "APRS":
+        elif radio == "APRS":
             self.sfr.devices["APRS"].transmit("ERR:" + command)
 
     def transmit(self, message: str):
@@ -118,9 +118,9 @@ class CommandExecutor:
         Transmits time + message string from primary radio to ground station
         """
         # TODO: how to handle if Iridium or APRS is off
-        if self.sfr.PRIMARY_RADIO is "Iridium":
+        if self.sfr.PRIMARY_RADIO == "Iridium":
             self.sfr.devices["Iridium"].transmit(message)
-        elif self.sfr.PRIMARY_RADIO is "APRS":
+        elif self.sfr.PRIMARY_RADIO == "APRS":
             self.sfr.devices["APRS"].transmit(message)
 
     def BVT(self):
