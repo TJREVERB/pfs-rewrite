@@ -15,12 +15,12 @@ class StateFieldRegistry:
         """
         Defines all the StateFields present in the state registry
         """
-        self.LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt"
-        self.PWR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/pwr_draw_log.csv"
-        self.SOLAR_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/solar_generation_log.csv"
-        self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/volt-energy-map.csv"
-        self.ORBIT_LOG_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/orbit_log.csv"
-        self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/StateFieldRegistry/data/iridium_data.csv"
+        self.LOG_PATH = "./MainControlLoop/lib/data/state_field_log.txt"
+        self.PWR_LOG_PATH = "./MainControlLoop/lib/data/pwr_draw_log.csv"
+        self.SOLAR_LOG_PATH = "./MainControlLoop/lib/data/solar_generation_log.csv"
+        self.VOLT_ENERGY_MAP_PATH = "./MainControlLoop/lib/data/volt-energy-map.csv"
+        self.ORBIT_LOG_PATH = "./MainControlLoop/lib/data/orbit_log.csv"
+        self.IRIDIUM_DATA_PATH = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
         self.analytics = Analytics(self)
