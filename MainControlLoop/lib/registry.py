@@ -116,7 +116,7 @@ class StateFieldRegistry:
                     f.write(f"{key}:False\n")
                 elif type(val) == str:
                     f.write(f"{key}:\"{val}\"")
-                elif type(val) == Mode:
+                elif any([type(val) == i for i in self.modes_list.items]):
                     f.write(f"{key}:\"{str(val)}\"")
                 else:
                     f.write(f"{key}:{val}\n")  # Save the variables in the log
