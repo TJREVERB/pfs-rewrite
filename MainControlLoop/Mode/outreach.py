@@ -26,13 +26,13 @@ class Outreach(Mode):
     def __str__(self):
         return "Outreach"
 
-    def start(self):
+    def start(self) -> None:
         super(Outreach, self).start()
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
         self.instruct["All Off"](exceptions=["Iridium", "APRS"])
 
-    def check_conditions(self):
+    def check_conditions(self) -> bool:
         super(Outreach, self).check_conditions()
         if self.conditions["Low Battery"]:
             self.switch_mode("Charging")
@@ -40,15 +40,15 @@ class Outreach(Mode):
         else:
             return True
 
-    def update_conditions(self):
+    def update_conditions(self) -> None:
         super(Outreach, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.LOWER_THRESHOLD
 
-    def execute_cycle(self):
+    def execute_cycle(self) -> None:
         super(Outreach, self).execute_cycle()
         self.read_radio()
 
-    def read_radio(self):
+    def read_radio(self) -> None:
         """
         Main logic for reading messages from radio in Outreach mode
         """
@@ -74,6 +74,6 @@ class Outreach(Mode):
             self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].nextMsg())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
-    def terminate_mode(self):
+    def terminate_mode(self) -> None:
         super(Outreach, self).terminate_mode()
         pass

@@ -45,7 +45,7 @@ class Charging(Mode):
         self.read_radio()
         self.sfr.dump()  # Log changes
 
-    def read_radio(self):
+    def read_radio(self) -> None:
         """
         Main logic for reading messages from radio in Charging mode
         """
@@ -71,6 +71,6 @@ class Charging(Mode):
             self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].nextMsg())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
-    def terminate_mode(self):
+    def terminate_mode(self) -> None:
         super(Charging, self).terminate_mode()
         pass

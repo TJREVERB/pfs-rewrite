@@ -7,7 +7,7 @@ from MainControlLoop.command_executor import CommandExecutor
 
 
 class Mode:
-    # initialization: turn on any necessary devices using EPS, initialize any instance variables, etc.
+    # initialization: does not turn on devices, initializes instance variables
     def __init__(self, sfr):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
@@ -35,7 +35,7 @@ class Mode:
 
     def start(self) -> None:
         """
-        Runs initial setup for a mode. Turns on devices for a specific mode.
+        Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
         pass
 
@@ -167,7 +167,9 @@ class Mode:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
-        :param exceptions: (list) components to not turn on, default is ["Antenna Deployer"]
+        :param exceptions: (list) components to not turn on, default is ["Antenna Deployer, IMU"]
+        :param override_default_exceptions: (bool) whether or not to use default exceptions
+        :return: None
         """
 
         if override_default_exceptions:  # if True no default exceptions
@@ -188,7 +190,9 @@ class Mode:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
-        :param exceptions: (list) components to not turn off, default is ["Antenna Deployer"]
+        :param exceptions: (list) components to not turn off, default is ["Antenna Deployer, IMU"]
+        :param override_default_exceptions: (bool) whether or not to use default exceptions
+        :return: None
         """
         if override_default_exceptions:
             default_exceptions = []
