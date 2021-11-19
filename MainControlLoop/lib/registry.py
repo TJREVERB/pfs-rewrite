@@ -130,6 +130,10 @@ class StateFieldRegistry:
         """
         if t == 0:
             t = time.time()
+        import inspect
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        print('caller name:', calframe[1][3])
         print(t, pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
