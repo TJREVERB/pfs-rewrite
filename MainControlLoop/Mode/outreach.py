@@ -9,16 +9,6 @@ class Outreach(Mode):
         self.conditions = {
             "Low Battery": False
         }
-        self.limited_command_registry = {
-            # Reads and transmits battery voltage
-            "BVT": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.sfr.eps.telemetry["VBCROUT"]())),
-            # Transmit total power draw of connected components
-            "PWR": lambda: self.sfr.devices["APRS"].write("TJ;" + str(self.sfr.eps.total_power(3)[0])),
-            # Calculate and transmit Iridium signal strength variability
-            "SSV": lambda: self.sfr.devices["APRS"].write("TJ;SSV:" + str(self.sfr.signal_strength_variability())),
-            # Transmit current solar panel production
-            "SOL": lambda: self.sfr.devices["APRS"].write("TJ;SOL:" + str(self.sfr.eps.solar_power())),
-        }
 
         self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
         self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
