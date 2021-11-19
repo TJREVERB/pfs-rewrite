@@ -51,8 +51,8 @@ class Startup(Mode):
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
-            self.read_radio()  # only reads radio if not low battery
             self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
+            self.read_radio()  # only reads radio if not low battery
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
