@@ -81,7 +81,7 @@ class Analytics:
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
-    def calc_orbital_period(self) -> int:
+    def calc_orbital_period(self) -> float:
         """
         Calculate orbital period over last 50 orbits
         :return: average orbital period over last 50 orbits

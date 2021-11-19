@@ -25,6 +25,7 @@ class CommandExecutor:
             "SOL": self.SOL,
             "TBL": self.TBL,  # Transmits tumble value
             "MLK": self.MLK,
+            "ORB": self.ORB,
             "Arguments": { #this doesn't make sense, we'd have to call primary_registry["arguments"].keys() to check if a string is one of these commands
                 "U": self.U,  # Set upper threshold
                 "L": self.L,  # Set lower threshold
@@ -213,3 +214,9 @@ class CommandExecutor:
         """
         Transmits down information about the satellite's current status
         """
+    
+    def ORB(self):
+        """
+        Transmits current orbital period
+        """
+        self.transmit(str(self.sfr.ORBITAL_PERIOD))
