@@ -27,6 +27,7 @@ class StateFieldRegistry:
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.PWR_LOG_PATH, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.SOLAR_LOG_PATH, header=0).columns
+        self.voltage_energy_map = pd.read_csv(self.VOLT_ENERGY_MAP_PATH)
 
         self.defaults = {
             "START_TIME": -1,
