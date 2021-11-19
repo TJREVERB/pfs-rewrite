@@ -29,11 +29,10 @@ class Outreach(Mode):
 
         return super_result and is_valid
     
-    #This will always return charging mode, regardless of the conditions... even if check_conditions was previously true
-    #   If this is ever called when check_conditions was still true, there is probably a reason, so return a DIFFERENT mode
+    # This will always return charging mode, regardless of the conditions... even if check_conditions was previously true
+    # If this is ever called when check_conditions was still true, there is probably a reason, so return a DIFFERENT mode
     def switch_mode(self):
         return self.sfr.modes_list["Charging"] #suggest charging mode
-        
 
     def update_conditions(self) -> None:
         super(Outreach, self).update_conditions()

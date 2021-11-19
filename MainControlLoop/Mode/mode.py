@@ -52,7 +52,7 @@ class Mode:
         """
         pass
 
-    def switch_mode(self, mode: str) -> None:
+    def switch_mode(self):
         """
         Returns which mode to switch to
         """
@@ -65,7 +65,7 @@ class Mode:
         NOTE: This method should not execute radio commands, that is done by command_executor class.
         """
         self.integrate_charge()
-        self.command_executor.execute()
+        self.sfr.command_executor.execute()
         self.sfr.eps.total_power(2)
         self.sfr.eps.solar_power()
         sun = self.sfr.eps.sun_detected()
