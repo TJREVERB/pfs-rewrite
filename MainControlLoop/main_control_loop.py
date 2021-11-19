@@ -41,7 +41,6 @@ class MainControlLoop:
             self.sfr.mode_obj.start()
             # Iterate while we're supposed to be in this mode
             while isinstance(self.sfr.mode_obj, self.sfr.MODE):
-
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
                     self.sfr.mode_obj.update_conditions()
                     current_time = time.time()

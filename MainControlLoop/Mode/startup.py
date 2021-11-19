@@ -90,17 +90,14 @@ class Startup(Mode):
         # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def check_conditions(self) -> bool:
-        super_result = super(Startup, self).check_conditions()
-        # Switch mode if contact is established and antenna is deployed
+        super(Startup, self).check_conditions()
+        if self.sfr.CONTACT_ESTABLISHED:  # if contact established, get out of charging
+            return False
+        else:
+            return True
 
-        is_valid = (not self.sfr.CONTACT_ESTABLISHED) and (not self.sfr.ANTENNA_DEPLOYED)
-        # as long as we have not yet established contact and not yet deployed the antennas
-        
-        return super_result and is_valid 
-    
     def switch_mode(self):
-        if self.conditions["Low Battery"]:  # If battery is now low
-            # We use this syntax to avoid importing other modes
+        if self.conditions["Low Battery"]:  # If battery is low
             return self.sfr.modes_list("Charging")
         else:
             return self.sfr.modes_list("Science")

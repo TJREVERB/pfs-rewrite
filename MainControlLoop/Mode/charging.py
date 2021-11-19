@@ -33,9 +33,9 @@ class Charging(Mode):
 
     def switch_mode(self):
         if self.conditions["Science Mode Status"]:  # if science mode is complete
-            return self.sfr.modes_list["Outreach"] #suggest outreach mode
+            return self.sfr.modes_list["Outreach"]  # suggest outreach mode
         else:  # science mode not done
-            return self.sfr.modes_list["Science"] #suggest science mode
+            return self.sfr.modes_list["Science"]  # suggest science mode
 
 
     def update_conditions(self) -> None:
