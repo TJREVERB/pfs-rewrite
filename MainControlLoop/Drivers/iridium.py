@@ -22,7 +22,7 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_REGISTRY = [
+    ENCODED_REGISTRY = [ #TODO: import from command_executor instead of keeping a copy here. Perhaps use list(primary_registry.keys()). Still need to add 0OK and ERR afterwards though
         # Commands to satellite, also used in specifying return values to ground
         "NOP",  # 0, NO OP
         "BVT",  # 1, BATTERY VOLTAGE
@@ -44,7 +44,7 @@ class Iridium:
         "ERR",  # 15, MSG received and read, but error executing or reading
     ]
 
-    ARG_REGISTRY = [12, 13]  # Commands that require arguments from the ground
+    ARG_REGISTRY = [12, 13]  # Commands that require arguments from the ground #TODO: import from command_executor instead
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
@@ -59,15 +59,15 @@ class Iridium:
 
         # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
         # Optional param location
-        self.REGISTER = lambda location="": self.request("AT+SBDREG") if len(location) == 0 else self.request(
-            "AT+SBDREG=" + location)
+        self.REGISTER = lambda location="": self.request("AT+SBDREG") if len(location) == 0 \
+                                            else self.request("AT+SBDREG=" + location)
 
         self.MODEL = lambda: self.request("AT+CGMM")
         self.PHONE_REV = lambda: self.request("AT+CGMR")
         self.IMEI = lambda: self.request("AT+CSGN")
 
-        self.NETWORK_TIME = lambda: self.request(
-            "AT-MSSTM")  # System time, GMT, retrieved from satellite network (used as a network check)
+        self.NETWORK_TIME = lambda: self.request("AT-MSSTM")  
+        # System time, GMT, retrieved from satellite network (used as a network check)
         # returns a 32 bit integer formatted in hex, with no leading zeros. Counts number of 90 millisecond intervals
         # that have elapsed since the epoch current epoch is May 11, 2014, at 14:23:55, and will change again around
         # 2026
@@ -80,8 +80,8 @@ class Iridium:
         # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI
         # line and issues the unsolicited result code SBDRING when an SBD ring alert is received Ring alerts can only
         # be sent after the unit is registered :optional param b: set 1/0 enable/disable
-        self.RING_ALERT = lambda b="": self.request("AT+SBDMTA") if len(str(b)) == 0 else self.request(
-            "AT+SBDMTA" + str(b))
+        self.RING_ALERT = lambda b="": self.request("AT+SBDMTA") if len(str(b)) == 0 \
+                                        else self.request("AT+SBDMTA" + str(b))
 
         # doesn't seem relevant to us?
         self.BAT_CHECK = lambda: self.request("AT+CBC")
@@ -111,8 +111,8 @@ class Iridium:
 
         # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS,
         # in seconds. 0 means infinite timeout
-        self.SBD_TIMEOUT = lambda time="": self.request("AT+SBDST") if len(str(time)) == 0 else self.request(
-            "AT+SBDST=" + str(time))
+        self.SBD_TIMEOUT = lambda time="": self.request("AT+SBDST") if len(str(time)) == 0 \
+                                            else self.request("AT+SBDST=" + str(time))
 
         # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to
         # ISU without initiating SBD sessions with GSS/ESS returns response of the form "SBDTC: Outbound SBD copied
@@ -124,8 +124,8 @@ class Iridium:
         # Like SBDI but it always attempts SBD registration, consisting of attach and location update. a should be
         # "A" if in response to SBD ring alert, otherwise unspecified. location is an optional param,
         # format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
-        self.SBD_INITIATE_EX = lambda a="", location="": self.request("AT+SBDIX" + a, 10) if len(
-            location) == 0 else self.request("AT+SBDIX" + a + "=" + location)  # beamcommunications 95-96
+        self.SBD_INITIATE_EX = lambda a="", location="": self.request("AT+SBDIX" + a, 10) if len(location) == 0 \
+                                                        else self.request("AT+SBDIX" + a + "=" + location)  # beamcommunications 95-96
         # returns: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
         # MO status: 0: no message to send, 1: successful send, 2: error while sending
         # MOMSN: sequence number for next MO transmission
@@ -209,18 +209,38 @@ class Iridium:
         """
         return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
-    def encode(self, message):
+    def encode(self, descriptor, msn, time, data, err = False):
         """
         Encodes string for transmit using numbered codes
-        :param message: (tuple) tup of strings and floats/ints to encode, in order
-        :return: (bytes) encoded utf-8 string
+        :param descriptor: (str) 3 character string code
+        :param msn: (int) message sequence number of command response
+        :param time: (tuple) time of command execution, in (days, hours, minutes)
+        :param data: (list) of data values to encode, in order.
+        :param err: (bool) if True, encode data as string error message (single length list containing error string). 
+        if False (default), encode data as float values
+        :return: (bytes) encoded byte string
         """
-        encoded = ""
-        for m in message:
-            if str(m).isnumeric():
+
+        if descriptor in Iridium.ENCODED_REGISTRY: #First byte descriptor
+            encoded = chr(Iridium.ENCODED_REGISTRY.find(descriptor))
+        else:
+            raise RuntimeError("Invalid descriptor string")
+        
+        encoded += chr((msn >> 8) & 0xff) #Second and third bytes msn, msb first
+        encoded += chr(msn & 0xff)
+
+        date = (time[0] << 11) | (time[1] << 6) | time[2] #fourth and fifth bytes date, msb first
+
+        encoded += chr((date >> 8) & 0xff)
+        encoded += chr(date & 0xff)
+
+        if err:
+            encoded += data[0]
+        else:
+            for n in data:
                 # convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
-                exp = int(math.log10(abs(m)))
+                exp = int(math.log10(abs(n)))
                 if exp < 0:
                     exp = abs(exp) + 1
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
@@ -229,9 +249,9 @@ class Iridium:
                     flt |= 1 << 15
                 else:
                     flt |= (exp & 0xf) << 11  # make sure exp is 4 bits, cut off anything past the 4th, shift left 11
-                num = int(m / (10 ** exp) * 100)  # num will always have three digits, with trailing zeros if necessary
+                num = int(n / (10 ** exp) * 100)  # num will always have three digits, with trailing zeros if necessary
                 # to fill it in
-                if m < 0:
+                if n < 0:
                     num &= 0x3ff  # make sure num is 10 bits long
                     num = (1 << 10) - num  # twos comp
                     flt |= num
@@ -242,13 +262,6 @@ class Iridium:
                 byte2 = flt & 0xff
                 encoded += chr(byte1)  # MSB FIRST
                 encoded += chr(byte2)  # LSB LAST
-            else:
-                for i in range(0, len(m), 3):
-                    num = Iridium.ENCODED_REGISTRY.find(m[i:i + 3])
-                    if num == -1:
-                        raise RuntimeError("Incorrect string code")
-                    else:
-                        encoded += chr(num)
         return encoded.encode("utf-8")
 
     def decode(self, message):
@@ -411,7 +424,7 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Transmission successful
         """
-        msg = f"BVT{battery_voltage:.2f}SOL{solar_generation:.2f}PWR{power_draw[0]:.2f}FAI{chr(59).join(self.sfr.FAILURES)}"  # Component failures, sep by ;
+        msg = f"WVE{battery_voltage:.2f}{solar_generation:.2f}{power_draw[0]:.2f}{chr(59).join(self.sfr.FAILURES)}"  # Component failures, sep by ; #TODO: correct for new protocol
         self.SBD_WT(msg)
         result = self.SBD_INITIATE()
         # format needs verification:
