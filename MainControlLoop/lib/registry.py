@@ -50,7 +50,6 @@ class StateFieldRegistry:
             "SIGNAL_STRENGTH_VARIABILITY": "-1.0",  # Science mode result
             "MODE_LOCK": "False",  # Whether to lock mode switches
             "CONTACT_ESTABLISHED": "False",
-            "LOCKED_DEVICES": "[]",
             "IRIDIUM_RECEIVED_COMMAND": "[]",
             "APRS_RECEIVED_COMMAND": "\"\"",
         }
@@ -74,6 +73,13 @@ class StateFieldRegistry:
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
+        }
+
+        self.locked_devices = {
+            "Iridium": False,
+            "APRS": False,
+            "IMU": False,
+            "Antenna Deployer": None
         }
         with open(self.log_path, "r") as f:
             lines = f.readlines()
