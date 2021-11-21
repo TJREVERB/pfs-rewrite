@@ -59,7 +59,7 @@ class CommandExecutor:
         if self.sfr.devices["APRS"] is not None:  # if APRS is on
             if self.sfr.APRS_RECEIVED_COMMAND != "":  # If message was received
                 raw_command = self.sfr.APRS_RECEIVED_COMMAND
-                if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us
+                if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us #TODO: INSTEAD OF ASSUMING IT IS AT THE END OF THE STRING, LOOK FOR : end character
                     command = raw_command[raw_command.find(self.TJ_PREFIX) + len(self.TJ_PREFIX):].strip() # Extract command
                     self.exec_cmd(command, "APRS", self.primary_registry)
                 elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
