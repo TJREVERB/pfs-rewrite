@@ -309,26 +309,6 @@ class Iridium:
             decoded += str(coef * 10 ** exp)
         return decoded
 
-    def request(self, command: str, timeout=0.5) -> str:
-        """
-        Requests information from Iridium and returns unprocessed response
-        :param command: Command to send
-        :param timeout: maximum time to wait for a response
-        :return: (str) Response from Iridium
-        """
-        self.serial.flush()
-        self.write(command)
-        result = ""
-        sttime = time.perf_counter()
-        while time.perf_counter() - sttime < timeout:
-            time.sleep(.1)
-            result += self.read()
-            if result.find("ERROR") != -1:
-                return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly
-            if result.find("OK") != -1:
-                return result
-        raise RuntimeError("Incomplete response")
-
     def transmit(self, message, discardbuf=True):
         """
         Loads message into MO buffer, then transmits
@@ -438,6 +418,26 @@ class Iridium:
         except:
             raise RuntimeError("Serial Port malfunction")
         return True
+
+    def request(self, command: str, timeout=0.5) -> str:
+        """
+        Requests information from Iridium and returns unprocessed response
+        :param command: Command to send
+        :param timeout: maximum time to wait for a response
+        :return: (str) Response from Iridium
+        """
+        self.serial.flush()
+        self.write(command)
+        result = ""
+        sttime = time.perf_counter()
+        while time.perf_counter() - sttime < timeout:
+            time.sleep(.1)
+            result += self.read()
+            if result.find("ERROR") != -1:
+                return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly
+            if result.find("OK") != -1:
+                return result
+        raise RuntimeError("Incomplete response")
 
     def write(self, command: str) -> bool:
         """
