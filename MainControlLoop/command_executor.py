@@ -53,48 +53,46 @@ class CommandExecutor:
         if self.sfr.devices["Iridium"] is not None:  # if iridium is on
             # IRIDIUM
             while len(self.sfr.IRIDIUM_RECEIVED_COMMAND) > 0:  # Iterate through all received commands
-                cmd = self.sfr.IRIDIUM_RECEIVED_COMMAND.pop(0)
-                msn = cmd[1]
-                prcmd = cmd[0].split(":") 
-
-                if prcmd[0] in self.primary_registry.keys():  # If command exists
-                    try:
-                        if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
-                            self.primary_registry[prcmd[0]](prcmd[1])
-                        elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
-                            self.primary_registry[prcmd[0]]() 
-                        else:
-                            self.error("Iridium", msn, "Incorrect number of arguments received")
-                    except Exception as e:
-                        self.error("Iridium", msn, "Exec error: " + str(e)) #returns exception
-        # APRS TODO: fix this absolute monstrosity of code
+                command, msn = self.sfr.IRIDIUM_RECEIVED_COMMAND.pop(0)
+                self.exec_cmd(command, "Iridium", self.primary_registry, msn)
+        # APRS
         if self.sfr.devices["APRS"] is not None:  # if APRS is on
             if self.sfr.APRS_RECEIVED_COMMAND != "":  # If message was received
                 raw_command = self.sfr.APRS_RECEIVED_COMMAND
                 if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us
-                    command = raw_command[raw_command.find(self.TJ_PREFIX) +  # Extract command
-                                            len(self.TJ_PREFIX):
-                                            raw_command.find(self.TJ_PREFIX) +
-                                            len(self.TJ_PREFIX) + 3]
-                    
-                    if command in self.primary_registry.keys():  # If command is real
-                        self.primary_registry[command]()  # Execute command
-                    elif i[0] in self.aprs_primary_registry["Arguments"].keys:  # If command has arguments
-                        self.aprs_primary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
-                    else:
-                        self.error("APRS", command)  # Transmit error message
+                    command = raw_command[raw_command.find(self.TJ_PREFIX) + len(self.TJ_PREFIX):].strip() # Extract command
+                    self.exec_cmd(command, "APRS", self.primary_registry)
                 elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
-                    command = raw_command[raw_command.find(self.OUTREACH_PREFIX) +  # Extract command
-                                            len(self.OUTREACH_PREFIX):
-                                            raw_command.find(self.OUTREACH_PREFIX) +
-                                            len(self.OUTREACH_PREFIX) + 3]
-                    if command in self.aprs_secondary_registry.keys:  # If command is real
-                        self.aprs_secondary_registry[command]()  # Execute command
-                    elif i[0] in self.aprs_secondary_registry["Arguments"].keys:  # If command has arguments
-                        self.aprs_secondary_registry["Arguments"][i[0]](i[1], i[2])  # Execute command
-                    else:
-                        self.error("APRS", command)  # Transmit error message
+                    command = raw_command[raw_command.find(self.OUTREACH_PREFIX) + len(self.OUTREACH_PREFIX):].strip() # Extract command
+                    self.exec_cmd(command, "APRS", self.aprs_secondary_registry)
                 self.sfr.APRS_RECEIVED_COMMAND = ""  # Clear buffer
+
+    def exec_cmd(self, command, radio, registry, msn=0):
+        """
+        Helper function for execute()
+        :param command: (str) command as read from sfr
+        :param radio: (str) radio reading the command
+        :param registry: (dict) which command registry to use
+        :param msn: (int) If radio is Iridium, MSN number of message
+        """
+        prcmd = command.split(":")  #list: command, arg
+
+        if prcmd[0] in registry.keys():  # If command exists
+            try:
+                if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
+                    registry[prcmd[0]](prcmd[1])
+                elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
+                    registry[prcmd[0]]() 
+                else:
+                    if radio == "Iridium":
+                        self.error(radio, msn, "Incorrect number of arguments received")
+                    else:
+                        self.error(radio, prcmd[0], "Incorrect number of arguments received")
+            except Exception as e:
+                if radio == "Iridium":
+                    self.error(radio, msn, "Exec error: " + str(e)) #returns exception
+                else:
+                    self.error(radio, prcmd[0], "Exec error: " + str(e))
     
     def error(self, radio, command, description):
         """
