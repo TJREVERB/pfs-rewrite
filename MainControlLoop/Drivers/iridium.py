@@ -309,35 +309,29 @@ class Iridium:
             decoded += str(coef * 10 ** exp)
         return decoded
 
-    def transmit(self, message, discardbuf=True):
+    def transmit(self, message, discardmtbuf = False):
         """
         Loads message into MO buffer, then transmits
         If a message has been received, read it into SFR
         Clear buffers once done
         :param message: (str) message to send
-        :param discardbuf: (bool) if False: transmit contents, if any, of MO buffer before loading new message in; 
-            if True: overwrite MO buffer contents
+        :param discardmtbuf: (bool) if False: Store contents of MO buffer before reading in new messages.
+            if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
-        """  # We should consider using the sequence numbers
-        # TODO: SWITCH THIS FROM SBDWT TO SBDWB
+        """ 
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
-        if int(ls[2]) == 1:  # Save MT to sfr
-            try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
-            except:
-                pass  # whatever, not worth it
-        if int(ls[0]) == 1:
-            if not discardbuf:  # If discardbuf false, transmit MO
+        if int(ls[2]) == 1:  # If message in MT, save MT to sfr
+            if not discardmtbuf: #
                 try:
-                    self.SBD_INITIATE()
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3]))) #append message, msn number
                 except:
-                    pass  # whatever, not worth it
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", int(ls[3]))) # Append garbled message indicator and msn
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
             return False
         self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
-        self.SBD_WT(message)
+        self.SBD_WB(self.encode(message)) #TODO: Correct this implementation
         result = self.process(self.SBD_INITIATE(), "SBDI").split(", ")
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
@@ -345,9 +339,9 @@ class Iridium:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME()))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
             except:
-                pass  # whatever, not worth it
+                pass  # serial broken probably
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
         return True
@@ -361,7 +355,7 @@ class Iridium:
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3])))
             except:
                 pass  # broken serial prolly
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
@@ -369,7 +363,7 @@ class Iridium:
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.process(self.SBD_RT(), "SBDRT"), self.NETWORK_TIME))
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
                 except:
                     pass  # broken serial prolly
             elif result[2] == 0:
@@ -379,7 +373,7 @@ class Iridium:
             result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
-                pass  # TODO: HANDLE GSS QUEUE NOT CHANGING
+                break # If GSS queue is not changing, don't bother to keep trying, just break
 
     def processed_time(self):
         """

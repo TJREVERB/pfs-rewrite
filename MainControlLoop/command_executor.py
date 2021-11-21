@@ -48,8 +48,8 @@ class CommandExecutor:
     
     def execute(self) -> None:
         """
-        Execute all commands in buffers
-        """
+        Execute all commands in buffers 
+        """ #TODO: CHECK FOR GARBLED MESSAGES, IF NEEDED
         if self.sfr.devices["Iridium"] is not None:  # if iridium is on
             # IRIDIUM
             while len(self.sfr.IRIDIUM_RECEIVED_COMMAND) > 0:  # Iterate through all received commands
