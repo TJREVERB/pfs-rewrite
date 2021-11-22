@@ -34,9 +34,7 @@ class Science(Mode):  # TODO: IMPLEMENT
     def check_conditions(self) -> bool:
         super(Science, self).check_conditions()
 
-        is_valid = (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"])
-
-        return is_valid
+        return (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"])
 
     def switch_mode(self):
         return self.sfr.modes_list["Charging"]

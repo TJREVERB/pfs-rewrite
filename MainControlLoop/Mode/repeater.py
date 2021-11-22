@@ -26,9 +26,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
     def check_conditions(self) -> bool:
         super(Repeater, self).check_conditions()
 
-        is_valid = not self.conditions["Low Battery"]  # as long as the battery is still good
-
-        return is_valid
+        return not self.conditions["Low Battery"]  # as long as the battery is still good
 
     # always returns charging. just read the comment in outreach mode's switch_mode, I don't feel like writing it here again
     def switch_mode(self):

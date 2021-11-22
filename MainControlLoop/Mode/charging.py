@@ -28,9 +28,7 @@ class Charging(Mode):
     def check_conditions(self) -> bool:
         super(Charging, self).check_conditions()  # in case we decide to add some super conditions later
 
-        is_valid = self.conditions["Low Battery"]  # Stays in charging mode as long as battery is low
-
-        return is_valid
+        return self.conditions["Low Battery"]  # Stays in charging mode as long as battery is low
 
     def switch_mode(self):
         if self.conditions["Science Mode Status"]:  # if science mode is complete
