@@ -89,12 +89,11 @@ class Analytics:
         df = pd.read_csv(self.sfr.orbit_log_path, header=0)  # Reads in data
         # Calculates on either last 50 points or whole dataset
         sunlight = df.loc[df["phase"] == "sunlight"]
-        deltas = np.array([sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)])
         eclipse = df.loc[df["phase"] == "eclipse"]
-        deltas = np.concatenate((deltas,  # Appends eclipse data to deltas
-                                 np.array([eclipse[i + 1] - eclipse[i] for i in range(
-                                     -2, -1 * min([len(eclipse), 50]), -1)])))
-        return np.sum(deltas) / np.shape(deltas)[0]
+        # Appends eclipse data to deltas
+        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
+            [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
+        return sum(deltas) / len(deltas)
 
     def signal_strength_variability(self) -> float:
         """
