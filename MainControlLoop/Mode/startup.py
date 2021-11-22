@@ -9,7 +9,7 @@ class Startup(Mode):
         """
         super().__init__(sfr)
         # CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
-        self.THIRTY_MINUTES = 5  # 1800 seconds in 30 minutes
+        self.THIRTY_MINUTES = 1800  # 1800 seconds in 30 minutes
         self.BEACON_WAIT_TIME = 120  # 2 minutes
         # CHANGE TO ACCOMMODATE DATA BUDGET
         self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
