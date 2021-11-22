@@ -69,11 +69,11 @@ class Mode:
         self.sfr.eps.total_power(2)
         self.sfr.eps.solar_power()
         sun = self.sfr.eps.sun_detected()
-        if sun and self.sfr.LAST_DAYLIGHT_ENTRY < self.sfr.LAST_ECLIPSE_ENTRY:
+        if sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
-        elif not sun and self.sfr.LAST_DAYLIGHT_ENTRY > self.sfr.LAST_ECLIPSE_ENTRY:
+        elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
-        self.sfr.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
+        self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
         self.sfr.dump()
 
     def terminate_mode(self) -> None:
@@ -100,7 +100,7 @@ class Mode:
         """
         draw = self.sfr.eps.total_power(4)[0]
         gain = self.sfr.eps.solar_power()
-        self.sfr.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
+        self.sfr.vars.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
         self.previous_time = time.perf_counter()
 
     def systems_check(self) -> list:
@@ -125,7 +125,7 @@ class Mode:
         """
         if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
             return None
-        if self.sfr.locked_devices[component] is True:  # if component is locked, stop method from running further
+        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
         self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
@@ -145,7 +145,7 @@ class Mode:
         # TODO: if component iridium: copy iridium command buffer to sfr to avoid wiping commands when switching modes
         if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
             return None
-        if self.sfr.locked_devices[component] is True:  # if component is locked, stop method from running further
+        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
         if component == "Iridium" and self.sfr.devices["Iridium"] is not None:  # if iridium is already on

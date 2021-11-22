@@ -33,9 +33,9 @@ class Startup(Mode):
 
     def antenna(self) -> None:
         # TODO: TURNING OFF ANTENNA DEPLOYER INSTANTLY MAY PREVENT ANTENNA FROM PROPERLY DEPLOYING
-        if not self.sfr.ANTENNA_DEPLOYED:
+        if not self.sfr.vars.ANTENNA_DEPLOYED:
             # if 30 minutes have elapsed
-            if time.time() - self.sfr.START_TIME > self.THIRTY_MINUTES:
+            if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
@@ -43,7 +43,6 @@ class Startup(Mode):
                     self.instruct["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
                 else:
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
-                self.sfr.dump()  # Log state field registry change
 
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
@@ -51,7 +50,7 @@ class Startup(Mode):
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
-            self.instruct["Pin On"](self.sfr.PRIMARY_RADIO)
+            self.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
             self.read_radio()  # only reads radio if not low battery
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
@@ -67,7 +66,7 @@ class Startup(Mode):
         """
         super(Startup, self).read_radio()
         # If primary radio is iridium and enough time has passed
-        if self.sfr.PRIMARY_RADIO == "Iridium" and \
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
@@ -76,7 +75,7 @@ class Startup(Mode):
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
-        elif self.sfr.PRIMARY_RADIO == "APRS" and \
+        elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
@@ -86,12 +85,13 @@ class Startup(Mode):
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
-            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr
+            # add aprs messages to sfr
+            self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())
         # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
-        if self.sfr.CONTACT_ESTABLISHED:  # if contact established, get out of charging
+        if self.sfr.vars.CONTACT_ESTABLISHED:  # if contact established, get out of charging
             return False
         else:
             return True

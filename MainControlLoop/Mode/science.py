@@ -24,9 +24,11 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def start(self) -> None:
         super(Science, self).start()
-        self.instruct["Pin On"](self.sfr.primary_radio)
-        self.instruct["All Off"](exceptions=[self.sfr.primary_radio])
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
+        if self.vars["PRIMARY_RADIO"] == "APRS":
+            self.instruct["Pin On"]("APRS")
+        self.instruct["Pin On"]("Iridium")
+        self.instruct["All Off"](exceptions=["APRS", "Iridium"])
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def check_conditions(self) -> bool:
@@ -41,7 +43,7 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def update_conditions(self) -> None:
         super(Science, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def execute_cycle(self) -> None:
@@ -63,7 +65,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         """
         super(Science, self).read_radio()
         # If primary radio is iridium and enough time has passed
-        if self.sfr.PRIMARY_RADIO == "Iridium" and \
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
@@ -72,7 +74,7 @@ class Science(Mode):  # TODO: IMPLEMENT
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
-        elif self.sfr.PRIMARY_RADIO == "APRS" and \
+        elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
                 time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
@@ -82,7 +84,7 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
-            self.sfr.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr
+            self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def terminate_mode(self) -> None:

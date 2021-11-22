@@ -176,5 +176,5 @@ class AntennaDeployer():
 
         if not success:
             return False
-        self.sfr.ANTENNA_DEPLOYED = True
+        self.sfr.vars.ANTENNA_DEPLOYED = True
         return True

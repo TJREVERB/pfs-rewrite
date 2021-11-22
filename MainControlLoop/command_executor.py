@@ -53,20 +53,20 @@ class CommandExecutor:
         #  TODO: CHECK FOR GARBLED MESSAGES, IF NEEDED
         if self.sfr.devices["Iridium"] is not None:  # if iridium is on
             # IRIDIUM
-            while len(self.sfr.IRIDIUM_RECEIVED_COMMAND) > 0:  # Iterate through all received commands
-                command, msn = self.sfr.IRIDIUM_RECEIVED_COMMAND.pop(0)
+            while len(self.sfr.vars.IRIDIUM_RECEIVED_COMMAND) > 0:  # Iterate through all received commands
+                command, msn = self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.pop(0)
                 self.exec_cmd(command, "Iridium", self.primary_registry, msn)
         # APRS
         if self.sfr.devices["APRS"] is not None:  # if APRS is on
-            if self.sfr.APRS_RECEIVED_COMMAND != "":  # If message was received
-                raw_command = self.sfr.APRS_RECEIVED_COMMAND
+            if self.sfr.vars.APRS_RECEIVED_COMMAND != []:  # If message was received
+                raw_command = self.sfr.vars.APRS_RECEIVED_COMMAND
                 if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us #TODO: INSTEAD OF ASSUMING IT IS AT THE END OF THE STRING, LOOK FOR : end character
                     command = raw_command[raw_command.find(self.TJ_PREFIX) + len(self.TJ_PREFIX):].strip() # Extract command
                     self.exec_cmd(command, "APRS", self.primary_registry)
                 elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
                     command = raw_command[raw_command.find(self.OUTREACH_PREFIX) + len(self.OUTREACH_PREFIX):].strip() # Extract command
                     self.exec_cmd(command, "APRS", self.aprs_secondary_registry)
-                self.sfr.APRS_RECEIVED_COMMAND = ""  # Clear buffer
+                self.sfr.vars.APRS_RECEIVED_COMMAND.pop(0)  # Clear buffer
 
     def exec_cmd(self, command, radio, registry, msn=0):
         """
@@ -133,9 +133,9 @@ class CommandExecutor:
         Transmits time + message string from primary radio to ground station
         """
         # TODO: how to handle if Iridium or APRS is off
-        if self.sfr.PRIMARY_RADIO == "Iridium":
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium":
             self.sfr.devices["Iridium"].transmit(message)
-        elif self.sfr.PRIMARY_RADIO == "APRS":
+        elif self.sfr.vars.PRIMARY_RADIO == "APRS":
             self.sfr.devices["APRS"].transmit(message)
 
     def BVT(self):
@@ -151,7 +151,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Charging":
             self.transmit("NO SWITCH")
         else:
-            self.sfr.MODE = self.sfr.modes_list["Charging"]
+            self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
             self.transmit("SWITCH CHARGING")
 
     def SCI(self):
@@ -161,7 +161,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Science":
             self.transmit("Already in science mode, no mode switch executed")
         else:
-            self.sfr.MODE = self.sfr.modes_list["Science"]
+            self.sfr.vars.MODE = self.sfr.modes_list["Science"]
             self.transmit("SWITCH SCIENCE")
 
     def OUT(self):
@@ -171,7 +171,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Outreach":
             self.transmit("NO SWITCH")
         else:
-            self.sfr.MODE = self.sfr.modes_list["Outreach"]
+            self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
             self.transmit("SWITCH OUTREACH")
 
     def UVT(self, v):  #TODO: Implement
@@ -203,7 +203,7 @@ class CommandExecutor:
         """
         Transmit signal strength variability
         """
-        self.transmit(str(self.sfr.SIGNAL_STRENTH_VARIABILITY))
+        self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
     
     def SOL(self):
         """
@@ -236,11 +236,11 @@ class CommandExecutor:
             "03": "Antenna Deployer"
         }
         try:
-            if self.sfr.locked_devices[device_codes[a + b]]:
-                self.sfr.locked_devices[device_codes[a + b]] = False
+            if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
+                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = False
                 self.transmit(device_codes[a + b] + " UNLOCKED")
             else:
-                self.sfr.locked_devices[device_codes[a + b]] = True
+                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = True
                 self.transmit(device_codes[a + b] + " LOCKED")
         except KeyError:
             self.error(self.sfr.PRIMARY_RADIO, "D")
@@ -259,4 +259,4 @@ class CommandExecutor:
         """
         Transmits current orbital period
         """
-        self.transmit(str(self.sfr.ORBITAL_PERIOD))
+        self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
