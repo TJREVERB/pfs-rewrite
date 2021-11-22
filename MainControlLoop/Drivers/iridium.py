@@ -324,9 +324,9 @@ class Iridium:
         if int(ls[2]) == 1:  # If message in MT, save MT to sfr
             if not discardmtbuf: #
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3]))) #append message, msn number
+                    self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3]))) #append message, msn number
                 except:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", int(ls[3]))) # Append garbled message indicator and msn
+                    self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append(("GRB", int(ls[3]))) # Append garbled message indicator and msn
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
             return False
@@ -339,7 +339,7 @@ class Iridium:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
+                self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
             except:
                 pass  # serial broken probably
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
@@ -355,7 +355,7 @@ class Iridium:
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3])))
+                self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3])))
             except:
                 pass  # broken serial prolly
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
@@ -363,7 +363,7 @@ class Iridium:
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
+                    self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
                 except:
                     pass  # broken serial prolly
             elif result[2] == 0:

@@ -186,5 +186,5 @@ class APRS:
             pass #TODO: Handle a garbled message
         else:
             message = message[message.find("TJ;") + 3 :].strip() #remove TJ; and strip
-        self.sfr.APRS_RECEIVED_COMMAND = message  # store message in statefield
+        self.sfr.vars.APRS_RECEIVED_COMMAND.append(message)  # store message in statefield
         return message

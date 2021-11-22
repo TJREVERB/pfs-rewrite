@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+import pickle
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
@@ -15,10 +16,10 @@ from MainControlLoop.command_executor import CommandExecutor
 class StateFieldRegistry:
     def __init__(self):
         """
-        Defines all the StateFields present in the state registry
-        SFR VALUES TO BE LOGGED MUST BE IN ALL CAPS!!!
+        Variables common across our pfs
+        Vars in the "vars" object get logged
         """
-        self.log_path = "./MainControlLoop/lib/data/state_field_log.txt"
+        self.log_path = "./MainControlLoop/lib/data/state_field_log.pkl"
         self.pwr_log_path = "./MainControlLoop/lib/data/pwr_draw_log.csv"
         self.solar_log_path = "./MainControlLoop/lib/data/solar_generation_log.csv"
         self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
@@ -34,25 +35,6 @@ class StateFieldRegistry:
         self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
         self.voltage_energy_map = pd.read_csv(self.volt_energy_map_path)
 
-        self.defaults = {
-            "START_TIME": "-1",
-            "ANTENNA_DEPLOYED": "False",
-            # Integral estimate of remaining battery capacity
-            "BATTERY_CAPACITY_INT": str(self.analytics.volt_to_charge(self.eps.telemetry["VBCROUT"]())),
-            "FAILURES": "[]",
-            "LAST_DAYLIGHT_ENTRY": "None",
-            "LAST_ECLIPSE_ENTRY": "None",
-            "ORBITAL_PERIOD": "90 * 60",
-            # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
-            "LOWER_THRESHOLD": "60000",  # Switch to charging mode if battery capacity (J) dips below threshold
-            "MODE": "Startup",  # Stores mode class, mode is instantiated in mcl
-            "PRIMARY_RADIO": "\"Iridium\"",  # Primary radio to use for communications
-            "SIGNAL_STRENGTH_VARIABILITY": "-1.0",  # Science mode result
-            "MODE_LOCK": "False",  # Whether to lock mode switches
-            "CONTACT_ESTABLISHED": "False",
-            "IRIDIUM_RECEIVED_COMMAND": "[]",
-            "APRS_RECEIVED_COMMAND": "\"\"",
-        }
         self.devices = {
             "Iridium": None,
             "APRS": None,
@@ -74,61 +56,49 @@ class StateFieldRegistry:
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
-
-        self.locked_devices = {
-            "Iridium": False,
-            "APRS": False,
-            "IMU": False,
-            "Antenna Deployer": None
-        }
-        with open(self.log_path, "r") as f:
-            lines = f.readlines()
-            # If every field in the log is in defaults and every key in defaults is in the log
-            # Protects against incomplete or outdated log files
-            if [i.strip("\n ").split(":")[0] for i in lines] == [*self.defaults]:
-                # Iterate through fields
-                for line in lines:
-                    line = line.strip("\n ").split(":")
-                    if self.defaults[line[0]].startswith("\""):
-                        line[1] = "\"" + line[1] + "\""
-                    # Changed it back because this allows us to store objects other than string and int
-                    exec(f"self.{line[0]} = {line[1]}")
-            else:
-                self.load_defaults()  # Create default fields
-        self.START_TIME = time.time()  # specifically set the time; it is better if the antenna deploys late than early
-
-    def load_defaults(self) -> None:
-        """
-        Loads default state field values
-        """
-        for key, val in self.defaults.items():
-            exec(f"self.{key} = {val}")  # Create default fields
-
-    def to_dict(self) -> dict:
-        """
-        Converts state fields into dictionary
-        :return: dictionary of state fields
-        """
-        result = {}
-        # Iterate through all caps class variables only
-        for i in [i for i in dir(self) if not i.startswith("__") and i.isupper()]:
-            result[i] = getattr(self, i)  # Get the value of the variable from a string name
-        return result
+        defaults = self.Registry(self.eps, self.analytics)
+        try:
+            self.vars: self.Registry = pickle.loads(open(self.log_path, "rb"))
+            # If all variable names are the same and all types of values are the same
+            # Checks if log is valid and up-to-date
+            if not [i for i in self.vars if not i.startswith("__")] == [i for i in self.defaults if not i.startswith("__")] \
+               and not [type(getattr(self.vars, i)) for i in dir(self.vars) if not i.startswith("__")] == \
+                       [type(getattr(defaults, i)) for i in dir(defaults) if not i.startswith("__")]:
+                print("Invalid log, loading default sfr...")
+                self.vars: self.Registry = defaults
+            print("Loading sfr from log...")
+        except Exception:
+            print("Unknown error, loading default sfr...")
+            self.vars: self.Registry = defaults
+    
+    class Registry:
+        def __init__(self, eps, analytics):
+            self.START_TIME = -1
+            self.ANTENNA_DEPLOYED = False
+            # Integral estimate of remaining battery capacity
+            self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
+            self.FAILURES = []
+            sun = eps.sun_detected()
+            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
+            self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
+            self.ORBITAL_PERIOD = 90 * 60
+            # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
+            self.LOWER_THRESHOLD = 60000  # Switch to charging mode if battery capacity (J) dips below threshold
+            self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
+            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+            self.MODE_LOCK = False  # Whether to lock mode switches
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.CONTACT_ESTABLISHED = False
+            self.IRIDIUM_RECEIVED_COMMAND = []
+            self.APRS_RECEIVED_COMMAND = []
+            self.START_TIME = time.time()
 
     def dump(self) -> None:
         """
         Dump values of all state fields into state_field_log
         """
-        with open(self.log_path, "w") as f:
-            for key, val in self.to_dict().items():  # TODO: make good
-                if type(val) == bool and not val:
-                    f.write(f"{key}:False\n")
-                elif type(val) == str:
-                    f.write(f"{key}:\"{val}\"\n")
-                elif any([val is b for a, b in self.modes_list.items()]):
-                    f.write(f"{key}:\"{str(val)}\"")
-                else:
-                    f.write(f"{key}:{val}\n")  # Save the variables in the log
+        pickle.dump(self.vars, open(self.log_path, "wb"))
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """

@@ -9,23 +9,15 @@ class MainControlLoop:
         Each object should take in the state field registry
         """
         self.sfr = StateFieldRegistry()
-        # If orbital data is default, set based on current position
-        if self.sfr.LAST_DAYLIGHT_ENTRY is None:
-            if self.sfr.eps.sun_detected():  # If we're in sunlight
-                self.sfr.LAST_DAYLIGHT_ENTRY = time.time()  # Pretend we just entered sunlight
-                self.sfr.LAST_ECLIPSE_ENTRY = time.time() - 45 * 60
-            else:  # If we're in eclipse
-                self.sfr.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60  # Pretend we just entered eclipse
-                self.sfr.LAST_ECLIPSE_ENTRY = time.time()
 
     def run(self):  # Repeat main control loop forever
         print("MCL Start")
         current_time = time.time()
         while True:  # Iterate forever
-            self.sfr.mode_obj = self.sfr.MODE(self.sfr)
+            self.sfr.mode_obj = self.sfr.vars.MODE(self.sfr)
             self.sfr.mode_obj.start()
             # Iterate while we're supposed to be in this mode
-            while isinstance(self.sfr.mode_obj, self.sfr.MODE):
+            while isinstance(self.sfr.mode_obj, self.sfr.vars.MODE):
 
                 # Update the conditions dictionary periodically for this mode:
                 if current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode
@@ -33,8 +25,9 @@ class MainControlLoop:
                     current_time = time.time()
 
                 # If the conditions of this mode aren't met and we are allowed to switch:
-                if self.sfr.mode_obj.check_conditions() == False and self.sfr.MODE_LOCK == False:
-                    self.sfr.MODE = self.sfr.mode_obj.switch_mode()  # change the mode to be whatever our current mode wants to switch to
+                if not self.sfr.mode_obj.check_conditions() and not self.sfr.vars.MODE_LOCK:
+                    # change the mode to be whatever our current mode wants to switch to
+                    self.sfr.vars.MODE = self.sfr.mode_obj.switch_mode()
                     break
 
                 print("Cycle")
