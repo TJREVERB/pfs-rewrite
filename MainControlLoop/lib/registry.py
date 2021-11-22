@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+import json
 import pickle
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Mode.mode import Mode
@@ -20,6 +21,7 @@ class StateFieldRegistry:
         Vars in the "vars" object get logged
         """
         self.log_path = "./MainControlLoop/lib/data/state_field_log.pkl"
+        self.readable_log_path = "./MainControlLoop/lib/data/state_field_log.json"
         self.pwr_log_path = "./MainControlLoop/lib/data/pwr_draw_log.csv"
         self.solar_log_path = "./MainControlLoop/lib/data/solar_generation_log.csv"
         self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
@@ -58,12 +60,11 @@ class StateFieldRegistry:
         }
         defaults = self.Registry(self.eps, self.analytics)
         try:
-            self.vars: self.Registry = pickle.loads(open(self.log_path, "rb"))
+            self.vars: self.Registry = pickle.load(open(self.log_path, "rb"))
             # If all variable names are the same and all types of values are the same
             # Checks if log is valid and up-to-date
-            if not [i for i in self.vars if not i.startswith("__")] == [i for i in self.defaults if not i.startswith("__")] \
-               and not [type(getattr(self.vars, i)) for i in dir(self.vars) if not i.startswith("__")] == \
-                       [type(getattr(defaults, i)) for i in dir(defaults) if not i.startswith("__")]:
+            if not [tuple(i[0], type(i[1])) for i in self.vars.__dict__.items()] == \
+                   [tuple(i[0], type(i[1])) for i in defaults.__dict__.items()]:
                 print("Invalid log, loading default sfr...")
                 self.vars: self.Registry = defaults
             print("Loading sfr from log...")
@@ -99,6 +100,7 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log
         """
         pickle.dump(self.vars, open(self.log_path, "wb"))
+        json.dump(self.vars.__dict__, open(self.readable_log_path, "w"))
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """
