@@ -37,7 +37,6 @@ class Charging(Mode):
         else:  # science mode not done
             return self.sfr.modes_list["Science"]  # suggest science mode
 
-
     def update_conditions(self) -> None:
         super(Charging, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() <= self.UPPER_THRESHOLD

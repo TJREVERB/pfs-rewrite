@@ -36,7 +36,7 @@ class CommandExecutor:
         }
 
         # IMPLEMENT FULLY
-        self.aprs_secondary_registry = { #Secondary command registry for APRS, in outreach mode
+        self.aprs_secondary_registry = {  # Secondary command registry for APRS, in outreach mode
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
         }
@@ -48,8 +48,9 @@ class CommandExecutor:
     
     def execute(self) -> None:
         """
-        Execute all commands in buffers 
-        """ #TODO: CHECK FOR GARBLED MESSAGES, IF NEEDED
+        Execute all commands in buffers
+        """
+        #  TODO: CHECK FOR GARBLED MESSAGES, IF NEEDED
         if self.sfr.devices["Iridium"] is not None:  # if iridium is on
             # IRIDIUM
             while len(self.sfr.IRIDIUM_RECEIVED_COMMAND) > 0:  # Iterate through all received commands
@@ -82,7 +83,7 @@ class CommandExecutor:
                 if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
                     registry[prcmd[0]](prcmd[1])
                 elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
-                    registry[prcmd[0]]() 
+                    registry[prcmd[0]]()
                 else:
                     if radio == "Iridium":
                         self.error(radio, msn, "Incorrect number of arguments received")
@@ -93,7 +94,28 @@ class CommandExecutor:
                     self.error(radio, msn, "Exec error: " + str(e)) #returns exception
                 else:
                     self.error(radio, prcmd[0], "Exec error: " + str(e))
-    
+
+    def execute_(self):
+        for iridium_command in self.sfr.iridium_command_buffer:
+            command, argument, message_number = iridium_command
+            if argument is None:
+                self.primary_registry[command]()
+            else:
+                self.primary_registry[command](argument)
+        self.sfr
+        for aprs_command in self.sfr.aprs_command_buffer:
+            command, argument, message_number = aprs_command
+            if argument is None:
+                self.primary_registry[command]()
+            else:
+                self.primary_registry[command](argument)
+        for aprs_outreach in self.sfr.aprs_outreach_buffer:
+            command, argument, message_number = aprs_outreach
+            if argument is None:
+                self.aprs_secondary_registry[command]()
+            else:
+                self.aprs_secondary_registry[command](argument)
+
     def error(self, radio, command, description):
         """
         Transmit an error message over radio that received command

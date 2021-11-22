@@ -28,7 +28,10 @@ class StateFieldRegistry:
         self.eps = EPS(self)  # EPS never turns off
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
-        
+
+        self.iridium_command_buffer = []  # tuple (3 char command str, argument, message number: int)
+        self.aprs_command_buffer = []  # tuple (3 char command str, argument, message number: int)
+        self.aprs_outreach_buffer = []
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
