@@ -24,7 +24,7 @@ class Science(Mode):  # TODO: IMPLEMENT
 
     def start(self) -> None:
         super(Science, self).start()
-        if self.vars["PRIMARY_RADIO"] == "APRS":
+        if self.sfr.vars["PRIMARY_RADIO"] == "APRS":
             self.instruct["Pin On"]("APRS")
         self.instruct["Pin On"]("Iridium")
         self.instruct["All Off"](exceptions=["APRS", "Iridium"])
@@ -32,11 +32,11 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def check_conditions(self) -> bool:
-        super_result = super(Science, self).check_conditions()
+        super(Science, self).check_conditions()
 
-        is_valid = (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"]) 
-        
-        return super_result and is_valid
+        is_valid = (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"])
+
+        return is_valid
 
     def switch_mode(self):
         return self.sfr.modes_list["Charging"]
@@ -71,7 +71,7 @@ class Science(Mode):  # TODO: IMPLEMENT
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
@@ -80,7 +80,7 @@ class Science(Mode):  # TODO: IMPLEMENT
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:

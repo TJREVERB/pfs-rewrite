@@ -96,10 +96,7 @@ class Startup(Mode):
 
     def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
-        if self.sfr.vars.CONTACT_ESTABLISHED:  # if contact established, get out of charging
-            return False
-        else:
-            return True
+        return self.sfr.vars.CONTACT_ESTABLISHED is False  # if contact not established, stay in charging
 
     def switch_mode(self):
         if self.conditions["Low Battery"]:  # If battery is low

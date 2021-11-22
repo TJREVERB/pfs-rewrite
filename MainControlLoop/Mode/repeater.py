@@ -24,13 +24,13 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         # TODO: TURN ON DIGIPEATING
 
     def check_conditions(self) -> bool:
-        super_result = super(Repeater, self).check_conditions()
-        
-        is_valid = not self.conditions["Low Battery"] #as long as the battery is still good
+        super(Repeater, self).check_conditions()
 
-        return super_result and is_valid
+        is_valid = not self.conditions["Low Battery"]  # as long as the battery is still good
 
-    #always returns charging. just read the comment in outreach mode's switch_mode, I don't feel like writing it here again
+        return is_valid
+
+    # always returns charging. just read the comment in outreach mode's switch_mode, I don't feel like writing it here again
     def switch_mode(self):
         return self.sfr.modes_list["Charging"]
 
@@ -55,7 +55,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
@@ -64,7 +64,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:

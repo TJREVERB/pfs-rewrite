@@ -26,11 +26,11 @@ class Charging(Mode):
         self.conditions["Science Mode Status"] = self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY > -1
 
     def check_conditions(self) -> bool:
-        super_result = super(Charging, self).check_conditions() #in case we decide to add some super conditions later
+        super(Charging, self).check_conditions()  # in case we decide to add some super conditions later
 
-        is_valid = self.conditions["Low Battery"] #Stays in charging mode as long as battery is low
+        is_valid = self.conditions["Low Battery"]  # Stays in charging mode as long as battery is low
 
-        return is_valid and super_result 
+        return is_valid
 
     def switch_mode(self):
         if self.conditions["Science Mode Status"]:  # if science mode is complete
@@ -59,7 +59,7 @@ class Charging(Mode):
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
@@ -68,7 +68,7 @@ class Charging(Mode):
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                pass  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:

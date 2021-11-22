@@ -23,11 +23,11 @@ class Outreach(Mode):
         self.instruct["All Off"](exceptions=["Iridium", "APRS"])
 
     def check_conditions(self) -> bool:
-        super_result = super(Outreach, self).check_conditions()
+        super(Outreach, self).check_conditions()
 
         is_valid = not (self.conditions["Low Battery"]) #as long as the battery is not low, we stay
 
-        return super_result and is_valid
+        return is_valid
     
     # This will always return charging mode, regardless of the conditions... even if check_conditions was previously true
     # If this is ever called when check_conditions was still true, there is probably a reason, so return a DIFFERENT mode
