@@ -33,16 +33,13 @@ class Startup(Mode):
 
     def antenna(self) -> None:
         if not self.sfr.vars.ANTENNA_DEPLOYED:
-            print("antenna running")
             # if 30 minutes have elapsed
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
-                print("attempting to deploy")
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
                 if not self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
-                print("antenna deployed")
 
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
