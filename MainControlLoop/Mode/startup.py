@@ -32,7 +32,6 @@ class Startup(Mode):
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
     def antenna(self) -> None:
-        # TODO: TURNING OFF ANTENNA DEPLOYER INSTANTLY MAY PREVENT ANTENNA FROM PROPERLY DEPLOYING
         if not self.sfr.vars.ANTENNA_DEPLOYED:
             # if 30 minutes have elapsed
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
