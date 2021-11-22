@@ -39,9 +39,7 @@ class Startup(Mode):
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
-                if self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
-                    self.instruct["Pin Off"]("Antenna Deployer")  # Disable power to antenna deployer
-                else:
+                if not self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
 
     def execute_cycle(self) -> None:
