@@ -18,5 +18,5 @@ config_custom.yml
 # ADCS TLE backup file
 backup_tle.txt
 
-# StateFieldRegistry log
-MainControlLoop/lib/StateFieldRegistry/data/state_field_log.txt
+# All data
+MainControlLoop/lib/StateFieldRegistry/data/*
