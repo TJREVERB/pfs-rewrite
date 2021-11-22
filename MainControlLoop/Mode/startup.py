@@ -51,13 +51,21 @@ class Startup(Mode):
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
             self.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
-            self.read_radio()  # only reads radio if not low battery
+            # TODO: HANDLE THIS BETTER
+            try:
+                self.read_radio()  # only reads radio if not low battery
+            except RuntimeError:
+                pass
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
-                self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
-                                                 self.sfr.eps.total_power(4))
+                # TOOD: HANDLE THIS BETTER
+                try:
+                    self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), 
+                                                    self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
+                except RuntimeError:
+                    pass
                 self.last_contact_attempt = time.time()
 
     def read_radio(self) -> None:
