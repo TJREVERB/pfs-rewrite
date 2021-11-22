@@ -439,7 +439,7 @@ class Iridium:
         :param failures: component failures
         :return: (bool) Transmission successful
         """
-        msg = f"WVE{battery_voltage:.2f}{solar_generation:.2f}{power_draw[0]:.2f}{chr(59).join(self.sfr.FAILURES)}"  # Component failures, sep by ; #TODO: correct for new protocol
+        msg = f"WVE{battery_voltage:.2f}{solar_generation:.2f}{power_draw[0]:.2f}{chr(59).join(self.sfr.vars.FAILURES)}"  # Component failures, sep by ; #TODO: correct for new protocol
         self.SBD_WT(msg)
         result = self.SBD_INITIATE()
         # format needs verification:
