@@ -54,7 +54,8 @@ class Startup(Mode):
             # TODO: HANDLE THIS BETTER
             try:
                 self.read_radio()  # only reads radio if not low battery
-            except RuntimeError:
+            except RuntimeError as e:
+                print(e)
                 pass
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
@@ -64,7 +65,8 @@ class Startup(Mode):
                 try:
                     self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), 
                                                     self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
-                except RuntimeError:
+                except RuntimeError as e:
+                    print(e)
                     pass
                 self.last_contact_attempt = time.time()
 
