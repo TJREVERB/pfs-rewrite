@@ -79,7 +79,8 @@ class Startup(Mode):
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError:
+            except RuntimeError as e:
+                print(e)
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
@@ -88,7 +89,8 @@ class Startup(Mode):
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError:
+            except RuntimeError as e:
+                print(e)
                 pass #TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
