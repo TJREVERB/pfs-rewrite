@@ -314,14 +314,13 @@ class Iridium:
             decoded += str(coef * 10 ** exp)
         return decoded
 
-    def transmit(self, descriptor, msn, time, data, discardmtbuf = False):
+    def transmit(self, descriptor, msn, data, discardmtbuf = False):
         """
         Loads message into MO buffer, then transmits
         If a message has been received, read it into SFR
         Clear buffers once done
         :param descriptor: (str) 3 character descriptor
         :param msn: (int) message sequence number of message responded to
-        :param time: (tup) time, (date, hour, minute)
         :param data: (list) of data to be encoded, or a 1 length list containing string error message if descriptor = "ERR"
         :param discardmtbuf: (bool) if False: Store contents of MO buffer before reading in new messages.
             if True: Discard contents of MO buffer when reading in new messages.
@@ -336,8 +335,8 @@ class Iridium:
                 except:
                     self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         
-        #TODO: error handling, consider using datetime instead of time param
-        result = self.transmit_raw(self.encode(descriptor, msn, time, data))
+        #TODO: error handling, datetime instead of time param
+        result = self.transmit_raw(self.encode(descriptor, msn, t, data))
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
