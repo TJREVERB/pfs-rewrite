@@ -223,7 +223,7 @@ class Iridium:
         :param data: (list) of data values to encode, in order.
         :param err: (bool) if True, encode data as string error message (single length list containing error string). 
         if False (default), encode data as float values
-        :return: (bytes) encoded byte string
+        :return: (str) string representation of bytes
         """
 
         if descriptor in Iridium.ENCODED_REGISTRY: #First byte descriptor
@@ -267,7 +267,7 @@ class Iridium:
                 byte2 = flt & 0xff
                 encoded += chr(byte1)  # MSB FIRST
                 encoded += chr(byte2)  # LSB LAST
-        return encoded.encode("utf-8")
+        return encoded
 
     def decode(self, message):
         """
