@@ -58,19 +58,7 @@ class StateFieldRegistry:
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
-        defaults = self.Registry(self.eps, self.analytics)
-        try:
-            self.vars: self.Registry = pickle.load(open(self.log_path, "rb"))
-            # If all variable names are the same and all types of values are the same
-            # Checks if log is valid and up-to-date
-            if not [tuple(i[0], type(i[1])) for i in self.vars.__dict__.items()] == \
-                   [tuple(i[0], type(i[1])) for i in defaults.__dict__.items()]:
-                print("Invalid log, loading default sfr...")
-                self.vars: self.Registry = defaults
-            print("Loading sfr from log...")
-        except Exception:
-            print("Unknown error, loading default sfr...")
-            self.vars: self.Registry = defaults
+        self.vars = self.load()
     
     class Registry:
         def __init__(self, eps, analytics):
@@ -94,6 +82,23 @@ class StateFieldRegistry:
             self.IRIDIUM_RECEIVED_COMMAND = []
             self.APRS_RECEIVED_COMMAND = []
             self.START_TIME = time.time()
+    
+    def load(self) -> Registry:
+        defaults = self.Registry(self.eps, self.analytics)
+        try:
+            with open(self.log_path, "rb") as f:
+                vars = pickle.load(f)
+            # If all variable names are the same and all types of values are the same
+            # Checks if log is valid and up-to-date
+            if not [tuple(i[0], type(i[1])) for i in self.vars.__dict__.items()] == \
+                   [tuple(i[0], type(i[1])) for i in defaults.__dict__.items()]:
+                print("Invalid log, loading default sfr...")
+                vars = defaults
+            print("Loading sfr from log...")
+        except Exception:
+            print("Unknown error, loading default sfr...")
+            vars = defaults
+        return vars
 
     def dump(self) -> None:
         """
