@@ -112,7 +112,7 @@ class Startup(Mode):
 
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"] < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
     def terminate_mode(self) -> None:
         super(Startup, self).terminate_mode()
