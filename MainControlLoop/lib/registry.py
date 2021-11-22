@@ -94,8 +94,9 @@ class StateFieldRegistry:
                 print("Invalid log, loading default sfr...")
                 vars = defaults
             print("Loading sfr from log...")
-        except Exception:
+        except Exception as e:
             print("Unknown error, loading default sfr...")
+            print(e)
             vars = defaults
         return vars
 
