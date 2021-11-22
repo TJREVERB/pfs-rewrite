@@ -89,9 +89,14 @@ class Iridium:
         # Resets settings without power cycle
         self.SOFT_RST = lambda: self.request("ATZn", 1)
 
-        # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary
+        # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary. 
         self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
-        self.SBD_WB = lambda message: self.request("AT+SBDWB=" + message)
+        # For SBDWB, input message byte length
+        # Once "READY" is read in, write each byte, then the two least significant checksum bytes, MSB first
+        # Final response: 0: success, 1: timeout (insufficient number of bytes transferred in 60 seconds)
+        # 2: Checksum does not match calculated checksum, 3: message length too long or short
+        # Keep messages 340 bytes or shorter
+        self.SBD_WB = lambda length: self.write("AT+SBDWB=" + length)
         # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is
         # contained in buffer at a time
         self.SBD_RT = lambda: self.request("AT+SBDRT")
@@ -209,7 +214,7 @@ class Iridium:
         """
         return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
-    def encode(self, descriptor, msn, time, data, err = False):
+    def encode(self, descriptor, msn, time, data):
         """
         Encodes string for transmit using numbered codes
         :param descriptor: (str) 3 character string code
@@ -234,7 +239,7 @@ class Iridium:
         encoded += chr((date >> 8) & 0xff)
         encoded += chr(date & 0xff)
 
-        if err:
+        if descriptor == "ERR":
             encoded += data[0]
         else:
             for n in data:
@@ -309,42 +314,78 @@ class Iridium:
             decoded += str(coef * 10 ** exp)
         return decoded
 
-    def transmit(self, message, discardmtbuf = False):
+    def transmit(self, descriptor, msn, time, data, discardmtbuf = False):
         """
         Loads message into MO buffer, then transmits
         If a message has been received, read it into SFR
         Clear buffers once done
-        :param message: (str) message to send
+        :param descriptor: (str) 3 character descriptor
+        :param msn: (int) message sequence number of message responded to
+        :param time: (tup) time, (date, hour, minute)
+        :param data: (list) of data to be encoded, or a 1 length list containing string error message if descriptor = "ERR"
         :param discardmtbuf: (bool) if False: Store contents of MO buffer before reading in new messages.
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """ 
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
-        if int(ls[2]) == 1:  # If message in MT, save MT to sfr
-            if not discardmtbuf: #
+        if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
+            if not discardmtbuf: 
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3]))) #append message, msn number
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(ls[3]) )) #append message, args, msn number
                 except:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", int(ls[3]))) # Append garbled message indicator and msn
-        rssi = self.RSSI()
-        if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
-            return False
-        self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
-        self.SBD_WB(self.encode(message)) #TODO: Correct this implementation
-        result = self.process(self.SBD_INITIATE(), "SBDI").split(", ")
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+        
+        #TODO: error handling, consider using datetime instead of time param
+        result = self.transmit_raw(self.encode(descriptor, msn, time, data))
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(result[3]) ))
             except:
                 pass  # serial broken probably
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
         return True
+
+    def transmit_raw(self, message):
+        """
+        Transmits raw message using SBDWB, ignore MT buffer
+        Use as a helper function for transmit
+        :param message: (str) message, of utf-8 encoded bytes.
+        """
+        rssi = self.RSSI()
+        if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
+            return False
+        b = message.encode("utf-8")
+        length = len(b)
+        checksum = sum(b) & 0xffff
+        self.SBD_WB(length) #Specify bytes to write
+        st = self.read()
+        time.sleep(1) # 1 second to respond
+        if st.find("READY") != -1:
+            raise RuntimeError("Serial Timeout")
+        for c in b: #write each byte of the message
+            self.serial.write(c)
+        self.serial.write(checksum >> 8) #Write checksum
+        self.serial.write(checksum & 0xff)
+        time.sleep(1) #give 1 second to respond
+        result = self.read()
+        if result.find("OK") == -1 or result.find("ERROR") != -1:
+            raise RuntimeError("Serial Timeout")
+        i = int(result.split("\r\n")[1]) #'\r\n0\r\n\r\nOK\r\n' format
+        if i == 1:
+            raise RuntimeError("Serial Timeout")
+        if i == 2:
+            raise RuntimeError("Incorrect Checksum")
+        if i == 3:
+            raise RuntimeError("Message too long")
+        self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
+        result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
+        return result
 
     def next_msg(self):
         """
@@ -355,17 +396,17 @@ class Iridium:
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
-                self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(ls[3])))
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(ls[3])))
             except:
-                pass  # broken serial prolly
+                self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append((self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(result[3])))
                 except:
-                    pass  # broken serial prolly
+                    self.sfr.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
             elif result[2] == 0:
                 pass
             elif result[2] == 2:
