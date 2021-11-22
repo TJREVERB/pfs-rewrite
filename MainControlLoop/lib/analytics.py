@@ -93,7 +93,10 @@ class Analytics:
         # Appends eclipse data to deltas
         deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
             [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
-        return sum(deltas) / len(deltas)
+        if len(deltas) > 0:
+            return sum(deltas) / len(deltas)
+        else:
+            return -1
 
     def signal_strength_variability(self) -> float:
         """
