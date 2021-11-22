@@ -149,7 +149,10 @@ class Mode:
             return None
 
         if component == "Iridium" and self.sfr.devices["Iridium"] is not None:  # if iridium is already on
-            self.sfr.devices["Iridium"].SHUTDOWN()  # runs proprietary off function for iridium before pdm off
+            try:
+                self.sfr.devices["Iridium"].SHUTDOWN()  # runs proprietary off function for iridium before pdm off
+            except RuntimeError as e:
+                print(e)
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to close

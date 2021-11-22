@@ -33,13 +33,16 @@ class Startup(Mode):
 
     def antenna(self) -> None:
         if not self.sfr.vars.ANTENNA_DEPLOYED:
+            print("antenna running")
             # if 30 minutes have elapsed
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
+                print("attempting to deploy")
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
                 if not self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
+                print("antenna deployed")
 
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
@@ -53,7 +56,6 @@ class Startup(Mode):
                 self.read_radio()  # only reads radio if not low battery
             except RuntimeError as e:
                 print(e)
-                pass
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
@@ -64,7 +66,6 @@ class Startup(Mode):
                                                     self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
                 except RuntimeError as e:
                     print(e)
-                    pass
                 self.last_contact_attempt = time.time()
 
     def read_radio(self) -> None:
@@ -79,8 +80,7 @@ class Startup(Mode):
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError as e:
-                print(e)
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                print(e)  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
@@ -89,8 +89,7 @@ class Startup(Mode):
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError as e:
-                print(e)
-                pass #TODO: IMPLEMENT CONTINGENCIES
+                print(e)  # TODO: IMPLEMENT CONTINGENCIES
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
