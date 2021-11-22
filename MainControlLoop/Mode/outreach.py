@@ -37,8 +37,8 @@ class Outreach(Mode):
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.vars.LOWER_THRESHOLD
 
     def execute_cycle(self) -> None:
-        super(Outreach, self).execute_cycle()
         self.read_radio()
+        super(Outreach, self).execute_cycle()
 
     def read_radio(self) -> None:
         """

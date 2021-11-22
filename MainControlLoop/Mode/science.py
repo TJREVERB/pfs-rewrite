@@ -45,8 +45,9 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
 
     def execute_cycle(self) -> None:
-        super(Science, self).execute_cycle()
         self.read_radio()
+        super(Science, self).execute_cycle()
+
         if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
             # Transmit signal strength variability
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" +

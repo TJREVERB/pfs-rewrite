@@ -37,8 +37,8 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
     def execute_cycle(self) -> None:
-        super(Repeater, self).execute_cycle()
         self.read_radio()
+        super(Repeater, self).execute_cycle()
         self.sfr.dump()  # Log changes
 
     def read_radio(self):

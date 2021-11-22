@@ -42,8 +42,8 @@ class Charging(Mode):
         self.conditions["Science Mode Status"] = self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY > -1
 
     def execute_cycle(self) -> None:
+        self.read_radio()  # Super will call execute_commands so we need to read the commands
         super(Charging, self).execute_cycle()
-        self.read_radio()
 
     def read_radio(self) -> None:
         """
