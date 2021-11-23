@@ -8,9 +8,9 @@ class CommandExecutor:
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
 
-        self.GARBLED = "GRB" #String for garbled message
+        self.GARBLED = "GRB"  # String for garbled message
 
-        self.primary_registry = { #primary command registry for BOTH Iridium and APRS
+        self.primary_registry = {  # primary command registry for BOTH Iridium and APRS
             "NOP": lambda: self.transmit("0OK"),  # Test method, transmits "Hello"
             "BVT": self.BVT,  # Reads and transmits battery voltage
             "CHG": self.CHG,  # Enters charging mode
@@ -31,8 +31,8 @@ class CommandExecutor:
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
             "MLK": self.MLK,
             "ORB": self.ORB,
-            "UVT": self.UVT, # Set upper threshold
-            "LVT": self.LVT, # Set lower threshold
+            "UVT": self.UVT,  # Set upper threshold
+            "LVT": self.LVT,  # Set lower threshold
             "DLK": self.DLK,
         }
 
@@ -41,7 +41,8 @@ class CommandExecutor:
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
         }
-        self.arg_registry = { # Set of commands that require arguments, for either registry, for error checking reasons only
+        self.arg_registry = {
+            # Set of commands that require arguments, for either registry, for error checking reasons only
             "UVT",
             "LVT",
             "DLK"
@@ -61,11 +62,14 @@ class CommandExecutor:
         if self.sfr.devices["APRS"] is not None:  # if APRS is on
             if self.sfr.vars.APRS_RECEIVED_COMMAND != []:  # If message was received
                 raw_command = self.sfr.vars.APRS_RECEIVED_COMMAND
-                if raw_command.find(self.TJ_PREFIX) != -1:  # If message is from us #TODO: INSTEAD OF ASSUMING IT IS AT THE END OF THE STRING, LOOK FOR : end character
-                    command = raw_command[raw_command.find(self.TJ_PREFIX) + len(self.TJ_PREFIX):].strip() # Extract command
+                if raw_command.find(
+                        self.TJ_PREFIX) != -1:  # If message is from us #TODO: INSTEAD OF ASSUMING IT IS AT THE END OF THE STRING, LOOK FOR : end character
+                    command = raw_command[
+                              raw_command.find(self.TJ_PREFIX) + len(self.TJ_PREFIX):].strip()  # Extract command
                     self.exec_cmd(command, "APRS", self.primary_registry)
                 elif raw_command.find(self.OUTREACH_PREFIX) != -1:  # If command is from outreach
-                    command = raw_command[raw_command.find(self.OUTREACH_PREFIX) + len(self.OUTREACH_PREFIX):].strip() # Extract command
+                    command = raw_command[raw_command.find(self.OUTREACH_PREFIX) + len(
+                        self.OUTREACH_PREFIX):].strip()  # Extract command
                     self.exec_cmd(command, "APRS", self.aprs_secondary_registry)
                 self.sfr.vars.APRS_RECEIVED_COMMAND.pop(0)  # Clear buffer
 
@@ -77,13 +81,15 @@ class CommandExecutor:
         :param registry: (dict) which command registry to use
         :param msn: (int) If radio is Iridium, MSN number of message
         """
-        prcmd = command.split(":")  #list: command, arg
+        prcmd = command.split(":")  # list: command, arg
 
         if prcmd[0] in registry.keys():  # If command exists
             try:
-                if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
+                if len(prcmd) == 2 and prcmd[
+                    0] in self.arg_registry:  # If an argument is included and the command actually requires an argument, execute with arg
                     registry[prcmd[0]](prcmd[1])
-                elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
+                elif len(prcmd) == 1 and prcmd[
+                    0] not in self.arg_registry:  # If an argument is not included, and the command does not require an argument, execute without arg
                     registry[prcmd[0]]()
                 else:
                     if radio == "Iridium":
@@ -92,7 +98,7 @@ class CommandExecutor:
                         self.error(radio, prcmd[0], "Incorrect number of arguments received")
             except Exception as e:
                 if radio == "Iridium":
-                    self.error(radio, msn, "Exec error: " + str(e)) #returns exception
+                    self.error(radio, msn, "Exec error: " + str(e))  # returns exception
                 else:
                     self.error(radio, prcmd[0], "Exec error: " + str(e))
 
@@ -141,30 +147,25 @@ class CommandExecutor:
         :param description: (str) detailed description of failure
         """
         if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}") #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
-        elif radio == "APRS":
-            self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
+            self.transmit("ERR", command, description)  #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
+        elif radio == "APRS"
+            self.transmit("ERR", command, description)
 
-    def transmit(self, message: str, command, datetime, data):
+    def transmit(self, message, command, description):
         """
         Transmits time + message string from primary radio to ground station
 
-        :param message:
+        :param message: (str) 3 character descriptor
+        :param command: (int) message sequence number of message responded to or aprs command
+        :param description: (list) of data to be encoded, or a 1 length list containing string error message if descriptor = "ERR"
         """
         # TODO: how to handle if Iridium or APRS is off
-<<<<<<< Updated upstream
+        if not isinstance(description, list):  # if data is not list make list
+            description = [description]
         if self.sfr.vars.PRIMARY_RADIO == "Iridium":
-            self.sfr.devices["Iridium"].transmit(message)
+            self.sfr.devices["Iridium"].transmit(message, command, description)
         elif self.sfr.vars.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message)
-=======
-        if self.sfr.PRIMARY_RADIO == "Iridium":
-            self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
-        elif self.sfr.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message, command, datetime, )
-
-
->>>>>>> Stashed changes
+            self.sfr.devices["APRS"].transmit(message, command, description)
 
     def BVT(self):
         """
@@ -179,13 +180,8 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Charging":
             self.transmit("Already in Charging, No Switch")
         else:
-<<<<<<< Updated upstream
             self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-            self.transmit("SWITCH CHARGING")
-=======
-            self.sfr.MODE = self.sfr.modes_list["Charging"]
             self.transmit("Switched to Charging, Successful")
->>>>>>> Stashed changes
 
     def SCI(self):
         """
@@ -194,31 +190,26 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Science":
             self.transmit("Already in Science, No Switch")
         else:
-<<<<<<< Updated upstream
             self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-            self.transmit("SWITCH SCIENCE")
-=======
-            self.sfr.MODE = self.sfr.modes_list["Science"]
             self.transmit("Switched to Charging, Successful")
->>>>>>> Stashed changes
 
     def OUT(self):
         """
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            self.transmit("NO SWITCH")
+            self.transmit("Already in Outreach, No Switch")
         else:
             self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
-            self.transmit("SWITCH OUTREACH")
+            self.transmit("Switched to Charging, Successful")
 
-    def UVT(self, v):  #TODO: Implement
+    def UVT(self, v):  # TODO: Implement
         self.sfr.UPPER_THRESHOLD = float(v)
 
-    def LVT(self, v):  #TODO: Implement
+    def LVT(self, v):  # TODO: Implement
         self.sfr.LOWER_THRESHOLD = float(v)
 
-    def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
+    def RST(self):  # TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
@@ -228,8 +219,8 @@ class CommandExecutor:
         Transmits proof of life via Iridium, along with critical component data
         using iridium.wave (not transmit function)
         """
-        self.sfr.iridium.wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
-                                    self.sfr.eps.total_power(4))
+        self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
+                                         self.sfr.eps.total_power(4))
 
     def PWR(self):
         """
@@ -241,13 +232,8 @@ class CommandExecutor:
         """
         Transmit signal strength variability
         """
-<<<<<<< Updated upstream
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
-    
-=======
-        self.transmit(str(self.sfr.SIGNAL_STRENTH_VARIABILITY))
 
->>>>>>> Stashed changes
     def SOL(self):
         """
         Transmit solar generation
@@ -267,6 +253,8 @@ class CommandExecutor:
         """
         Enable Mode Lock
         """
+        self.sfr.vars.MODE_LOCK = True
+        self.transmit("Mode Lock Enabled")
 
     def DLK(self, a, b):
         """
@@ -302,4 +290,4 @@ class CommandExecutor:
         """
         Transmits current orbital period
         """
-        self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
+        self.transmit("ORB", str(self.sfr.vars.ORBITAL_PERIOD))
