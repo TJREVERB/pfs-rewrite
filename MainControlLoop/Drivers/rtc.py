@@ -95,6 +95,47 @@ class RTC:
         b = (int(new_minutes/10) << 4) | (new_minutes%10)
         return self.bus.write_byte_data(self.addr, RTC.RTC_MINUTES, b)
 
+    @property
+    def hours(self):
+        self.bus.write_byte(self.addr, RTC.RCT_HOURS)
+        raw = self.read_byte(self.addr)
+        if (raw >> 6) & 1: # 12 hour
+            return 12 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
+        else: # 24 hour
+            return 20 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
+
+    @hours.setter
+    def hours(self, new_hours, mode): #mode: 12/24 bit, 0 = 24 hour, 1 = 12 hour. new_hours must always be in 24h form
+        if mode: # 12 hour
+            b = (mode << 6) | ((new_hours > 12) << 5) | ((new_hours%12 > 10) << 4) | ((new_hours%12)%10)
+        else: # 24 hour
+
+
+    @property
+    def day(self):
+    
+    @day.setter
+    def day(self, new_day):
+
+    @property
+    def date(self):
+    
+    @date.setter
+    def date(self, new_date):
+
+    @property
+    def month(self):
+
+    @month.setter
+    def month(self, new_month):
+
+    @property
+    def year(self):
+
+    @year.setter
+    def year(self, new_year):
+
+    
     // Read the current time from the RTC and return it as a time_t
     // value. Returns a zero value if an I2C error occurred (e.g. RTC
     // not present).
