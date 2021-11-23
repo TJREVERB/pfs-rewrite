@@ -6,7 +6,6 @@ from datetime import datetime
 class CommandExecutor:
     def __init__(self, sfr):
         self.sfr = sfr
-        self.COMMAND_LOG_PATH = "./lib/data/command_log.csv"
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
 
@@ -80,17 +79,17 @@ class CommandExecutor:
         if prcmd[0] in registry.keys():  # If command exists
             try:
                 if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
-                    result = registry[prcmd[0]](prcmd[1])
+                    registry[prcmd[0]](prcmd[1])
                 elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
-                    result = registry[prcmd[0]]()
+                    registry[prcmd[0]]()
                 else:
                     if radio == "Iridium":
-                        result = self.error(radio, msn, "Incorrect number of arguments received")
+                        self.error(radio, msn, "Incorrect number of arguments received")
                     else:
-                        result = self.error(radio, prcmd[0], "Incorrect number of arguments received")
+                        self.error(radio, prcmd[0], "Incorrect number of arguments received")
             except Exception as e:
                 if radio == "Iridium":
-                    result = self.error(radio, msn, "Exec error: " + str(e))  # returns exception
+                    self.error(radio, msn, "Exec error: " + str(e)) #returns exception
                 else:
                     result = self.error(radio, prcmd[0], "Exec error: " + str(e))
 
@@ -156,7 +155,7 @@ class CommandExecutor:
         if self.sfr.PRIMARY_RADIO == "Iridium":
             self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
         elif self.sfr.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message, command, datetime, None)
+            self.sfr.devices["APRS"].transmit(message, command, datetime, )
 
     def BVT(self):
         """
