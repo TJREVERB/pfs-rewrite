@@ -5,6 +5,9 @@ https://github.com/JChristensen/DS3232RTC
 Copyright (C) 2018 by Jack Christensen and licensed under
 GNU GPL v3.0, https://www.gnu.org/licenses/gpl.html
 """
+
+#https://datasheets.maximintegrated.com/en/ds/DS3232.pdf
+
 import datetime
 import os
 import time
