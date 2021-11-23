@@ -99,36 +99,27 @@ class CommandExecutor:
     def execute_(self):
         # IRIDIUM
         for iridium_command in self.sfr.iridium_command_buffer:
-            command, argument, message_number = iridium_command
+            command, arguments, message_number = iridium_command
             try:
-                if argument is None:
-                    self.primary_registry[command]()
-                else:
-                    self.primary_registry[command](argument)
+                self.primary_registry[command](*arguments)
             except Exception as e:
                 self.error("Iridium", message_number, repr(e))
         self.sfr.iridium_command_buffer.clear()
 
         # APRS
         for aprs_command in self.sfr.aprs_command_buffer:
+            command, arguments, message_number = aprs_command
             try:
-                command, argument, message_number = aprs_command
-                if argument is None:
-                    self.primary_registry[command]()
-                else:
-                    self.primary_registry[command](argument)
+                self.primary_registry[command](*arguments)
             except Exception as e:
                 self.error("APRS", command, repr(e))
         self.sfr.aprs_command_buffer.clear()
 
         # APRS OUTREACH
         for aprs_outreach in self.sfr.aprs_outreach_buffer:
+            command, arguments, message_number = aprs_outreach
             try:
-                command, argument, message_number = aprs_outreach
-                if argument is None:
-                    self.aprs_secondary_registry[command]()
-                else:
-                    self.aprs_secondary_registry[command](argument)
+                self.aprs_secondary_registry[command](*arguments)
             except Exception as e:
                 self.error("APRS", command, repr(e))
         self.sfr.aprs_outreach_buffer.clear()
@@ -141,7 +132,7 @@ class CommandExecutor:
         :param description: (str) detailed description of failure
         """
         if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}")  # DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
+            self.sfr.devices["Iridium"].transmit("ERR", command, [description], discardmtbuf=True)
         elif radio == "APRS":
             self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
 

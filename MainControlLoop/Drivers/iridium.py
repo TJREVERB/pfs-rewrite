@@ -412,6 +412,8 @@ class Iridium:
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
                 break # If GSS queue is not changing, don't bother to keep trying, just break
+        if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
+            raise RuntimeError("Error clearing buffers")
 
     def processed_time(self):
         """
