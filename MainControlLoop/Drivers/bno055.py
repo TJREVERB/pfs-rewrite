@@ -182,9 +182,9 @@ class IMU:
         self.accel_range = IMU.ACCEL_4G
         self.gyro_range = IMU.GYRO_2000_DPS
         self.magnet_rate = IMU.MAGNET_20HZ
-        self.sfr.wait(0.01)
+        time.sleep(0.01)
         self.mode = IMU.NDOF_MODE
-        self.sfr.wait(0.01)
+        time.sleep(0.01)
 
     def _reset(self):
         """Resets the sensor to default settings."""
@@ -194,7 +194,7 @@ class IMU:
         except OSError:  # error due to the chip resetting
             pass
         # wait for the chip to reset (650 ms typ.)
-        self.sfr.wait(0.7)
+        time.sleep(0.7)
 
     @property
     def mode(self):
@@ -309,10 +309,10 @@ class IMU:
     @mode.setter
     def mode(self, new_mode):
         self._write_register(IMU._MODE_REGISTER, IMU.CONFIG_MODE)  # Empirically necessary
-        self.sfr.wait(0.02)  # Datasheet table 3.6
+        time.sleep(0.02)  # Datasheet table 3.6
         if new_mode != IMU.CONFIG_MODE:
             self._write_register(IMU._MODE_REGISTER, new_mode)
-            self.sfr.wait(0.01)  # Table 3.6
+            time.sleep(0.01)  # Table 3.6
 
     def get_tup_data(self, registers, scale):
         """gets and returns xyz tuple data from corresponding register range, with scale multiplied"""
@@ -458,7 +458,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         self._write_register(IMU._TRIGGER_REGISTER, 0x80 if value else 0x00)
         self.mode = last_mode
-        self.sfr.wait(0.01)
+        time.sleep(0.01)
 
     @property
     def temperature(self):
@@ -819,12 +819,12 @@ class IMU:
         interval = .5 #Time interval for magnetometer readings
 
         temp = np.array(self.gyro)
-        self.sfr.wait(.05)
+        time.sleep(.05)
         gyroValues = tuple((np.array(self.gyro) - temp)/2) #read the gyroscope, two readings
 
         magValues = []
         magValues.append(np.array(self.magnetic)) #read the magnetometer
-        self.sfr.wait(interval)
+        time.sleep(interval)
         magValues.append(np.array(self.magnetic))
 
         magV = (magValues[1]-magValues[0])/interval #mag values velocity
@@ -850,13 +850,13 @@ class IMU_I2C(IMU):
         self.buffer[0] = register
         self.buffer[1] = value
         result = self.bus.write_byte_data(self.address, self.buffer[0], self.buffer[1])
-        self.sfr.wait(.02)
+        time.sleep(.02)
         return result
 
     def _read_register(self, register):
         self.buffer[0] = register
         self.bus.write_byte(self.address, self.buffer[0])
-        self.sfr.wait(.01)
+        time.sleep(.01)
         self.buffer[1] = self.bus.read_byte(self.address)
-        self.sfr.wait(.01)
+        time.sleep(.01)
         return self.buffer[1]
