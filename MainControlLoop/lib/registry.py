@@ -116,6 +116,14 @@ class StateFieldRegistry:
         TODO: UPDATE TO USE RTC TIME
         """
         return time.time()
+    
+    def wait(self, delay: int) -> None:
+        """
+        Wait a number of seconds before proceeding
+        """
+        start = self.time()
+        while self.time() < start + delay:
+            pass
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """

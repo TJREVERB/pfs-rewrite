@@ -50,7 +50,7 @@ class Iridium:
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
-            time.sleep(0.5)
+            self.sfr.wait(0.5)
         self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
         # return format: <x>, <y>, <z>, <time_stamp>
         self.GEO_S = lambda: self.request("AT-MSGEOS")  # Current geolocation, spherical coordinates
@@ -366,11 +366,11 @@ class Iridium:
         checksum = sum(raw) & 0xffff
         b = (message + chr(checksum >> 8) + chr(checksum & 0xff)).encode("utf-8") #add checksum bytes to message string
         self.SBD_WB(length) #Specify bytes to write
-        time.sleep(.3) # .3 second to respond
+        self.sfr.wait(.3) # .3 second to respond
         if self.read().find("READY") != -1:
             raise RuntimeError("Serial Timeout")
         self.serial.write(b)
-        time.sleep(.3) # .3 second to respond
+        self.sfr.wait(.3) # .3 second to respond
         result = self.read()
         if result.find("OK") == -1 or result.find("ERROR") != -1:
             raise RuntimeError("Serial Timeout")
@@ -463,7 +463,7 @@ class Iridium:
         result = ""
         sttime = time.perf_counter()
         while time.perf_counter() - sttime < timeout:
-            time.sleep(.1)
+            self.sfr.wait(.1)
             result += self.read()
             if result.find("ERROR") != -1:
                 return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly

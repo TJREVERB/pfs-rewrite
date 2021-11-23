@@ -13,7 +13,7 @@ class APRS:
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
-            time.sleep(0.5)
+            self.sfr.wait(0.5)
 
     def __del__(self):
         self.serial.close()
@@ -30,9 +30,9 @@ class APRS:
         attempts = 0
         while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
             self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-            time.sleep(.2)
+            self.sfr.wait(.2)
             self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(1)
+            self.sfr.wait(1)
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts+=1
@@ -43,11 +43,11 @@ class APRS:
         attempts = 0
         while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 or attempts > 2:
             self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
+            self.sfr.wait(.2)
             self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
+            self.sfr.wait(.2)
             self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(3)
+            self.sfr.wait(3)
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts += 1
@@ -61,9 +61,9 @@ class APRS:
         :return: whether exit was successful
         """
         self.serial.write("QUIT".encode("utf-8"))
-        time.sleep(.2)
+        self.sfr.wait(.2)
         self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(.5)
+        self.sfr.wait(.5)
         result = str(self.serial.read(100))
         if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
             return False
@@ -90,9 +90,9 @@ class APRS:
             raise RuntimeError("Failed to open options menu")
 
         self.serial.write("MYCALL".encode("utf-8"))
-        time.sleep(.2)
+        self.sfr.wait(.2)
         self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(1)
+        self.sfr.wait(1)
 
         result = str(self.serial.read(50))
         print(result)
@@ -146,10 +146,10 @@ class APRS:
         """
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
-        time.sleep(15)
+        self.sfr.wait(15)
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
-        time.sleep(5)
+        self.sfr.wait(5)
 
     def write(self, message: str) -> bool:
         """
