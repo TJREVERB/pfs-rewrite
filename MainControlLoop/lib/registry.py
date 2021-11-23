@@ -2,6 +2,7 @@ import time
 import pandas as pd
 import numpy as np
 import pickle
+import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.rtc import RTC
 from MainControlLoop.Mode.startup import Startup
@@ -108,7 +109,10 @@ class StateFieldRegistry:
         """
         Dump values of all state fields into state_field_log
         """
-        pickle.dump(self.vars, open(self.log_path, "wb"))
+        with open(self.log_path, "wb") as f:
+            pickle.dump(self.vars, f)
+        with open(self.readable_log_path, "w") as f:
+            json.dump(self.vars.__dict__, f)
     
     def time(self) -> int:
         """
