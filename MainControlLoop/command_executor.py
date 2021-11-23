@@ -1,9 +1,11 @@
 import time
+import pandas as pd
 
 
 class CommandExecutor:
     def __init__(self, sfr):
         self.sfr = sfr
+        self.COMMAND_LOG_PATH = "./lib/data/command_log.csv"
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
 
@@ -24,14 +26,13 @@ class CommandExecutor:
             # Calculate and transmit Iridium signal strength variability
             "SSV": self.SSV,
             "SVF": None,  # TODO: Implement #Transmit full rssi data logs
-            # Transmit current solar panel production
-            "SOL": self.SOL,
+            "SOL": self.SOL,  # Transmit current solar panel production
             "TBL": self.TBL,  # Transmits tumble value (Magnitude of gyroscope vector)
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
             "MLK": self.MLK,
             "ORB": self.ORB,
-            "UVT": self.UVT, # Set upper threshold
-            "LVT": self.LVT, # Set lower threshold
+            "UVT": self.UVT,  # Set upper threshold
+            "LVT": self.LVT,  # Set lower threshold
             "DLK": self.DLK,
         }
 
@@ -68,7 +69,7 @@ class CommandExecutor:
                     self.exec_cmd(command, "APRS", self.aprs_secondary_registry)
                 self.sfr.vars.APRS_RECEIVED_COMMAND.pop(0)  # Clear buffer
 
-    def exec_cmd(self, command, radio, registry, msn=0):
+    def exec_cmd(self, command, radio, registry, msn=-1):
         """
         Helper function for execute()
         :param command: (str) command as read from sfr
@@ -81,19 +82,24 @@ class CommandExecutor:
         if prcmd[0] in registry.keys():  # If command exists
             try:
                 if len(prcmd) == 2 and prcmd[0] in self.arg_registry: #If an argument is included and the command actually requires an argument, execute with arg
-                    registry[prcmd[0]](prcmd[1])
+                    result = registry[prcmd[0]](prcmd[1])
                 elif len(prcmd) == 1 and prcmd[0] not in self.arg_registry: #If an argument is not included, and the command does not require an argument, execute without arg
-                    registry[prcmd[0]]()
+                    result = registry[prcmd[0]]()
                 else:
                     if radio == "Iridium":
-                        self.error(radio, msn, "Incorrect number of arguments received")
+                        result = self.error(radio, msn, "Incorrect number of arguments received")
                     else:
-                        self.error(radio, prcmd[0], "Incorrect number of arguments received")
+                        result = self.error(radio, prcmd[0], "Incorrect number of arguments received")
             except Exception as e:
                 if radio == "Iridium":
-                    self.error(radio, msn, "Exec error: " + str(e)) #returns exception
+                    result = self.error(radio, msn, "Exec error: " + str(e))  # returns exception
                 else:
-                    self.error(radio, prcmd[0], "Exec error: " + str(e))
+                    result = self.error(radio, prcmd[0], "Exec error: " + str(e))
+        
+        pd.DataFrame(pd.Series([  # Write to log
+            time.time(), radio, command, registry, msn, result]), columns=[
+                "timestamp", "radio", "command", "registry", "msn", "result"]).to_csv(
+                    path_or_buf=self.COMMAND_LOG_PATH, mode="a", header=False)
 
     def execute_(self):
         for iridium_command in self.sfr.iridium_command_buffer:
