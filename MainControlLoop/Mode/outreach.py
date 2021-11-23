@@ -47,21 +47,21 @@ class Outreach(Mode):
         super(Outreach, self).read_radio()
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                self.sfr.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass #TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
+            self.last_iridium_poll_time = self.sfr.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+                self.sfr.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, should be in the form of a list
             iridium_messages = self.sfr.devices["Iridium"].next_msg()
             # Append messages to IRIDIUM_RECEIVED_COMMAND
             self.sfr.vars.IRIDIUM_RECEIVED_COMMAND = self.sfr.vars.IRIDIUM_RECEIVED_COMMAND + iridium_messages
-            self.last_iridium_poll_time = time.time()
+            self.last_iridium_poll_time = self.sfr.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Drivers.rtc import RTC
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -28,6 +28,7 @@ class StateFieldRegistry:
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
+        self.rtc = RTC()  # RTC never turns off
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
@@ -108,6 +109,13 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log
         """
         pickle.dump(self.vars, open(self.log_path, "wb"))
+    
+    def time(self) -> int:
+        """
+        Get current time
+        TODO: UPDATE TO USE RTC TIME
+        """
+        return time.time()
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """

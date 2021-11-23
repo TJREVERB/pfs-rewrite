@@ -3,7 +3,6 @@ Methods to analyze our data
 """
 import pandas as pd
 import numpy as np
-import time
 
 
 def line_eq(a: tuple, b: tuple) -> callable:
@@ -56,7 +55,7 @@ class Analytics:
         :param duration: time in s to simulate for
         :return: (tuple) (estimated power generation, standard deviation of data, oldest data point)
         """
-        current_time = time.time()  # Set current time
+        current_time = self.sfr.time()  # Set current time
         panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
         solar = pd.read_csv(self.sfr.solar_log_path, header=0).tail(51)  # Read solar power log
         orbits = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)  # Read orbits log

@@ -34,7 +34,7 @@ class Startup(Mode):
     def antenna(self) -> None:
         if not self.sfr.vars.ANTENNA_DEPLOYED:
             # if 30 minutes have elapsed
-            if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
+            if self.sfr.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
@@ -54,7 +54,7 @@ class Startup(Mode):
             except RuntimeError as e:
                 print(e)
             # wait for BEACON_WAIT_TIME to not spam beacons
-            if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
+            if self.sfr.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 # TOOD: HANDLE THIS BETTER
@@ -63,7 +63,7 @@ class Startup(Mode):
                                                     self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
                 except RuntimeError as e:
                     print(e)
-                self.last_contact_attempt = time.time()
+                self.last_contact_attempt = self.sfr.time()
 
     def read_radio(self) -> None:
         """
@@ -72,22 +72,22 @@ class Startup(Mode):
         super(Startup, self).read_radio()
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                self.sfr.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError as e:
                 print(e)  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
+            self.last_iridium_poll_time = self.sfr.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+                self.sfr.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError as e:
                 print(e)  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
+            self.last_iridium_poll_time = self.sfr.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             # add aprs messages to sfr
