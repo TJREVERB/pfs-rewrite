@@ -1,4 +1,5 @@
 """ DS3232 Driver
+This driver does not include alarm functionality
 
 Ported into python from:
 https://github.com/JChristensen/DS3232RTC
@@ -65,6 +66,13 @@ class RTC:
     MASK_BSY = 2
     MASK_A2F = 1
     MASK_A1F = 0
+
+    # Frequency vs RS2, RS1 bits
+    FREQ_DISABLE = (-1, -1)
+    FREQ_1Hz = (0, 0)
+    FREQ_1_024KHz = (0, 1)
+    FREQ_4_096KHz = (1, 0)
+    FREQ_8_192KHZ = (1, 1)
 
     def __init__(self):
         # DS3232 I2C Address
@@ -179,34 +187,33 @@ class RTC:
         self.bus.write_byte_data(self.addr, RTC.RTC_YEAR, b)
         self.clr_OSF()
 
-    #TODO: Convert the following to python
-    // Enable or disable the square wave output.
-    // Use a value from the SQWAVE_FREQS_t enumeration for the parameter.
-    void DS3232RTC::squareWave(SQWAVE_FREQS_t freq)
-    {
-        uint8_t controlReg;
+    def square_wave(self, freq):
+        """
+        Enables or disables square wave output
+        :param freq: (tuple) bits to set (RS2, RS1) to for frequency selection. If sqw is to be disabled, freq = (-1, -1)
+        """
+        if freq[0] not in [0, 1] or freq[1] not in [0, 1]:
+            #Disable sqw
+            self.bus.write_byte(self.addr, RTC.RTC_STATUS)
+            b = self.bus.read_byte(self.addr)
+            b &= ~(1 << RTC.MASK_EN32KHZ) 
+            return self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, b)
+        self.bus.write_byte(self.addr, RTC.RTC_CONTROL) #TODO: MAKE SURE THAT FIRST BYTE IS LS[0]
+        ls = self.bus.read_i2c_block_data(self.addr, 0, 2)
+        ls[0] |= (1 << RTC.MASK_EN32KHZ)
+        ls[1] = (ls[1] & ~(1 << RTC.MASK_RS2)) | (freq[0] << RTC.MASK_RS2) # Set RS2 bit
+        ls[1] = (ls[1] & ~(1 << RTC.MASK_RS1)) | (freq[1] << RTC.MASK_RS1) # Set RS1 bit
+        self.bus.write_i2c_block_data(self.addr, RTC.RTC_CONTROL, ls)
 
-        controlReg = readRTC(RTC_CONTROL);
-        if (freq >= SQWAVE_NONE)
-        {
-            controlReg |= _BV(INTCN);
-        }
-        else
-        {
-            controlReg = (controlReg & 0xE3) | (freq << RS1);
-        }
-        writeRTC(RTC_CONTROL, controlReg);
-    }
-
-    // Returns the temperature in Celsius times four.
-    int16_t DS3232RTC::temperature()
-    {
-        union int16_byte {
-            int16_t i;
-            byte b[2];
-        } rtcTemp;
-
-        rtcTemp.b[0] = readRTC(RTC_TEMP_LSB);
-        rtcTemp.b[1] = readRTC(RTC_TEMP_MSB);
-        return rtcTemp.i / 64;
-    }
+    def temperature(self):
+        """
+        Reads and returns temperature in C
+        :return: (int) temperature, degrees celsius
+        """
+        self.bus.write_byte(self.addr, RTC.RTC_TEMP_MSB)
+        ls = self.bus.read_i2c_block_data(self.addr, 0, 2)
+        raw = (ls[1] >> 6) | (ls[0] << 2)
+        if (raw >> 9) & 1: #convert from twos comp to decimal, if sign bit is 1
+            raw &= 0x1ff
+            raw -= (1 << 9)
+        return raw / 4
