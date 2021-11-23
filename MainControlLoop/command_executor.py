@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 
 class CommandExecutor:
@@ -45,7 +46,7 @@ class CommandExecutor:
             "LVT",
             "DLK"
         }
-    
+
     def execute(self) -> None:
         """
         Execute all commands in buffers
@@ -96,25 +97,41 @@ class CommandExecutor:
                     self.error(radio, prcmd[0], "Exec error: " + str(e))
 
     def execute_(self):
+        # IRIDIUM
         for iridium_command in self.sfr.iridium_command_buffer:
             command, argument, message_number = iridium_command
-            if argument is None:
-                self.primary_registry[command]()
-            else:
-                self.primary_registry[command](argument)
-        self.sfr
+            try:
+                if argument is None:
+                    self.primary_registry[command]()
+                else:
+                    self.primary_registry[command](argument)
+            except Exception as e:
+                self.error("Iridium", message_number, repr(e))
+        self.sfr.iridium_command_buffer.clear()
+
+        # APRS
         for aprs_command in self.sfr.aprs_command_buffer:
-            command, argument, message_number = aprs_command
-            if argument is None:
-                self.primary_registry[command]()
-            else:
-                self.primary_registry[command](argument)
+            try:
+                command, argument, message_number = aprs_command
+                if argument is None:
+                    self.primary_registry[command]()
+                else:
+                    self.primary_registry[command](argument)
+            except Exception as e:
+                self.error("APRS", command, repr(e))
+        self.sfr.aprs_command_buffer.clear()
+
+        # APRS OUTREACH
         for aprs_outreach in self.sfr.aprs_outreach_buffer:
-            command, argument, message_number = aprs_outreach
-            if argument is None:
-                self.aprs_secondary_registry[command]()
-            else:
-                self.aprs_secondary_registry[command](argument)
+            try:
+                command, argument, message_number = aprs_outreach
+                if argument is None:
+                    self.aprs_secondary_registry[command]()
+                else:
+                    self.aprs_secondary_registry[command](argument)
+            except Exception as e:
+                self.error("APRS", command, repr(e))
+        self.sfr.aprs_outreach_buffer.clear()
 
     def error(self, radio, command, description):
         """
@@ -124,19 +141,30 @@ class CommandExecutor:
         :param description: (str) detailed description of failure
         """
         if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit("ERR" + command + description) #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
+            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}") #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
         elif radio == "APRS":
-            self.sfr.devices["APRS"].transmit("ERR:" + command + ":" + description)
+            self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
 
-    def transmit(self, message: str):
+    def transmit(self, message: str, command, datetime, data):
         """
         Transmits time + message string from primary radio to ground station
+
+        :param message:
         """
         # TODO: how to handle if Iridium or APRS is off
+<<<<<<< Updated upstream
         if self.sfr.vars.PRIMARY_RADIO == "Iridium":
             self.sfr.devices["Iridium"].transmit(message)
         elif self.sfr.vars.PRIMARY_RADIO == "APRS":
             self.sfr.devices["APRS"].transmit(message)
+=======
+        if self.sfr.PRIMARY_RADIO == "Iridium":
+            self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
+        elif self.sfr.PRIMARY_RADIO == "APRS":
+            self.sfr.devices["APRS"].transmit(message, command, datetime, )
+
+
+>>>>>>> Stashed changes
 
     def BVT(self):
         """
@@ -149,20 +177,30 @@ class CommandExecutor:
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            self.transmit("NO SWITCH")
+            self.transmit("Already in Charging, No Switch")
         else:
+<<<<<<< Updated upstream
             self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
             self.transmit("SWITCH CHARGING")
+=======
+            self.sfr.MODE = self.sfr.modes_list["Charging"]
+            self.transmit("Switched to Charging, Successful")
+>>>>>>> Stashed changes
 
     def SCI(self):
         """
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            self.transmit("Already in science mode, no mode switch executed")
+            self.transmit("Already in Science, No Switch")
         else:
+<<<<<<< Updated upstream
             self.sfr.vars.MODE = self.sfr.modes_list["Science"]
             self.transmit("SWITCH SCIENCE")
+=======
+            self.sfr.MODE = self.sfr.modes_list["Science"]
+            self.transmit("Switched to Charging, Successful")
+>>>>>>> Stashed changes
 
     def OUT(self):
         """
@@ -192,39 +230,44 @@ class CommandExecutor:
         """
         self.sfr.iridium.wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
                                     self.sfr.eps.total_power(4))
-    
+
     def PWR(self):
         """
         Transmit total power draw of satellite
         """
         self.transmit(str(self.sfr.eps.total_power(3)[0]))
-    
+
     def SSV(self):
         """
         Transmit signal strength variability
         """
+<<<<<<< Updated upstream
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
     
+=======
+        self.transmit(str(self.sfr.SIGNAL_STRENTH_VARIABILITY))
+
+>>>>>>> Stashed changes
     def SOL(self):
         """
         Transmit solar generation
         """
-    
+
     def TBL(self):
         """
         Transmit magnitude IMU tumble
         """
-    
+
     def TBF(self):
         """
         Transmit full IMU tumble
         """
-    
+
     def MLK(self):
         """
         Enable Mode Lock
         """
-    
+
     def DLK(self, a, b):
         """
         Enable Device Lock
@@ -249,12 +292,12 @@ class CommandExecutor:
         """
         Transmits down summary statistics about our mission
         """
-    
+
     def STS(self):
         """
         Transmits down information about the satellite's current status
         """
-    
+
     def ORB(self):
         """
         Transmits current orbital period
