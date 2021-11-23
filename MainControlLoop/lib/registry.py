@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.rtc import RTC
+from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -29,7 +29,6 @@ class StateFieldRegistry:
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.rtc = RTC()  # RTC never turns off
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
@@ -113,21 +112,6 @@ class StateFieldRegistry:
             pickle.dump(self.vars, f)
         with open(self.readable_log_path, "w") as f:
             json.dump(self.vars.__dict__, f)
-    
-    def time(self) -> int:
-        """
-        Get current time
-        TODO: UPDATE TO USE RTC TIME
-        """
-        return self.time()
-    
-    def wait(self, delay: int) -> None:
-        """
-        Wait a number of seconds before proceeding
-        """
-        start = self.time()
-        while self.time() < start + delay:
-            pass
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """

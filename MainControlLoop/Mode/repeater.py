@@ -48,22 +48,22 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         super(Repeater, self).read_radio()
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                self.sfr.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = self.sfr.time()
+            self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                self.sfr.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = self.sfr.time()
+            self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].read())  # add aprs messages to sfr

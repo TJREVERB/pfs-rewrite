@@ -5,7 +5,7 @@ import time
 class Science(Mode):  # TODO: IMPLEMENT
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.last_ping = self.sfr.time()
+        self.last_ping = time.time()
         self.pings_performed = 0
         self.DATAPOINT_SPACING = 60  # in seconds
         self.NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
@@ -53,7 +53,7 @@ class Science(Mode):  # TODO: IMPLEMENT
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" +
                                                              str(self.sfr.analytics.signal_strength_variability()))
             self.pings_performed += 1
-        elif self.sfr.time() - self.last_ping >= self.DATAPOINT_SPACING:
+        elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
             self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](),
                                  self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
             self.pings_performed += 1
@@ -65,22 +65,22 @@ class Science(Mode):  # TODO: IMPLEMENT
         super(Science, self).read_radio()
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                self.sfr.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = self.sfr.time()
+            self.last_iridium_poll_time = time.time()
         # If primary radio is aprs and enough time has passed
         elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                self.sfr.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
             except RuntimeError:
                 pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = self.sfr.time()
+            self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr

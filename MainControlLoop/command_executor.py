@@ -94,7 +94,7 @@ class CommandExecutor:
                     result = self.error(radio, prcmd[0], "Exec error: " + str(e))
 
         with open(self.COMMAND_LOG_PATH, "a") as f:
-            f.write(f"{self.sfr.time()},{radio},{prcmd[0]},{prcmd[1]},{msn},{result}\n")
+            f.write(f"{time.time()},{radio},{prcmd[0]},{prcmd[1]},{msn},{result}\n")
 
     def execute_(self):
         # IRIDIUM
