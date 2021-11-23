@@ -141,36 +141,31 @@ class CommandExecutor:
         :param description: (str) detailed description of failure
         """
         if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}") #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
+            self.transmit("ERR", command, description) #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
         elif radio == "APRS":
-            self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
+            self.transmit("ERR", command, description)
 
-    def transmit(self, message: str, command, datetime, data):
+    def transmit(self, message, command, description):
         """
         Transmits time + message string from primary radio to ground station
 
-        :param message:
+        :param message: (str) 3 character descriptor
+        :param command: (int) message sequence number of message responded to or aprs command
+        :param description: (list) of data to be encoded, or a 1 length list containing string error message if descriptor = "ERR"
         """
         # TODO: how to handle if Iridium or APRS is off
-<<<<<<< Updated upstream
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium":
-            self.sfr.devices["Iridium"].transmit(message)
-        elif self.sfr.vars.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message)
-=======
+        if not isinstance(description, list):  # if data is not list make list
+            description = [description]
         if self.sfr.PRIMARY_RADIO == "Iridium":
-            self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
+            self.sfr.devices["Iridium"].transmit(message, command, description)
         elif self.sfr.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message, command, datetime, )
-
-
->>>>>>> Stashed changes
+            self.sfr.devices["APRS"].transmit(message, command, description)
 
     def BVT(self):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(str(self.sfr.eps.telemetry["VBCROUT"]()))
+        self.transmit("BVT", str(self.sfr.eps.telemetry["VBCROUT"]()))
 
     def CHG(self):
         """
@@ -179,13 +174,8 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Charging":
             self.transmit("Already in Charging, No Switch")
         else:
-<<<<<<< Updated upstream
-            self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-            self.transmit("SWITCH CHARGING")
-=======
             self.sfr.MODE = self.sfr.modes_list["Charging"]
             self.transmit("Switched to Charging, Successful")
->>>>>>> Stashed changes
 
     def SCI(self):
         """
@@ -194,13 +184,8 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Science":
             self.transmit("Already in Science, No Switch")
         else:
-<<<<<<< Updated upstream
-            self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-            self.transmit("SWITCH SCIENCE")
-=======
             self.sfr.MODE = self.sfr.modes_list["Science"]
             self.transmit("Switched to Charging, Successful")
->>>>>>> Stashed changes
 
     def OUT(self):
         """
@@ -241,13 +226,8 @@ class CommandExecutor:
         """
         Transmit signal strength variability
         """
-<<<<<<< Updated upstream
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
-    
-=======
-        self.transmit(str(self.sfr.SIGNAL_STRENTH_VARIABILITY))
 
->>>>>>> Stashed changes
     def SOL(self):
         """
         Transmit solar generation

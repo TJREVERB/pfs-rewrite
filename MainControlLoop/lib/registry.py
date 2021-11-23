@@ -69,7 +69,7 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            sun = eps.sun_detected()
+            self.sun = eps.sun_detected()
             self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
             self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
@@ -88,7 +88,7 @@ class StateFieldRegistry:
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)
         try:
-            with open(self.log_path, "rb") as f:
+            with open(self.log_path, 'rb') as f:
                 vars = pickle.load(f)
             # If all variable names are the same and all types of values are the same
             # Checks if log is valid and up-to-date
