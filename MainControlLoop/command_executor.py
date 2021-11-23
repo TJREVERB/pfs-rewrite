@@ -18,23 +18,20 @@ class CommandExecutor:
             "CHG": self.CHG,  # Enters charging mode
             "SCI": self.SCI,  # Enters science mode
             "OUT": self.OUT,  # Enters outreach mode
-            # Reset power to the entire satellite (!!!!)
-            "RST": self.RST,
-            # Transmit proof of life through Iridium to ground station
-            "WVE": self.WVE,
-            # Transmit total power draw of connected components
-            "PWR": self.PWR,
-            # Calculate and transmit Iridium signal strength variability
-            "SSV": self.SSV,
-            "SVF": None,  # TODO: Implement #Transmit full rssi data logs
+            "RST": self.RST,  # Reset power to the entire satellite (!!!!)
+            "WVE": self.WVE,  # Transmit proof of life through Iridium to ground station
+            "PWR": self.PWR,  # Transmit total power draw of connected components
+            "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
+            "SVF": None,  # TODO: Implement  # Transmit full rssi data logs
             "SOL": self.SOL,  # Transmit current solar panel production
             "TBL": self.TBL,  # Transmits tumble value (Magnitude of gyroscope vector)
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
-            "MLK": self.MLK,
-            "ORB": self.ORB,
+            "MLK": self.MLK,  # Mode lock
+            "ORB": self.ORB,  # Orbital period
             "UVT": self.UVT,  # Set upper threshold
             "LVT": self.LVT,  # Set lower threshold
-            "DLK": self.DLK,
+            "DLK": self.DLK,  # Device lock
+            "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
         }
 
         # IMPLEMENT FULLY
@@ -70,7 +67,7 @@ class CommandExecutor:
                     self.exec_cmd(command, "APRS", self.aprs_secondary_registry)
                 self.sfr.vars.APRS_RECEIVED_COMMAND.pop(0)  # Clear buffer
 
-    def exec_cmd(self, command, radio, registry, msn=-1):
+    def exec_cmd(self, command, radio, registry: dict, msn=-1):
         """
         Helper function for execute()
         :param command: (str) command as read from sfr
@@ -96,11 +93,9 @@ class CommandExecutor:
                     result = self.error(radio, msn, "Exec error: " + str(e))  # returns exception
                 else:
                     result = self.error(radio, prcmd[0], "Exec error: " + str(e))
-        
-        pd.DataFrame(pd.Series([  # Write to log
-            time.time(), radio, command, registry, msn, result]), columns=[
-                "timestamp", "radio", "command", "registry", "msn", "result"]).to_csv(
-                    path_or_buf=self.COMMAND_LOG_PATH, mode="a", header=False)
+
+        with open(self.COMMAND_LOG_PATH, "a") as f:
+            f.write(f"{time.time()},{radio},{prcmd[0]},{prcmd[1]},{msn},{result}\n")
 
     def execute_(self):
         # IRIDIUM
@@ -147,7 +142,7 @@ class CommandExecutor:
         :param description: (str) detailed description of failure
         """
         if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}") #DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
+            self.sfr.devices["Iridium"].transmit(f"ERR{command}{description}")  # DO NOT ADD PUNCTUATION TO IRIDIUM MESSAGES, IT MESSES UP ENCODING
         elif radio == "APRS":
             self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
 
@@ -161,9 +156,7 @@ class CommandExecutor:
         if self.sfr.PRIMARY_RADIO == "Iridium":
             self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
         elif self.sfr.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message, command, datetime, )
-
-
+            self.sfr.devices["APRS"].transmit(message, command, datetime, None)
 
     def BVT(self):
         """
@@ -201,11 +194,11 @@ class CommandExecutor:
             self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
             self.transmit("SWITCH OUTREACH")
 
-    def UVT(self, v):  #TODO: Implement
-        self.sfr.UPPER_THRESHOLD = float(v)
+    def UVT(self, v):  # TODO: Implement
+        self.sfr.vars.UPPER_THRESHOLD = float(v)
 
-    def LVT(self, v):  #TODO: Implement
-        self.sfr.LOWER_THRESHOLD = float(v)
+    def LVT(self, v):  # TODO: Implement
+        self.sfr.vars.LOWER_THRESHOLD = float(v)
 
     def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
@@ -217,7 +210,7 @@ class CommandExecutor:
         Transmits proof of life via Iridium, along with critical component data
         using iridium.wave (not transmit function)
         """
-        self.sfr.iridium.wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
+        self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
                                     self.sfr.eps.total_power(4))
 
     def PWR(self):
@@ -270,7 +263,7 @@ class CommandExecutor:
                 self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = True
                 self.transmit(device_codes[a + b] + " LOCKED")
         except KeyError:
-            self.error(self.sfr.PRIMARY_RADIO, "D")
+            self.error(self.sfr.vars.PRIMARY_RADIO, "D")
 
     def SUM(self):
         """
@@ -287,3 +280,14 @@ class CommandExecutor:
         Transmits current orbital period
         """
         self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
+    
+    def REP(self, msn):
+        """
+        Repeat result of command with given MSN
+        """
+        df = pd.read_csv(self.COMMAND_LOG_PATH)
+        try:
+            self.transmit(df[df["msn"] == msn].to_csv().strip("\n"))
+        except Exception as e:
+            print(e)
+            self.transmit("Command does not exist in log!")
