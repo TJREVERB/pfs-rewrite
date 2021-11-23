@@ -336,8 +336,9 @@ class Iridium:
                 except:
                     self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         
-        #TODO: error handling, datetime instead of time param
-        result = self.transmit_raw(self.encode(descriptor, msn, t, data))
+        #TODO: error handling
+        t = datetime.datetime.utcnow()
+        result = self.transmit_raw(self.encode(descriptor, msn, (t.day, t.hour, t.minute), data))
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:
