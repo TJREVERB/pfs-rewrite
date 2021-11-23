@@ -275,7 +275,7 @@ class Iridium:
         Truncates unused bits
         CALL PROCESS BEFORE CALLING DECODE
         :param message: (str) received
-        :return: (str) decoded character string
+        :return: (tup) decoded command and args
         """
         message.strip()
         msg = message.encode("utf-8")  # re encode message to byte list
@@ -295,6 +295,7 @@ class Iridium:
         if msg[0] < 0 or msg[0] >= len(Iridium.ENCODED_REGISTRY):
             raise RuntimeError("Invalid command received")
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
+        args = []
         if Iridium.ARG_REGISTRY.find(msg[0]) != -1:
             num = msg[1] << 8 | msg[2]  # msb first
             exp = num >> 11  # extract exponent
@@ -311,8 +312,8 @@ class Iridium:
                 coef /= 100
             elif abs(coef) > 9:
                 coef /= 10
-            decoded += str(coef * 10 ** exp)
-        return decoded
+            args.append(coef * 10 ** exp)
+        return (decoded, args)
 
     def transmit(self, descriptor, msn, data, discardmtbuf = False):
         """
@@ -359,19 +360,16 @@ class Iridium:
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
             return False
-        b = message.encode("utf-8")
-        length = len(b)
-        checksum = sum(b) & 0xffff
+        raw = message.encode("utf-8")
+        length = len(raw)
+        checksum = sum(raw) & 0xffff
+        b = (message + chr(checksum >> 8) + chr(checksum & 0xff)).encode("utf-8") #add checksum bytes to message string
         self.SBD_WB(length) #Specify bytes to write
-        st = self.read()
-        time.sleep(1) # 1 second to respond
-        if st.find("READY") != -1:
+        time.sleep(.3) # .3 second to respond
+        if self.read().find("READY") != -1:
             raise RuntimeError("Serial Timeout")
-        for c in b: #write each byte of the message
-            self.serial.write(c)
-        self.serial.write(checksum >> 8) #Write checksum
-        self.serial.write(checksum & 0xff)
-        time.sleep(1) #give 1 second to respond
+        self.serial.write(b)
+        time.sleep(.3) # .3 second to respond
         result = self.read()
         if result.find("OK") == -1 or result.find("ERROR") != -1:
             raise RuntimeError("Serial Timeout")
@@ -390,7 +388,6 @@ class Iridium:
         """
         Stores next received messages in sfr
         """
-        # TODO: SWITCH FROM SBDRT TO SBDRB
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
