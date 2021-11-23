@@ -72,8 +72,8 @@ class StateFieldRegistry:
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
             sun = eps.sun_detected()
-            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
-            self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
+            self.LAST_DAYLIGHT_ENTRY = [self.time() - 45 * 60, self.time()][sun]
+            self.LAST_ECLIPSE_ENTRY = [self.time(), self.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
             self.LOWER_THRESHOLD = 60000  # Switch to charging mode if battery capacity (J) dips below threshold
@@ -85,7 +85,7 @@ class StateFieldRegistry:
             self.CONTACT_ESTABLISHED = False
             self.IRIDIUM_RECEIVED_COMMAND = []
             self.APRS_RECEIVED_COMMAND = []
-            self.START_TIME = time.time()
+            self.START_TIME = self.time()
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)
@@ -119,7 +119,7 @@ class StateFieldRegistry:
         Get current time
         TODO: UPDATE TO USE RTC TIME
         """
-        return time.time()
+        return self.time()
     
     def wait(self, delay: int) -> None:
         """
@@ -137,7 +137,7 @@ class StateFieldRegistry:
         :param t: time to log data, defaults to time method is called
         """
         if t == 0:
-            t = time.time()
+            t = self.time()
         print("Power: ", t, pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
@@ -150,7 +150,7 @@ class StateFieldRegistry:
         :param t: time to log data, defaults to time method is called
         """
         if t == 0:
-            t = time.time()
+            t = self.time()
         print("Solar: ", t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.solar_log_path, mode="a", header=False)  # Append data to log
@@ -159,7 +159,7 @@ class StateFieldRegistry:
         """
         Update LAST_DAYLIGHT_ENTRY and log new data
         """
-        self.LAST_DAYLIGHT_ENTRY = time.time()
+        self.LAST_DAYLIGHT_ENTRY = self.time()
         # Add data to dataframe
         df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "sunlight"], columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
@@ -168,12 +168,12 @@ class StateFieldRegistry:
         """
         Update LAST_ECLIPSE_ENTRY and log new data
         """
-        self.LAST_ECLIPSE_ENTRY = time.time()
+        self.LAST_ECLIPSE_ENTRY = self.time()
         # Add data to dataframe
         df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "eclipse"], columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
-    def log_iridium(self, location, signal, t=time.time()):
+    def log_iridium(self, location, signal, t=self.time()):
         """
         Logs iridium data
         :param location: current geolocation
@@ -181,7 +181,7 @@ class StateFieldRegistry:
         :param t: time to log, defaults to time method is called
         """
         data = np.array(t, location, signal)  # Concatenate arrays
-        np.insert(data, 0, time.time())  # Add timestamp
+        np.insert(data, 0, self.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
 
