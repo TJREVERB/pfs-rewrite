@@ -144,7 +144,7 @@ class CommandExecutor:
 
     def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
-        self.sfr.wait(.5)
+        time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
 
     def WVE(self):
