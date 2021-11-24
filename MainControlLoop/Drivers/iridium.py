@@ -410,6 +410,7 @@ class Iridium:
             except:
                 self.sfr.vars.iridium_command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         self.SBD_TIMEOUT(60)
+        time.sleep(.3)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] > 0:
@@ -484,7 +485,9 @@ class Iridium:
             if result.find("ERROR") != -1:
                 return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly
             if result.find("OK") != -1:
+                print(result)
                 return result
+        print(result)
         raise RuntimeError("Incomplete response")
 
     def write(self, command: str) -> bool:
