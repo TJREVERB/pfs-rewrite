@@ -77,6 +77,8 @@ class Iridium:
         # ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF")  # Returns last known signal strength, immediately
 
+        self.CIER = lambda ls: self.request("AT+CIER=" + ",".join([str(s) for s in ls])) #Sets unsolicited notifications of signal strength on or off
+
         # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI
         # line and issues the unsolicited result code SBDRING when an SBD ring alert is received Ring alerts can only
         # be sent after the unit is registered :optional param b: set 1/0 enable/disable
@@ -142,7 +144,7 @@ class Iridium:
         # Clear one or both buffers. BUFFERS MUST BE CLEARED AFTER ANY MESSAGING ACTIVITY
         # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
         # returns bool if buffer wasnt cleared successfully (1 = error, 0 = successful)
-        self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type)),
+        self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type))
 
     def __del__(self):
         self.write("AT*F")  # SHUTDOWN
