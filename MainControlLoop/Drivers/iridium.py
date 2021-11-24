@@ -224,24 +224,26 @@ class Iridium:
         :param data: (list) of data values to encode, in order.
         :param err: (bool) if True, encode data as string error message (single length list containing error string). 
         if False (default), encode data as float values
-        :return: (str) string representation of bytes
+        :return: (list) of bytes
         """
 
         if descriptor in Iridium.ENCODED_REGISTRY: #First byte descriptor
-            encoded = chr(Iridium.ENCODED_REGISTRY.index(descriptor))
+            encoded = [Iridium.ENCODED_REGISTRY.index(descriptor)]
         else:
             raise RuntimeError("Invalid descriptor string")
         
-        encoded += chr((msn >> 8) & 0xff) #Second and third bytes msn, msb first
-        encoded += chr(msn & 0xff)
+        encoded.append((msn >> 8) & 0xff) #Second and third bytes msn, msb first
+        encoded.append(msn & 0xff)
 
         date = (time[0] << 11) | (time[1] << 6) | time[2] #fourth and fifth bytes date, msb first
 
-        encoded += chr((date >> 8) & 0xff)
-        encoded += chr(date & 0xff)
+        encoded.append((date >> 8) & 0xff)
+        encoded.append(date & 0xff)
 
         if descriptor == "ERR":
-            encoded += data[0]
+            data = data.encode("ascii")
+            for d in data:
+                encoded.append(d)
         else:
             for n in data:
                 # convert from float or int to twos comp half precision, bytes are MSB FIRST
@@ -266,8 +268,8 @@ class Iridium:
                     flt |= num & 0x3ff  # make sure num is 10 bits long
                 byte1 = flt >> 8
                 byte2 = flt & 0xff
-                encoded += chr(byte1)  # MSB FIRST
-                encoded += chr(byte2)  # LSB LAST
+                encoded.append(byte1)  # MSB FIRST
+                encoded.append(byte2)  # LSB LAST
         return encoded
 
     def decode(self, message):
@@ -275,16 +277,14 @@ class Iridium:
         Decodes received and processed string from SBDRB and converts to string
         Truncates unused bits
         CALL PROCESS BEFORE CALLING DECODE
-        :param message: (str) received
+        :param message: (list) received list of bytes
         :return: (tup) decoded command and args
         """
-        message.strip()
-        msg = message.encode("utf-8")  # re encode message to byte list
-        length = msg[:2]  # check length and checksum against message length and sum
+        length = message[:2]  # check length and checksum against message length and sum
         length = length[1] + length[0] << 8
-        checksum = msg[-2:]
+        checksum = message[-2:]
         checksum = checksum[1] + checksum[0] << 8
-        msg = msg[2:-2]
+        msg = message[2:-2]
         actual_checksum = sum(msg) & 0xffff
 
         if checksum != actual_checksum and length != len(msg):
@@ -357,26 +357,29 @@ class Iridium:
         """
         Transmits raw message using SBDWB, ignore MT buffer
         Use as a helper function for transmit
-        :param message: (str) message, of utf-8 encoded bytes.
+        :param message: (list) message, of encoded bytes.
         """
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
             return [2, 0, 2, 0] # Simulate failure to transmit
-        raw = message.encode("utf-8")
-        length = len(raw)
-        checksum = sum(raw) & 0xffff
-        print(checksum, length, raw)
-        b = (message + chr(checksum >> 8) + chr(checksum & 0xff)).encode("utf-8") #add checksum bytes to message string
+        length = len(message)
+        checksum = sum(message) & 0xffff
+        print(checksum, length, message)
+        message.append(checksum >> 8) # add checksum bytes
+        message.append(checksum & 0xff)
         self.SBD_WB(length) #Specify bytes to write
         time.sleep(1) # 1 second to respond
         if self.read().find("READY") == -1:
             raise RuntimeError("Serial Timeout")
-        self.serial.write(b)
+        self.serial.write(message)
         time.sleep(1) # 1 second to respond
-        result = self.read()
+        result = ""
+        t = time.perf_counter()
+        while result.find("OK") == -1:
+            if time.perf_counter() - t> 5:
+                raise RuntimeError("Serial Timeout")
+            result += self.read()
         print(result)
-        if result.find("OK") == -1 or result.find("ERROR") != -1:
-            raise RuntimeError("Serial Timeout")
         i = int(result.split("\r\n")[1]) #'\r\n0\r\n\r\nOK\r\n' format
         if i == 1:
             raise RuntimeError("Serial Timeout")
@@ -396,9 +399,17 @@ class Iridium:
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
-                self.sfr.vars.iridium_command_buffer.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(ls[3])))
+                raw = self.serial.read(50)
+                t = time.perf_counter()
+                while raw.decode("utf-8").find("OK") == -1:
+                    if time.perf_counter() - t > 5:
+                        raise RuntimeError("Serial Timeout")
+                    raw += self.serial.read(50)
+                raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
+                self.sfr.vars.iridium_command_buffer.append(( *self.decode(list(raw)) , int(ls[3])))
             except:
                 self.sfr.vars.iridium_command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+        self.SBD_TIMEOUT(60)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] > 0:
@@ -408,9 +419,9 @@ class Iridium:
                 except:
                     self.sfr.vars.iridium_command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
             elif result[2] == 0:
-                pass
+                break
             elif result[2] == 2:
-                pass  # TODO: HANDLE ERROR OR NO MESSAGE RECEIVED
+                break
             result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
@@ -485,7 +496,7 @@ class Iridium:
         command = command + "\r\n"
         print(command)
         try:
-            self.serial.write(command.encode("UTF-8"))
+            self.serial.write(command.encode("utf-8"))
         except:
             return False
         return True
