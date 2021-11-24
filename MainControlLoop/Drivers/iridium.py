@@ -209,6 +209,32 @@ class Iridium:
         except UnicodeDecodeError:
             return False
 
+    def enable_notif(self):
+        """
+        Enable RSSI and service notifications
+        """
+        return self.CIER([1,1,1]).find("OK") != -1
+
+    def check_notif(self, threshold=2):
+        """
+        Checks if any notification has been received
+        :return: (int) code: 0: signal status unchanged, 1: signal not present, 2: signal present
+        """
+        b = self.read()
+        if b.find("+CIEV:") == -1:
+            return 0
+        b = b[b.find("+CIEV:") + 6:].strip().split(",")
+        if int(b[0]) == 0:
+            if int(b[1]) >= threshold:
+                return 2
+            else:
+                return 1
+        if int(b[0]) == 1:
+            if int(b[1]) == 1:
+                return 2
+            else:
+                return 1
+
     def process(self, data, cmd):
         """
         Clean up data string
