@@ -360,7 +360,7 @@ class Iridium:
         """
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
-            return False
+            return [2, 0, 2, 0] # Simulate failure to transmit
         raw = message.encode("utf-8")
         length = len(raw)
         checksum = sum(raw) & 0xffff
