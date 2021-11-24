@@ -151,6 +151,40 @@ class APRS:
             f.write(str(1))
         self.sfr.wait(5)
 
+    def transmit(self, descriptor, data):
+        """
+        Takes a descriptor and data, and transmits
+        :param descriptor: (str) three letter string descriptor
+        :param data: (list) list of numerical data, or single length list of string error message if descriptor is "ERR"
+        :return: (bool) success
+        """ #TODO: IMPLEMENT TIME IF NECESSARY
+        msg = descriptor
+        if descriptor == "ERR":
+            msg += ":" + data[0]
+        else:
+            for d in data:
+                msg += ":" + d
+        return self.write(msg)
+
+    def next_msg(self):
+        """
+        Reads in any messages, process, and add to queue
+        """
+        msg = self.read()
+        if msg.find(self.sfr.command_executor.TJ_PREFIX) != -1:
+            prefix = self.sfr.command_executor.TJ_PREFIX
+            processed = msg[msg.find(prefix) + len(prefix):].strip()
+            processed = msg.split(":")
+            tup = (processed[0], processed[1:])
+            self.sfr.vars.aprs_command_buffer.append(tup)
+        elif msg.find(self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            prefix = self.sfr.command_executor.OUTREACH_PREFIX
+            processed = msg[msg.find(prefix) + len(prefix):].strip()
+            processed = msg.split(":")
+            tup = (processed[0], processed[1:])
+            self.sfr.vars.aprs_outreach_buffer.append(tup)
+        
+
     def write(self, message: str) -> bool:
         """
         Writes the message to the APRS radio through the serial port
@@ -158,7 +192,7 @@ class APRS:
         :return: (bool) whether or not the write worked
         """
         try:
-            self.serial.write(("TJ;" + message + "\x0d").encode("utf-8"))
+            self.serial.write((message + "\x0d").encode("utf-8"))
             self.serial.flush()
             return True
         except:
@@ -181,10 +215,5 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
-        message = output.decode('utf-8')
-        if message.find("TJ;") == -1:
-            pass #TODO: Handle a garbled message
-        else:
-            message = message[message.find("TJ;") + 3 :].strip() #remove TJ; and strip
-        self.sfr.vars.APRS_RECEIVED_COMMAND.append(message)  # store message in statefield
-        return message
+        return output.decode('utf-8')
+        

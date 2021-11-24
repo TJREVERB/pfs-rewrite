@@ -9,10 +9,8 @@ class CommandExecutor:
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
 
-        self.GARBLED = "GRB" #String for garbled message
-
         self.primary_registry = { #primary command registry for BOTH Iridium and APRS
-            "NOP": lambda: self.transmit("0OK"),  # Test method, transmits "Hello"
+            "NOP": self.NOP,  # Test method, transmits OK code
             "BVT": self.BVT,  # Reads and transmits battery voltage
             "CHG": self.CHG,  # Enters charging mode
             "SCI": self.SCI,  # Enters science mode
@@ -31,6 +29,7 @@ class CommandExecutor:
             "LVT": self.LVT,  # Set lower threshold
             "DLK": self.DLK,  # Device lock
             "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
+            "GRB": self.GRB,  # Return a garbled message error if one is received
         }
 
         # IMPLEMENT FULLY
@@ -95,6 +94,11 @@ class CommandExecutor:
             self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
         elif self.sfr.PRIMARY_RADIO == "APRS":
             self.sfr.devices["APRS"].transmit(message, command, datetime, )
+
+    def NOP(self):
+        """
+        Transmits an OK code
+        """
 
     def BVT(self):
         """
@@ -229,3 +233,9 @@ class CommandExecutor:
         except Exception as e:
             print(e)
             self.transmit("Command does not exist in log!")
+
+    def GRB(self, **kwargs):
+        """
+        Transmit a garbled message error
+        """
+        

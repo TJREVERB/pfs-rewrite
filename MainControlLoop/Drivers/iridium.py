@@ -336,7 +336,7 @@ class Iridium:
                 except:
                     self.sfr.vars.IRIDIUM_RECEIVED_COMMAND.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         
-        #TODO: error handling
+        #TODO: error handling, use rtc instead of datetime
         t = datetime.datetime.utcnow()
         result = self.transmit_raw(self.encode(descriptor, msn, (t.day, t.hour, t.minute), data))
         if result[0] == 0:
