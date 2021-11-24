@@ -37,7 +37,7 @@ class Startup(Mode):
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
-                self.sfr.wait(5)
+                time.sleep(5)
                 if not self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
                     raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
 
@@ -45,7 +45,7 @@ class Startup(Mode):
         super(Startup, self).execute_cycle()
         if self.conditions["Low Battery"]:  # Execute cycle low battery
             self.instruct["All Off"]()  # turn everything off
-            self.sfr.wait(60 * 90)  # sleep for one full orbit
+            time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
             self.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
             # TODO: HANDLE THIS BETTER
