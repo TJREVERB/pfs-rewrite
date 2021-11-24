@@ -32,9 +32,6 @@ class StateFieldRegistry:
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
-        self.iridium_command_buffer = []  # tuple (3 char command str, argument, message number: int)
-        self.aprs_command_buffer = []  # tuple (3 char command str, argument, message number: int)
-        self.aprs_outreach_buffer = []
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
@@ -82,8 +79,9 @@ class StateFieldRegistry:
             self.MODE_LOCK = False  # Whether to lock mode switches
             self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
             self.CONTACT_ESTABLISHED = False
-            self.IRIDIUM_RECEIVED_COMMAND = []
-            self.APRS_RECEIVED_COMMAND = []
+            self.iridium_command_buffer = []  # tuple (3 char command str, argument, message number: int)
+            self.aprs_command_buffer = []  # tuple (3 char command str, argument)
+            self.aprs_outreach_buffer = []
             self.START_TIME = self.time()
     
     def load(self) -> Registry:

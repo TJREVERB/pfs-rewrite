@@ -45,31 +45,31 @@ class CommandExecutor:
 
     def execute(self):
         # IRIDIUM
-        for iridium_command in self.sfr.iridium_command_buffer:
+        for iridium_command in self.sfr.vars.iridium_command_buffer:
             command, arguments, message_number = iridium_command
             try:
                 self.primary_registry[command](*arguments)
             except Exception as e:
                 self.error("Iridium", message_number, repr(e))
-        self.sfr.iridium_command_buffer.clear()
+        self.sfr.vars.iridium_command_buffer.clear()
 
         # APRS
-        for aprs_command in self.sfr.aprs_command_buffer:
+        for aprs_command in self.sfr.vars.aprs_command_buffer:
             command, arguments, message_number = aprs_command
             try:
                 self.primary_registry[command](*arguments)
             except Exception as e:
                 self.error("APRS", command, repr(e))
-        self.sfr.aprs_command_buffer.clear()
+        self.sfr.vars.aprs_command_buffer.clear()
 
         # APRS OUTREACH
-        for aprs_outreach in self.sfr.aprs_outreach_buffer:
+        for aprs_outreach in self.sfr.vars.aprs_outreach_buffer:
             command, arguments, message_number = aprs_outreach
             try:
                 self.aprs_secondary_registry[command](*arguments)
             except Exception as e:
                 self.error("APRS", command, repr(e))
-        self.sfr.aprs_outreach_buffer.clear()
+        self.sfr.vars.aprs_outreach_buffer.clear()
 
     def error(self, radio, command, description):
         """
