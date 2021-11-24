@@ -366,11 +366,11 @@ class Iridium:
         checksum = sum(raw) & 0xffff
         b = (message + chr(checksum >> 8) + chr(checksum & 0xff)).encode("utf-8") #add checksum bytes to message string
         self.SBD_WB(length) #Specify bytes to write
-        time.sleep(1) # .3 second to respond
+        time.sleep(1) # 1 second to respond
         if self.read().find("READY") != -1:
             raise RuntimeError("Serial Timeout")
         self.serial.write(b)
-        time.sleep(1) # .3 second to respond
+        time.sleep(1) # 1 second to respond
         result = self.read()
         if result.find("OK") == -1 or result.find("ERROR") != -1:
             raise RuntimeError("Serial Timeout")
@@ -480,6 +480,7 @@ class Iridium:
         :return: (bool) if the serial write worked
         """
         command = command + "\r\n"
+        print(command)
         try:
             self.serial.write(command.encode("UTF-8"))
         except:
