@@ -145,7 +145,8 @@ class Iridium:
         self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type)),
 
     def __del__(self):
-        self.request("AT*F", 1)  # SHUTDOWN
+        self.write("AT*F")  # SHUTDOWN
+        time.sleep(1)
         self.serial.close()
 
     def __str__(self):
