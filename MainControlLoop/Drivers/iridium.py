@@ -367,8 +367,8 @@ class Iridium:
         b = (message + chr(checksum >> 8) + chr(checksum & 0xff)).encode("utf-8") #add checksum bytes to message string
         self.SBD_WB(length) #Specify bytes to write
         time.sleep(1) # .3 second to respond
-        #if self.read().find("READY") != -1:
-        #    raise RuntimeError("Serial Timeout")
+        if self.read().find("READY") != -1:
+            raise RuntimeError("Serial Timeout")
         self.serial.write(b)
         time.sleep(1) # .3 second to respond
         result = self.read()
