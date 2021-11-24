@@ -96,7 +96,7 @@ class Iridium:
         # Final response: 0: success, 1: timeout (insufficient number of bytes transferred in 60 seconds)
         # 2: Checksum does not match calculated checksum, 3: message length too long or short
         # Keep messages 340 bytes or shorter
-        self.SBD_WB = lambda length: self.write("AT+SBDWB=" + length)
+        self.SBD_WB = lambda length: self.write("AT+SBDWB=" + str(length))
         # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is
         # contained in buffer at a time
         self.SBD_RT = lambda: self.request("AT+SBDRT")
