@@ -9,7 +9,7 @@ class CommandExecutor:
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
 
-        self.primary_registry = { #primary command registry for BOTH Iridium and APRS
+        self.primary_registry = {  # primary command registry for BOTH Iridium and APRS
             "NOP": self.NOP,  # Test method, transmits OK code
             "BVT": self.BVT,  # Reads and transmits battery voltage
             "CHG": self.CHG,  # Enters charging mode
