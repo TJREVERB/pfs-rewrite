@@ -285,8 +285,7 @@ class Iridium:
                     flt |= 1 << 15
                 else:
                     flt |= (exp & 0xf) << 11  # make sure exp is 4 bits, cut off anything past the 4th, shift left 11
-                num = int(n / (10 ** exp) * 100)  # num will always have three digits, with trailing zeros if necessary
-                # to fill it in
+                num = int((n / (10 ** exp)) * 100)  # num will always have three digits, with trailing zeros if necessary to fill it in
                 if n < 0:
                     num &= 0x3ff  # make sure num is 10 bits long
                     num = (1 << 10) - num  # twos comp
