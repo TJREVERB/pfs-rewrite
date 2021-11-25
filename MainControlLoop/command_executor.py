@@ -38,11 +38,12 @@ class CommandExecutor:
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
         }
-        self.arg_registry = {  # Set of commands that require arguments, for either registry, for error checking reasons only
+        self.arg_registry = {
+            # Set of commands that require arguments, for either registry, for error checking reasons only
             "UVT",
             "LVT",
             "DLK"
-        } 
+        }
 
     def execute(self, packet: TransmissionPacket):
         for command in self.sfr.vars.command_buffer:
@@ -54,6 +55,7 @@ class CommandExecutor:
             function = self.secondary_registry[command.command_string]
             function(command)
         self.sfr.vars.outreach_buffer.clear()
+
     def error(self, packet: TransmissionPacket, error_message: str):
         """
         Transmit an error message over radio that received command
@@ -124,7 +126,8 @@ class CommandExecutor:
         self.sfr.vars.LOWER_THRESHOLD = float(v)
         self.transmit(packet, f"Set Lower Voltage Threshold to {v}, Successful")
 
-    def RST(self, packet: TransmissionPacket):  #TODO: Implement, how to power cycle satelitte without touching CPU power
+    def RST(self,
+            packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
@@ -133,15 +136,9 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
-                                    self.sfr.eps.total_power(4))
-
-
-    def GCD(self, packet: TransmissionPacket):#TODO: FIX
-        """
-        Get critical data
-        """
-        self.sfr.analytics.
+        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].wave(self.sfr.eps.telemetry["VBCROUT"](),
+                                                           self.sfr.eps.solar_power(),
+                                                           self.sfr.eps.total_power(4))
 
     def PWR(self, packet: TransmissionPacket):
         """
@@ -154,7 +151,7 @@ class CommandExecutor:
         Transmit signal strength variability
         """
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
-    
+
     def SOL(self, packet: TransmissionPacket):
         """
         Transmit solar generation
@@ -203,14 +200,45 @@ class CommandExecutor:
     def STS(self, packet: TransmissionPacket):
         """
         Transmits down information about the satellite's current status
+        Transmits:
+        1. Average power draw over last 50 data points
+        2. Average solar panel generation over last 50 datapoints while in sunlight
+        3. Orbital period
+        4. Amount of one orbit which we spend in sunlight
+        5. Iridium signal strength variability (default -1 if science mode incomplete)
+        6. Current battery charge
+        7. Current tumble
         """
+        pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
+        pwr_data = pd.read_csv(self.sfr.pwr_log_path, header=0).tail(50)
+        avg_pwr = pwr_data[[i + "_pwr" for i in pdms]].sum(axis=1).mean()  # Average power draw
+        panels = ["panel1", "panel2", "panel3", "panel4"]
+        solar_data = pd.read_csv(self.sfr.solar_log_path, header=0).tail(51)
+        orbits_data = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)
+        # Filter out all data points which weren't taken in sunlight
+        in_sun = pd.DataFrame([solar_data[i] for i in range(solar_data.shape[0])
+                               if orbits_data[solar_data["timestamp"][i] -
+                                              orbits_data["timestamp"] > 0]["phase"][-1] == "sunlight"])
+        avg_solar = in_sun[panels].sum(axis=1).mean()  # Average solar panel generation
+        # Calculate sunlight period
+        sunlight_period = pd.Series([orbits_data["timestamp"][i + 1] - orbits_data["timestamp"][i]
+                                     for i in range(orbits_data.shape[0] - 1)
+                                     if orbits_data["phase"][i] == "sunlight"]).mean()
+        # Calculate orbital period
+        orbital_period = sunlight_period + pd.Series([orbits_data["timestamp"][i + 1] - orbits_data["timestamp"][i]
+                                                      for i in range(orbits_data.shape[0] - 1)
+                                                      if orbits_data["phase"][i] == "eclipse"]).mean()
+        sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
+        tumble = self.sfr.imu.getTumble()  # Current tumble
+        result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
+                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
 
     def ORB(self, packet: TransmissionPacket):
         """
         Transmits current orbital period
         """
         self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
-    
+
     def REP(self, msn):
         """
         Repeat result of command with given MSN
@@ -226,4 +254,3 @@ class CommandExecutor:
         """
         Transmit a garbled message error
         """
-        

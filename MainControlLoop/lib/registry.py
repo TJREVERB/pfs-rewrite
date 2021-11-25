@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -29,6 +29,7 @@ class StateFieldRegistry:
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
+        self.imu = IMU(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
@@ -68,8 +69,8 @@ class StateFieldRegistry:
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
             sun = eps.sun_detected()
-            self.LAST_DAYLIGHT_ENTRY = [self.time() - 45 * 60, self.time()][sun]
-            self.LAST_ECLIPSE_ENTRY = [self.time(), self.time() - 45 * 60][sun]
+            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
+            self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
             self.LOWER_THRESHOLD = 60000  # Switch to charging mode if battery capacity (J) dips below threshold
@@ -81,7 +82,7 @@ class StateFieldRegistry:
             self.CONTACT_ESTABLISHED = False
             self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
             self.outreach_buffer = []
-            self.START_TIME = self.time()
+            self.START_TIME = time.time()
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)
@@ -118,7 +119,7 @@ class StateFieldRegistry:
         :param t: time to log data, defaults to time method is called
         """
         if t == 0:
-            t = self.time()
+            t = time.time()
         print("Power: ", t, pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
@@ -131,7 +132,7 @@ class StateFieldRegistry:
         :param t: time to log data, defaults to time method is called
         """
         if t == 0:
-            t = self.time()
+            t = time.time()
         print("Solar: ", t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.solar_log_path, mode="a", header=False)  # Append data to log
@@ -140,7 +141,7 @@ class StateFieldRegistry:
         """
         Update LAST_DAYLIGHT_ENTRY and log new data
         """
-        self.LAST_DAYLIGHT_ENTRY = self.time()
+        self.LAST_DAYLIGHT_ENTRY = time.time()
         # Add data to dataframe
         df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "sunlight"], columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
@@ -149,12 +150,12 @@ class StateFieldRegistry:
         """
         Update LAST_ECLIPSE_ENTRY and log new data
         """
-        self.LAST_ECLIPSE_ENTRY = self.time()
+        self.LAST_ECLIPSE_ENTRY = time.time()
         # Add data to dataframe
         df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "eclipse"], columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
-    def log_iridium(self, location, signal, t=self.time()):
+    def log_iridium(self, location, signal, t=time.time()):
         """
         Logs iridium data
         :param location: current geolocation
@@ -162,7 +163,7 @@ class StateFieldRegistry:
         :param t: time to log, defaults to time method is called
         """
         data = np.array(t, location, signal)  # Concatenate arrays
-        np.insert(data, 0, self.time())  # Add timestamp
+        np.insert(data, 0, time.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
 
