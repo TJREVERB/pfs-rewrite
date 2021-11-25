@@ -224,10 +224,7 @@ class CommandExecutor:
         sunlight_period = pd.Series([orbits_data["timestamp"][i + 1] - orbits_data["timestamp"][i]
                                      for i in range(orbits_data.shape[0] - 1)
                                      if orbits_data["phase"][i] == "sunlight"]).mean()
-        # Calculate orbital period
-        orbital_period = sunlight_period + pd.Series([orbits_data["timestamp"][i + 1] - orbits_data["timestamp"][i]
-                                                      for i in range(orbits_data.shape[0] - 1)
-                                                      if orbits_data["phase"][i] == "eclipse"]).mean()
+        orbital_period = self.sfr.analytics.calc_orbital_period()  # Calculate orbital period
         sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
         tumble = self.sfr.imu.getTumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
