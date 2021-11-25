@@ -19,8 +19,8 @@ class CommandExecutor:
             "RST": self.RST,  # Reset power to the entire satellite (!!!!)
             "POL": self.POL,  # Transmit proof of life through primary radio to ground station
             "PWR": self.PWR,  # Transmit total power draw of connected components
+            "PWD": self.PWD,  # Transmit
             "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
-            "SVF": None,  # TODO: Implement  # Transmit full rssi data logs
             "SOL": self.SOL,  # Transmit current solar panel production
             "TBL": self.TBL,  # Transmits tumble value (Magnitude of gyroscope vector)
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
@@ -30,7 +30,6 @@ class CommandExecutor:
             "LVT": self.LVT,  # Set lower threshold
             "DLK": self.DLK,  # Device lock
             "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
-            "GRB": self.GRB,  # Return a garbled message error if one is received
         }
 
         # IMPLEMENT FULLY
@@ -54,6 +53,7 @@ class CommandExecutor:
             function = self.secondary_registry[command.command_string]
             function(command)
         self.sfr.vars.outreach_buffer.clear()
+
     def error(self, packet: TransmissionPacket, error_message: str):
         """
         Transmit an error message over radio that received command
@@ -149,16 +149,27 @@ class CommandExecutor:
         """
         self.transmit(str(self.sfr.eps.total_power(3)[0]))
 
+    def PWD(self, packet: TransmissionPacket):
+        """
+        Transmits last n power draw datapoints
+        """
+
     def SSV(self, packet: TransmissionPacket):
         """
         Transmit signal strength variability
         """
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
-    
+
+    def SSD(self): #TODO: fix
+        pass
+
     def SOL(self, packet: TransmissionPacket):
         """
         Transmit solar generation
         """
+
+    def SOD(self, packet: TransmissionPacket):  # TODO: Fix
+        pass
 
     def TBL(self, packet: TransmissionPacket):
         """
@@ -174,6 +185,9 @@ class CommandExecutor:
         """
         Enable Mode Lock
         """
+
+    def MLF(self): # TODO: fix
+        pass
 
     def DLK(self, a, b):
         """
@@ -195,6 +209,9 @@ class CommandExecutor:
         except KeyError:
             self.error(self.sfr.vars.PRIMARY_RADIO, "D")
 
+    def DLF(self): # TODO: fix
+        pass
+
     def SUM(self, packet: TransmissionPacket):
         """
         Transmits down summary statistics about our mission
@@ -211,7 +228,7 @@ class CommandExecutor:
         """
         self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
     
-    def REP(self, msn):
+    def REP(self, msn):  #TODO: fix
         """
         Repeat result of command with given MSN
         """
@@ -222,8 +239,5 @@ class CommandExecutor:
             print(e)
             self.transmit("Command does not exist in log!")
 
-    def GRB(self, **kwargs):
-        """
-        Transmit a garbled message error
-        """
+
         
