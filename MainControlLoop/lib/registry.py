@@ -79,9 +79,8 @@ class StateFieldRegistry:
             self.MODE_LOCK = False  # Whether to lock mode switches
             self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
             self.CONTACT_ESTABLISHED = False
-            self.iridium_command_buffer = []  # tuple (3 char command str, argument, message number: int)
-            self.aprs_command_buffer = []  # tuple (3 char command str, argument)
-            self.aprs_outreach_buffer = []
+            self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
+            self.outreach_buffer = []
             self.START_TIME = self.time()
     
     def load(self) -> Registry:
