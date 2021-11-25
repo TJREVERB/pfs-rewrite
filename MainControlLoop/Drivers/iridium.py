@@ -470,31 +470,6 @@ class Iridium:
         processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
 
-    def wave(self, battery_voltage, solar_generation, power_draw) -> bool:
-        """
-        Attempts to establish first contact with ground station
-        Overwrites any message already in the MO buffer in doing so
-        :param battery_voltage: battery voltage, will be truncated to 3 digits
-        :param solar_generation: solar panel power generation, will be truncated to 3 digits
-        :param power_draw: total power output of EPS, will be truncated to 3 digits
-        :param failures: component failures
-        :return: (bool) Transmission successful
-        """
-        msg = f"WVE{battery_voltage:.2f}{solar_generation:.2f}{power_draw[0]:.2f}{chr(59).join(self.sfr.vars.FAILURES)}"  # Component failures, sep by ; #TODO: correct for new protocol
-        self.SBD_WT(msg)
-        result = self.SBD_INITIATE()
-        # format needs verification:
-        processed = result.split("\n")[0].split("SBDI")[1].strip()
-        try:
-            ls = [int(s) for s in processed.split(", ")]
-            if ls[0] == 0:
-                raise RuntimeError("Error writing to buffer")
-            if ls[0] == 2:
-                raise RuntimeError("Unable to transmit")
-        except:
-            raise RuntimeError("Serial Port malfunction")
-        return True
-
     def request(self, command: str, timeout=0.5) -> str:
         """
         Requests information from Iridium and returns unprocessed response
