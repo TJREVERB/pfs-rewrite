@@ -1,5 +1,6 @@
 import time
 import pandas as pd
+from transmission_packet import TransmissionPacket
 from datetime import datetime
 
 
@@ -16,7 +17,7 @@ class CommandExecutor:
             "SCI": self.SCI,  # Enters science mode
             "OUT": self.OUT,  # Enters outreach mode
             "RST": self.RST,  # Reset power to the entire satellite (!!!!)
-            "WVE": self.WVE,  # Transmit proof of life through Iridium to ground station
+            "POL": self.POL,  # Transmit proof of life through primary radio to ground station
             "PWR": self.PWR,  # Transmit total power draw of connected components
             "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
             "SVF": None,  # TODO: Implement  # Transmit full rssi data logs
@@ -33,156 +34,143 @@ class CommandExecutor:
         }
 
         # IMPLEMENT FULLY
-        self.aprs_secondary_registry = {  # Secondary command registry for APRS, in outreach mode
+        self.secondary_registry = {  # Secondary command registry for APRS, in outreach mode
             # Reads and transmits battery voltage
             "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
         }
-        self.arg_registry = { # Set of commands that require arguments, for either registry, for error checking reasons only
+        self.arg_registry = {  # Set of commands that require arguments, for either registry, for error checking reasons only
             "UVT",
             "LVT",
             "DLK"
         } 
 
-    def execute(self):
-        # IRIDIUM
-        for iridium_command in self.sfr.vars.iridium_command_buffer:
-            command, arguments, message_number = iridium_command
-            try:
-                self.primary_registry[command](*arguments)
-            except Exception as e:
-                self.error("Iridium", message_number, repr(e))
-        self.sfr.vars.iridium_command_buffer.clear()
+    def execute(self, packet: TransmissionPacket):
+        for command in self.sfr.vars.command_buffer:
+            function = self.primary_registry[command.command_string]
+            function(command)
+        self.sfr.vars.command_buffer.clear()
 
-        # APRS
-        for aprs_command in self.sfr.vars.aprs_command_buffer:
-            command, arguments, message_number = aprs_command
-            try:
-                self.primary_registry[command](*arguments)
-            except Exception as e:
-                self.error("APRS", command, repr(e))
-        self.sfr.vars.aprs_command_buffer.clear()
-
-        # APRS OUTREACH
-        for aprs_outreach in self.sfr.vars.aprs_outreach_buffer:
-            command, arguments, message_number = aprs_outreach
-            try:
-                self.aprs_secondary_registry[command](*arguments)
-            except Exception as e:
-                self.error("APRS", command, repr(e))
-        self.sfr.vars.aprs_outreach_buffer.clear()
-
-    def error(self, radio, command, description):
+        for command in self.sfr.vars.outreach_buffer:
+            function = self.secondary_registry[command.command_string]
+            function(command)
+        self.sfr.vars.outreach_buffer.clear()
+    def error(self, packet: TransmissionPacket, error_message: str):
         """
         Transmit an error message over radio that received command
         :param radio: (str) radio which received erraneous command, "Iridium" or "APRS"
         :param command: (str) command which failed in case of APRS, or MSN number of failed command in case of Iridium
         :param description: (str) detailed description of failure
         """
-        if radio == "Iridium":
-            self.sfr.devices["Iridium"].transmit("ERR", command, [description], discardmtbuf=True)
-        elif radio == "APRS":
-            self.sfr.devices["APRS"].transmit(f"ERR:{command}{description}")
+        packet.error = True
+        self.transmit(packet, error_message)
 
-    def transmit(self, message: str, command, datetime, data):
+    def transmit(self, packet: TransmissionPacket, message: str):
         """
         Transmits time + message string from primary radio to ground station
 
-        :param message:
+        :param packet: Transmission object
         """
-        # TODO: how to handle if Iridium or APRS is off
-        if self.sfr.PRIMARY_RADIO == "Iridium":
-            self.sfr.devices["Iridium"].transmit(message, command, datetime, data)
-        elif self.sfr.PRIMARY_RADIO == "APRS":
-            self.sfr.devices["APRS"].transmit(message, command, datetime, )
+        packet.return_message = message
+        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
 
-    def NOP(self):
+    def NOP(self, packet: TransmissionPacket):
         """
         Transmits an OK code
         """
 
-    def BVT(self):
+    def BVT(self, packet: TransmissionPacket):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(str(self.sfr.eps.telemetry["VBCROUT"]()))
+        self.transmit(packet, str(self.sfr.eps.telemetry["VBCROUT"]()))
 
-    def CHG(self):
+    def CHG(self, packet: TransmissionPacket):
         """
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            self.transmit("Already in Charging, No Switch")
+            self.transmit(packet, "Already in Charging, No Switch")
         else:
             self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-            self.transmit("Switched to Charging, Successful")
+            self.transmit(packet, "Switched to Charging, Successful")
 
-    def SCI(self):
+    def SCI(self, packet: TransmissionPacket):
         """
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            self.transmit("Already in Science, No Switch")
+            self.transmit(packet, "Already in Science, No Switch")
         else:
             self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-            self.transmit("Switched to Charging, Successful")
+            self.transmit(packet, "Switched to Charging, Successful")
 
-    def OUT(self):
+    def OUT(self, packet: TransmissionPacket):
         """
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            self.transmit("NO SWITCH")
+            self.transmit(packet, "Already in Outreach, No Switch")
         else:
             self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
-            self.transmit("SWITCH OUTREACH")
+            self.transmit(packet, "Switched to Outreach, Successful")
 
-    def UVT(self, v):  # TODO: Implement
+    def UVT(self, packet: TransmissionPacket):  # TODO: Implement
+        v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
+        self.transmit(packet, f"Set Upper Voltage Threshold to {v}, Successful")
 
-    def LVT(self, v):  # TODO: Implement
+    def LVT(self, packet: TransmissionPacket):  # TODO: Implement
+        v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
+        self.transmit(packet, f"Set Lower Voltage Threshold to {v}, Successful")
 
-    def RST(self):  #TODO: Implement, how to power cycle satelitte without touching CPU power
+    def RST(self, packet: TransmissionPacket):  #TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
 
-    def WVE(self):
+    def POL(self, packet: TransmissionPacket):  # TODO: FIX
         """
-        Transmits proof of life via Iridium, along with critical component data
-        using iridium.wave (not transmit function)
+        Transmit proof of life
         """
-        self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
+        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].wave(self.sfr.eps.telemetry["VBCROUT"](), self.sfr.eps.solar_power(),
                                     self.sfr.eps.total_power(4))
 
-    def PWR(self):
+
+    def GCD(self, packet: TransmissionPacket):#TODO: FIX
+        """
+        Get critical data
+        """
+        self.sfr.analytics.
+
+    def PWR(self, packet: TransmissionPacket):
         """
         Transmit total power draw of satellite
         """
         self.transmit(str(self.sfr.eps.total_power(3)[0]))
 
-    def SSV(self):
+    def SSV(self, packet: TransmissionPacket):
         """
         Transmit signal strength variability
         """
         self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
     
-    def SOL(self):
+    def SOL(self, packet: TransmissionPacket):
         """
         Transmit solar generation
         """
 
-    def TBL(self):
+    def TBL(self, packet: TransmissionPacket):
         """
         Transmit magnitude IMU tumble
         """
 
-    def TBF(self):
+    def TBF(self, packet: TransmissionPacket):
         """
         Transmit full IMU tumble
         """
 
-    def MLK(self):
+    def MLK(self, packet: TransmissionPacket):
         """
         Enable Mode Lock
         """
@@ -207,17 +195,17 @@ class CommandExecutor:
         except KeyError:
             self.error(self.sfr.vars.PRIMARY_RADIO, "D")
 
-    def SUM(self):
+    def SUM(self, packet: TransmissionPacket):
         """
         Transmits down summary statistics about our mission
         """
 
-    def STS(self):
+    def STS(self, packet: TransmissionPacket):
         """
         Transmits down information about the satellite's current status
         """
 
-    def ORB(self):
+    def ORB(self, packet: TransmissionPacket):
         """
         Transmits current orbital period
         """
