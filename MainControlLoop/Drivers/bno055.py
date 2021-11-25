@@ -14,7 +14,7 @@ inertial measurement unit module with sensor fusion.
 * Adafruit `9-DOF Absolute Orientation IMU Fusion Breakout - BNO055
   <https://www.adafruit.com/product/4646>`_ (Product ID: 4646)
 """
-#from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
+# from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
 from micropython import const
 from smbus2 import SMBus
 import time
@@ -22,12 +22,14 @@ import numpy as np
 from math import atan
 from math import degrees
 
+
 def _twos_comp_to_signed(val, bits):
     # Convert an unsigned integer in 2's compliment form of the specified bit
     # length to its signed integer value and return it.
     if val & (1 << (bits - 1)) != 0:
         return val - (1 << bits)
     return val
+
 
 def _signed_to_twos_comp(val, bits):
     # Convert a signed integer to unsigned int in 2's complement form
@@ -37,13 +39,12 @@ def _signed_to_twos_comp(val, bits):
     return val
 
 
-
 class IMU:
     """
     Base class for the BNO055 9DOF IMU sensor.
     """
 
-    #Constants:
+    # Constants:
     _CHIP_ID = const(0xA0)
 
     CONFIG_MODE = const(0x00)
@@ -138,9 +139,9 @@ class IMU:
     AXIS_REMAP_POSITIVE = const(0x00)
     AXIS_REMAP_NEGATIVE = const(0x01)
 
-    #Data registers (start, end)
-    #X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
-    
+    # Data registers (start, end)
+    # X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
+
     ACCEL_REGISTER = (0x08, 0x0D)
     MAG_REGISTER = (0x0E, 0x13)
     GYRO_REGISTER = (0x14, 0x19)
@@ -150,7 +151,7 @@ class IMU:
     GRAV_REGISTER = (0x2E, 0x33)
     TEMP_REGISTER = 0x34
 
-    #Scales
+    # Scales
     ACCEL_SCALE = 1 / 100
     MAG_SCALE = 1 / 16
     GYRO_SCALE = 0.001090830782496456
@@ -159,14 +160,14 @@ class IMU:
     LIA_SCALE = 1 / 100
     GRAV_SCALE = 1 / 100
 
-    #Offset registers
+    # Offset registers
 
-    #X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
+    # X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
     _OFFSET_ACCEL_REGISTER = (0x55, 0x5A)
     _OFFSET_MAGNET_REGISTER = (0x5B, 0x60)
     _OFFSET_GYRO_REGISTER = (0x61, 0x66)
 
-    #LSB, MSB
+    # LSB, MSB
     _RADIUS_ACCEL_REGISTER = (0x67, 0x68)
     _RADIUS_MAGNET_REGISTER = (0x69, 0x6A)
 
@@ -319,15 +320,15 @@ class IMU:
         raw = []
         for addr in range(*registers, 2):
             lsb = self._read_register(addr)
-            msb = self._read_register(addr+1)
+            msb = self._read_register(addr + 1)
             raw.append(_twos_comp_to_signed(lsb + (msb << 8), 16))
-        return tuple(np.array(raw)*scale)
+        return tuple(np.array(raw) * scale)
 
     def write_tup_data(self, tup, registers, scale):
         """sets xyz tuple data from register range, dividing by scale"""
         i = 0
         for addr in range(*registers, 2):
-            raw = _signed_to_twos_comp(int(tup[i]/scale), 16)
+            raw = _signed_to_twos_comp(int(tup[i] / scale), 16)
             msb = (raw >> 8) & 0xff
             lsb = raw & 0xff
             self._write_register(addr, lsb)
@@ -349,7 +350,7 @@ class IMU:
         sys, gyro, accel, mag = self.calibration_status
         return sys == gyro == accel == mag == 0x03
 
-    #Calibration offsets for accelerometer
+    # Calibration offsets for accelerometer
     @property
     def offsets_accelerometer(self):
         old_mode = self.mode
@@ -357,7 +358,7 @@ class IMU:
         result = self.get_tup_data(IMU._OFFSET_ACCEL_REGISTER, IMU.ACCEL_SCALE)
         self.mode = old_mode
         return result
-        
+
     @offsets_accelerometer.setter
     def offsets_accelerometer(self, new_offsets):
         old_mode = self.mode
@@ -365,7 +366,7 @@ class IMU:
         self.write_tup_data(new_offsets, IMU._OFFSET_ACCEL_REGISTER, IMU.ACCEL_SCALE)
         self.mode = old_mode
 
-    #Calibration offsets for the magnetometer
+    # Calibration offsets for the magnetometer
     @property
     def offsets_magnetometer(self):
         old_mode = self.mode
@@ -380,8 +381,8 @@ class IMU:
         self.mode = IMU.CONFIG_MODE
         self.write_tup_data(new_offsets, IMU._OFFSET_MAGNET_REGISTER, IMU.MAG_SCALE)
         self.mode = old_mode
-    
-    #Calibration offsets for the gyroscope
+
+    # Calibration offsets for the gyroscope
     @property
     def offsets_gyroscope(self):
         old_mode = self.mode
@@ -396,8 +397,8 @@ class IMU:
         self.mode = IMU.CONFIG_MODE
         self.write_tup_data(new_offsets, IMU._OFFSET_GYRO_REGISTER, IMU.GYRO_SCALE)
         self.mode = old_mode
-    
-    #Radius for accelerometer (cm?)
+
+    # Radius for accelerometer (cm?)
     @property
     def radius_accelerometer(self):
         old_mode = self.mode
@@ -419,7 +420,7 @@ class IMU:
         self._write_register(IMU._RADIUS_ACCEL_REGISTER[1], msb)
         self.mode = old_mode
 
-    #Radius for magnetometer (cm?)
+    # Radius for magnetometer (cm?)
     @property
     def radius_magnetometer(self):
         old_mode = self.mode
@@ -467,7 +468,7 @@ class IMU:
 
     @property
     def _temperature(self):
-        #return _twos_comp_to_signed(self._read_register(IMU.TEMP_REGISTER), 8)
+        # return _twos_comp_to_signed(self._read_register(IMU.TEMP_REGISTER), 8)
         return self._read_register(IMU.TEMP_REGISTER)
 
     @property
@@ -816,21 +817,22 @@ class IMU:
         Returns tumble taken from gyro and magnetometer, in degrees/s
         :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
         """
-        interval = .5 #Time interval for magnetometer readings
+        interval = .5  # Time interval for magnetometer readings
 
         temp = np.array(self.gyro)
         time.sleep(.05)
-        gyroValues = tuple((np.array(self.gyro) - temp)/2) #read the gyroscope, two readings
+        gyroValues = tuple((np.array(self.gyro) - temp) / 2)  # read the gyroscope, two readings
 
         magValues = []
-        magValues.append(np.array(self.magnetic)) #read the magnetometer
+        magValues.append(np.array(self.magnetic))  # read the magnetometer
         time.sleep(interval)
         magValues.append(np.array(self.magnetic))
 
-        magV = (magValues[1]-magValues[0])/interval #mag values velocity
+        magV = (magValues[1] - magValues[0]) / interval  # mag values velocity
 
-        magRot = (degrees(atan(magV[2]/magV[1])), degrees(magV[0]/magV[2]), degrees(atan(magV[1]/magV[0]))) #yz, xz, xy
-        #from https://forum.sparkfun.com/viewtopic.php?t=22252
+        magRot = (
+        degrees(atan(magV[2] / magV[1])), degrees(magV[0] / magV[2]), degrees(atan(magV[1] / magV[0])))  # yz, xz, xy
+        # from https://forum.sparkfun.com/viewtopic.php?t=22252
 
         return (gyroValues, magRot)
 
@@ -840,7 +842,7 @@ class IMU_I2C(IMU):
     Driver for the BNO055 9DOF IMU sensor via I2C.
     """
 
-    def __init__(self, state_field_registry = None, addr=0x28):
+    def __init__(self, state_field_registry=None, addr=0x28):
         self.buffer = bytearray(2)
         self.address = addr
         self.bus = SMBus(1)
