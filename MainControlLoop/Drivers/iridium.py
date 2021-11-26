@@ -314,9 +314,9 @@ class Iridium:
         :return: (tup) decoded command and args
         """
         length = message[:2]  # check length and checksum against message length and sum
-        length = length[1] + length[0] << 8
+        length = length[1] + (length[0] << 8)
         checksum = message[-2:]
-        checksum = checksum[1] + checksum[0] << 8
+        checksum = checksum[1] + (checksum[0] << 8)
         msg = message[2:-2]
         actual_checksum = sum(msg) & 0xffff
 
@@ -457,7 +457,7 @@ class Iridium:
                         raise RuntimeError("Serial Timeout")
                     raw += self.serial.read(50)
                 print(raw)
-                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0].strip()
+                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
                 #except:
                 #    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
