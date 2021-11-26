@@ -437,9 +437,9 @@ class Iridium:
                         raise RuntimeError("Serial Timeout")
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
-                self.sfr.vars.iridium_command_buffer.append(( *self.decode(list(raw)) , int(ls[3])))
+                self.sfr.vars.iridium_command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
             except:
-                self.sfr.vars.iridium_command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+                self.sfr.vars.iridium_command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         self.SBD_TIMEOUT(60)
         time.sleep(.3)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
@@ -447,9 +447,16 @@ class Iridium:
         while result[5] > 0:
             if result[2] == 1:
                 try:
-                    self.sfr.vars.iridium_command_buffer.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(result[3])))
+                    raw = self.serial.read(50)
+                    t = time.perf_counter()
+                    while raw.decode("utf-8").find("OK") == -1:
+                        if time.perf_counter() - t > 5:
+                            raise RuntimeError("Serial Timeout")
+                        raw += self.serial.read(50)
+                    raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
+                    self.sfr.vars.iridium_command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
                 except:
-                    self.sfr.vars.iridium_command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+                    self.sfr.vars.iridium_command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
             elif result[2] == 0:
                 break
             elif result[2] == 2:
