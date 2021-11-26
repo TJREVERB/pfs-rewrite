@@ -176,14 +176,14 @@ class APRS:
             prefix = self.sfr.command_executor.TJ_PREFIX
             processed = msg[msg.find(prefix) + len(prefix):].strip()
             processed = msg.split(":")
-            tup = (processed[0], processed[1:])
-            self.sfr.vars.aprs_command_buffer.append(tup)
+            processed = processed[:-1] # Ignore anything after last :
+            self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             prefix = self.sfr.command_executor.OUTREACH_PREFIX
             processed = msg[msg.find(prefix) + len(prefix):].strip()
             processed = msg.split(":")
-            tup = (processed[0], processed[1:])
-            self.sfr.vars.aprs_outreach_buffer.append(tup)
+            processed = processed[:-1] # Ignore anything after last :
+            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         
 
     def write(self, message: str) -> bool:
