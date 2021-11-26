@@ -457,7 +457,7 @@ class Iridium:
                         raise RuntimeError("Serial Timeout")
                     raw += self.serial.read(50)
                 print(raw)
-                raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
+                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0].strip()
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
                 #except:
                 #    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
