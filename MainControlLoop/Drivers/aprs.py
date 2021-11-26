@@ -1,5 +1,5 @@
 from serial import Serial
-import time
+import time, datetime
 from MainControlLoop.transmission_packet import TransmissionPacket
 
 class APRS:
@@ -152,19 +152,19 @@ class APRS:
             f.write(str(1))
         time.sleep(5)
 
-    def transmit(self, descriptor, data):
+    def transmit(self, packet: TransmissionPacket):
         """
         Takes a descriptor and data, and transmits
-        :param descriptor: (str) three letter string descriptor
-        :param data: (list) list of numerical data, or single length list of string error message if descriptor is "ERR"
+        :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
-        """ #TODO: IMPLEMENT TIME IF NECESSARY
-        msg = descriptor
-        if descriptor == "ERR":
-            msg += ":" + data[0]
+        """
+        t = datetime.datetime.utcnow()
+        msg = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{t.day}-{t.hour}-{t.minute}:"
+        if packet.return_code == "ERR":
+            msg += packet.return_data[0]
         else:
-            for d in data:
-                msg += ":" + d
+            for d in packet.return_data:
+                msg += str(d) + ":"
         return self.write(msg)
 
     def next_msg(self):
