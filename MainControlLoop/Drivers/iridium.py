@@ -103,7 +103,7 @@ class Iridium:
         # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is
         # contained in buffer at a time
         self.SBD_RT = lambda: self.request("AT+SBDRT")
-        self.SBD_RB = lambda: self.request("AT+SBDRB")
+        self.SBD_RB = lambda: self.write("AT+SBDRB")
 
         # Returns state of mobile originated and mobile terminated buffers
         # SBDS return format: <MO flag>, <MOMSN>, <MT flag>, <MTMSN>
@@ -430,12 +430,14 @@ class Iridium:
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
+                self.SBD_RB()
                 raw = self.serial.read(50)
                 t = time.perf_counter()
                 while raw.decode("utf-8").find("OK") == -1:
                     if time.perf_counter() - t > 5:
                         raise RuntimeError("Serial Timeout")
                     raw += self.serial.read(50)
+                print(raw)
                 raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
             except:
@@ -447,12 +449,14 @@ class Iridium:
         while result[5] >= 0:
             if result[2] == 1:
                 try:
+                    self.SBD_RB()
                     raw = self.serial.read(50)
                     t = time.perf_counter()
                     while raw.decode("utf-8").find("OK") == -1:
                         if time.perf_counter() - t > 5:
                             raise RuntimeError("Serial Timeout")
                         raw += self.serial.read(50)
+                    print(raw)
                     raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
                     self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
                 except:
