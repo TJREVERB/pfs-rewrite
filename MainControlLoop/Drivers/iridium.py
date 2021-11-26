@@ -330,7 +330,7 @@ class Iridium:
             raise RuntimeError("Invalid command received")
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
-        if msg[0] not in Iridium.ARG_REGISTRY:
+        if msg[0] in Iridium.ARG_REGISTRY:
             num = msg[1] << 8 | msg[2]  # msb first
             exp = num >> 11  # extract exponent
             if exp & (1 << 4) == 1:  # convert twos comp
