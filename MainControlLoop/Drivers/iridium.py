@@ -449,7 +449,7 @@ class Iridium:
             except Exception as e:
                 self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3]))) # Append garbled message indicator and msn, args set to exception string to debug
         self.SBD_TIMEOUT(60)
-        time.sleep(.3)
+        time.sleep(1)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] >= 0:
