@@ -444,7 +444,7 @@ class Iridium:
         time.sleep(.3)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
-        while result[5] > 0:
+        while result[5] >= 0:
             if result[2] == 1:
                 try:
                     raw = self.serial.read(50)
