@@ -450,9 +450,13 @@ class Iridium:
                 self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3]))) # Append garbled message indicator and msn, args set to exception string to debug
         self.SBD_TIMEOUT(60)
         time.sleep(1)
-        result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
-        lastqueued = [result[5]]
+        result = [0, 0, 0, 0, 0, 1]
+        lastqueued = []
         while result[5] >= 0:
+            result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
+            lastqueued.append(result[5])
+            if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
+                break # If GSS queue is not changing, don't bother to keep trying, just break
             if result[2] == 1:
                 try:
                     self.SBD_RB()
@@ -472,10 +476,6 @@ class Iridium:
             elif result[2] == 2:
                 break
             time.sleep(.5)
-            result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
-            lastqueued.append(result[5])
-            if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
-                break # If GSS queue is not changing, don't bother to keep trying, just break
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
 
@@ -542,4 +542,5 @@ class Iridium:
             if next_byte == bytes():
                 break
             output += next_byte
+        print(output)
         return output.decode("utf-8")
