@@ -1,7 +1,7 @@
 import time, datetime
 import math
 from serial import Serial
-
+from MainControlLoop.transmission_packet import TransmissionPacket
 
 # https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
 # https://docs.rockblock.rock7.com/reference/sbdwt
@@ -38,10 +38,11 @@ class Iridium:
         "TBL",  # 11, TUMBLE
         "UVP",  # 12, Set Undervoltage cutoff
         "OVP",  # 13, Set Overvoltage cutoff
+    ]
 
-        # codes to be sent in response to commands for satellite
-        "0OK",  # 14, MSG received and executed
-        "ERR",  # 15, MSG received and read, but error executing or reading
+    RETURN_CODES = [
+        "0OK", # 0, MSG received and executed
+        "ERR"  # 1, MSG received and read, but error executing or reading
     ]
 
     ARG_REGISTRY = [12, 13]  # Commands that require arguments from the ground #TODO: import from command_executor instead
@@ -243,7 +244,7 @@ class Iridium:
         """
         return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
-    def encode(self, descriptor, msn, time, data):
+    def encode(self, descriptor, return_code, msn, time, data):
         """
         Encodes string for transmit using numbered codes
         :param descriptor: (str) 3 character string code
@@ -259,16 +260,21 @@ class Iridium:
             encoded = [Iridium.ENCODED_REGISTRY.index(descriptor)]
         else:
             raise RuntimeError("Invalid descriptor string")
+
+        if return_code in Iridium.RETURN_CODES: #Second byte return code
+            encoded.append(Iridium.RETURN_CODES.index(return_code))
+        else:
+            raise RuntimeError("Invalid return code")
         
-        encoded.append((msn >> 8) & 0xff) #Second and third bytes msn, msb first
+        encoded.append((msn >> 8) & 0xff) # third and fourth bytes msn, msb first
         encoded.append(msn & 0xff)
 
-        date = (time[0] << 11) | (time[1] << 6) | time[2] #fourth and fifth bytes date, msb first
+        date = (time[0] << 11) | (time[1] << 6) | time[2] # fifth and sixth bytes date, msb first
 
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
 
-        if descriptor == "ERR":
+        if return_code == "ERR":
             data = data.encode("ascii")
             for d in data:
                 encoded.append(d)
@@ -343,14 +349,12 @@ class Iridium:
             args.append(coef * 10 ** exp)
         return (decoded, args)
 
-    def transmit(self, descriptor, msn, data, discardmtbuf = False):
+    def transmit(self, packet: TransmissionPacket, discardmtbuf = False):
         """
         Loads message into MO buffer, then transmits
         If a message has been received, read it into SFR
         Clear buffers once done
-        :param descriptor: (str) 3 character descriptor
-        :param msn: (int) message sequence number of message responded to
-        :param data: (list) of data to be encoded, or a 1 length list containing string error message if descriptor = "ERR"
+        :param packet: (TransmissionPacket) packet to transmit
         :param discardmtbuf: (bool) if False: Store contents of MO buffer before reading in new messages.
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
@@ -366,7 +370,7 @@ class Iridium:
         
         #TODO: error handling, use rtc instead of datetime
         t = datetime.datetime.utcnow()
-        result = self.transmit_raw(self.encode(descriptor, msn, (t.day, t.hour, t.minute), data))
+        result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, (t.day, t.hour, t.minute), packet.return_data))
         if result[0] == 0:
             raise RuntimeError("Error writing to buffer")
         elif result[0] == 2:

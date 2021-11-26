@@ -1,5 +1,6 @@
 from serial import Serial
 import time
+from MainControlLoop.transmission_packet import TransmissionPacket
 
 class APRS:
     """
