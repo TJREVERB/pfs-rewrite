@@ -47,32 +47,33 @@ class CommandExecutor:
 
     def execute(self, packet: TransmissionPacket):
         for command in self.sfr.vars.command_buffer:
-            function = self.primary_registry[command.command_string]
-            function(command)
+            try:
+                function = self.primary_registry[command.command_string]
+                function(command)
+            except Exception as e:
+                self.transmit(command, [repr(e)], True)
         self.sfr.vars.command_buffer.clear()
 
         for command in self.sfr.vars.outreach_buffer:
-            function = self.secondary_registry[command.command_string]
-            function(command)
+            try:
+                function = self.secondary_registry[command.command_string]
+                function(command)
+            except Exception as e:
+                self.transmit(command, [repr(e)], True)
         self.sfr.vars.outreach_buffer.clear()
 
-    def error(self, packet: TransmissionPacket, error_message: str):
+    def transmit(self, packet: TransmissionPacket, data: list, error: bool):
         """
-        Transmit an error message over radio that received command
-        :param radio: (str) radio which received erraneous command, "Iridium" or "APRS"
-        :param command: (str) command which failed in case of APRS, or MSN number of failed command in case of Iridium
-        :param description: (str) detailed description of failure
+        Transmit a message over radio that received command
+        :param packet: (TransmissionPacket) packet of received transmission
+        :param data: (list) of data, or a single length list of error message
+        :param error: (bool) whether transmission is an error message
         """
-        packet.error = True
-        self.transmit(packet, error_message)
-
-    def transmit(self, packet: TransmissionPacket, message: str):
-        """
-        Transmits time + message string from primary radio to ground station
-
-        :param packet: Transmission object
-        """
-        packet.return_message = message
+        if error:
+            packet.return_code = "ERR"
+        else:
+            packet.return_code = "0OK"
+        packet.return_data = data
         self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
 
     def NOP(self, packet: TransmissionPacket):
@@ -80,51 +81,50 @@ class CommandExecutor:
         Transmits an OK code
         """
 
+
     def BVT(self, packet: TransmissionPacket):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(packet, str(self.sfr.eps.telemetry["VBCROUT"]()))
+        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()], False) 
+        
 
     def CHG(self, packet: TransmissionPacket):
         """
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            self.transmit(packet, "Already in Charging, No Switch")
-        else:
-            self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-            self.transmit(packet, "Switched to Charging, Successful")
+            raise RuntimeError("Already in Charging")
+        self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
+        self.transmit(packet, [], False)
 
     def SCI(self, packet: TransmissionPacket):
         """
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            self.transmit(packet, "Already in Science, No Switch")
-        else:
-            self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-            self.transmit(packet, "Switched to Charging, Successful")
+            raise RuntimeError("Already in Science")
+        self.sfr.vars.MODE = self.sfr.modes_list["Science"]
+        self.transmit(packet, [], False)
 
     def OUT(self, packet: TransmissionPacket):
         """
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            self.transmit(packet, "Already in Outreach, No Switch")
-        else:
-            self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
-            self.transmit(packet, "Switched to Outreach, Successful")
+            raise RuntimeError("Already in Outreach")
+        self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
+        self.transmit(packet, [], False)
 
     def UVT(self, packet: TransmissionPacket):  # TODO: Implement
         v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
-        self.transmit(packet, f"Set Upper Voltage Threshold to {v}, Successful")
+        self.transmit(packet, [v], False)
 
     def LVT(self, packet: TransmissionPacket):  # TODO: Implement
         v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
-        self.transmit(packet, f"Set Lower Voltage Threshold to {v}, Successful")
+        self.transmit(packet, [v], False)
 
     def RST(self,
             packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
@@ -144,13 +144,13 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(str(self.sfr.eps.total_power(3)[0]))
+        self.transmit(packet, [self.sfr.eps.total_power(4)[0]], False) #might as well go comprehensive
 
     def SSV(self, packet: TransmissionPacket):
         """
         Transmit signal strength variability
         """
-        self.transmit(str(self.sfr.vars.SIGNAL_STRENTH_VARIABILITY))
+        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY], False)
 
     def SOL(self, packet: TransmissionPacket):
         """
@@ -181,7 +181,7 @@ class CommandExecutor:
             "01": "APRS",
             "02": "IMU",
             "03": "Antenna Deployer"
-        }
+        } #TODO: Fix this with packet implementation
         try:
             if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
                 self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = False
@@ -229,17 +229,18 @@ class CommandExecutor:
         tumble = self.sfr.imu.getTumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
+        self.transmit(packet, result, False)
 
     def ORB(self, packet: TransmissionPacket):
         """
         Transmits current orbital period
         """
-        self.transmit(str(self.sfr.vars.ORBITAL_PERIOD))
+        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
 
     def REP(self, msn):
         """
         Repeat result of command with given MSN
-        """
+        """ #TODO: Fix this
         df = pd.read_csv(self.COMMAND_LOG_PATH)
         try:
             self.transmit(df[df["msn"] == msn].to_csv().strip("\n"))
@@ -251,3 +252,4 @@ class CommandExecutor:
         """
         Transmit a garbled message error
         """
+        raise RuntimeError("Garbled Message")

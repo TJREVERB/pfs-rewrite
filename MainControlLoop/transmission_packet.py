@@ -3,6 +3,6 @@ class TransmissionPacket:
         self.command_string = command_string
         self.args = args
         self.msn = msn
-        self.error = False
-        self.return_message = ""
+        self.return_code = ""
+        self.return_data = []
 
