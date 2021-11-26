@@ -215,6 +215,12 @@ class Iridium:
         Enable RSSI and service notifications
         """
         return self.CIER([1,1,1]).find("OK") != -1
+    
+    def disable_notif(self):
+        """
+        Disable RSSI and service notifications
+        """
+        return self.CIER([0,0,0]).find("OK") != -1
 
     def check_notif(self, threshold=2):
         """
@@ -440,31 +446,32 @@ class Iridium:
                 print(raw)
                 raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
-            except:
-                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+            except Exception as e:
+                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3]))) # Append garbled message indicator and msn, args set to exception string to debug
         self.SBD_TIMEOUT(60)
         time.sleep(.3)
         result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
         lastqueued = [result[5]]
         while result[5] >= 0:
             if result[2] == 1:
-                #try:
-                self.SBD_RB()
-                raw = self.serial.read(50)
-                t = time.perf_counter()
-                while raw.decode("utf-8").find("OK") == -1:
-                    if time.perf_counter() - t > 5:
-                        raise RuntimeError("Serial Timeout")
-                    raw += self.serial.read(50)
-                print(raw)
-                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
-                #except:
-                #    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
+                try:
+                    self.SBD_RB()
+                    raw = self.serial.read(50)
+                    t = time.perf_counter()
+                    while raw.decode("utf-8").find("OK") == -1:
+                        if time.perf_counter() - t > 5:
+                            raise RuntimeError("Serial Timeout")
+                        raw += self.serial.read(50)
+                    print(raw)
+                    raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                    self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
+                except Exception as e:
+                    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3]))) # Append garbled message indicator and msn
             elif result[2] == 0:
                 break
             elif result[2] == 2:
                 break
+            time.sleep(.5)
             result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
