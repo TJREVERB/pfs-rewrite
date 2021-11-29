@@ -190,7 +190,7 @@ class EPS:
         #try:
         self.bus.write_i2c_block_data(self.addr, register, data)
         time.sleep(.05)
-        result = self.bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
+        result = self.bus.read_i2c_block_data(self.addr, 0, length)
         #except:
         #    return False
         time.sleep(.1)
