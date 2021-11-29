@@ -132,7 +132,7 @@ class Iridium:
         # Like SBDI but it always attempts SBD registration, consisting of attach and location update. a should be
         # "A" if in response to SBD ring alert, otherwise unspecified. location is an optional param,
         # format =[+|-]DDMM.MMM, [+|-]dddmm.mmm
-        self.SBD_INITIATE_EX = lambda a="", location="": self.request("AT+SBDIX" + a, 10) if len(location) == 0 \
+        self.SBD_INITIATE_EX = lambda a="", location="": self.request("AT+SBDIX" + a, 60) if len(location) == 0 \
                                                         else self.request("AT+SBDIX" + a + "=" + location)  # beamcommunications 95-96
         # returns: <MO status>,<MOMSN>,<MT status>,<MTMSN>,<MT length>,<MT queued>
         # MO status: 0: no message to send, 1: successful send, 2: error while sending
