@@ -65,7 +65,9 @@ class Logger:
     
     def execute_cycle(self):
         if time.perf_counter() - self.last_log_time > self.LOG_DELAY:
+            print("Logging power")
             self.integrate_charge()
         if time.perf_counter() - self.last_orbit_update > self.ORBIT_CHECK_DELAY:
+            print("Logging orbits")
             self.update_orbits()
         self.sfr.dump()
