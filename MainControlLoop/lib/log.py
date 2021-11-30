@@ -3,13 +3,12 @@ import pandas as pd
 
 
 class Logger:
-    LOG_DELAY = 10  # Seconds
-    ORBIT_CHECK_DELAY = 60
-
     def __init__(self, sfr):
         self.sfr = sfr
         self.last_log_time = time.perf_counter()
         self.last_orbit_update = self.last_log_time
+        self.LOG_DELAY = 10  # Seconds
+        self.ORBIT_CHECK_DELAY = 60
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """
