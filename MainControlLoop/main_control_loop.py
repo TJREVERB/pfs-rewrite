@@ -1,5 +1,6 @@
 import time
 from MainControlLoop.lib.registry import StateFieldRegistry
+from MainControlLoop.lib.log import Logger
 
 
 class MainControlLoop:
@@ -9,6 +10,7 @@ class MainControlLoop:
         Each object should take in the state field registry
         """
         self.sfr = StateFieldRegistry()
+        self.logger = Logger(self.sfr)
 
     def run(self):  # Repeat main control loop forever
         print("MCL Start")
@@ -32,5 +34,6 @@ class MainControlLoop:
 
                 print("Cycle")
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
+                self.logger.execute_cycle()  # Update logs
 
             self.sfr.mode_obj.terminate_mode()  # terminates current old mode

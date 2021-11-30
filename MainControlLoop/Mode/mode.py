@@ -65,10 +65,7 @@ class Mode:
         """
         self.integrate_charge()
         self.sfr.command_executor.execute()
-        self.sfr.eps.total_power(2)
-        self.sfr.eps.solar_power()
-        sun = self.sfr.eps.sun_detected()
-        if sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
+        if sun := self.sfr.eps.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
         elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
@@ -92,15 +89,6 @@ class Mode:
         Function for each mode to implement to determine how it will use the specific radios
         """
         pass
-
-    def integrate_charge(self) -> None:
-        """
-        Integrate charge in Joules
-        """
-        draw = self.sfr.eps.total_power(4)[0]
-        gain = self.sfr.eps.solar_power()
-        self.sfr.vars.BATTERY_CAPACITY_INT -= (draw - gain) * (time.perf_counter() - self.previous_time)
-        self.previous_time = time.perf_counter()
 
     def systems_check(self) -> list:
         """
