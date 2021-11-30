@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
+from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -29,8 +29,7 @@ class StateFieldRegistry:
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        # self.imu = IMU_I2C(self)
-        self.imu = IMU(self)
+        self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
