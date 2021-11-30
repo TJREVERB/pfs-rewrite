@@ -62,7 +62,7 @@ class Logger:
         self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
         self.last_orbit_update = time.perf_counter()
     
-    def execute_cycle(self):
+    def log(self):
         if time.perf_counter() - self.last_log_time > self.LOG_DELAY:
             print("Logging power")
             self.integrate_charge()

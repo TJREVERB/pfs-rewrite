@@ -12,7 +12,7 @@ from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
-
+from MainControlLoop.lib.log import Logger
 
 class StateFieldRegistry:
     def __init__(self):
@@ -32,6 +32,7 @@ class StateFieldRegistry:
         self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
+        self.logger = Logger(self)
 
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
