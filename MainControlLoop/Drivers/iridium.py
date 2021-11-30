@@ -1,7 +1,7 @@
 import time, datetime
 import math
 from serial import Serial
-from MainControlLoop.transmission_packet import TransmissionPacket
+from MainControlLoop.lib.transmission_packet import TransmissionPacket
 
 # https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
 # https://docs.rockblock.rock7.com/reference/sbdwt

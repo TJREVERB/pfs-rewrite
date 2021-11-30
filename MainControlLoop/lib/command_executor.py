@@ -1,7 +1,7 @@
 import time
 import pandas as pd
-from MainControlLoop.transmission_packet import TransmissionPacket
-from datetime import datetime
+from MainControlLoop.lib.transmission_packet import TransmissionPacket
+from MainControlLoop.lib.exceptions import InvalidCommandInputError, RedundantCommandInputError
 
 
 class CommandExecutor:
@@ -92,7 +92,7 @@ class CommandExecutor:
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            raise RuntimeError("Already in Charging")
+            raise RedundantCommandInputError("Already in Charging")
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
         self.transmit(packet, [])
 
@@ -101,7 +101,7 @@ class CommandExecutor:
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            raise RuntimeError("Already in Science")
+            raise RedundantCommandInputError("Already in Science")
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
         self.transmit(packet, [])
 
@@ -110,7 +110,7 @@ class CommandExecutor:
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            raise RuntimeError("Already in Outreach")
+            raise RedundantCommandInputError("Already in Outreach")
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
         self.transmit(packet, [])
 
@@ -124,8 +124,7 @@ class CommandExecutor:
         self.sfr.vars.LOWER_THRESHOLD = float(v)
         self.transmit(packet, [v])
 
-    def RST(self,
-        packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
+    def RST(self, packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])

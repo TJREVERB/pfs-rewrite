@@ -11,7 +11,7 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
-from MainControlLoop.command_executor import CommandExecutor
+from MainControlLoop.lib.command_executor import CommandExecutor
 
 
 class StateFieldRegistry:
