@@ -3,7 +3,6 @@ from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.command_executor import CommandExecutor
 
 
 class Mode:

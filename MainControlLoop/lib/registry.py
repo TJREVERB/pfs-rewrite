@@ -2,15 +2,16 @@ import time
 import pandas as pd
 import numpy as np
 import pickle
+import json
 from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
-from MainControlLoop.command_executor import CommandExecutor
+from MainControlLoop.lib.command_executor import CommandExecutor
 
 
 class StateFieldRegistry:
@@ -28,12 +29,10 @@ class StateFieldRegistry:
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
 
         self.eps = EPS(self)  # EPS never turns off
+        self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
 
-        self.iridium_command_buffer = []  # tuple (3 char command str, argument, message number: int)
-        self.aprs_command_buffer = []  # tuple (3 char command str, argument, message number: int)
-        self.aprs_outreach_buffer = []
         # Data for power draw and solar generation logs
         self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
         self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
@@ -81,8 +80,8 @@ class StateFieldRegistry:
             self.MODE_LOCK = False  # Whether to lock mode switches
             self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
             self.CONTACT_ESTABLISHED = False
-            self.IRIDIUM_RECEIVED_COMMAND = []
-            self.APRS_RECEIVED_COMMAND = []
+            self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
+            self.outreach_buffer = []
             self.START_TIME = time.time()
     
     def load(self) -> Registry:
@@ -107,7 +106,10 @@ class StateFieldRegistry:
         """
         Dump values of all state fields into state_field_log
         """
-        pickle.dump(self.vars, open(self.log_path, "wb"))
+        with open(self.log_path, "wb") as f:
+            pickle.dump(self.vars, f)
+        with open(self.readable_log_path, "w") as f:
+            json.dump(self.vars.__dict__, f)
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """

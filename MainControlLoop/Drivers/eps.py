@@ -7,7 +7,6 @@ class EPS:
     """
     Class for EPS
     """
-    EPS_ADDRESS: hex = 0x2b
     SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
     # ARBITRARY VALUE!!!
     COMPONENTS = {
@@ -22,6 +21,7 @@ class EPS:
 
     def __init__(self, state_field_registry):
         self.bus = SMBus(1)
+        self.addr = 0x2b
         self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"),
                             ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"),
@@ -32,7 +32,7 @@ class EPS:
             # Board info commands: Basic board info
             "Board Status": lambda: self.request(0x01, [0x00], 2),
             # Reads and returns board status
-            "Last Error": lambda: self.request(0x01, [0x00], 2),  # Reads and returns last error
+            "Last Error": lambda: self.request(0x03, [0x00], 2),  # Reads and returns last error
             "Firmware Version": lambda: self.request(0x04, [0x00], 2),
             # Reads and returns firmware version
             "Checksum": lambda: self.request(0x05, [0x00], 2),
@@ -187,12 +187,12 @@ class EPS:
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        try:
-            self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
-            time.sleep(.05)
-            result = self.bus.read_i2c_block_data(self.EPS_ADDRESS, 0, length)
-        except:
-            return False
+        #try:
+        self.bus.write_i2c_block_data(self.addr, register, data)
+        time.sleep(.05)
+        result = self.bus.read_i2c_block_data(self.addr, 0, length)
+        #except:
+        #    return False
         time.sleep(.1)
         return result
 
@@ -204,7 +204,7 @@ class EPS:
         :return: (bool) whether command was successful
         """
         try:
-            result = self.bus.write_i2c_block_data(EPS.EPS_ADDRESS, register, data)
+            result = self.bus.write_i2c_block_data(self.addr, register, data)
         except:
             return False
         time.sleep(.1)

@@ -46,7 +46,7 @@ class Analytics:
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
         pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
         # Add either the last 50 datapoints or entire dataset for each pdm which is on
-        total = pd.DataFrame([df.loc[df[i + "_state"] == 1][i + "_pwr"].astype(float) for i in pdms_on]).sum(axis=1)
+        total = pd.DataFrame([df[df[i + "_state"] == 1][i + "_pwr"] for i in pdms_on]).sum(axis=1)
         return total.mean() * duration, total.stdev()
 
     def predicted_generation(self, duration) -> tuple:
@@ -58,26 +58,26 @@ class Analytics:
         """
         current_time = time.time()  # Set current time
         panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
-        solar = pd.read_csv(self.sfr.solar_log_path, header=0).tail(51)  # Read solar power log
+        solar = pd.read_csv(self.sfr.solar_log_path, header=0).tail(50)  # Read solar power log
         orbits = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)  # Read orbits log
         # Calculate sunlight period
-        sunlight_period = pd.Series([orbits["timestamp"].iloc[i + 1] - orbits["timestamp"].iloc[i]
+        sunlight_period = pd.Series([orbits["timestamp"][i + 1] - orbits["timestamp"][i]
                                      for i in range(orbits.shape[0] - 1)
-                                     if orbits["phase"].iloc[i] == "sunlight"]).mean()
+                                     if orbits["phase"][i] == "sunlight"]).mean()
         # Calculate orbital period
-        orbital_period = sunlight_period + pd.Series([orbits["timestamp"].iloc[i + 1] -
-                                                      orbits["timestamp"].iloc[i] for i in range(orbits.shape[0] - 1)
-                                                      if orbits["phase"].iloc[i] == "eclipse"]).mean()
+        orbital_period = sunlight_period + pd.Series([orbits["timestamp"][i + 1] -
+                                                      orbits["timestamp"][i] for i in range(orbits.shape[0] - 1)
+                                                      if orbits["phase"][i] == "eclipse"]).mean()
         # Filter out all data points which weren't taken in sunlight
-        in_sun = pd.DataFrame([solar.iloc[i] for i in range(solar.shape[0])
-                               if orbits.loc[solar["timestamp"].iloc[i] -
-                                             orbits["timestamp"] > 0]["phase"].iloc[-1] == "sunlight"])
+        in_sun = pd.DataFrame([solar[i] for i in range(solar.shape[0])
+                               if orbits[solar["timestamp"][i] -
+                                         orbits["timestamp"] > 0]["phase"][-1] == "sunlight"])
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
-                                     min([t % orbital_period, sunlight_period]) * solar_gen
+            min([t % orbital_period, sunlight_period]) * solar_gen
         # Set start time for simulation
-        start = current_time - orbits.loc[orbits["phase"] == "sunlight"]["timestamp"].iloc[-1]
+        start = current_time - orbits[orbits["phase"] == "sunlight"]["timestamp"][-1]
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
@@ -88,11 +88,11 @@ class Analytics:
         """
         df = pd.read_csv(self.sfr.orbit_log_path, header=0)  # Reads in data
         # Calculates on either last 50 points or whole dataset
-        sunlight = df.loc[df["phase"] == "sunlight"]
-        eclipse = df.loc[df["phase"] == "eclipse"]
+        sunlight = df[df["phase"] == "sunlight"]
+        eclipse = df[df["phase"] == "eclipse"]
         # Appends eclipse data to deltas
         deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
-            [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
+                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
         if len(deltas) > 0:
             return sum(deltas) / len(deltas)
         else:

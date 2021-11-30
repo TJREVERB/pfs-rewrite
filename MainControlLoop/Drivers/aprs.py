@@ -1,5 +1,6 @@
 from serial import Serial
-import time
+import time, datetime
+from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
 class APRS:
     """
@@ -151,6 +152,40 @@ class APRS:
             f.write(str(1))
         time.sleep(5)
 
+    def transmit(self, packet: TransmissionPacket):
+        """
+        Takes a descriptor and data, and transmits
+        :param packet: (TransmissionPacket) packet to transmit
+        :return: (bool) success
+        """
+        t = datetime.datetime.utcnow()
+        msg = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{t.day}-{t.hour}-{t.minute}:"
+        if packet.return_code == "ERR":
+            msg += packet.return_data[0]
+        else:
+            for d in packet.return_data:
+                msg += str(d) + ":"
+        return self.write(msg)
+
+    def next_msg(self):
+        """
+        Reads in any messages, process, and add to queue
+        """
+        msg = self.read()
+        if msg.find(self.sfr.command_executor.TJ_PREFIX) != -1:
+            prefix = self.sfr.command_executor.TJ_PREFIX
+            processed = msg[msg.find(prefix) + len(prefix):].strip()
+            processed = msg.split(":")
+            processed = processed[:-1] # Ignore anything after last :
+            self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+        elif msg.find(self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            prefix = self.sfr.command_executor.OUTREACH_PREFIX
+            processed = msg[msg.find(prefix) + len(prefix):].strip()
+            processed = msg.split(":")
+            processed = processed[:-1] # Ignore anything after last :
+            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+        
+
     def write(self, message: str) -> bool:
         """
         Writes the message to the APRS radio through the serial port
@@ -158,7 +193,7 @@ class APRS:
         :return: (bool) whether or not the write worked
         """
         try:
-            self.serial.write(("TJ;" + message + "\x0d").encode("utf-8"))
+            self.serial.write((message + "\x0d").encode("utf-8"))
             self.serial.flush()
             return True
         except:
@@ -181,10 +216,5 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
-        message = output.decode('utf-8')
-        if message.find("TJ;") == -1:
-            pass #TODO: Handle a garbled message
-        else:
-            message = message[message.find("TJ;") + 3 :].strip() #remove TJ; and strip
-        self.sfr.vars.APRS_RECEIVED_COMMAND.append(message)  # store message in statefield
-        return message
+        return output.decode('utf-8')
+        

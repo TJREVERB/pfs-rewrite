@@ -1,10 +1,14 @@
 """ DS3232 Driver
+This driver does not include alarm functionality
 
 Ported into python from:
 https://github.com/JChristensen/DS3232RTC
 Copyright (C) 2018 by Jack Christensen and licensed under
 GNU GPL v3.0, https://www.gnu.org/licenses/gpl.html
 """
+
+#https://datasheets.maximintegrated.com/en/ds/DS3232.pdf
+
 import datetime
 import os
 import time
@@ -35,38 +39,40 @@ class RTC:
     SRAM_SIZE = 236 # number of bytes of SRAM
 
     # Alarm mask bits
-    A1M1 = 7
-    A1M2 = 7
-    A1M3 = 7
-    A1M4 = 7
-    A2M2 = 7
-    A2M3 = 7
-    A2M4 = 7
+    MASK_A1M1 = 7
+    MASK_A1M2 = 7
+    MASK_A1M3 = 7
+    MASK_A1M4 = 7
+    MASK_A2M2 = 7
+    MASK_A2M3 = 7
+    MASK_A2M4 = 7
 
     # Control register bits
-    EOSC = 7
-    BBSQW = 6
-    CONV = 5
-    RS2 = 4
-    RS1 = 3
-    INTCN = 2
-    A2IE = 1
-    A1IE = 0
+    MASK_EOSC = 7
+    MASK_BBSQW = 6
+    MASK_CONV = 5
+    MASK_RS2 = 4
+    MASK_RS1 = 3
+    MASK_INTCN = 2
+    MASK_A2IE = 1
+    MASK_A1IE = 0
 
     # Status register bits
-    OSF = 7
-    BB32KHZ = 6
-    CRATE1 = 5
-    CRATE0 = 4
-    EN32KHZ = 3
-    BSY = 2
-    A2F = 1
-    A1F = 0
+    MASK_OSF = 7
+    MASK_BB32KHZ = 6
+    MASK_CRATE1 = 5
+    MASK_CRATE0 = 4
+    MASK_EN32KHZ = 3
+    MASK_BSY = 2
+    MASK_A2F = 1
+    MASK_A1F = 0
 
-    # Other
-    HR1224 = 6                   # Hours register 12 or 24 hour mode (24 hour mode==0)
-    CENTURY = 7                  # Century bit in Month register
-    DYDT = 6                     # Day/Date flag bit in alarm Day/Date registers
+    # Frequency vs RS2, RS1 bits
+    FREQ_DISABLE = (-1, -1)
+    FREQ_1Hz = (0, 0)
+    FREQ_1_024KHz = (0, 1)
+    FREQ_4_096KHz = (1, 0)
+    FREQ_8_192KHZ = (1, 1)
 
     def __init__(self):
         # DS3232 I2C Address
@@ -74,291 +80,140 @@ class RTC:
         self.bus = SMBus(1)
 
     @property
+    def OSF(self):
+        self.bus.write_byte(self.addr, RTC.RTC_STATUS)
+        raw = self.bus.read_byte(self.addr)
+        return (raw >> RTC.MASK_OSF) & 1
+    
+    def clr_OSF(self): #Clear oscillator stop flag
+        self.bus.write_byte(self.addr, RTC.RTC_STATUS)
+        raw = self.bus.read_byte(self.addr)
+        self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, raw | (1 << RTC.MASK_OSF))
+
+    @property
     def seconds(self):
         self.bus.write_byte(self.addr, RTC.RTC_SECONDS)
-        raw = self.read_byte(self.addr)
+        raw = self.bus.read_byte(self.addr)
         return (10 * ((raw >> 4) & 0x07)) + (raw & 0x0F)
 
     @seconds.setter
     def seconds(self, new_seconds):
-        b = (int(new_seconds/10) << 4) | (new_seconds%10)
-        return self.bus.write_byte_data(self.addr, RTC.RTC_SECONDS, b)
+        b = ((new_seconds//10) << 4) | (new_seconds%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_SECONDS, b)
+        self.clr_OSF()
     
     @property
     def minutes(self):
         self.bus.write_byte(self.addr, RTC.RTC_MINUTES)
-        raw = self.read_byte(self.addr)
+        raw = self.bus.read_byte(self.addr)
         return (10 * ((raw >> 4) & 0x07)) + (raw & 0x0F)
 
     @minutes.setter
     def minutes(self, new_minutes):
-        b = (int(new_minutes/10) << 4) | (new_minutes%10)
-        return self.bus.write_byte_data(self.addr, RTC.RTC_MINUTES, b)
+        b = ((new_minutes//10) << 4) | (new_minutes%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_MINUTES, b)
+        self.clr_OSF()
 
-    // Read the current time from the RTC and return it as a time_t
-    // value. Returns a zero value if an I2C error occurred (e.g. RTC
-    // not present).
-    time_t DS3232RTC::get()
-    {
-        tmElements_t tm;
+    @property
+    def hours(self):
+        self.bus.write_byte(self.addr, RTC.RCT_HOURS)
+        raw = self.bus.read_byte(self.addr)
+        if (raw >> 6) & 1: # 12 hour
+            return 12 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
+        else: # 24 hour
+            return 20 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
 
-        if ( read(tm) ) return 0;
-        return( makeTime(tm) );
-    }
+    @hours.setter
+    def hours(self, new_hours, mode=0):
+        """
+        :param new_hours: (int) new hour, in 24 hour format
+        :param mode: (bool) 12 or 24 hour mode, default to 24h. 1 if 12 hour, 0 if 24 hour
+        """ 
+        if mode: # 12 hour
+            b = (mode << 6) | ((new_hours >= 12) << 5) | ((new_hours%12 >= 10) << 4) | ((new_hours%12)%10)
+        else: # 24 hour
+            b = (mode << 6) | ((new_hours >= 20) << 5) | ((new_hours%20 >= 10) << 4) | (new_hours%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_HOURS, b)
+        self.clr_OSF()
 
-    // Set the RTC to the given time_t value and clear the
-    // oscillator stop flag (OSF) in the Control/Status register.
-    // Returns the I2C status (zero if successful).
-    byte DS3232RTC::set(time_t t)
-    {
-        tmElements_t tm;
+    @property
+    def day(self):
+        self.bus.write_byte(self.addr, RTC.RTC_DAY)
+        return self.bus.read_byte(self.addr)
+    
+    @day.setter
+    def day(self, new_day):
+        """
+        :param new_day: (int) date, 1-7
+        """
+        self.bus.write_byte_data(self.addr, RTC.RTC_DAY, new_day)
+        self.clr_OSF()
 
-        breakTime(t, tm);
-        return ( write(tm) );
-    }
+    @property
+    def date(self):
+        self.bus.write_byte(self.addr, RTC.RTC_DATE)
+        raw = self.bus.read_byte(self.addr)
+        return (raw >> 4) * 10 + (raw & 0x0F)
+    
+    @date.setter
+    def date(self, new_date):
+        b = (new_date//10 << 4) | (new_date%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_DATE, b)
+        self.clr_OSF()
 
-    // Read the current time from the RTC and return it in a tmElements_t
-    // structure. Returns the I2C status (zero if successful).
-    byte DS3232RTC::read(tmElements_t &tm)
-    {
-        i2cBeginTransmission(RTC_ADDR);
-        i2cWrite((uint8_t)RTC_SECONDS);
-        if ( byte e = i2cEndTransmission() ) { errCode = e; return e; }
-        // request 7 bytes (secs, min, hr, dow, date, mth, yr)
-        i2cRequestFrom(RTC_ADDR, tmNbrFields);
-        tm.Second = bcd2dec(i2cRead() & ~_BV(DS1307_CH));
-        tm.Minute = bcd2dec(i2cRead());
-        tm.Hour = bcd2dec(i2cRead() & ~_BV(HR1224));    // assumes 24hr clock
-        tm.Wday = i2cRead();
-        tm.Day = bcd2dec(i2cRead());
-        tm.Month = bcd2dec(i2cRead() & ~_BV(CENTURY));  // don't use the Century bit
-        tm.Year = y2kYearToTm(bcd2dec(i2cRead()));
-        return 0;
-    }
+    @property
+    def month(self):
+        self.bus.write_byte(self.addr, RTC.RTC_MONTH)
+        raw = self.bus.read_byte(self.addr) & (0x1F) #Ignore century bit
+        return (raw >> 4) * 10 + (raw & 0x0F)
 
-    // Set the RTC time from a tmElements_t structure and clear the
-    // oscillator stop flag (OSF) in the Control/Status register.
-    // Returns the I2C status (zero if successful).
-    byte DS3232RTC::write(tmElements_t &tm)
-    {
-        i2cBeginTransmission(RTC_ADDR);
-        i2cWrite((uint8_t)RTC_SECONDS);
-        i2cWrite(dec2bcd(tm.Second));
-        i2cWrite(dec2bcd(tm.Minute));
-        i2cWrite(dec2bcd(tm.Hour));         // sets 24 hour format (Bit 6 == 0)
-        i2cWrite(tm.Wday);
-        i2cWrite(dec2bcd(tm.Day));
-        i2cWrite(dec2bcd(tm.Month));
-        i2cWrite(dec2bcd(tmYearToY2k(tm.Year)));
-        byte ret = i2cEndTransmission();
-        uint8_t s = readRTC(RTC_STATUS);        // read the status register
-        writeRTC( RTC_STATUS, s & ~_BV(OSF) );  // clear the Oscillator Stop Flag
-        return ret;
-    }
+    @month.setter
+    def month(self, new_month):
+        self.bus.write_byte(self.addr, RTC.RTC_MONTH)
+        b = self.bus.read_byte(self.addr) & 0x80 #Read century bit to make sure it doesn't change
+        b |= (new_month//10 << 4) | (new_month%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_MONTH, b)
+        self.clr_OSF()
 
-    // Write multiple bytes to RTC RAM.
-    // Valid address range is 0x00 - 0xFF, no checking.
-    // Number of bytes (nBytes) must be between 1 and 31 (Wire library
-    // limitation).
-    // Returns the I2C status (zero if successful).
-    byte DS3232RTC::writeRTC(byte addr, byte *values, byte nBytes)
-    {
-        i2cBeginTransmission(RTC_ADDR);
-        i2cWrite(addr);
-        for (byte i=0; i<nBytes; i++) i2cWrite(values[i]);
-        return i2cEndTransmission();
-    }
+    @property
+    def year(self):
+        self.bus.write_byte(self.addr, RTC.RTC_YEAR)
+        raw = self.bus.read_bytes(self.addr)
+        return (raw >> 4) * 10 + (raw & 0x0F)
 
-    // Write a single byte to RTC RAM.
-    // Valid address range is 0x00 - 0xFF, no checking.
-    // Returns the I2C status (zero if successful).
-    byte DS3232RTC::writeRTC(byte addr, byte value)
-    {
-        return ( writeRTC(addr, &value, 1) );
-    }
+    @year.setter
+    def year(self, new_year):
+        b = (new_year//10 << 4) | (new_year%10)
+        self.bus.write_byte_data(self.addr, RTC.RTC_YEAR, b)
+        self.clr_OSF()
 
-    // Read multiple bytes from RTC RAM.
-    // Valid address range is 0x00 - 0xFF, no checking.
-    // Number of bytes (nBytes) must be between 1 and 32 (Wire library
-    // limitation).
-    // Returns the I2C status (zero if successful).
-    byte DS3232RTC::readRTC(byte addr, byte *values, byte nBytes)
-    {
-        i2cBeginTransmission(RTC_ADDR);
-        i2cWrite(addr);
-        if ( byte e = i2cEndTransmission() ) return e;
-        i2cRequestFrom( (uint8_t)RTC_ADDR, nBytes );
-        for (byte i=0; i<nBytes; i++) values[i] = i2cRead();
-        return 0;
-    }
+    def square_wave(self, freq):
+        """
+        Enables or disables square wave output
+        :param freq: (tuple) bits to set (RS2, RS1) to for frequency selection. If sqw is to be disabled, freq = (-1, -1)
+        """
+        if freq[0] not in [0, 1] or freq[1] not in [0, 1]:
+            #Disable sqw
+            self.bus.write_byte(self.addr, RTC.RTC_STATUS)
+            b = self.bus.read_byte(self.addr)
+            b &= ~(1 << RTC.MASK_EN32KHZ) 
+            return self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, b)
+        self.bus.write_byte(self.addr, RTC.RTC_CONTROL) #TODO: MAKE SURE THAT FIRST BYTE IS LS[0]
+        ls = self.bus.read_i2c_block_data(self.addr, 0, 2)
+        ls[0] |= (1 << RTC.MASK_EN32KHZ)
+        ls[1] = (ls[1] & ~(1 << RTC.MASK_RS2)) | (freq[0] << RTC.MASK_RS2) # Set RS2 bit
+        ls[1] = (ls[1] & ~(1 << RTC.MASK_RS1)) | (freq[1] << RTC.MASK_RS1) # Set RS1 bit
+        self.bus.write_i2c_block_data(self.addr, RTC.RTC_CONTROL, ls)
 
-    // Read a single byte from RTC RAM.
-    // Valid address range is 0x00 - 0xFF, no checking.
-    byte DS3232RTC::readRTC(byte addr)
-    {
-        byte b;
-
-        readRTC(addr, &b, 1);
-        return b;
-    }
-
-    // Set an alarm time. Sets the alarm registers only.  To cause the
-    // INT pin to be asserted on alarm match, use alarmInterrupt().
-    // This method can set either Alarm 1 or Alarm 2, depending on the
-    // value of alarmType (use a value from the ALARM_TYPES_t enumeration).
-    // When setting Alarm 2, the seconds value must be supplied but is
-    // ignored, recommend using zero. (Alarm 2 has no seconds register.)
-    void DS3232RTC::setAlarm(ALARM_TYPES_t alarmType, byte seconds, byte minutes, byte hours, byte daydate)
-    {
-        uint8_t addr;
-
-        seconds = dec2bcd(seconds);
-        minutes = dec2bcd(minutes);
-        hours = dec2bcd(hours);
-        daydate = dec2bcd(daydate);
-        if (alarmType & 0x01) seconds |= _BV(A1M1);
-        if (alarmType & 0x02) minutes |= _BV(A1M2);
-        if (alarmType & 0x04) hours |= _BV(A1M3);
-        if (alarmType & 0x10) daydate |= _BV(DYDT);
-        if (alarmType & 0x08) daydate |= _BV(A1M4);
-
-        if ( !(alarmType & 0x80) )  // alarm 1
-        {
-            addr = ALM1_SECONDS;
-            writeRTC(addr++, seconds);
-        }
-        else
-        {
-            addr = ALM2_MINUTES;
-        }
-        writeRTC(addr++, minutes);
-        writeRTC(addr++, hours);
-        writeRTC(addr++, daydate);
-    }
-
-    // Set an alarm time. Sets the alarm registers only. To cause the
-    // INT pin to be asserted on alarm match, use alarmInterrupt().
-    // This method can set either Alarm 1 or Alarm 2, depending on the
-    // value of alarmType (use a value from the ALARM_TYPES_t enumeration).
-    // However, when using this method to set Alarm 1, the seconds value
-    // is set to zero. (Alarm 2 has no seconds register.)
-    void DS3232RTC::setAlarm(ALARM_TYPES_t alarmType, byte minutes, byte hours, byte daydate)
-    {
-        setAlarm(alarmType, 0, minutes, hours, daydate);
-    }
-
-    // Enable or disable an alarm "interrupt" which asserts the INT pin
-    // on the RTC.
-    void DS3232RTC::alarmInterrupt(byte alarmNumber, bool interruptEnabled)
-    {
-        uint8_t controlReg, mask;
-
-        controlReg = readRTC(RTC_CONTROL);
-        mask = _BV(A1IE) << (alarmNumber - 1);
-        if (interruptEnabled)
-            controlReg |= mask;
-        else
-            controlReg &= ~mask;
-        writeRTC(RTC_CONTROL, controlReg);
-    }
-
-    // Returns true or false depending on whether the given alarm has been
-    // triggered, and resets the alarm flag bit.
-    bool DS3232RTC::alarm(byte alarmNumber)
-    {
-        uint8_t statusReg = readRTC(RTC_STATUS);
-        uint8_t mask = _BV(A1F) << (alarmNumber - 1);
-        if (statusReg & mask) {
-            statusReg &= ~mask;
-            writeRTC(RTC_STATUS, statusReg);
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    // Returns true or false depending on whether the given alarm has been
-    // triggered, without resetting the alarm flag bit.
-    bool DS3232RTC::checkAlarm(byte alarmNumber)
-    {
-        uint8_t statusReg = readRTC(RTC_STATUS);
-        uint8_t mask = _BV(A1F) << (alarmNumber - 1);
-        return (statusReg & mask);
-    }
-
-    // Clears the given alarm flag bit if it is set.
-    // Returns the value of the flag bit before if was cleared.
-    bool DS3232RTC::clearAlarm(byte alarmNumber)
-    {
-        uint8_t statusReg = readRTC(RTC_STATUS);
-        uint8_t mask = _BV(A1F) << (alarmNumber - 1);
-        bool retVal = statusReg & mask;
-        if (retVal) {
-            statusReg &= ~mask;
-            writeRTC(RTC_STATUS, statusReg);
-        }
-        return retVal;
-    }
-
-    // Enable or disable the square wave output.
-    // Use a value from the SQWAVE_FREQS_t enumeration for the parameter.
-    void DS3232RTC::squareWave(SQWAVE_FREQS_t freq)
-    {
-        uint8_t controlReg;
-
-        controlReg = readRTC(RTC_CONTROL);
-        if (freq >= SQWAVE_NONE)
-        {
-            controlReg |= _BV(INTCN);
-        }
-        else
-        {
-            controlReg = (controlReg & 0xE3) | (freq << RS1);
-        }
-        writeRTC(RTC_CONTROL, controlReg);
-    }
-
-    // Returns the value of the oscillator stop flag (OSF) bit in the
-    // control/status register which indicates that the oscillator is or    *
-    // was stopped, and that the timekeeping data may be invalid.
-    // Optionally clears the OSF bit depending on the argument passed.
-    bool DS3232RTC::oscStopped(bool clearOSF)
-    {
-        uint8_t s = readRTC(RTC_STATUS);    // read the status register
-        bool ret = s & _BV(OSF);            // isolate the osc stop flag to return to caller
-        if (ret && clearOSF)                // clear OSF if it's set and the caller wants to clear it
-        {
-            writeRTC( RTC_STATUS, s & ~_BV(OSF) );
-        }
-        return ret;
-    }
-
-    // Returns the temperature in Celsius times four.
-    int16_t DS3232RTC::temperature()
-    {
-        union int16_byte {
-            int16_t i;
-            byte b[2];
-        } rtcTemp;
-
-        rtcTemp.b[0] = readRTC(RTC_TEMP_LSB);
-        rtcTemp.b[1] = readRTC(RTC_TEMP_MSB);
-        return rtcTemp.i / 64;
-    }
-
-    // Decimal-to-BCD conversion
-    uint8_t DS3232RTC::dec2bcd(uint8_t n)
-    {
-        return n + 6 * (n / 10);
-    }
-
-    // BCD-to-Decimal conversion
-    uint8_t __attribute__ ((noinline)) DS3232RTC::bcd2dec(uint8_t n)
-    {
-        return n - 6 * (n >> 4);
-    }
-
-    #ifdef ARDUINO_ARCH_AVR
-    DS3232RTC RTC;      // instantiate an RTC object
-    #endif
+    def temperature(self):
+        """
+        Reads and returns temperature in C
+        :return: (int) temperature, degrees celsius
+        """
+        self.bus.write_byte(self.addr, RTC.RTC_TEMP_MSB)
+        ls = self.bus.read_i2c_block_data(self.addr, 0, 2)
+        raw = (ls[1] >> 6) | (ls[0] << 2)
+        if (raw >> 9) & 1: #convert from twos comp to decimal, if sign bit is 1
+            raw &= 0x1ff
+            raw -= (1 << 9)
+        return raw / 4
