@@ -13,7 +13,8 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
         self.conditions = {
             "Collection Complete": False,
-            "Low Battery": False
+            "Low Battery": False,
+            "Iridium Status": True  # if iridium works (not locked off), True
         }
 
         self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
@@ -30,6 +31,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.instruct["All Off"](exceptions=["APRS", "Iridium"])
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
+        self.conditions["Iridium Status"] = self.sfr.devices["Iridium Status"] is not None
 
     def check_conditions(self) -> bool:
         super(Science, self).check_conditions()
@@ -43,7 +45,8 @@ class Science(Mode):  # TODO: IMPLEMENT
         super(Science, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
-
+        self.conditions["Iridium Status"] = self.sfr.devices["Iridium Status"] is not None
+        
     def execute_cycle(self) -> None:
         self.read_radio()
         super(Science, self).execute_cycle()
