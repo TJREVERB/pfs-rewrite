@@ -34,6 +34,7 @@ class MainControlLoop:
 
                 print("Cycle")
                 self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
+                self.sfr.command_executor.execute()  # Execute commands
                 self.logger.execute_cycle()  # Update logs
 
             self.sfr.mode_obj.terminate_mode()  # terminates current old mode

@@ -63,13 +63,7 @@ class Mode:
         For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute radio commands, that is done by command_executor class.
         """
-        self.sfr.command_executor.execute()
-        if sun := self.sfr.eps.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
-            self.sfr.enter_sunlight()
-        elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
-            self.sfr.enter_eclipse()
-        self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
-        self.sfr.dump()
+        pass
 
     def terminate_mode(self) -> None:
         """

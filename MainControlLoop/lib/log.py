@@ -3,11 +3,13 @@ import pandas as pd
 
 
 class Logger:
-    LOG_DELAY = 10  # Time delay in seconds
+    LOG_DELAY = 10  # Seconds
+    ORBIT_CHECK_DELAY = 10
 
     def __init__(self, sfr):
         self.sfr = sfr
         self.last_log_time = time.perf_counter()
+        self.last_orbit_update = self.last_log_time
 
     def log_pwr(self, pdm_states, pwr, t=0) -> None:
         """
@@ -21,7 +23,7 @@ class Logger:
         print("Power: ", t, pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
-        data.to_frame().to_csv(path_or_buf=self.pwr_log_path, mode="a", header=False)  # Append data to log
+        data.to_frame().to_csv(path_or_buf=self.sfr.pwr_log_path, mode="a", header=False)  # Append data to log
 
     def log_solar(self, gen, t=0) -> None:
         """
@@ -33,7 +35,7 @@ class Logger:
             t = time.time()
         print("Solar: ", t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
-        data.to_frame().to_csv(path_or_buf=self.solar_log_path, mode="a", header=False)  # Append data to log
+        data.to_frame().to_csv(path_or_buf=self.sfr.solar_log_path, mode="a", header=False)  # Append data to log
     
     def integrate_charge(self) -> None:
         """
@@ -46,10 +48,24 @@ class Logger:
         self.log_solar(gain := self.sfr.eps.solar_power())
         # Subtract delta * time from BATTERY_CAPACITY_INT
         self.sfr.vars.BATTERY_CAPACITY_INT += (gain - buspower - pdms_on[0]) * \
-            (t := time.perf_counter() - self.previous_time)
+            (t := time.perf_counter() - self.last_log_time)
         # Update previous_time, accounts for rollover
-        self.previous_time = t
+        self.last_log_time = t
+    
+    def update_orbits(self):
+        """
+        Update orbits log when sun is detected
+        """
+        if sun := self.sfr.eps.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
+            self.sfr.enter_sunlight()
+        elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
+            self.sfr.enter_eclipse()
+        self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
+        self.last_orbit_update = time.perf_counter()
     
     def execute_cycle(self):
-        if time.time() - self.last_log_time > self.LOG_DELAY:
+        if time.perf_counter() - self.last_log_time > self.LOG_DELAY:
             self.integrate_charge()
+        if time.perf_counter() - self.last_orbit_update > self.ORBIT_CHECK_DELAY:
+            self.update_orbits()
+        self.sfr.dump()
