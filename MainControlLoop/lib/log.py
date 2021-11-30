@@ -4,7 +4,7 @@ import pandas as pd
 
 class Logger:
     LOG_DELAY = 10  # Seconds
-    ORBIT_CHECK_DELAY = 10
+    ORBIT_CHECK_DELAY = 60
 
     def __init__(self, sfr):
         self.sfr = sfr
