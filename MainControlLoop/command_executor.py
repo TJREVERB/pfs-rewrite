@@ -62,7 +62,7 @@ class CommandExecutor:
                 self.transmit(command, [repr(e)], True)
         self.sfr.vars.outreach_buffer.clear()
 
-    def transmit(self, packet: TransmissionPacket, data: list, error: bool):
+    def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
         Transmit a message over radio that received command
         :param packet: (TransmissionPacket) packet of received transmission
@@ -81,13 +81,11 @@ class CommandExecutor:
         Transmits an OK code
         """
 
-
     def BVT(self, packet: TransmissionPacket):
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()], False) 
-        
+        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()])
 
     def CHG(self, packet: TransmissionPacket):
         """
@@ -96,7 +94,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Charging":
             raise RuntimeError("Already in Charging")
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-        self.transmit(packet, [], False)
+        self.transmit(packet, [])
 
     def SCI(self, packet: TransmissionPacket):
         """
@@ -105,7 +103,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Science":
             raise RuntimeError("Already in Science")
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-        self.transmit(packet, [], False)
+        self.transmit(packet, [])
 
     def OUT(self, packet: TransmissionPacket):
         """
@@ -114,20 +112,20 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Outreach":
             raise RuntimeError("Already in Outreach")
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
-        self.transmit(packet, [], False)
+        self.transmit(packet, [])
 
     def UVT(self, packet: TransmissionPacket):  # TODO: Implement
         v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
-        self.transmit(packet, [v], False)
+        self.transmit(packet, [v])
 
     def LVT(self, packet: TransmissionPacket):  # TODO: Implement
         v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
-        self.transmit(packet, [v], False)
+        self.transmit(packet, [v])
 
     def RST(self,
-            packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
+        packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
@@ -144,13 +142,13 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [self.sfr.eps.total_power(4)[0]], False) #might as well go comprehensive
+        self.transmit(packet, [self.sfr.eps.total_power(4)[0]]) #might as well go comprehensive
 
     def SSV(self, packet: TransmissionPacket):
         """
         Transmit signal strength variability
         """
-        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY], False)
+        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
 
     def SOL(self, packet: TransmissionPacket):
         """
@@ -229,7 +227,7 @@ class CommandExecutor:
         tumble = self.sfr.imu.getTumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
-        self.transmit(packet, result, False)
+        self.transmit(packet, result)
 
     def ORB(self, packet: TransmissionPacket):
         """
