@@ -2,7 +2,7 @@ from MainControlLoop.Mode.mode import Mode
 import time
 
 
-class Science(Mode):  # TODO: IMPLEMENT
+class Science(Mode):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.last_ping = time.time()
@@ -46,7 +46,7 @@ class Science(Mode):  # TODO: IMPLEMENT
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium Status"] is not None
-        
+
     def execute_cycle(self) -> None:
         self.read_radio()
         super(Science, self).execute_cycle()
