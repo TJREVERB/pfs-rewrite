@@ -95,6 +95,7 @@ class CommandExecutor:
         """
         Transmits an OK code
         """
+        self.transmit(packet, [])
 
     def BVT(self, packet: TransmissionPacket):
         """
