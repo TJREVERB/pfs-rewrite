@@ -10,7 +10,6 @@ class MainControlLoop:
         Each object should take in the state field registry
         """
         self.sfr = StateFieldRegistry()
-        self.logger = Logger(self.sfr)
 
     def run(self):  # Repeat main control loop forever
         print("MCL Start")
@@ -37,4 +36,4 @@ class MainControlLoop:
             print("Cycle")
             self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
             self.sfr.command_executor.execute()  # Execute commands
-            self.logger.execute_cycle()  # Update logs
+            self.sfr.logger.log()  # Logs data
