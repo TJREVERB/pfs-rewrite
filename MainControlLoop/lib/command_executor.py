@@ -149,9 +149,9 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].wave(self.sfr.eps.telemetry["VBCROUT"](),
-                                                           self.sfr.eps.solar_power(),
-                                                           self.sfr.eps.total_power(4))
+        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
+                                self.sfr.eps.solar_power(),
+                                self.sfr.eps.total_power(4)])
 
     def PWR(self, packet: TransmissionPacket):
         """

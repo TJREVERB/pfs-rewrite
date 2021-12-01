@@ -281,7 +281,7 @@ class Iridium:
         encoded.append(date & 0xff)
 
         if return_code == "ERR":
-            data = data.encode("ascii")
+            data = data[0].encode("ascii")
             for d in data:
                 encoded.append(d)
         else:

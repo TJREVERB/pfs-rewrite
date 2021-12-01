@@ -173,6 +173,10 @@ class IMU:
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
+        
+    
+    def start(self):
+        # Start the IMU; MUST BE RUN BEFORE TRYING TO READ ANYTHING
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:
             raise RuntimeError("bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
