@@ -176,6 +176,9 @@ class IMU:
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:
             raise RuntimeError("bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
+    
+    def start(self):
+        # Start the IMU; MUST BE RUN BEFORE TRYING TO READ ANYTHING
         self._reset()
         self._write_register(IMU._POWER_REGISTER, IMU._POWER_NORMAL)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
