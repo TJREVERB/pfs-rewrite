@@ -20,25 +20,25 @@ class CommandExecutor:
             "POL": self.POL,  # Transmit proof of life through primary radio to ground station
             "PWR": self.PWR,  # Transmit total power draw of connected components
             "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
-            "SVF": None,  # TODO: Implement  # Transmit full rssi data logs
-            "SOL": self.SOL,  # Transmit current solar panel production
-            "TBL": self.TBL,  # Transmits tumble value (Magnitude of gyroscope vector)
+            "SVF": self.SVF,  # TODO: Implement  # Transmit full rssi data logs
+            "SOL": self.SOL,  # TODO: Implement Transmit current solar panel production
+            "TBL": self.TBL,  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
-            "MLK": self.MLK,  # Mode lock
+            "MLK": self.MLK,  # TODO: Implement Mode lock
+            "MFL": self.MFL,  # TODO: Implement Disable mode lock
             "ORB": self.ORB,  # Orbital period
             "UVT": self.UVT,  # Set upper threshold
             "LVT": self.LVT,  # Set lower threshold
-            "DLK": self.DLK,  # Device lock
+            "DLK": self.DLK,  # Enable Device lock
+            "DLF": self.DLF,  # Disable device lock
             "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
             "GRB": self.GRB,  # Return a garbled message error if one is received
             "GCD": self.GCD,  # TODO: Implement transmit detailed critical data,
-            "PWD": None,  # TODO: Implement Transmits last n power draw datapoints
-            "SOD": None,  # TODO: Implement Transmits last n solar generation datapoints
-            "TBD": None,  # TODO: Implement Transmits last n IMU tumble datapoints
-            "MFL": None,  # TODO: Implement Distable mode lock
-            "DLF": None,  # TODO: Implement Disable device lock
-            "SUM" : self.SUM,  # Get summary (averages) statistics for missionn
-            "SZE" : None,  # TODO: Implement Transmit the expected data return size of a given command
+            "PWD": self.PWD,  # TODO: Implement Transmits last n power draw datapoints
+            "SOD": self.SOD,  # TODO: Implement Transmits last n solar generation datapoints
+            "TBD": self.TBD,  # TODO: Implement Transmits last n IMU tumble datapoints
+            "SUM": self.SUM,  # TODO: ImplementGet summary (averages) statistics for missionn
+            "SZE": self.SZE,  # TODO: Implement Transmit the expected data return size of a given command
         }
 
         # IMPLEMENT FULLY
@@ -130,12 +130,12 @@ class CommandExecutor:
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
         self.transmit(packet, [])
 
-    def UVT(self, packet: TransmissionPacket):  # TODO: Implement
+    def UVT(self, packet: TransmissionPacket):
         v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
         self.transmit(packet, [v])
 
-    def LVT(self, packet: TransmissionPacket):  # TODO: Implement
+    def LVT(self, packet: TransmissionPacket):
         v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
         self.transmit(packet, [v])
@@ -165,12 +165,17 @@ class CommandExecutor:
         """
         self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
 
-    def SOL(self, packet: TransmissionPacket):
+    def SVF(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Transmit full rssi data logs
+        """
+
+    def SOL(self, packet: TransmissionPacket): # TODO: Implement
         """
         Transmit solar generation
         """
 
-    def TBL(self, packet: TransmissionPacket):
+    def TBL(self, packet: TransmissionPacket): # TODO: Implement
         """
         Transmit magnitude IMU tumble
         """
@@ -179,29 +184,60 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
+        self.transmit(packet, [self.sfr.imu.getTumble()])
+        
 
-    def MLK(self, packet: TransmissionPacket):
+    def MLK(self, packet: TransmissionPacket): # TODO: Implement
         """
         Enable Mode Lock
         """
 
-    def DLK(self, a, b):
+    def MFL(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Disable mode lock
+        """
+
+    def DLK(self, packet: TransmissionPacket): # TODO: Test
         """
         Enable Device Lock
         """
+        a = packet[0] # Get device code
+        b = packet[1]
         device_codes = {
             "00": "Iridium",
             "01": "APRS",
             "02": "IMU",
             "03": "Antenna Deployer"
-        }  # TODO: Fix this with packet implementation
+        }
+        try:
+            if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
+                raise RuntimeError("Device already locked")
+            else:
+                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = True
+                self.transmit(packet, [a + b])
+        except KeyError:
+            self.error(self.sfr.vars.PRIMARY_RADIO, "D")
+
+    def DLF(self, packet: TransmissionPacket): # TODO: Test
+        """
+        Disable Device Lock
+        """
+
+        a = packet[0] # Get device code
+        b = packet[1]
+
+        device_codes = {
+            "00": "Iridium",
+            "01": "APRS",
+            "02": "IMU",
+            "03": "Antenna Deployer"
+        }
         try:
             if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
                 self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = False
-                self.transmit(device_codes[a + b] + " UNLOCKED")
+                self.transmit(packet, [a + b])
             else:
-                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = True
-                self.transmit(device_codes[a + b] + " LOCKED")
+                raise RuntimeError("Device not locked")
         except KeyError:
             self.error(self.sfr.vars.PRIMARY_RADIO, "D")
 
@@ -250,19 +286,47 @@ class CommandExecutor:
         """
         self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
 
-    def REP(self, msn):
+    def REP(self, packet: TransmissionPacket):
         """
         Repeat result of command with given MSN
         """  # TODO: Fix this
+        msn = packet[0] # Read Packet Value
         df = pd.read_csv(self.COMMAND_LOG_PATH)
         try:
-            self.transmit(df[df["msn"] == msn].to_csv().strip("\n"))
+            self.transmit(packet, [df[df["msn"] == msn].to_csv().strip("\n")])
         except Exception as e:
             print(e)
-            self.transmit("Command does not exist in log!")
+            raise RuntimeError("Command does not exist in log!")
 
-    def GRB(self, **kwargs):
+    def GRB(self, packet: TransmissionPacket):
         """
         Transmit a garbled message error
         """
         raise RuntimeError("Garbled Message")
+
+    def PWD(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Transmits last n power draw datapoints
+        """    
+
+    def SOD(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Transmits last n solar generation datapoints
+        """
+    
+    def TBD(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Transmits last n IMU tumble datapoints
+        """
+
+    def SZE(self, packet: TransmissionPacket): # TODO: Implement
+        """
+        Transmit the expected data return size of a given command
+        """
+
+        cmd = packet[0] # only packet value; encoded command identifier
+        size = 0 # return variable
+
+        # TODO: Parse encoded command value and return value
+
+        self.transmit(packet, [cmd, size])
