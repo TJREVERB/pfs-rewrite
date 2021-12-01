@@ -44,7 +44,7 @@ class CommandExecutor:
         # IMPLEMENT FULLY
         self.secondary_registry = {  # Secondary command registry for APRS, in outreach mode
             # Reads and transmits battery voltage
-            "BVT": lambda: self.sfr.devices["Iridium"].transmit(str(self.sfr.eps.telemetry["VBCROUT"]())),
+            "BVT": self.BVT
         }
         self.arg_registry = {
             # Set of commands that require arguments, for either registry, for error checking reasons only
