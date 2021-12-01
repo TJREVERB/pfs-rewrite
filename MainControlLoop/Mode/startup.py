@@ -1,5 +1,6 @@
 import time
 from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
 
 class Startup(Mode):
@@ -58,11 +59,7 @@ class Startup(Mode):
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 # TOOD: HANDLE THIS BETTER
-                try:
-                    self.sfr.devices["Iridium"].wave(self.sfr.eps.telemetry["VBCROUT"](), 
-                                                    self.sfr.eps.solar_power(), self.sfr.eps.total_power(4))
-                except RuntimeError as e:
-                    print(e)
+                self.sfr.command_executor.POL(TransmissionPacket("POL", [], 0))
                 self.last_contact_attempt = time.time()
 
     def read_radio(self) -> None:
