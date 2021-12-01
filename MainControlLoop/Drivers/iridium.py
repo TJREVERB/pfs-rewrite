@@ -462,7 +462,7 @@ class Iridium:
                     self.SBD_RB()
                     raw = self.serial.read(50)
                     t = time.perf_counter()
-                    while raw.decode("utf-8").find("OK") == -1:
+                    while raw.find(b'OK') == -1:
                         if time.perf_counter() - t > 5:
                             raise RuntimeError("Serial Timeout")
                         raw += self.serial.read(50)
