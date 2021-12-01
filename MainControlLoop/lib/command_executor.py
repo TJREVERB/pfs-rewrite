@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import RedundantCommandInputError
+from MainControlLoop.lib.exceptions import RedundantCommandInputError, InvalidCommandInputError
 
 
 class CommandExecutor:
@@ -201,45 +201,40 @@ class CommandExecutor:
         """
         Enable Device Lock
         """
-        a = packet[0] # Get device code
-        b = packet[1]
-        device_codes = {
-            "00": "Iridium",
-            "01": "APRS",
-            "02": "IMU",
-            "03": "Antenna Deployer"
-        }
-        try:
-            if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
-                raise RuntimeError("Device already locked")
-            else:
-                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = True
-                self.transmit(packet, [a + b])
-        except KeyError:
-            self.error(self.sfr.vars.PRIMARY_RADIO, "D")
+        dcode = packet.args[0]
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if dcode < 0 or dcode >= len(device_codes):
+            raise InvalidCommandInputError("Invalid Device Code")
+        if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
+            raise RuntimeError("Device already locked")
+        else:
+            self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
+            self.transmit(packet, [dcode])
 
     def DLF(self, packet: TransmissionPacket): # TODO: Test
         """
         Disable Device Lock
         """
 
-        a = packet[0] # Get device code
-        b = packet[1]
-
-        device_codes = {
-            "00": "Iridium",
-            "01": "APRS",
-            "02": "IMU",
-            "03": "Antenna Deployer"
-        }
-        try:
-            if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
-                self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = False
-                self.transmit(packet, [a + b])
-            else:
-                raise RuntimeError("Device not locked")
-        except KeyError:
-            self.error(self.sfr.vars.PRIMARY_RADIO, "D")
+        dcode = packet.args[0]
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if dcode < 0 or dcode >= len(device_codes):
+            raise InvalidCommandInputError("Invalid Device Code")
+        if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
+            self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = False
+            self.transmit(packet, [dcode])
+        else:
+            raise RuntimeError("Device not locked")
 
     def SUM(self, packet: TransmissionPacket):
         """
