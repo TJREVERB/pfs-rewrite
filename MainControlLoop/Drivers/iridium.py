@@ -475,7 +475,7 @@ class Iridium:
                 break
             elif result[2] == 2:
                 break
-            time.sleep(5)
+            time.sleep(2.5)
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
 
