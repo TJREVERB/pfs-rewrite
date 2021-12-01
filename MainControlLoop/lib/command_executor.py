@@ -31,6 +31,14 @@ class CommandExecutor:
             "DLK": self.DLK,  # Device lock
             "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
             "GRB": self.GRB,  # Return a garbled message error if one is received
+            "GCD": self.GCD,  # TODO: Implement transmit detailed critical data,
+            "PWD": None,  # TODO: Implement Transmits last n power draw datapoints
+            "SOD": None,  # TODO: Implement Transmits last n solar generation datapoints
+            "TBD": None,  # TODO: Implement Transmits last n IMU tumble datapoints
+            "MFL": None,  # TODO: Implement Distable mode lock
+            "DLF": None,  # TODO: Implement Disable device lock
+            "SUM" : self.SUM,  # Get summary (averages) statistics for missionn
+            "SZE" : None,  # TODO: Implement Transmit the expected data return size of a given command
         }
 
         # IMPLEMENT FULLY
@@ -42,7 +50,14 @@ class CommandExecutor:
             # Set of commands that require arguments, for either registry, for error checking reasons only
             "UVT",
             "LVT",
-            "DLK"
+            "PWD",
+            "SSD",
+            "SOD",
+            "TBD",
+            "DLK",
+            "DLF",
+            "REP",
+            "SZE"
         }
 
     def execute(self, packet: TransmissionPacket):
@@ -141,7 +156,7 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [self.sfr.eps.total_power(4)[0]]) #might as well go comprehensive
+        self.transmit(packet, [self.sfr.eps.total_power(4)[0]])  # might as well go comprehensive
 
     def SSV(self, packet: TransmissionPacket):
         """
@@ -178,7 +193,7 @@ class CommandExecutor:
             "01": "APRS",
             "02": "IMU",
             "03": "Antenna Deployer"
-        } #TODO: Fix this with packet implementation
+        }  # TODO: Fix this with packet implementation
         try:
             if self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]]:
                 self.sfr.vars.LOCKED_DEVICES[device_codes[a + b]] = False
@@ -194,7 +209,7 @@ class CommandExecutor:
         Transmits down summary statistics about our mission
         """
 
-    def STS(self, packet: TransmissionPacket):
+    def GCD(self, packet: TransmissionPacket):
         """
         Transmits down information about the satellite's current status
         Transmits:
@@ -237,7 +252,7 @@ class CommandExecutor:
     def REP(self, msn):
         """
         Repeat result of command with given MSN
-        """ #TODO: Fix this
+        """  # TODO: Fix this
         df = pd.read_csv(self.COMMAND_LOG_PATH)
         try:
             self.transmit(df[df["msn"] == msn].to_csv().strip("\n"))
