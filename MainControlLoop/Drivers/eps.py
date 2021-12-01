@@ -219,6 +219,36 @@ class EPS:
         """
         raw = self.request(0x10, tle, 2)
         return (raw[0] << 8 | raw[1]) * multiplier
+    
+    def bus_power(self) -> float:
+        """
+        Returns total bus power draw
+        :return: (float) total bus power draw
+        """
+        return self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() + \
+            self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() + \
+            self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() + \
+            self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]()
+    
+    def power_pdms_on(self) -> tuple:
+        """
+        Returns total power for a list of pdms
+        :param pdms: bits object storing which pdms are on
+        :return: (tuple) 10-element list showing which pdms are on, total power draw of pdms
+        """
+        raw = self.commands["All Actual States"]()
+        actual_on = raw[2] << 8 | raw[3]
+        ls = []
+        for i in range(1, 11):
+            b = actual_on & int(math.pow(2, i)) >> i
+            if b:
+                ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
+            else:
+                ls.append(0)
+        pdm_states = []
+        for pdm in range(1, 11):
+            pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
+        return pdm_states, sum(ls)
 
     def total_power(self, mode) -> tuple:
         """
@@ -232,18 +262,12 @@ class EPS:
         :return: (tuple) power draw in W, time to poll
         """
         t = time.perf_counter()
-        buspower = (self.telemetry["I12VBUS"]() * self.telemetry["V12VBUS"]() +
-                    self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() +
-                    self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() +
-                    self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]())
+        buspower = self.bus_power()
         if mode == 0:
             return buspower, time.perf_counter() - t
         if mode == 1:
             raw = self.commands["All Expected States"]()
             expected_on = raw[2] << 8 | raw[3]
-            pdm_states = []
-            for pdm in range(1, 11):
-                pdm_states.append(expected_on & int(math.pow(2, pdm)) >> pdm)
             ls = []
             for i in range(1, 11):
                 b = expected_on & int(math.pow(2, i)) >> i
@@ -251,14 +275,10 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
-            self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter() - t
         if mode == 2:
             raw = self.commands["All Actual States"]()
             actual_on = raw[2] << 8 | raw[3]
-            pdm_states = []
-            for pdm in range(1, 11):
-                pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
             ls = []
             for i in range(1, 11):
                 b = actual_on & int(math.pow(2, i)) >> i
@@ -266,17 +286,12 @@ class EPS:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
                     ls.append(0)
-            self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter() - t
         if mode == 3:
             ls = [self.telemetry[self.bitsToTelem[i[0]][0]]() * self.telemetry[
                 self.bitsToTelem[i[0]][1]]() for i in self.COMPONENTS.values()]
-            pdm_states = []
             raw = self.commands["All Actual States"]()
             data = raw[2] << 8 | raw[3]
-            for pdm in range(1, 11):
-                pdm_states.append(data & int(math.pow(2, pdm)) >> pdm)
-            self.sfr.log_pwr(pdm_states, ls)
             return buspower + sum(ls), time.perf_counter() - t
         if mode == 4:
             ls = [self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[
