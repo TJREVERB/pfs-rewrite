@@ -157,7 +157,7 @@ class CommandExecutor:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [sum(self.sfr.recent_power()))]
+        self.transmit(packet, [sum(self.sfr.recent_power())])
 
     def SSV(self, packet: TransmissionPacket):
         """
