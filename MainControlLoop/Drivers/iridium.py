@@ -398,7 +398,7 @@ class Iridium:
         """
         rssi = self.RSSI()
         if rssi.find("CSQ:0") != -1 or rssi.find("OK") == -1:  # check signal strength first
-            return [2, 0, 2, 0] # Simulate failure to transmit
+            raise RuntimeError("No Signal")
         length = len(message)
         checksum = sum(message) & 0xffff
         print(checksum, length, message)
