@@ -151,13 +151,13 @@ class CommandExecutor:
         """
         self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
                                 sum(self.sfr.recent_gen()),
-                                sum(self.sfr.recent_power())])
+                                sum(self.sfr.recent_power()))]
 
     def PWR(self, packet: TransmissionPacket):
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [sum(self.sfr.recent_power())])
+        self.transmit(packet, [sum(self.sfr.recent_power()))]
 
     def SSV(self, packet: TransmissionPacket):
         """
