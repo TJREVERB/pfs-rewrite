@@ -141,6 +141,19 @@ class StateFieldRegistry:
         np.insert(data, 0, time.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
+    
+    def clear_logs(self):
+        """
+        WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
+        """
+        pd.DataFrame().to_csv(self.pwr_log_path, header=self.pwr_draw_log_headers, mode="w")
+        pd.DataFrame().to_csv(self.solar_log_path, header=self.solar_generation_log_headers, mode="w")
+        orbit_log_headers = pd.read_csv(self.orbit_log_path, header=0).columns
+        pd.DataFrame().to_csv(self.orbit_log_path, header=orbit_log_headers, mode="w")
+        command_log_headers = pd.read_csv(self.command_log_path, header=0).columns
+        pd.DataFrame().to_csv(self.command_log_path, header=command_log_headers, mode="w")
+        os.remove(self.log_path)
+        print("Logs cleared")
 
     def reset(self):
         """
