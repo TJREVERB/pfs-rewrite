@@ -147,15 +147,15 @@ class StateFieldRegistry:
         Returns list of buspower and power draws for all pdms
         :return: (list) [buspower, 0x01, 0x02... 0x0A]
         """
-        ser = pd.read_csv(self.pwr_log_path, header=0)[-1]
-        return list(ser[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]])
+        return list(pd.read_csv(self.pwr_log_path, header=0)
+            [["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
     
     def recent_gen(self) -> list:
         """
         Returns list of input power from all bcrs
         :return: (list) [bcr1, bcr2, bcr3]
         """
-        return list(pd.read_csv(self.solar_log_path, header=0)[-1]["bcr1", "bcr2", "bcr3"])
+        return list(pd.read_csv(self.solar_log_path, header=0)["bcr1", "bcr2", "bcr3"][-1])
     
     def clear_logs(self):
         """
