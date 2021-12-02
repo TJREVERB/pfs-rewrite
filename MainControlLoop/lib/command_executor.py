@@ -21,7 +21,7 @@ class CommandExecutor:
             "PWR": self.PWR,  # Transmit total power draw of connected components
             "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
             "SVF": self.SVF,  # TODO: Implement  # Transmit full rssi data logs
-            "SOL": self.SOL,  # TODO: Implement Transmit current solar panel production
+            "SOL": self.SOL,  # Transmit current solar panel production
             "TBL": self.TBL,  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
             "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
             "MLK": self.MLK,  # TODO: Implement Mode lock
@@ -37,7 +37,7 @@ class CommandExecutor:
             "PWD": self.PWD,  # TODO: Implement Transmits last n power draw datapoints
             "SOD": self.SOD,  # TODO: Implement Transmits last n solar generation datapoints
             "TBD": self.TBD,  # TODO: Implement Transmits last n IMU tumble datapoints
-            "SUM": self.SUM,  # TODO: ImplementGet summary (averages) statistics for missionn
+            "SUM": self.SUM,  # TODO: Implement Get summary (averages) statistics for missionn
             "SZE": self.SZE,  # TODO: Implement Transmit the expected data return size of a given command
         }
 
@@ -300,15 +300,35 @@ class CommandExecutor:
         """
         raise RuntimeError("Garbled Message")
 
-    def PWD(self, packet: TransmissionPacket): # TODO: Implement
+    def PWD(self, packet: TransmissionPacket): # TODO: Test
         """
         Transmits last n power draw datapoints
         """    
 
-    def SOD(self, packet: TransmissionPacket): # TODO: Implement
+        data = pd.read_csv(self.sfr.pwr_log_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
+
+
+    def SOD(self, packet: TransmissionPacket): # TODO: Test
         """
         Transmits last n solar generation datapoints
         """
+
+        data = pd.read_csv(self.sfr.solar_log_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
+
     
     def TBD(self, packet: TransmissionPacket): # TODO: Implement
         """
