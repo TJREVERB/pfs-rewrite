@@ -298,16 +298,21 @@ class EPS:
                 self.bitsToTelem[i][1]]() for i in range(1, 11)]
             return buspower + sum(ls), time.perf_counter() - t
         return -1, -1
+    
+    def raw_solar_gen(self) -> list:
+        """
+        Returns solar generation of all three busses
+        :return: (list) 3-elements: BCR1, BCR2, BCR3 power input
+        """
+        return [self.telemetry["VBCR" + str(i)]() * max([self.telemetry["IBCR" + str(i) + j]()
+                                                               for j in ["A", "B"]]) for i in range(1, 4)]
 
     def solar_power(self) -> float:
         """
         Returns net solar power gain
         :return: (float) power gain in W
         """
-        generation = [self.telemetry["VBCR" + str(i)]() * max([self.telemetry["IBCR" + str(i) + j]()
-                                                               for j in ["A", "B"]]) for i in range(1, 4)]
-        self.sfr.log_solar(generation)
-        return sum(generation)
+        return sum(self.raw_solar_gen())
 
     def sun_detected(self) -> bool:
         """

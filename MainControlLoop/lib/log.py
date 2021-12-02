@@ -24,7 +24,7 @@ class Logger:
         data = pd.concat([pd.Series([t]), pd.Series(pdm_states), pd.Series(pwr)])
         data.to_frame().to_csv(path_or_buf=self.sfr.pwr_log_path, mode="a", header=False)  # Append data to log
 
-    def log_solar(self, gen, t=0) -> None:
+    def log_solar(self, gen: list, t=0) -> None:
         """
         Logs the solar power generation from each panel (sum of A and B)
         :param gen: array of power inputs from each panel, in W.
@@ -43,10 +43,10 @@ class Logger:
         # Log total power, store values into variables
         self.log_pwr((pdms_on := self.sfr.eps.power_pdms_on())[1], 
             buspower := self.sfr.eps.bus_power() + pdms_on[0])
-        # Log solar generation, store value into variable
-        self.log_solar(gain := self.sfr.eps.solar_power())
+        # Log solar generation, store list into variable gen
+        self.log_solar(gen := self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
-        self.sfr.vars.BATTERY_CAPACITY_INT += (gain - buspower - pdms_on[0]) * \
+        self.sfr.vars.BATTERY_CAPACITY_INT += (sum(gen) - buspower - pdms_on[0]) * \
             (t := time.perf_counter() - self.last_log_time)
         # Update previous_time, accounts for rollover
         self.last_log_time = t
