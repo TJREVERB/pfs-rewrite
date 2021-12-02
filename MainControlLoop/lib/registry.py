@@ -1,4 +1,5 @@
 import time
+import os
 import pandas as pd
 import numpy as np
 import pickle
@@ -109,8 +110,8 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "wb") as f:
             pickle.dump(self.vars, f)
-        with open(self.readable_log_path, "w") as f:
-            json.dump(self.vars.__dict__, f)
+        # with open(self.readable_log_path, "w") as f:
+        #     json.dump(self.vars.__dict__, f)
 
     def enter_sunlight(self) -> None:
         """
@@ -141,6 +142,36 @@ class StateFieldRegistry:
         np.insert(data, 0, time.time())  # Add timestamp
         df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
+    
+    def recent_power(self) -> list:
+        """
+        Returns list of buspower and power draws for all pdms
+        :return: (list) [buspower, 0x01, 0x02... 0x0A]
+        """
+        if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
+            return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
+        return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
+    
+    def recent_gen(self) -> list:
+        """
+        Returns list of input power from all bcrs
+        :return: (list) [bcr1, bcr2, bcr3]
+        """
+        if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
+            return self.eps.raw_solar_gen()
+        return list(df["bcr1", "bcr2", "bcr3"][-1])
+    
+    def clear_logs(self):
+        """
+        WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
+        """
+        for f in [self.pwr_log_path, self.solar_log_path, self.orbit_log_path]:
+            headers = pd.read_csv(f, header=0).columns
+            os.remove(f)
+            with open(f, "w") as new:
+                new.write(",".join(list(headers)))
+        os.remove(self.log_path)
+        print("Logs cleared")
 
     def reset(self):
         """

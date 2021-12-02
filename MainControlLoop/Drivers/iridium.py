@@ -24,20 +24,34 @@ class Iridium:
 
     ENCODED_REGISTRY = [ #TODO: import from command_executor instead of keeping a copy here. Perhaps use list(primary_registry.keys()). Still need to add 0OK and ERR afterwards though
         # Commands to satellite, also used in specifying return values to ground
-        "NOP",  # 0, NO OP
-        "BVT",  # 1, BATTERY VOLTAGE
-        "CHG",  # 2, CHARGING MODE
-        "SCI",  # 3, SCIENCE MODE
-        "OUT",  # 4, OUTREACH MODE
-        "RST",  # 5, BUS RESET
-        "WVE",  # 6, PROOF OF LIFE
-        "PWR",  # 7, TOTAL POWER
-        "SSV",  # 8, SIGNAL VARIABILITY
-        "SVF",  # 9, FULL SIGNAL VARIABILITY DATA
-        "SOL",  # 10, SOLAR POWER
-        "TBL",  # 11, TUMBLE
-        "UVP",  # 12, Set Undervoltage cutoff
-        "OVP",  # 13, Set Overvoltage cutoff
+        "NOP",
+        "BVT",
+        "CHG",
+        "SCI",  # Enters science mode
+        "OUT",  # Enters outreach mode
+        "RST",  # Reset power to the entire satellite (!!!!)
+        "POL",  # Transmit proof of life through primary radio to ground station
+        "PWR",  # Transmit total power draw of connected components
+        "SSV",  # Calculate and transmit Iridium signal strength variability
+        "SVF",  # TODO: Implement  # Transmit full rssi data logs
+        "SOL",  # TODO: Implement Transmit current solar panel production
+        "TBL",  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
+        "TBF",  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
+        "MLK",  # TODO: Implement Mode lock
+        "MFL",  # TODO: Implement Disable mode lock
+        "ORB",  # Orbital period
+        "UVT",  # Set upper threshold
+        "LVT",  # Set lower threshold
+        "DLK",  # Enable Device lock
+        "DLF",  # Disable device lock
+        "REP",  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
+        "GRB",  # Return a garbled message error if one is received
+        "GCD",  # TODO: Implement transmit detailed critical data,
+        "PWD",  # TODO: Implement Transmits last n power draw datapoints
+        "SOD",  # TODO: Implement Transmits last n solar generation datapoints
+        "TBD",  # TODO: Implement Transmits last n IMU tumble datapoints
+        "SUM",  # TODO: ImplementGet summary (averages) statistics for missionn
+        "SZE"
     ]
 
     RETURN_CODES = [
