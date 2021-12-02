@@ -110,8 +110,8 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "wb") as f:
             pickle.dump(self.vars, f)
-        with open(self.readable_log_path, "w") as f:
-            json.dump(self.vars.__dict__, f)
+        # with open(self.readable_log_path, "w") as f:
+        #     json.dump(self.vars.__dict__, f)
 
     def enter_sunlight(self) -> None:
         """
