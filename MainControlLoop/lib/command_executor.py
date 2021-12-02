@@ -151,7 +151,7 @@ class CommandExecutor:
         """
         self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
                                 sum(self.sfr.recent_gen()),
-                                sum(self.sfr.recent_power()))]
+                                sum(self.sfr.recent_power())])
 
     def PWR(self, packet: TransmissionPacket):
         """

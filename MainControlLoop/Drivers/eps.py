@@ -230,11 +230,10 @@ class EPS:
             self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() + \
             self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]()
     
-    def power_pdms_on(self) -> tuple:
+    def raw_pdm_draw(self) -> tuple:
         """
-        Returns total power for a list of pdms
-        :param pdms: bits object storing which pdms are on
-        :return: (tuple) 10-element list showing which pdms are on, total power draw of pdms
+        Returns which pdms are on, power draw of each pdm
+        :return: (tuple) 10-element list of which pdms are on, 10-element list of power draws per pdm
         """
         raw = self.commands["All Actual States"]()
         actual_on = raw[2] << 8 | raw[3]
@@ -248,7 +247,15 @@ class EPS:
         pdm_states = []
         for pdm in range(1, 11):
             pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
-        return pdm_states, sum(ls)
+        return pdm_states, ls
+    
+    def power_pdms_on(self) -> tuple:
+        """
+        Returns total power for a list of pdms
+        :param pdms: bits object storing which pdms are on
+        :return: (tuple) 10-element list showing which pdms are on, total power draw of pdms
+        """
+        return (raw := self.raw_pdm_draw())[0], sum(raw[1])
 
     def total_power(self, mode) -> tuple:
         """
