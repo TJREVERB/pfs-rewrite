@@ -166,7 +166,7 @@ class StateFieldRegistry:
             headers = pd.read_csv(f, header=0).columns
             os.remove(f)
             with open(f, "w") as new:
-                new.write(list(headers).join(","))
+                new.write(",".join(list(headers)))
         os.remove(self.log_path)
         print("Logs cleared")
 
