@@ -148,7 +148,7 @@ class StateFieldRegistry:
         :return: (list) [buspower, 0x01, 0x02... 0x0A]
         """
         ser = pd.read_csv(self.pwr_log_path, header=0)[-1]
-        return [ser["buspower"]] + list(ser[f"0x0{str(hex(i))}_pwr" for i in range(1, 11)])
+        return list(ser[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]])
     
     def recent_gen(self) -> list:
         """
