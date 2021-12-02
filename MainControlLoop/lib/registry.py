@@ -161,8 +161,7 @@ class StateFieldRegistry:
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
-        logs = [self.pwr_log_path, self.solar_log_path, self.orbit_log_path, self.command_log_path]
-        for f in logs:
+        for f in [self.pwr_log_path, self.solar_log_path, self.orbit_log_path, self.command_log_path]:
             headers = pd.read_csv(f, header=0).columns
             os.remove(f)
             with open(f, "w") as new:
