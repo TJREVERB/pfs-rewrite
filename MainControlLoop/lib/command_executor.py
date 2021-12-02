@@ -176,10 +176,15 @@ class CommandExecutor:
         """
         self.transmit(packet, [sum(self.sfr.recent_gen())])
 
-    def TBL(self, packet: TransmissionPacket): # TODO: Implement
+    def TBL(self, packet: TransmissionPacket): # TODO: Make Not Temporary
         """
         Transmit magnitude IMU tumble
-        """
+        """ # Temporary
+
+        tum = self.sfr.imu.getTumble()
+        mag = (tum[0][0] + tum[0][1] + tum[0][2]) / 3 # Average Gyroscope DPS Values
+
+        self.transmit(packet, [mag])
 
     def TBF(self, packet: TransmissionPacket):
         """
