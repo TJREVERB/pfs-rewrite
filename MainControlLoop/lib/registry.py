@@ -161,12 +161,13 @@ class StateFieldRegistry:
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
-        logs = [self.pwr_log_path, self.solar_log_path, self.orbit_log_path, self.command_log_path, self.log_path]
+        logs = [self.pwr_log_path, self.solar_log_path, self.orbit_log_path, self.command_log_path]
         for f in logs:
             headers = pd.read_csv(f, header=0).columns
             os.remove(f)
             with open(f, "w") as new:
                 new.write(list(headers).join(","))
+        os.remove(self.log_path)
         print("Logs cleared")
 
     def reset(self):
