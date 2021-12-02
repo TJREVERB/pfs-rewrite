@@ -150,14 +150,14 @@ class CommandExecutor:
         Transmit proof of life
         """
         self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
-                                self.sfr.eps.solar_power(),
-                                self.sfr.eps.total_power(4)])
+                                sum(self.sfr.recent_gen()),
+                                sum(self.sfr.recent_power())])
 
     def PWR(self, packet: TransmissionPacket):
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [self.sfr.eps.total_power(4)[0]])  # might as well go comprehensive
+        self.transmit(packet, [sum(self.sfr.recent_power())])
 
     def SSV(self, packet: TransmissionPacket):
         """
@@ -170,10 +170,11 @@ class CommandExecutor:
         Transmit full rssi data logs
         """
 
-    def SOL(self, packet: TransmissionPacket): # TODO: Implement
+    def SOL(self, packet: TransmissionPacket):
         """
         Transmit solar generation
         """
+        self.transmit(packet, [sum(self.sfr.recent_gen())])
 
     def TBL(self, packet: TransmissionPacket): # TODO: Implement
         """
