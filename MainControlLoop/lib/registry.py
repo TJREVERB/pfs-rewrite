@@ -158,7 +158,7 @@ class StateFieldRegistry:
         :return: (list) [bcr1, bcr2, bcr3]
         """
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
-            return self.eps.solar_power()
+            return self.eps.raw_solar_gen()
         return list(df["bcr1", "bcr2", "bcr3"][-1])
     
     def clear_logs(self):
