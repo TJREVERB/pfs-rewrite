@@ -28,6 +28,7 @@ class StateFieldRegistry:
         self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
         self.orbit_log_path = "./MainControlLoop/lib/data/orbit_log.csv"
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
+        self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv" # Scuffed implementation
 
         self.eps = EPS(self)  # EPS never turns off
         self.imu = IMU_I2C(self)

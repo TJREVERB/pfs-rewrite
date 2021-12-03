@@ -332,7 +332,14 @@ class CommandExecutor:
         """
         Transmits last n signal strength variability datapoints
         """
-        pass
+        data = pd.read_csv(self.sfr.iridium_data_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
 
     def ASG(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -352,7 +359,14 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        pass
+        data = pd.read_csv(self.sfr.imu_log_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
 
     def ARS(self, packet: TransmissionPacket): # TODO: Implement
         """
