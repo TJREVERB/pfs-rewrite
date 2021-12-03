@@ -11,34 +11,34 @@ class CommandExecutor:
         self.OUTREACH_PREFIX = "OUT;"
 
         self.primary_registry = {  # primary command registry for BOTH Iridium and APRS
-            "MCH": self.MCH,  # Test method, transmits OK code
-            "MSC": self.MSC,  # Reads and transmits battery voltage
-            "MOU": self.MOU,  # Enters charging mode
-            "MRP": self.MRP,  # Enters science mode
-            "MLK": self.MLK,  # Enters outreach mode
-            "MDF": self.MDF,  # Reset power to the entire satellite (!!!!)
-            "DLK": self.DLK,  # Transmit proof of life through primary radio to ground station
-            "DDF": self.DDF,  # Transmit total power draw of connected components
-            "GCR": self.GCR,  # Calculate and transmit Iridium signal strength variability
-            "GVT": self.GVT,  # TODO: Implement  # Transmit full rssi data logs
-            "GPL": self.GPL,  # Transmit current solar panel production
-            "GCD": self.GCD,  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
-            "GPW": self.GPW,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
-            "GOP": self.GOP,  # TODO: Implement Mode lock
-            "GCS": self.GCS,  # TODO: Implement Disable mode lock
-            "GSV": self.GSV,  # Orbital period
-            "GSG": self.GSG,  # Set upper threshold
-            "GTB": self.GTB,  # Set lower threshold
-            "GMT": self.DLK,  # Enable Device lock
-            "GST": self.GST,  # Disable device lock
-            "GTS": self.GTS,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
-            "AAP": self.AAP,  # Return a garbled message error if one is received
-            "APW": self.APW,  # TODO: Implement transmit detailed critical data,
-            "ASV": self.ASV,  # TODO: Implement Transmits last n power draw datapoints
-            "ASG": self.ASG,  # TODO: Implement Transmits last n solar generation datapoints
-            "ATB": self.ATB,  # TODO: Implement Transmits last n IMU tumble datapoints
-            "ARS": self.ARS,  # TODO: Implement Get summary (averages) statistics for missionn
-            "AMS": self.AMS,  # TODO: Implement Transmit the expected data return size of a given command
+            "MCH": self.MCH,
+            "MSC": self.MSC,
+            "MOU": self.MOU,
+            "MRP": self.MRP,
+            "MLK": self.MLK,
+            "MDF": self.MDF,
+            "DLK": self.DLK,
+            "DDF": self.DDF,
+            "GCR": self.GCR,
+            "GVT": self.GVT,
+            "GPL": self.GPL,
+            "GCD": self.GCD,
+            "GPW": self.GPW,
+            "GOP": self.GOP,
+            "GCS": self.GCS,
+            "GSV": self.GSV,
+            "GSG": self.GSG,
+            "GTB": self.GTB,
+            "GMT": self.GMT,
+            "GST": self.GST,
+            "GTS": self.GTS,
+            "AAP": self.AAP,
+            "APW": self.APW,
+            "ASV": self.ASV,
+            "ASG": self.ASG,
+            "ATB": self.ATB,
+            "ARS": self.ARS,
+            "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
             "USM": self.USM,
@@ -67,12 +67,12 @@ class CommandExecutor:
         }
 
     def execute(self, packet: TransmissionPacket):
-        for command in self.sfr.vars.command_buffer:
+        for command_packet in self.sfr.vars.command_buffer:
             try:
-                function = self.primary_registry[command.command_string]
-                function(command)
+                function = self.primary_registry[command_packet.command_string]
+                function(command_packet)
             except Exception as e:
-                self.transmit(command, [repr(e)], True)
+                self.transmit(command_packet, [repr(e)], True)
         self.sfr.vars.command_buffer.clear()
 
         for command in self.sfr.vars.outreach_buffer:
@@ -131,13 +131,13 @@ class CommandExecutor:
         """
         Enable Mode Lock
         """
-        pass
+        self.sfr.vars.MODE_LOCK = True
 
     def MDF(self, packet: TransmissionPacket):  # TODO: Implement
         """
         Disable mode lock
         """
-        pass
+        self.sfr.vars.MODE_LOCK = False
 
     def DLK(self, packet: TransmissionPacket): # TODO: Test
         """
