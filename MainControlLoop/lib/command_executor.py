@@ -125,19 +125,22 @@ class CommandExecutor:
         self.transmit(packet, [])
 
     def MRP(self, packet: TransmissionPacket):
-        pass
+        self.sfr.vars.MODE = self.sfr.modes_list["Repeater"]
+        self.transmit(packet, [])
 
     def MLK(self, packet: TransmissionPacket): # TODO: Implement
         """
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
+        self.transmit(packet, [])
 
     def MDF(self, packet: TransmissionPacket):  # TODO: Implement
         """
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
+        self.transmit(packet, [])
 
     def DLK(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -179,7 +182,8 @@ class CommandExecutor:
             raise RuntimeError("Device not locked")
 
     def GCR(self, packet: TransmissionPacket):
-        pass
+        df = pd.read_csv(self.COMMAND_LOG_PATH)
+        self.transmit(packet, [time.time() - df["timestamp"][-1]])
 
     def GVT(self, packet: TransmissionPacket):
         """
