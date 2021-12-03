@@ -36,6 +36,19 @@ class Logger:
         print("Solar: ", t, gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.sfr.solar_log_path, mode="a", header=False)  # Append data to log
+
+    def log_imu(self, tumble: list, t=0) -> None: # Probably scuffed
+        """
+        Logs IMU datapoints
+        :param tumble: result of getTumble() call
+        """
+        if t == 0:
+            t = time.time()
+        print("Imu: ", t, tumble)
+
+        # Format data into pandas series
+        data = pd.concat(pd.Series([t]), pd.Series(tumble[0]), pd.Series(tumble[1]))
+        data.to_frame().to_csv(path_or_buf=self.sfr.imu_log_path)
     
     def integrate_charge(self) -> None:
         """

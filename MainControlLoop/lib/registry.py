@@ -28,6 +28,7 @@ class StateFieldRegistry:
         self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
         self.orbit_log_path = "./MainControlLoop/lib/data/orbit_log.csv"
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
+        self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv" # Scuffed implementation
 
         self.eps = EPS(self)  # EPS never turns off
         self.imu = IMU_I2C(self)
@@ -70,8 +71,7 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            sun = eps.sun_detected()
-            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
+            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun := eps.sun_detected()]
             self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
@@ -85,6 +85,8 @@ class StateFieldRegistry:
             self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
             self.outreach_buffer = []
             self.START_TIME = time.time()
+            self.LAST_COMMAND_RUN = time.time()
+            self.LAST_MODE_SWITCH = time.time()
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)

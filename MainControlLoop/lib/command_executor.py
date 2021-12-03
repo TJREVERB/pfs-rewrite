@@ -47,10 +47,20 @@ class CommandExecutor:
             "IPC": self.IPC
         }
 
-        # IMPLEMENT FULLY
+        # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
         self.secondary_registry = {  # Secondary command registry for APRS, in outreach mode
             # Reads and transmits battery voltage
-            "BVT": self.BVT
+            "GVT": self.GVT,
+            "GPL": self.GPL,
+            "GPW": self.GPW,
+            "GSV": self.GSV,
+            "GSG": self.GSG,
+            "GTB": self.GTB,
+            "GOP": self.GOP,
+            "GCS": self.GCS,
+            "ARS": self.ARS,
+            "USM": self.USM,
+            "IPC": self.IPC
         }
         self.arg_registry = {
             # Set of commands that require arguments, for either registry, for error checking reasons only
@@ -82,6 +92,7 @@ class CommandExecutor:
             except Exception as e:
                 self.transmit(command, [repr(e)], True)
         self.sfr.vars.outreach_buffer.clear()
+        self.sfr.LAST_COMMAND_RUN = time.time()
 
     def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
@@ -125,22 +136,24 @@ class CommandExecutor:
         self.transmit(packet, [])
 
     def MRP(self, packet: TransmissionPacket):
-        self.sfr.vars.MODE = self.sfr.modes_list["Repeater"]
-        self.transmit(packet, [])
+        """
+        Switches current mode to Repeater mode
+        """
+        pass
 
     def MLK(self, packet: TransmissionPacket): # TODO: Implement
         """
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
-        self.transmit(packet, [])
+        self.transmit(packet, []) # OK code
 
     def MDF(self, packet: TransmissionPacket):  # TODO: Implement
         """
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
-        self.transmit(packet, [])
+        self.transmit(packet, []) # OK code
 
     def DLK(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -182,8 +195,11 @@ class CommandExecutor:
             raise RuntimeError("Device not locked")
 
     def GCR(self, packet: TransmissionPacket):
-        df = pd.read_csv(self.COMMAND_LOG_PATH)
-        self.transmit(packet, [time.time() - df["timestamp"][-1]])
+        """
+        Transmits time since last command run
+        """
+        data = time.time() - self.sfr.LAST_COMMAND_RUN
+        self.transmit(packet, [data])
 
     def GVT(self, packet: TransmissionPacket):
         """
@@ -200,6 +216,9 @@ class CommandExecutor:
                                 sum(self.sfr.recent_power())])
 
     def GCD(self, packet: TransmissionPacket):  # TODO: implement
+        """
+        Transmits detailed critical data
+        """
         pass
 
     def GPW(self, packet: TransmissionPacket):
@@ -245,7 +264,7 @@ class CommandExecutor:
         sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
         tumble = self.sfr.imu.getTumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
-                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
+                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
         self.transmit(packet, result)
 
     def GSV(self, packet: TransmissionPacket):
@@ -264,7 +283,8 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        self.transmit(packet, [self.sfr.imu.getTumble()])
+        tum = self.sfr.imu.getTumble()
+        self.transmit(packet, [*tum[0], *tum[1]])
 
     def GMT(self, packet: TransmissionPacket): # TODO: Make Not Temporary
         """
@@ -272,16 +292,26 @@ class CommandExecutor:
         """ # Temporary
 
         tum = self.sfr.imu.getTumble()
-        mag = (tum[0][0] + tum[0][1] + tum[0][2]) / 3 # Average Gyroscope DPS Values
+        mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
         self.transmit(packet, [mag])
 
     def GST(self, packet: TransmissionPacket):
-        pass
+        """
+        Transmits RTC time currently
+        """
+        self.transmit(packet, [time.time()]) # Bad
 
     def GTS(self, packet: TransmissionPacket):
-        pass
+        """
+        Transmits time since last mode switch
+        """
+        data = time.time() - self.sfr.LAST_MODE_SWITCH
+        self.transmit(packet, data)
 
     def AAP(self, packet: TransmissionPacket):
+        """
+        Transmits average power draw over n data points
+        """
         pass
 
     def APW(self, packet: TransmissionPacket): # TODO: Test
@@ -299,7 +329,17 @@ class CommandExecutor:
         self.transmit(packet, returns)
 
     def ASV(self, packet: TransmissionPacket):
-        pass
+        """
+        Transmits last n signal strength variability datapoints
+        """
+        data = pd.read_csv(self.sfr.iridium_data_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
 
     def ASG(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -319,7 +359,14 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        pass
+        data = pd.read_csv(self.sfr.imu_log_path) # Read logs
+
+        returns = []
+
+        for i in range(packet.args[0]):
+            returns.append(data[len(data)-i])
+
+        self.transmit(packet, returns)
 
     def ARS(self, packet: TransmissionPacket): # TODO: Implement
         """
@@ -359,11 +406,13 @@ class CommandExecutor:
         """
         Transmits down summary statistics about our mission
         """
+        pass
 
     def ULG(self, packet: TransmissionPacket):  # TODO: Implement
         """
         Transmit full rssi data logs
         """
+        pass
 
     def ITM(self, packet: TransmissionPacket):
         """

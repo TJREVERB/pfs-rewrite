@@ -30,6 +30,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
 
     # always returns charging. just read the comment in outreach mode's switch_mode, I don't feel like writing it here again
     def switch_mode(self):
+        self.sfr.LAST_MODE_SWITCH = time.time()
         return self.sfr.modes_list["Charging"]
 
     def update_conditions(self):
