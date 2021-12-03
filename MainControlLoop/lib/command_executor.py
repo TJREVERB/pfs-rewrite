@@ -11,34 +11,40 @@ class CommandExecutor:
         self.OUTREACH_PREFIX = "OUT;"
 
         self.primary_registry = {  # primary command registry for BOTH Iridium and APRS
-            "NOP": self.NOP,  # Test method, transmits OK code
-            "BVT": self.BVT,  # Reads and transmits battery voltage
-            "CHG": self.CHG,  # Enters charging mode
-            "SCI": self.SCI,  # Enters science mode
-            "OUT": self.OUT,  # Enters outreach mode
-            "RST": self.RST,  # Reset power to the entire satellite (!!!!)
-            "POL": self.POL,  # Transmit proof of life through primary radio to ground station
-            "PWR": self.PWR,  # Transmit total power draw of connected components
-            "SSV": self.SSV,  # Calculate and transmit Iridium signal strength variability
-            "SVF": self.SVF,  # TODO: Implement  # Transmit full rssi data logs
-            "SOL": self.SOL,  # Transmit current solar panel production
-            "TBL": self.TBL,  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
-            "TBF": self.TBF,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
-            "MLK": self.MLK,  # TODO: Implement Mode lock
-            "MFL": self.MFL,  # TODO: Implement Disable mode lock
-            "ORB": self.ORB,  # Orbital period
-            "UVT": self.UVT,  # Set upper threshold
-            "LVT": self.LVT,  # Set lower threshold
-            "DLK": self.DLK,  # Enable Device lock
-            "DLF": self.DLF,  # Disable device lock
-            "REP": self.REP,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
-            "GRB": self.GRB,  # Return a garbled message error if one is received
-            "GCD": self.GCD,  # TODO: Implement transmit detailed critical data,
-            "PWD": self.PWD,  # TODO: Implement Transmits last n power draw datapoints
-            "SOD": self.SOD,  # TODO: Implement Transmits last n solar generation datapoints
-            "TBD": self.TBD,  # TODO: Implement Transmits last n IMU tumble datapoints
-            "SUM": self.SUM,  # TODO: Implement Get summary (averages) statistics for missionn
-            "SZE": self.SZE,  # TODO: Implement Transmit the expected data return size of a given command
+            "MCH": self.MCH,  # Test method, transmits OK code
+            "MSC": self.MSC,  # Reads and transmits battery voltage
+            "MOU": self.MOU,  # Enters charging mode
+            "MRP": self.MRP,  # Enters science mode
+            "MLK": self.MLK,  # Enters outreach mode
+            "MDF": self.MDF,  # Reset power to the entire satellite (!!!!)
+            "DLK": self.DLK,  # Transmit proof of life through primary radio to ground station
+            "DDF": self.DDF,  # Transmit total power draw of connected components
+            "GCR": self.GCR,  # Calculate and transmit Iridium signal strength variability
+            "GVT": self.GVT,  # TODO: Implement  # Transmit full rssi data logs
+            "GPL": self.GPL,  # Transmit current solar panel production
+            "GCD": self.GCD,  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
+            "GPW": self.GPW,  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
+            "GOP": self.GOP,  # TODO: Implement Mode lock
+            "GCS": self.GCS,  # TODO: Implement Disable mode lock
+            "GSV": self.GSV,  # Orbital period
+            "GSG": self.GSG,  # Set upper threshold
+            "GTB": self.GTB,  # Set lower threshold
+            "GMT": self.DLK,  # Enable Device lock
+            "GST": self.GST,  # Disable device lock
+            "GTS": self.GTS,  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
+            "AAP": self.AAP,  # Return a garbled message error if one is received
+            "APW": self.APW,  # TODO: Implement transmit detailed critical data,
+            "ASV": self.ASV,  # TODO: Implement Transmits last n power draw datapoints
+            "ASG": self.ASG,  # TODO: Implement Transmits last n solar generation datapoints
+            "ATB": self.ATB,  # TODO: Implement Transmits last n IMU tumble datapoints
+            "ARS": self.ARS,  # TODO: Implement Get summary (averages) statistics for missionn
+            "AMS": self.AMS,  # TODO: Implement Transmit the expected data return size of a given command
+            "SUV": self.SUV,
+            "SLV": self.SLV,
+            "USM": self.USM,
+            "ULG": self.ULG,
+            "ITM": self.ITM,
+            "IPC": self.IPC
         }
 
         # IMPLEMENT FULLY
@@ -91,19 +97,7 @@ class CommandExecutor:
         packet.return_data = data
         self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
 
-    def NOP(self, packet: TransmissionPacket):
-        """
-        Transmits an OK code
-        """
-        self.transmit(packet, [])
-
-    def BVT(self, packet: TransmissionPacket):
-        """
-        Reads and Transmits Battery Voltage
-        """
-        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()])
-
-    def CHG(self, packet: TransmissionPacket):
+    def MCH(self, packet: TransmissionPacket):
         """
         Switches current mode to charging mode
         """
@@ -112,7 +106,7 @@ class CommandExecutor:
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
         self.transmit(packet, [])
 
-    def SCI(self, packet: TransmissionPacket):
+    def MSC(self, packet: TransmissionPacket):
         """
         Switches current mode to science mode
         """
@@ -121,7 +115,7 @@ class CommandExecutor:
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
         self.transmit(packet, [])
 
-    def OUT(self, packet: TransmissionPacket):
+    def MOU(self, packet: TransmissionPacket):
         """
         Switches current mode to outreach mode
         """
@@ -130,78 +124,20 @@ class CommandExecutor:
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
         self.transmit(packet, [])
 
-    def UVT(self, packet: TransmissionPacket):
-        v = packet.args[0]  # get only argument from arg list
-        self.sfr.vars.UPPER_THRESHOLD = float(v)
-        self.transmit(packet, [v])
-
-    def LVT(self, packet: TransmissionPacket):
-        v = packet.args[0]
-        self.sfr.vars.LOWER_THRESHOLD = float(v)
-        self.transmit(packet, [v])
-
-    def RST(self, packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
-        self.sfr.mode_obj.instruct["All Off"](exceptions=[])
-        time.sleep(.5)
-        self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-
-    def POL(self, packet: TransmissionPacket):  # TODO: FIX
-        """
-        Transmit proof of life
-        """
-        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
-                                sum(self.sfr.recent_gen()),
-                                sum(self.sfr.recent_power())])
-
-    def PWR(self, packet: TransmissionPacket):
-        """
-        Transmit total power draw of satellite
-        """
-        self.transmit(packet, [sum(self.sfr.recent_power())])
-
-    def SSV(self, packet: TransmissionPacket):
-        """
-        Transmit signal strength variability
-        """
-        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
-
-    def SVF(self, packet: TransmissionPacket): # TODO: Implement
-        """
-        Transmit full rssi data logs
-        """
-
-    def SOL(self, packet: TransmissionPacket):
-        """
-        Transmit solar generation
-        """
-        self.transmit(packet, [sum(self.sfr.recent_gen())])
-
-    def TBL(self, packet: TransmissionPacket): # TODO: Make Not Temporary
-        """
-        Transmit magnitude IMU tumble
-        """ # Temporary
-
-        tum = self.sfr.imu.getTumble()
-        mag = (tum[0][0] + tum[0][1] + tum[0][2]) / 3 # Average Gyroscope DPS Values
-
-        self.transmit(packet, [mag])
-
-    def TBF(self, packet: TransmissionPacket):
-        """
-        Transmit full IMU tumble
-        """
-        self.transmit(packet, [self.sfr.imu.getTumble()])
-        
+    def MRP(self, packet: TransmissionPacket):
+        pass
 
     def MLK(self, packet: TransmissionPacket): # TODO: Implement
         """
         Enable Mode Lock
         """
+        pass
 
-    def MFL(self, packet: TransmissionPacket): # TODO: Implement
+    def MDF(self, packet: TransmissionPacket):  # TODO: Implement
         """
         Disable mode lock
         """
+        pass
 
     def DLK(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -222,7 +158,7 @@ class CommandExecutor:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
             self.transmit(packet, [dcode])
 
-    def DLF(self, packet: TransmissionPacket): # TODO: Test
+    def DDF(self, packet: TransmissionPacket):  # TODO: Test
         """
         Disable Device Lock
         """
@@ -242,12 +178,39 @@ class CommandExecutor:
         else:
             raise RuntimeError("Device not locked")
 
-    def SUM(self, packet: TransmissionPacket):
-        """
-        Transmits down summary statistics about our mission
-        """
+    def GCR(self, packet: TransmissionPacket):
+        pass
 
-    def GCD(self, packet: TransmissionPacket):
+    def GVT(self, packet: TransmissionPacket):
+        """
+        Reads and Transmits Battery Voltage
+        """
+        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()])
+
+    def GPL(self, packet: TransmissionPacket):  # TODO: FIX
+        """
+        Transmit proof of life
+        """
+        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
+                                sum(self.sfr.recent_gen()),
+                                sum(self.sfr.recent_power())])
+
+    def GCD(self, packet: TransmissionPacket):  # TODO: implement
+        pass
+
+    def GPW(self, packet: TransmissionPacket):
+        """
+        Transmit total power draw of satellite
+        """
+        self.transmit(packet, [sum(self.sfr.recent_power())])
+
+    def GOP(self, packet: TransmissionPacket):
+        """
+        Transmits current orbital period
+        """
+        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
+
+    def GCS(self, packet: TransmissionPacket):
         """
         Transmits down information about the satellite's current status
         Transmits:
@@ -281,34 +244,46 @@ class CommandExecutor:
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
         self.transmit(packet, result)
 
-    def ORB(self, packet: TransmissionPacket):
+    def GSV(self, packet: TransmissionPacket):
         """
-        Transmits current orbital period
+        Transmit signal strength variability
         """
-        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
+        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
 
-    def REP(self, packet: TransmissionPacket):
+    def GSG(self, packet: TransmissionPacket):
         """
-        Repeat result of command with given MSN
-        """  # TODO: Fix this
-        msn = packet[0] # Read Packet Value
-        df = pd.read_csv(self.COMMAND_LOG_PATH)
-        try:
-            self.transmit(packet, [df[df["msn"] == msn].to_csv().strip("\n")])
-        except Exception as e:
-            print(e)
-            raise RuntimeError("Command does not exist in log!")
+        Transmit solar generation
+        """
+        self.transmit(packet, [sum(self.sfr.recent_gen())])
 
-    def GRB(self, packet: TransmissionPacket):
+    def GTB(self, packet: TransmissionPacket):
         """
-        Transmit a garbled message error
+        Transmit full IMU tumble
         """
-        raise RuntimeError("Garbled Message")
+        self.transmit(packet, [self.sfr.imu.getTumble()])
 
-    def PWD(self, packet: TransmissionPacket): # TODO: Test
+    def GMT(self, packet: TransmissionPacket): # TODO: Make Not Temporary
+        """
+        Transmit magnitude IMU tumble
+        """ # Temporary
+
+        tum = self.sfr.imu.getTumble()
+        mag = (tum[0][0] + tum[0][1] + tum[0][2]) / 3 # Average Gyroscope DPS Values
+        self.transmit(packet, [mag])
+
+    def GST(self, packet: TransmissionPacket):
+        pass
+
+    def GTS(self, packet: TransmissionPacket):
+        pass
+
+    def AAP(self, packet: TransmissionPacket):
+        pass
+
+    def APW(self, packet: TransmissionPacket): # TODO: Test
         """
         Transmits last n power draw datapoints
-        """    
+        """
 
         data = pd.read_csv(self.sfr.pwr_log_path) # Read logs
 
@@ -319,8 +294,10 @@ class CommandExecutor:
 
         self.transmit(packet, returns)
 
+    def ASV(self, packet: TransmissionPacket):
+        pass
 
-    def SOD(self, packet: TransmissionPacket): # TODO: Test
+    def ASG(self, packet: TransmissionPacket): # TODO: Test
         """
         Transmits last n solar generation datapoints
         """
@@ -334,13 +311,13 @@ class CommandExecutor:
 
         self.transmit(packet, returns)
 
-    
-    def TBD(self, packet: TransmissionPacket): # TODO: Implement
+    def ATB(self, packet: TransmissionPacket): # TODO: Implement
         """
         Transmits last n IMU tumble datapoints
         """
+        pass
 
-    def SZE(self, packet: TransmissionPacket): # TODO: Implement
+    def ARS(self, packet: TransmissionPacket): # TODO: Implement
         """
         Transmit the expected data return size of a given command
         """
@@ -351,3 +328,81 @@ class CommandExecutor:
         # TODO: Parse encoded command value and return value
 
         self.transmit(packet, [cmd, size])
+
+    def AMS(self, packet: TransmissionPacket):
+        """
+        Repeat result of command with given MSN
+        """  # TODO: Fix this
+        msn = packet[0]  # Read Packet Value
+        df = pd.read_csv(self.COMMAND_LOG_PATH)
+        try:
+            self.transmit(packet, [df[df["msn"] == msn].to_csv().strip("\n")])
+        except Exception as e:
+            print(e)
+            raise RuntimeError("Command does not exist in log!")
+
+    def SUV(self, packet: TransmissionPacket):
+        v = packet.args[0]  # get only argument from arg list
+        self.sfr.vars.UPPER_THRESHOLD = float(v)
+        self.transmit(packet, [v])
+
+    def SLV(self, packet: TransmissionPacket):
+        v = packet.args[0]
+        self.sfr.vars.LOWER_THRESHOLD = float(v)
+        self.transmit(packet, [v])
+
+    def USM(self, packet: TransmissionPacket):
+        """
+        Transmits down summary statistics about our mission
+        """
+
+    def ULG(self, packet: TransmissionPacket):  # TODO: Implement
+        """
+        Transmit full rssi data logs
+        """
+
+    def ITM(self, packet: TransmissionPacket):
+        """
+        Transmits an OK code
+        """
+        self.transmit(packet, [])
+
+    def IPC(self, packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
+        self.sfr.mode_obj.instruct["All Off"](exceptions=[])
+        time.sleep(.5)
+        self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
