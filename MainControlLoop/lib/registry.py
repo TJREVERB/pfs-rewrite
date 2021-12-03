@@ -70,8 +70,7 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            sun = eps.sun_detected()
-            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
+            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun := eps.sun_detected()]
             self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
             # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
