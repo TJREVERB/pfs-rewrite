@@ -241,7 +241,7 @@ class CommandExecutor:
         sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
         tumble = self.sfr.imu.getTumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
-                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, tumble]
+                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
         self.transmit(packet, result)
 
     def GSV(self, packet: TransmissionPacket):
@@ -260,7 +260,8 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        self.transmit(packet, [self.sfr.imu.getTumble()])
+        tum = self.sfr.imu.getTumble()
+        self.transmit(packet, [*tum[0], *tum[1]])
 
     def GMT(self, packet: TransmissionPacket): # TODO: Make Not Temporary
         """
@@ -268,7 +269,7 @@ class CommandExecutor:
         """ # Temporary
 
         tum = self.sfr.imu.getTumble()
-        mag = (tum[0][0] + tum[0][1] + tum[0][2]) / 3 # Average Gyroscope DPS Values
+        mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
         self.transmit(packet, [mag])
 
     def GST(self, packet: TransmissionPacket):
