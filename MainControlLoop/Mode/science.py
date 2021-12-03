@@ -39,6 +39,7 @@ class Science(Mode):
         return (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"])
 
     def switch_mode(self):
+        self.sfr.LAST_MODE_SWITCH = time.time()
         return self.sfr.modes_list["Charging"]
 
     def update_conditions(self) -> None:

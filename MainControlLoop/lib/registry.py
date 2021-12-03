@@ -84,6 +84,8 @@ class StateFieldRegistry:
             self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
             self.outreach_buffer = []
             self.START_TIME = time.time()
+            self.LAST_COMMAND_RUN = time.time()
+            self.LAST_MODE_SWITCH = time.time()
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)

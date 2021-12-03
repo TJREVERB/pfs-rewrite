@@ -96,6 +96,7 @@ class Startup(Mode):
         return self.sfr.vars.CONTACT_ESTABLISHED is False  # if contact not established, stay in charging
 
     def switch_mode(self):
+        self.sfr.LAST_MODE_SWITCH = time.time()
         if self.conditions["Low Battery"]:  # If battery is low
             return self.sfr.modes_list("Charging")
         else:
