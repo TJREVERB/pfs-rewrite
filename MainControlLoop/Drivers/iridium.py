@@ -22,7 +22,7 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_REGISTRY = []  # primary command registry for BOTH Iridium and APRS
+    ENCODED_REGISTRY = [  # primary command registry for BOTH Iridium and APRS
             "MCH",
             "MSC",
             "MOU",
