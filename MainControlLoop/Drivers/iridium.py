@@ -22,7 +22,7 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_REGISTRY = [  # primary command registry for BOTH Iridium and APRS
+    ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
             "MCH",
             "MSC",
             "MOU",
@@ -63,8 +63,6 @@ class Iridium:
         "0OK", # 0, MSG received and executed
         "ERR"  # 1, MSG received and read, but error executing or reading
     ]
-
-    ARG_REGISTRY = [12, 13]  # Commands that require arguments from the ground #TODO: import from command_executor instead
 
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
@@ -355,8 +353,9 @@ class Iridium:
             raise RuntimeError("Invalid command received")
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
-        if msg[0] in Iridium.ARG_REGISTRY:
-            num = msg[1] << 8 | msg[2]  # msb first
+
+        for i in range(1, len(msg) - 1):
+            num = msg[i] << 8 | msg[i+1]  # msb first
             exp = num >> 11  # extract exponent
             if exp & (1 << 4) == 1:  # convert twos comp
                 exp &= 0x10  # truncate first bit

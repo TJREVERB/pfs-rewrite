@@ -62,20 +62,7 @@ class CommandExecutor:
             "USM": self.USM,
             "IPC": self.IPC
         }
-        self.arg_registry = {
-            # Set of commands that require arguments, for either registry, for error checking reasons only
-            "SUV",
-            "SLV",
-            "AAP",
-            "APW",
-            "ASV",
-            "ASG",
-            "ATB",
-            "DLK",
-            "DDF",
-            "ARS",
-            "AMS"
-        }
+        
 
     def execute(self, packet: TransmissionPacket):
         for command_packet in self.sfr.vars.command_buffer:
