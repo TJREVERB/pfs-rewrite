@@ -108,6 +108,28 @@ class APRS:
             raise RuntimeError("Failed to exit firmware menu")
         
         return True
+
+    def enable_digi(self): #TODO: Test these
+        """
+        Enables Hardware Digipeating
+        """
+        self.change_setting("ALIAS1", "APRSAT")
+        time.sleep(0.1)
+        self.change_setting("ALIAS2", "ARISS")
+        time.sleep(0.1)
+        self.change_setting("ALIAS3", "WIDE")
+        return True
+
+    def disable_digi(self):
+        """
+        Disables Hardware Digipeating
+        """
+        self.change_setting("ALIAS1", "TEMP")
+        time.sleep(0.1)
+        self.change_setting("ALIAS2", "%")
+        time.sleep(0.1)
+        self.change_setting("ALIAS3", "%")
+        return True
     
     def request_setting(self, setting) -> str:
         """
