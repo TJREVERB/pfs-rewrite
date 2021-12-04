@@ -59,7 +59,7 @@ class Startup(Mode):
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 # TOOD: HANDLE THIS BETTER
-                self.sfr.command_executor.POL(TransmissionPacket("POL", [], 0))
+                self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
                 self.last_contact_attempt = time.time()
 
     def read_radio(self) -> None:

@@ -64,16 +64,17 @@ class CommandExecutor:
         }
         self.arg_registry = {
             # Set of commands that require arguments, for either registry, for error checking reasons only
-            "UVT",
-            "LVT",
-            "PWD",
-            "SSD",
-            "SOD",
-            "TBD",
+            "SUV",
+            "SLV",
+            "AAP",
+            "APW",
+            "ASV",
+            "ASG",
+            "ATB",
             "DLK",
-            "DLF",
-            "REP",
-            "SZE"
+            "DDF",
+            "ARS",
+            "AMS"
         }
 
     def execute(self, packet: TransmissionPacket):
