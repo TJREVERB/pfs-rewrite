@@ -1,4 +1,5 @@
 from MainControlLoop.Mode.mode import Mode
+from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
 
 
@@ -52,10 +53,10 @@ class Science(Mode):
         self.read_radio()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS: # We shouldnt do this tbh
+        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS: 
             # Transmit signal strength variability
-            self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" +
-                                                             str(self.sfr.analytics.signal_strength_variability()))
+            pckt = TransmissionPacket("GSV", [], 0)
+            self.sfr.command_executor.GSV(pckt)
             self.pings_performed += 1 
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
             self.sfr.log_iridium(self.sfr.devices["Iridium"].GEO_C(),

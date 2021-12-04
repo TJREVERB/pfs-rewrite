@@ -60,7 +60,7 @@ class Logger:
         # Log solar generation, store list into variable gen
         self.log_solar(gen := self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
-        self.sfr.vars.BATTERY_CAPACITY_INT += (sum(gen) - buspower - pdms_on[0]) * \
+        self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.battery.charging_power() * \
             (t := time.perf_counter() - self.last_log_time)
         # Update previous_time, accounts for rollover
         self.last_log_time = t

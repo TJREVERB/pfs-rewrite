@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
+from MainControlLoop.Drivers.battery import Battery
 from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
@@ -31,6 +32,7 @@ class StateFieldRegistry:
         self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv" # Scuffed implementation
 
         self.eps = EPS(self)  # EPS never turns off
+        self.battery = Battery(self)
         self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
@@ -74,8 +76,7 @@ class StateFieldRegistry:
             self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun := eps.sun_detected()]
             self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
-            # TODO: UPDATE THIS THRESHOLD ONCE BATTERY TESTING IS DONE
-            self.LOWER_THRESHOLD = 60000  # Switch to charging mode if battery capacity (J) dips below threshold
+            self.LOWER_THRESHOLD = 133732.8 * (0.3)  # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
