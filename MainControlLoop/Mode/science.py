@@ -52,14 +52,14 @@ class Science(Mode):
         self.read_radio()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
+        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS: # We shouldnt do this tbh
             # Transmit signal strength variability
             self.sfr.devices["Iridium"].commands["Transmit"]("TJ;SSV:" +
                                                              str(self.sfr.analytics.signal_strength_variability()))
-            self.pings_performed += 1
+            self.pings_performed += 1 
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].commands["Geolocation"](),
-                                 self.sfr.devices["Iridium"].commands["Signal Quality"]())  # Log Iridium data
+            self.sfr.log_iridium(self.sfr.devices["Iridium"].GEO_C(),
+                                 self.sfr.devices["Iridium"].RSSI())  # Log Iridium data
             self.pings_performed += 1
 
     def read_radio(self) -> None:
