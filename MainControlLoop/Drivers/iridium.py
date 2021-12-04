@@ -22,37 +22,42 @@ class Iridium:
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_REGISTRY = [ #TODO: import from command_executor instead of keeping a copy here. Perhaps use list(primary_registry.keys()). Still need to add 0OK and ERR afterwards though
-        # Commands to satellite, also used in specifying return values to ground
-        "NOP",
-        "BVT",
-        "CHG",
-        "SCI",  # Enters science mode
-        "OUT",  # Enters outreach mode
-        "RST",  # Reset power to the entire satellite (!!!!)
-        "POL",  # Transmit proof of life through primary radio to ground station
-        "PWR",  # Transmit total power draw of connected components
-        "SSV",  # Calculate and transmit Iridium signal strength variability
-        "SVF",  # TODO: Implement  # Transmit full rssi data logs
-        "SOL",  # TODO: Implement Transmit current solar panel production
-        "TBL",  # TODO: Implement Transmits tumble value (Magnitude of gyroscope vector)
-        "TBF",  # Transmits 3 axis gyroscope and magnetometer readings (full tumble readouts)
-        "MLK",  # TODO: Implement Mode lock
-        "MFL",  # TODO: Implement Disable mode lock
-        "ORB",  # Orbital period
-        "UVT",  # Set upper threshold
-        "LVT",  # Set lower threshold
-        "DLK",  # Enable Device lock
-        "DLF",  # Disable device lock
-        "REP",  # Repeat result of a command with a given msn number (IRIDIUM ONLY)
-        "GRB",  # Return a garbled message error if one is received
-        "GCD",  # TODO: Implement transmit detailed critical data,
-        "PWD",  # TODO: Implement Transmits last n power draw datapoints
-        "SOD",  # TODO: Implement Transmits last n solar generation datapoints
-        "TBD",  # TODO: Implement Transmits last n IMU tumble datapoints
-        "SUM",  # TODO: ImplementGet summary (averages) statistics for missionn
-        "SZE"
-    ]
+    ENCODED_REGISTRY = []  # primary command registry for BOTH Iridium and APRS
+            "MCH",
+            "MSC",
+            "MOU",
+            "MRP",
+            "MLK",
+            "MDF",
+            "DLK",
+            "DDF",
+            "GCR",
+            "GVT",
+            "GPL",
+            "GCD",
+            "GPW",
+            "GOP",
+            "GCS",
+            "GSV",
+            "GSG",
+            "GTB",
+            "GMT",
+            "GST",
+            "GTS",
+            "AAP",
+            "APW",
+            "ASV",
+            "ASG",
+            "ATB",
+            "ARS",
+            "AMS",
+            "SUV",
+            "SLV",
+            "USM",
+            "ULG",
+            "ITM",
+            "IPC"
+        ]
 
     RETURN_CODES = [
         "0OK", # 0, MSG received and executed
