@@ -274,11 +274,10 @@ class CommandExecutor:
         tum = self.sfr.imu.getTumble()
         self.transmit(packet, [*tum[0], *tum[1]])
 
-    def GMT(self, packet: TransmissionPacket): # TODO: Make Not Temporary
+    def GMT(self, packet: TransmissionPacket):
         """
         Transmit magnitude IMU tumble
-        """ # Temporary
-
+        """
         tum = self.sfr.imu.getTumble()
         mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
         self.transmit(packet, [mag])
