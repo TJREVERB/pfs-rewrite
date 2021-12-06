@@ -405,7 +405,7 @@ class CommandExecutor:
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "APRS"]),
             len(pd.read_csv(self.sfr.iridium_data_path)),
-            len(pd.read_csv(self.pwr_log_path)),
+            len(pd.read_csv(self.sfr.pwr_log_path)),
         ])
 
     def ULG(self, packet: TransmissionPacket):
@@ -425,6 +425,7 @@ class CommandExecutor:
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
+        self.transmit(packet, [])
 
 
 
