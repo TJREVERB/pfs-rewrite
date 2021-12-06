@@ -21,7 +21,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
         self.instruct["All Off"](exceptions=["Iridium", "APRS"])
-        # TODO: TURN ON DIGIPEATING
+        self.sfr.devices["APRS"].enable_digi()
 
     def check_conditions(self) -> bool:
         super(Repeater, self).check_conditions()
@@ -71,6 +71,6 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
     def terminate_mode(self) -> None:
-        # TODO: write to APRS to turn off digipeating
+        self.sfr.devices["APRS"].disable_digi()
         super(Repeater, self).terminate_mode()
         pass
