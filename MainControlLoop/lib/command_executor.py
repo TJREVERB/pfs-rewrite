@@ -306,7 +306,7 @@ class CommandExecutor:
         Transmits last n power draw datapoints
         """
 
-        data = pd.read_csv(self.sfr.pwr_log_path) # Read logs
+        data = pd.read_csv(self.sfr.pwr_log_path)  # Read logs
 
         returns = []
 
@@ -371,8 +371,9 @@ class CommandExecutor:
         """
         Repeat result of command with given MSN
         """  # TODO: Fix this
-        msn = packet[0]  # Read Packet Value
-        df = pd.read_csv(self.COMMAND_LOG_PATH)
+        msn = packet.args[0]  # Read Packet Value
+        df = pd.read_csv(self.sfr.command_log_path)
+        df.loc[df["msn" == msn].
         try:
             self.transmit(packet, [df[df["msn"] == msn].to_csv().strip("\n")])
         except Exception as e:

@@ -209,7 +209,6 @@ class APRS:
             self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif self.softdigi:
             self.write(msg)
-        
 
     def write(self, message: str) -> bool:
         """

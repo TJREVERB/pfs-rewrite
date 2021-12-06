@@ -30,6 +30,7 @@ class StateFieldRegistry:
         self.orbit_log_path = "./MainControlLoop/lib/data/orbit_log.csv"
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
         self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv" # Scuffed implementation
+        self.command_log_path = "./MainControlLoop/lib/data/command_log.csv"
 
         self.eps = EPS(self)  # EPS never turns off
         self.battery = Battery(self)
