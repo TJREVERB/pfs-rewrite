@@ -89,20 +89,7 @@ class APRS:
                 raise RuntimeError("Serial port can't be opened")
         
         if not self.enter_firmware_menu():
-            raise RuntimeError("Failed to open options menu")
-
-        self.serial.write("MYCALL".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
-        time.sleep(1)
-
-        result = str(self.serial.read(50))
-        print(result)
-        
-        if result.find("MYCALL") == -1:
-            raise RuntimeError("Port broken during write")
-        if result.find("MYCALL is") == -1:
-            raise RuntimeError("APRS unresponsive")
+            raise RuntimeError("Failed to open firmware menu")
         
         if not self.exit_firmware_menu():
             raise RuntimeError("Failed to exit firmware menu")
