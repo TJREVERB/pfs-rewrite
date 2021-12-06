@@ -114,6 +114,7 @@ class APRS:
     def disable_digi(self):
         """
         Disables Hardware Digipeating
+        This should also be run after initialization to set the default bank to 0
         """
         if self.enter_firmware_menu():
             self.change_setting("BANK", "0")
