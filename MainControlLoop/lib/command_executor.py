@@ -357,15 +357,6 @@ class CommandExecutor:
 
         self.transmit(packet, returns)
 
-    def ARS(self, packet: TransmissionPacket): # TODO: Implement
-        """
-        Transmit the expected data return size of a given command
-        """
-        cmd = packet[0] # only packet value; encoded command identifier
-        size = 0 # return variable
-        # TODO: Parse encoded command value and return value
-        self.transmit(packet, [cmd, size])
-
     def AMS(self, packet: TransmissionPacket):
         """
         Repeat result of command with given MSN
