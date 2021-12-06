@@ -373,11 +373,11 @@ class CommandExecutor:
         """  # TODO: Fix this
         msn = packet.args[0]  # Read Packet Value
         df = pd.read_csv(self.sfr.command_log_path)
-        df.loc[df["msn" == msn].
-        try:
-            self.transmit(packet, [df[df["msn"] == msn].to_csv().strip("\n")])
-        except Exception as e:
-            print(e)
+        # If search for msn returns results
+        if len(row := df[df["msn"] == msn]) != 0:
+            # Transmit last element of log with given msn if duplicates exist
+            self.transmit(packet, row[-1].to_csv().strip("\n"))
+        else:
             raise RuntimeError("Command does not exist in log!")
 
     def SUV(self, packet: TransmissionPacket):
