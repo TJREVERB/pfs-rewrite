@@ -129,21 +129,21 @@ class CommandExecutor:
         """
         pass
 
-    def MLK(self, packet: TransmissionPacket): # TODO: Implement
+    def MLK(self, packet: TransmissionPacket):
         """
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
         self.transmit(packet, []) # OK code
 
-    def MDF(self, packet: TransmissionPacket):  # TODO: Implement
+    def MDF(self, packet: TransmissionPacket):
         """
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
         self.transmit(packet, []) # OK code
 
-    def DLK(self, packet: TransmissionPacket): # TODO: Test
+    def DLK(self, packet: TransmissionPacket):
         """
         Enable Device Lock
         """
@@ -162,7 +162,7 @@ class CommandExecutor:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
             self.transmit(packet, [dcode])
 
-    def DDF(self, packet: TransmissionPacket):  # TODO: Test
+    def DDF(self, packet: TransmissionPacket):
         """
         Disable Device Lock
         """
@@ -195,7 +195,7 @@ class CommandExecutor:
         """
         self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()])
 
-    def GPL(self, packet: TransmissionPacket):  # TODO: FIX
+    def GPL(self, packet: TransmissionPacket):
         """
         Transmit proof of life
         """
@@ -203,27 +203,9 @@ class CommandExecutor:
                                 sum(self.sfr.recent_gen()),
                                 sum(self.sfr.recent_power())])
 
-    def GCD(self, packet: TransmissionPacket):  # TODO: implement
+    def GCD(self, packet: TransmissionPacket):
         """
         Transmits detailed critical data
-        """
-        pass
-
-    def GPW(self, packet: TransmissionPacket):
-        """
-        Transmit total power draw of satellite
-        """
-        self.transmit(packet, [sum(self.sfr.recent_power())])
-
-    def GOP(self, packet: TransmissionPacket):
-        """
-        Transmits current orbital period
-        """
-        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
-
-    def GCS(self, packet: TransmissionPacket):
-        """
-        Transmits down information about the satellite's current status
         Transmits:
         1. Average power draw over last 50 data points
         2. Average solar panel generation over last 50 datapoints while in sunlight
@@ -254,6 +236,25 @@ class CommandExecutor:
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
         self.transmit(packet, result)
+
+    def GPW(self, packet: TransmissionPacket):
+        """
+        Transmit total power draw of satellite
+        """
+        self.transmit(packet, [sum(self.sfr.recent_power())])
+
+    def GOP(self, packet: TransmissionPacket):
+        """
+        Transmits current orbital period
+        """
+        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
+
+    def GCS(self, packet: TransmissionPacket):
+        """
+        Transmits down information about the satellite's current status
+        Transmits all sfr fields as str
+        """
+        self.transmit(packet, [str(i) for i in list(vars(self.sfr.vars).values())])
 
     def GSV(self, packet: TransmissionPacket):
         """
@@ -299,7 +300,8 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        pass
+        self.transmit(packet, [
+            self.sfr.analytics.historical_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], packet.args[0])])
 
     def APW(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -342,7 +344,7 @@ class CommandExecutor:
 
         self.transmit(packet, returns)
 
-    def ATB(self, packet: TransmissionPacket): # TODO: Implement
+    def ATB(self, packet: TransmissionPacket):
         """
         Transmits last n IMU tumble datapoints
         """
@@ -359,24 +361,21 @@ class CommandExecutor:
         """
         Transmit the expected data return size of a given command
         """
-
         cmd = packet[0] # only packet value; encoded command identifier
         size = 0 # return variable
-
         # TODO: Parse encoded command value and return value
-
         self.transmit(packet, [cmd, size])
 
     def AMS(self, packet: TransmissionPacket):
         """
         Repeat result of command with given MSN
-        """  # TODO: Fix this
+        """
         msn = packet.args[0]  # Read Packet Value
         df = pd.read_csv(self.sfr.command_log_path)
         # If search for msn returns results
         if len(row := df[df["msn"] == msn]) != 0:
             # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, row[-1].to_csv().strip("\n"))
+            self.transmit(packet, [row[-1].to_csv().strip("\n")])
         else:
             raise RuntimeError("Command does not exist in log!")
 
@@ -393,14 +392,37 @@ class CommandExecutor:
     def USM(self, packet: TransmissionPacket):
         """
         Transmits down summary statistics about our mission
+        Transmits:
+        1. Time since mission start
+        2. Time since last satellite startup
+        3. Total power consumed over mission
+        4. Total power generated over mission
+        5. Total amount of data transmitted
+        6. Orbital decay (seconds of period lost over mission duration)
+        7. Total number of iridium commands received
+        8. Total number of aprs commands received
+        9. Total number of iridium signal strength measurements taken
+        10. Total number of power consumption/generation measurements
         """
-        pass
+        self.transmit(packet, [
+            time.time() - self.sfr.vars.START_TIME,
+            time.time() - self.sfr.vars.LAST_STARTUP,
+            self.sfr.analytics.total_power_consumed(),
+            self.sfr.analytics.total_power_generated(),
+            None,  # TODO: IMPLEMENT TOTAL DATA TRANSMITTED
+            self.sfr.analytics.orbital_decay(),
+            len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
+            len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "APRS"]),
+            len(pd.read_csv(self.sfr.iridium_data_path)),
+            len(pd.read_csv(self.pwr_log_path)),
+        ])
 
-    def ULG(self, packet: TransmissionPacket):  # TODO: Implement
+    def ULG(self, packet: TransmissionPacket):
         """
         Transmit full rssi data logs
         """
-        pass
+        with open(self.sfr.command_log_path, "r") as f:
+            self.transmit(packet, [f.read()])
 
     def ITM(self, packet: TransmissionPacket):
         """

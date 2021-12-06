@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import numpy as np
 import pickle
-import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
 from MainControlLoop.Drivers.bno055 import IMU_I2C
@@ -29,7 +28,7 @@ class StateFieldRegistry:
         self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
         self.orbit_log_path = "./MainControlLoop/lib/data/orbit_log.csv"
         self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
-        self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv" # Scuffed implementation
+        self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv"  # Scuffed implementation
         self.command_log_path = "./MainControlLoop/lib/data/command_log.csv"
 
         self.eps = EPS(self)  # EPS never turns off
@@ -66,10 +65,10 @@ class StateFieldRegistry:
             "USB-UART": False  # Alternate APRS Serial Converter
         }
         self.vars = self.load()
+        self.vars.LAST_STARTUP = time.time()
     
     class Registry:
         def __init__(self, eps, analytics):
-            self.START_TIME = -1
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
@@ -115,8 +114,6 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "wb") as f:
             pickle.dump(self.vars, f)
-        # with open(self.readable_log_path, "w") as f:
-        #     json.dump(self.vars.__dict__, f)
 
     def enter_sunlight(self) -> None:
         """
