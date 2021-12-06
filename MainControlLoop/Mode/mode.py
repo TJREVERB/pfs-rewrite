@@ -108,12 +108,17 @@ class Mode:
         if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         self.sfr.eps.commands["Pin On"](component)  # turns on component
+        self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
             self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
             self.sfr.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
+
+        if component == "APRS":
+            self.sfr.devices[component].disable_digi()
+        if component == "IMU":
+            self.sfr.devices[component].start()
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
@@ -122,17 +127,17 @@ class Mode:
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
         """
-        # TODO: if component iridium: copy iridium command buffer to sfr to avoid wiping commands when switching modes
         if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
             return None
         if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.sfr.devices["Iridium"] is not None:  # if iridium is already on
+        if component == "Iridium" and self.sfr.devices["Iridium"] is not None: # Read in MT buffer to avoid wiping commands when mode switching
             try:
-                self.sfr.devices["Iridium"].SHUTDOWN()  # runs proprietary off function for iridium before pdm off
-            except RuntimeError as e:
+                self.sfr.devices[component].next_msg()
+            except Exception as e:
                 print(e)
+
         self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
         self.sfr.eps.commands["Pin Off"](component)  # turns component off
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
