@@ -100,22 +100,30 @@ class APRS:
         """
         Enables Hardware Digipeating
         """
-        self.change_setting("ALIAS1", "APRSAT")
-        time.sleep(0.1)
-        self.change_setting("ALIAS2", "ARISS")
-        time.sleep(0.1)
-        self.change_setting("ALIAS3", "WIDE")
+        if self.enter_firmware_menu():
+            self.change_setting("BANK", "1")
+            time.sleep(0.1)
+            self.change_setting("ABAUD", "19200")
+            time.sleep(0.1)
+            if not self.exit_firmware_menu():
+                raise RuntimeError("Unable to exit firmware menu")
+        else:
+            raise RuntimeError("Unable to enter firmware menu")
         return True
 
     def disable_digi(self):
         """
         Disables Hardware Digipeating
         """
-        self.change_setting("ALIAS1", "TEMP")
-        time.sleep(0.1)
-        self.change_setting("ALIAS2", "%")
-        time.sleep(0.1)
-        self.change_setting("ALIAS3", "%")
+        if self.enter_firmware_menu():
+            self.change_setting("BANK", "0")
+            time.sleep(0.1)
+            self.change_setting("ABAUD", "19200")
+            time.sleep(0.1)
+            if not self.exit_firmware_menu():
+                raise RuntimeError("Unable to exit firmware menu")
+        else:
+            raise RuntimeError("Unable to enter firmware menu")
         return True
     
     def request_setting(self, setting) -> str:
@@ -143,9 +151,9 @@ class APRS:
         try:
             result = self.serial.read(100).decode("utf-8")
             if result.find("COMMAND NOT FOUND") != -1:
-                return False
-            if result.find("is") != -1 and result.find("was") != -1:
-                return True
+                raise RuntimeError("No such setting")
+            if result.find("is") == -1 and result.find("was") == -1:
+                raise RuntimeError("Failed to change setting")
         except:
             raise RuntimeError("Failed to read setting")
 
