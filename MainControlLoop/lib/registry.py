@@ -74,7 +74,8 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun := eps.sun_detected()]
+            sun = eps.sun_detected()
+            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
             self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
             self.ORBITAL_PERIOD = 90 * 60
             self.LOWER_THRESHOLD = 133732.8 * (0.3)  # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
