@@ -15,7 +15,6 @@ class APRS:
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
-        self.softdigi = False
 
     def __del__(self):
         self.serial.close()
@@ -203,8 +202,6 @@ class APRS:
             processed = msg.split(":")
             processed = processed[:-1] # Ignore anything after last :
             self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
-        elif self.softdigi:
-            self.write(msg)
 
     def write(self, message: str) -> bool:
         """
