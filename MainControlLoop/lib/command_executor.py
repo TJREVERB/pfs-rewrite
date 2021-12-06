@@ -310,12 +310,7 @@ class CommandExecutor:
 
         data = pd.read_csv(self.sfr.pwr_log_path)  # Read logs
 
-        returns = []
-
-        for i in range(packet.args[0]):
-            returns.append(data[len(data)-i])
-
-        self.transmit(packet, returns)
+        self.transmit(packet, data[-1*packet.args[0]:])
 
     def ASV(self, packet: TransmissionPacket):
         """
@@ -323,12 +318,7 @@ class CommandExecutor:
         """
         data = pd.read_csv(self.sfr.iridium_data_path) # Read logs
 
-        returns = []
-
-        for i in range(packet.args[0]):
-            returns.append(data[len(data)-i])
-
-        self.transmit(packet, returns)
+        self.transmit(packet, data[-1*packet.args[0]:])
 
     def ASG(self, packet: TransmissionPacket): # TODO: Test
         """
@@ -337,12 +327,7 @@ class CommandExecutor:
 
         data = pd.read_csv(self.sfr.solar_log_path) # Read logs
 
-        returns = []
-
-        for i in range(packet.args[0]):
-            returns.append(data[len(data)-i])
-
-        self.transmit(packet, returns)
+        self.transmit(packet, data[-1*packet.args[0]:])
 
     def ATB(self, packet: TransmissionPacket):
         """
@@ -350,13 +335,8 @@ class CommandExecutor:
         """
         data = pd.read_csv(self.sfr.imu_log_path) # Read logs
 
-        returns = []
-
-        for i in range(packet.args[0]):
-            returns.append(data[len(data)-i])
-
-        self.transmit(packet, returns)
-
+        self.transmit(packet, data[-1*packet.args[0]:])
+        
     def AMS(self, packet: TransmissionPacket):
         """
         Repeat result of command with given MSN
