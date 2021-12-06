@@ -319,7 +319,7 @@ class CommandExecutor:
 
     def ASV(self, packet: TransmissionPacket):
         """
-        Transmits last n signal strength variability datapoints
+        Transmits last n signal strength datapoints
         """
         data = pd.read_csv(self.sfr.iridium_data_path) # Read logs
 
