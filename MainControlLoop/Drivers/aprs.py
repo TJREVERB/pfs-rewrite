@@ -101,7 +101,7 @@ class APRS:
         
         if result.find("MYCALL") == -1:
             raise RuntimeError("Port broken during write")
-        if result.find("MYCALL is NOCALL") == -1:
+        if result.find("MYCALL is") == -1:
             raise RuntimeError("APRS unresponsive")
         
         if not self.exit_firmware_menu():
