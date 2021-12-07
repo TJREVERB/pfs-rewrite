@@ -360,11 +360,17 @@ class CommandExecutor:
             raise RuntimeError("Command does not exist in log!")
 
     def SUV(self, packet: TransmissionPacket):
+        """
+        Set upper threshold for mode switch
+        """
         v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
         self.transmit(packet, [v])
 
     def SLV(self, packet: TransmissionPacket):
+        """
+        Set lower threshold for mode switch
+        """
         v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
         self.transmit(packet, [v])
@@ -411,6 +417,9 @@ class CommandExecutor:
         self.transmit(packet, [])
 
     def IPC(self, packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
+        """
+        Power cycle satellite
+        """
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
