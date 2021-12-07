@@ -12,11 +12,6 @@ class Startup(Mode):
         # CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
         self.THIRTY_MINUTES = 1800  # 1800 seconds in 30 minutes
         self.BEACON_WAIT_TIME = 120  # 2 minutes
-        # CHANGE TO ACCOMMODATE DATA BUDGET
-        self.ACKNOWLEDGEMENT = "Hello from TJ!"  # Acknowledgement message from ground station
-
-        self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
-        self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
 
         self.last_contact_attempt = 0
         self.conditions = {
@@ -52,6 +47,8 @@ class Startup(Mode):
             # TODO: HANDLE THIS BETTER
             try:
                 self.read_radio()  # only reads radio if not low battery
+                self.transmit_radio()
+                self.check_time()
             except RuntimeError as e:
                 print(e)
             # wait for BEACON_WAIT_TIME to not spam beacons
@@ -62,41 +59,14 @@ class Startup(Mode):
                 self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
                 self.last_contact_attempt = time.time()
 
-    def read_radio(self) -> None:
-        """
-        Main logic for reading messages from radio in Startup mode
-        """
+    def read_radio(self):
         super(Startup, self).read_radio()
-        # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, store them in sfr
-            try:
-                self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError as e:
-                print(e)  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
-        # If primary radio is aprs and enough time has passed
-        elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, store them in sfr
-            try:
-                self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError as e:
-                print(e)  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
-        # If APRS is on for whatever reason
-        if self.sfr.devices["APRS"] is not None:
-            # add aprs messages to sfr
-            self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())
-        # commands will be executed in the mode.py's super method for execute_cycle using a command executor
+    
+    def transmit_radio(self):
+        return super(Startup, self).transmit_radio()
 
-        while len(self.sfr.vars.transmit_buffer) > 0: # After read radios, attempt to transmit transmit buffer
-            packet = self.vars.transmit_buffer.pop(0)
-            if not self.sfr.command_executor.transmit(packet):
-                break
-        
-        #TODO: Update Iridium time
+    def check_time(self):
+        return super(Startup, self).check_time()
 
 
     def check_conditions(self) -> bool:

@@ -9,9 +9,6 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             "Low Battery": False
         }
 
-        self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
-        self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
-
     def __str__(self):
         return "Repeater"
 
@@ -39,45 +36,19 @@ class Repeater(Mode):  # TODO: IMPLEMENT
 
     def execute_cycle(self) -> None:
         self.read_radio()
+        self.transmit_radio()
+        self.check_time()
         super(Repeater, self).execute_cycle()
         self.sfr.dump()  # Log changes
 
     def read_radio(self):
-        """
-        Main logic for reading messages from radio in Repeater mode
-        """
         super(Repeater, self).read_radio()
-        # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, store them in sfr
-            try:
-                self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError:
-                pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
-        # If primary radio is aprs and enough time has passed
-        elif self.sfr.vars.PRIMARY_RADIO == "APRS" and \
-                time.time() - self.last_iridium_poll_time > self.SECONDARY_IRIDIUM_WAIT_TIME:
-            # get all messages from iridium, store them in sfr
-            try:
-                self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError:
-                pass  # TODO: IMPLEMENT CONTINGENCIES
-            self.last_iridium_poll_time = time.time()
-        # If APRS is on for whatever reason
-        if self.sfr.devices["APRS"] is not None:
-            self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].read())  # add aprs messages to sfr
-            # commands will be executed in the mode.py's super method for execute_cycle using a command executor
-        
-        while len(self.sfr.vars.transmit_buffer) > 0: # After read radios, attempt to transmit transmit buffer
-            packet = self.vars.transmit_buffer.pop(0)
-            if not self.sfr.command_executor.transmit(packet):
-                break
-        
-        #TODO: Update Iridium time
+    
+    def transmit_radio(self):
+        return super(Repeater, self).transmit_radio()
 
-
+    def check_time(self):
+        return super(Repeater, self).check_time()
 
     def terminate_mode(self) -> None:
         self.sfr.devices["APRS"].disable_digi()
