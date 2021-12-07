@@ -304,7 +304,7 @@ class CommandExecutor:
         Transmits time since last mode switch
         """
         data = time.time() - self.sfr.LAST_MODE_SWITCH
-        self.transmit(packet, data)
+        self.transmit(packet, [data])
 
     def AAP(self, packet: TransmissionPacket):
         """
