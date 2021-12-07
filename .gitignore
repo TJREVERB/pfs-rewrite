@@ -19,4 +19,4 @@ config_custom.yml
 backup_tle.txt
 
 # All data
-MainControlLoop/lib/data/*
+# MainControlLoop/lib/data/*

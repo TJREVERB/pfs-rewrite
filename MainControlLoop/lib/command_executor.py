@@ -61,33 +61,51 @@ class CommandExecutor:
             "USM": self.USM,
             "IPC": self.IPC
         }
-        
 
     def execute(self):
         for command_packet in self.sfr.vars.command_buffer:
+            to_log = pd.DataFrame([
+                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
+                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
+                {"command": command_packet.command_string},
+                {"arg": ":".join(command_packet.args)},
+                {"registry": "Primary"},
+                {"msn": command_packet.msn}
+            ])
+            command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                function = self.primary_registry[command_packet.command_string]
-                function(command_packet)
-                t = datetime.datetime.utcnow()
-                command_packet.timestamp = (t.day, t.hour, t.minute)
+                to_log["result"] = self.primary_registry[command_packet.command_string](command_packet)
             except Exception as e:
                 self.transmit(command_packet, [repr(e)], True)
+                to_log["result"] = "ERR:" + type(e).__name__
+            finally:
+                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
         for command in self.sfr.vars.outreach_buffer:
+            to_log = pd.DataFrame([
+                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
+                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
+                {"command": command_packet.command_string},
+                {"arg": ":".join(command_packet.args)},
+                {"registry": "Secondary"},
+                {"msn": command_packet.msn}
+            ])
+            command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                function = self.secondary_registry[command.command_string]
-                function(command)
-                t = datetime.datetime.utcnow()
-                command_packet.timestamp = (t.day, t.hour, t.minute)
+                to_log["result"] = self.secondary_registry[command.command_string](command)
             except Exception as e:
                 self.transmit(command, [repr(e)], True)
+                to_log["result"] = "ERR:" + type(e).__name__
+            finally:
+                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
-        self.sfr.LAST_COMMAND_RUN = time.time()
 
     def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
-        Transmit a message over radio that received command
+        Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
@@ -106,54 +124,63 @@ class CommandExecutor:
             self.sfr.vars.transmit_buffer.append(packet)
             return False
 
-    def MCH(self, packet: TransmissionPacket):
+    def MCH(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
             raise RedundantCommandInputError("Already in Charging")
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
-        self.transmit(packet, [])
+        self.transmit(packet, result := [])
+        return result
 
-    def MSC(self, packet: TransmissionPacket):
+    def MSC(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
             raise RedundantCommandInputError("Already in Science")
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
-        self.transmit(packet, [])
+        self.transmit(packet, result := [])
+        return result
 
-    def MOU(self, packet: TransmissionPacket):
+    def MOU(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
             raise RedundantCommandInputError("Already in Outreach")
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
-        self.transmit(packet, [])
+        self.transmit(packet, result := [])
+        return result
 
-    def MRP(self, packet: TransmissionPacket):
+    def MRP(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to Repeater mode
         """
-        pass
+        if str(self.sfr.mode_obj) == "Repeater":
+            raise RedundantCommandInputError("Already in Repeater")
+        self.sfr.vars.MODE = self.sfr.modes_list["Repeater"]
+        self.transmit(packet, result := [])
+        return result
 
-    def MLK(self, packet: TransmissionPacket):
+    def MLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
-        self.transmit(packet, []) # OK code
+        self.transmit(packet, result := [])  # OK code
+        return result
 
-    def MDF(self, packet: TransmissionPacket):
+    def MDF(self, packet: TransmissionPacket) -> list:
         """
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
-        self.transmit(packet, []) # OK code
+        self.transmit(packet, result := [])  # OK code
+        return result
 
-    def DLK(self, packet: TransmissionPacket):
+    def DLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Device Lock
         """
@@ -167,16 +194,16 @@ class CommandExecutor:
         if dcode < 0 or dcode >= len(device_codes):
             raise InvalidCommandInputError("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
-            raise RuntimeError("Device already locked")
+            raise RedundantCommandInputError("Device already locked")
         else:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
-            self.transmit(packet, [dcode])
+            self.transmit(packet, result := [dcode])
+        return result
 
-    def DDF(self, packet: TransmissionPacket):
+    def DDF(self, packet: TransmissionPacket) -> list:
         """
         Disable Device Lock
         """
-
         dcode = packet.args[0]
         device_codes = [
             "Iridium",
@@ -188,32 +215,35 @@ class CommandExecutor:
             raise InvalidCommandInputError("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = False
-            self.transmit(packet, [dcode])
+            self.transmit(packet, result := [dcode])
         else:
-            raise RuntimeError("Device not locked")
+            raise RedundantCommandInputError("Device not locked")
+        return result
 
-    def GCR(self, packet: TransmissionPacket):
+    def GCR(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last command run
         """
-        data = time.time() - self.sfr.LAST_COMMAND_RUN
-        self.transmit(packet, [data])
+        self.transmit(packet, result := [time.time() - self.sfr.LAST_COMMAND_RUN])
+        return result
 
-    def GVT(self, packet: TransmissionPacket):
+    def GVT(self, packet: TransmissionPacket) -> list:
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"]()])
+        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"]()])
+        return result
 
-    def GPL(self, packet: TransmissionPacket):
+    def GPL(self, packet: TransmissionPacket) -> list:
         """
         Transmit proof of life
         """
-        self.transmit(packet, [self.sfr.eps.telemetry["VBCROUT"](),
+        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"](),
                                 sum(self.sfr.recent_gen()),
                                 sum(self.sfr.recent_power())])
+        return result
 
-    def GCD(self, packet: TransmissionPacket):
+    def GCD(self, packet: TransmissionPacket) -> list:
         """
         Transmits detailed critical data
         Transmits:
@@ -246,101 +276,116 @@ class CommandExecutor:
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
         self.transmit(packet, result)
+        return result
 
-    def GPW(self, packet: TransmissionPacket):
+    def GPW(self, packet: TransmissionPacket) -> list:
         """
         Transmit total power draw of satellite
         """
-        self.transmit(packet, [sum(self.sfr.recent_power())])
+        self.transmit(packet, result := [sum(self.sfr.recent_power())])
+        return result
 
-    def GOP(self, packet: TransmissionPacket):
+    def GOP(self, packet: TransmissionPacket) -> list:
         """
         Transmits current orbital period
         """
-        self.transmit(packet, [self.sfr.vars.ORBITAL_PERIOD], False)
+        self.transmit(packet, result := [self.sfr.vars.ORBITAL_PERIOD], False)
+        return result
 
-    def GCS(self, packet: TransmissionPacket):
+    def GCS(self, packet: TransmissionPacket) -> list:
         """
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
         """
-        self.transmit(packet, [str(i) for i in list(vars(self.sfr.vars).values())])
+        self.transmit(packet, result := [str(i) for i in list(vars(self.sfr.vars).values())])
+        return result
 
-    def GSV(self, packet: TransmissionPacket):
+    def GSV(self, packet: TransmissionPacket) -> list:
         """
         Transmit signal strength variability
         """
-        self.transmit(packet, [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
+        self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
+        return result
 
-    def GSG(self, packet: TransmissionPacket):
+    def GSG(self, packet: TransmissionPacket) -> list:
         """
         Transmit solar generation
         """
-        self.transmit(packet, [sum(self.sfr.recent_gen())])
+        self.transmit(packet, result := [sum(self.sfr.recent_gen())])
+        return result
 
-    def GTB(self, packet: TransmissionPacket):
+    def GTB(self, packet: TransmissionPacket) -> list:
         """
         Transmit full IMU tumble
         """
         tum = self.sfr.imu.getTumble()
-        self.transmit(packet, [*tum[0], *tum[1]])
+        self.transmit(packet, result := [*tum[0], *tum[1]])
+        return result
 
-    def GMT(self, packet: TransmissionPacket):
+    def GMT(self, packet: TransmissionPacket) -> list:
         """
         Transmit magnitude IMU tumble
         """
         tum = self.sfr.imu.getTumble()
         mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
-        self.transmit(packet, [mag])
+        self.transmit(packet, result := [mag])
+        return result
 
-    def GST(self, packet: TransmissionPacket):
+    def GST(self, packet: TransmissionPacket) -> list:
         """
         Transmits RTC time currently
         """
-        self.transmit(packet, [time.time()]) # Bad
+        self.transmit(packet, result := [time.time()])  # TODO: FIX
+        return result
 
-    def GTS(self, packet: TransmissionPacket):
+    def GTS(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last mode switch
         """
-        self.transmit(packet, [time.time() - self.sfr.LAST_MODE_SWITCH])
+        self.transmit(packet, result := [time.time() - self.sfr.LAST_MODE_SWITCH])
+        return result
 
-    def AAP(self, packet: TransmissionPacket):
+    def AAP(self, packet: TransmissionPacket) -> list:
         """
         Transmits average power draw over n data points
         """
-        self.transmit(packet, [
+        self.transmit(packet, result := [
             self.sfr.analytics.historical_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], packet.args[0])])
+        return result
 
-    def APW(self, packet: TransmissionPacket):  # TODO: Test
+    def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n power draw datapoints
         """
         df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
+        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        return result
 
-    def ASV(self, packet: TransmissionPacket):
+    def ASV(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n signal strength datapoints
         """
-        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0]) # Read logs
-        self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
+        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0])  # Read logs
+        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        return result
 
-    def ASG(self, packet: TransmissionPacket):  # TODO: Test
+    def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n solar generation datapoints
         """
-        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0]) # Read logs
-        self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
+        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0])  # Read logs
+        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        return result
 
-    def ATB(self, packet: TransmissionPacket):
+    def ATB(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n IMU tumble datapoints
         """
-        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0]) # Read logs
-        self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
+        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
+        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        return result
 
-    def AMS(self, packet: TransmissionPacket):
+    def AMS(self, packet: TransmissionPacket) -> list:
         """
         Repeat result of command with given MSN
         """
@@ -349,27 +394,30 @@ class CommandExecutor:
         # If search for msn returns results
         if len(row := df[df["msn"] == msn]) != 0:
             # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, [row[-1].to_csv().strip("\n")])
+            self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
         else:
             raise RuntimeError("Command does not exist in log!")
+        return result
 
-    def SUV(self, packet: TransmissionPacket):
+    def SUV(self, packet: TransmissionPacket) -> list:
         """
         Set upper threshold for mode switch
         """
         v = packet.args[0]  # get only argument from arg list
         self.sfr.vars.UPPER_THRESHOLD = float(v)
-        self.transmit(packet, [v])
+        self.transmit(packet, result := [v])
+        return result
 
-    def SLV(self, packet: TransmissionPacket):
+    def SLV(self, packet: TransmissionPacket) -> list:
         """
         Set lower threshold for mode switch
         """
         v = packet.args[0]
         self.sfr.vars.LOWER_THRESHOLD = float(v)
-        self.transmit(packet, [v])
+        self.transmit(packet, result := [v])
+        return result
 
-    def USM(self, packet: TransmissionPacket):
+    def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
         Transmits:
@@ -384,7 +432,7 @@ class CommandExecutor:
         9. Total number of iridium signal strength measurements taken
         10. Total number of power consumption/generation measurements
         """
-        self.transmit(packet, [
+        self.transmit(packet, result := [
             time.time() - self.sfr.vars.START_TIME,
             time.time() - self.sfr.vars.LAST_STARTUP,
             self.sfr.analytics.total_power_consumed(),
@@ -396,30 +444,34 @@ class CommandExecutor:
             len(pd.read_csv(self.sfr.iridium_data_path)),
             len(pd.read_csv(self.sfr.pwr_log_path)),
         ])
+        return result
 
-    def ULG(self, packet: TransmissionPacket):
+    def ULG(self, packet: TransmissionPacket) -> list:
         """
         Transmit full rssi data logs
         """
         with open(self.sfr.command_log_path, "r") as f:
-            self.transmit(packet, [f.read()])
+            self.transmit(packet, result := [f.read()])
+        return result
 
-    def ITM(self, packet: TransmissionPacket):
+    def ITM(self, packet: TransmissionPacket) -> list:
         """
         Transmits an OK code
         """
-        self.transmit(packet, [])
+        self.transmit(packet, result := [])
+        return result
 
-    def IPC(self, packet: TransmissionPacket):  # TODO: Implement, how to power cycle satelitte without touching CPU power
+    def IPC(self, packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
         """
         Power cycle satellite
         """
         self.sfr.mode_obj.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-        self.transmit(packet, [])
+        self.transmit(packet, result := [])
+        return result
     
-    def IRB(self, packet: TransmissionPacket):
+    def IRB(self, packet: TransmissionPacket) -> list:
         """
         Reboot pi
         """

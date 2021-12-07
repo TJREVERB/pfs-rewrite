@@ -1,5 +1,6 @@
 from serial import Serial
 import time, datetime
+import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
 class APRS:
@@ -170,19 +171,22 @@ class APRS:
             f.write(str(1))
         time.sleep(5)
 
-    def transmit(self, packet: TransmissionPacket):
+    def transmit(self, packet: TransmissionPacket) -> bool:
         """
         Takes a descriptor and data, and transmits
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
-        msg = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}-{packet.timestamp[1]}-{packet.timestamp[2]}:"
-        if packet.return_code == "ERR":
-            msg += packet.return_data[0]
-        else:
-            for d in packet.return_data:
-                msg += str(d) + ":"
-        return self.write(msg)
+        to_log = pd.DataFrame([
+            {"timestamp": time.time()},
+            {"radio": "APRS"},
+            {"data": f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]} \
+                -{packet.timestamp[1]}-{packet.timestamp[2]}:{':'.join(packet.return_data)}:"},
+            {"simulate": packet.simulate}
+        ])
+        if packet.simulate:
+            return True
+        return self.write(to_log["data"])
 
     def next_msg(self):
         """
