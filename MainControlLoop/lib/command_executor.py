@@ -349,7 +349,7 @@ class CommandExecutor:
         # If search for msn returns results
         if len(row := df[df["msn"] == msn]) != 0:
             # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, [row[-1].to_csv().strip("\n")])
+            self.transmit(packet, [float(i) for i in row["result"][-1].split(",")])
         else:
             raise RuntimeError("Command does not exist in log!")
 
