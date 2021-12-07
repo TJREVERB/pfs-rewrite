@@ -511,11 +511,14 @@ class Iridium:
         :return: (tuple) lat, long, altitude (0,0,0 if unable to retrieve)
         """
         raw = self.process(self.GEO_C(), "MSGEO").split(",") # raw x, y, z, timestamp
-        if self.processed_time() - (int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH) > 60: # Checks if time passed since last geolocation update has been more than 60 seconds
-            result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")] # Use SBDIX to update geolocation
-            if result[0] not in [0, 1, 3, 4]:
-                return (0, 0, 0) # Return 0, 0, 0 if SBDIX fails
-            raw = self.process(self.GEO_C(), "MSGEO").split(",") # try again
+        try:
+            if self.processed_time() - (int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH) > 60: # Checks if time passed since last geolocation update has been more than 60 seconds
+                result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")] # Use SBDIX to update geolocation
+                if result[0] not in [0, 1, 3, 4]:
+                    return (0, 0, 0) # Return 0, 0, 0 if SBDIX fails
+                raw = self.process(self.GEO_C(), "MSGEO").split(",") # try again
+        except TypeError:
+            return (0, 0, 0) # Return 0, 0, 0 if network time cannot be retrieved
         lon = math.atan(float(raw[1])/float(raw[0]))
         lat = math.atan(float(raw[2])/((float(raw[1])**2 + float(raw[0])**2)**0.5))
         alt = (float(raw[0])**2 + float(raw[1])**2 + float(raw[2])**2)**0.5
