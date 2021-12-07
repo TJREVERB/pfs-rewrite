@@ -61,33 +61,53 @@ class CommandExecutor:
             "USM": self.USM,
             "IPC": self.IPC
         }
-        
 
     def execute(self):
         for command_packet in self.sfr.vars.command_buffer:
+            command_packet.timestamp = ((t := datetime.datetime.utcnow()).day, t.hour, t.minute)
+            to_log = pd.DataFrame([
+                {"timestamp": t.timestamp()},
+                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
+                {"command": command_packet.command_string},
+                {"arg": ":".join(command_packet.args)},
+                {"registry": "Primary"},
+                {"msn": command_packet.msn}
+            ])
             try:
-                function = self.primary_registry[command_packet.command_string]
-                function(command_packet)
-                t = datetime.datetime.utcnow()
-                command_packet.timestamp = (t.day, t.hour, t.minute)
+                self.primary_registry[command_packet.command_string](command_packet)
+                to_log["result"] = None  # TODO: IMPLEMENT
             except Exception as e:
                 self.transmit(command_packet, [repr(e)], True)
+                to_log["result"] = "ERR:" + type(e).__name__
+            finally:
+                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
         for command in self.sfr.vars.outreach_buffer:
+            command_packet.timestamp = ((t := datetime.datetime.utcnow()).day, t.hour, t.minute)
+            to_log = pd.DataFrame([
+                {"timestamp": t.timestamp()},
+                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
+                {"command": command_packet.command_string},
+                {"arg": ":".join(command_packet.args)},
+                {"registry": "Secondary"},
+                {"msn": command_packet.msn}
+            ])
             try:
-                function = self.secondary_registry[command.command_string]
-                function(command)
-                t = datetime.datetime.utcnow()
-                command_packet.timestamp = (t.day, t.hour, t.minute)
+                self.secondary_registry[command.command_string](command)
+                to_log["result"] = None  # TODO: IMPLEMENT
             except Exception as e:
                 self.transmit(command, [repr(e)], True)
+                to_log["result"] = "ERR:" + type(e).__name__
+            finally:
+                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
-        self.sfr.LAST_COMMAND_RUN = time.time()
 
     def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
-        Transmit a message over radio that received command
+        Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
@@ -349,7 +369,7 @@ class CommandExecutor:
         # If search for msn returns results
         if len(row := df[df["msn"] == msn]) != 0:
             # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, [float(i) for i in row["result"][-1].split(",")])
+            self.transmit(packet, [float(i) for i in row["result"][-1].split(":")])
         else:
             raise RuntimeError("Command does not exist in log!")
 
