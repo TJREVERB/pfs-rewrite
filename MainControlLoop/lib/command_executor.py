@@ -1,5 +1,6 @@
 import time, datetime
 import pandas as pd
+import os
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.lib.exceptions import RedundantCommandInputError, InvalidCommandInputError
 
@@ -424,38 +425,9 @@ class CommandExecutor:
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
         self.transmit(packet, [])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    def IRB(self, packet: TransmissionPacket):
+        """
+        Reboot pi
+        """
+        os.system("sudo reboot")
