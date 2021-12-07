@@ -316,28 +316,28 @@ class CommandExecutor:
         """
         Transmits last n power draw datapoints
         """
-        df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])   # Read logs
+        df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])  # Read logs
         self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
 
     def ASV(self, packet: TransmissionPacket):
         """
         Transmits last n signal strength datapoints
         """
-        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0]) # Read logs
         self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
 
     def ASG(self, packet: TransmissionPacket):  # TODO: Test
         """
         Transmits last n solar generation datapoints
         """
-        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0]) # Read logs
         self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
 
     def ATB(self, packet: TransmissionPacket):
         """
         Transmits last n IMU tumble datapoints
         """
-        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0]) # Read logs
         self.transmit(packet, [j for j in [i for i in df.values.tolist()]])
 
     def AMS(self, packet: TransmissionPacket):
