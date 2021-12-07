@@ -519,8 +519,8 @@ class Iridium:
                 raw = self.process(self.GEO_C(), "MSGEO").split(",") # try again
         except TypeError:
             return (0, 0, 0) # Return 0, 0, 0 if network time cannot be retrieved
-        lon = math.atan(float(raw[1])/float(raw[0]))
-        lat = math.atan(float(raw[2])/((float(raw[1])**2 + float(raw[0])**2)**0.5))
+        lon = math.atan2(float(raw[1]), float(raw[0]))
+        lat = math.atan2(float(raw[2]), ((float(raw[1])**2 + float(raw[0])**2)**0.5))
         alt = (float(raw[0])**2 + float(raw[1])**2 + float(raw[2])**2)**0.5
         return (lat, lon, alt)
 
