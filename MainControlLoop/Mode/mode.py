@@ -94,7 +94,7 @@ class Mode:
         for device in self.sfr.devices:
             # TODO: Implement functional for all devices
             # if the device is on and not functional
-            if self.sfr.devices[device] is not None and not self.sfr.devices[device].functional:
+            if self.sfr.devices[device] is not None and not self.sfr.devices[device].functional():
                 result.append(device)
         return result
 
