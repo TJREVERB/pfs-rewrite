@@ -96,7 +96,11 @@ class CommandExecutor:
         else:
             packet.return_code = "0OK"
         packet.return_data = data
-        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        try:
+            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        except RuntimeError as e:
+            print(e)
+            self.sfr.vars.transmit_buffer.append(packet)
 
     def MCH(self, packet: TransmissionPacket):
         """

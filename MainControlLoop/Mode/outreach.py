@@ -68,6 +68,12 @@ class Outreach(Mode):
             self.sfr.vars.APRS_RECEIVED_COMMAND.append(self.sfr.devices["APRS"].next_msg())  # add aprs messages to sfr
             # commands will be executed in the mode.py's super method for execute_cycle using a command executor
 
+        while len(self.sfr.vars.transmit_buffer) > 0: # After read radios, attempt to transmit transmit buffer
+            packet = self.vars.transmit_buffer.pop(0)
+            self.sfr.command_executor.transmit(packet)
+        
+        #TODO: Update Iridium time
+    
     def terminate_mode(self) -> None:
         super(Outreach, self).terminate_mode()
         pass

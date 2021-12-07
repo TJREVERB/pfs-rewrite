@@ -84,7 +84,8 @@ class StateFieldRegistry:
             self.MODE_LOCK = False  # Whether to lock mode switches
             self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
             self.CONTACT_ESTABLISHED = False
-            self.command_buffer = []  # tuple (3 char command str, argument, message number: int)
+            self.transmit_buffer = []
+            self.command_buffer = []
             self.outreach_buffer = []
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
