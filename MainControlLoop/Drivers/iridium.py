@@ -388,7 +388,8 @@ class Iridium:
                     self.sfr.vars.command_buffer.append(( *self.decode(self.process(self.SBD_RB(), "SBDRB").strip()) , int(ls[3]) )) #append message, args, msn number
                 except:
                     self.sfr.vars.command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
-        
+        if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
+            raise RuntimeError("Error clearing buffers")
         result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
         if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")
