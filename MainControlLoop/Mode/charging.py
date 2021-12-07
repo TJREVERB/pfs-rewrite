@@ -76,7 +76,8 @@ class Charging(Mode):
         
         while len(self.sfr.vars.transmit_buffer) > 0: # After read radios, attempt to transmit transmit buffer
             packet = self.vars.transmit_buffer.pop(0)
-            self.sfr.command_executor.transmit(packet)
+            if not self.sfr.command_executor.transmit(packet):
+                break
         
         #TODO: Update Iridium time
 

@@ -90,6 +90,7 @@ class CommandExecutor:
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
+        :return: (bool) transmission successful
         """
         if error:
             packet.return_code = "ERR"
@@ -98,9 +99,11 @@ class CommandExecutor:
         packet.return_data = data
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+            return True
         except RuntimeError as e:
             print(e)
             self.sfr.vars.transmit_buffer.append(packet)
+            return False
 
     def MCH(self, packet: TransmissionPacket):
         """
