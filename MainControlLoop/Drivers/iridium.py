@@ -49,14 +49,13 @@ class Iridium:
             "ASV",
             "ASG",
             "ATB",
-            "ARS",
             "AMS",
             "SUV",
             "SLV",
             "USM",
             "ULG",
             "ITM",
-            "IPC"
+            "IPC",
         ]
 
     RETURN_CODES = [
@@ -395,9 +394,7 @@ class Iridium:
         #TODO: error handling, use rtc instead of datetime
         t = datetime.datetime.utcnow()
         result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, (t.day, t.hour, t.minute), packet.return_data))
-        if result[0] == 0:
-            raise RuntimeError("Error writing to buffer")
-        elif result[0] == 2:
+        if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:
             try:
@@ -443,7 +440,7 @@ class Iridium:
         if i == 3:
             raise RuntimeError("Message too long")
         self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
-        result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
+        result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(", ")]
         return result
 
     def next_msg(self):
@@ -471,7 +468,7 @@ class Iridium:
         result = [0, 0, 0, 0, 0, 1]
         lastqueued = []
         while result[5] >= 0:
-            result = [int(s) for s in self.process(self.SBD_INITIATE(), "SBDI").split(", ")]
+            result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(", ")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
                 break # If GSS queue is not changing, don't bother to keep trying, just break

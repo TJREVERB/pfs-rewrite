@@ -37,7 +37,6 @@ class CommandExecutor:
             "ASV": self.ASV,
             "ASG": self.ASG,
             "ATB": self.ATB,
-            "ARS": self.ARS,
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
@@ -58,7 +57,6 @@ class CommandExecutor:
             "GTB": self.GTB,
             "GOP": self.GOP,
             "GCS": self.GCS,
-            "ARS": self.ARS,
             "USM": self.USM,
             "IPC": self.IPC
         }
@@ -336,7 +334,7 @@ class CommandExecutor:
         data = pd.read_csv(self.sfr.imu_log_path) # Read logs
 
         self.transmit(packet, data[-1*packet.args[0]:])
-        
+
     def AMS(self, packet: TransmissionPacket):
         """
         Repeat result of command with given MSN
