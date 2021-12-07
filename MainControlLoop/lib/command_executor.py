@@ -292,7 +292,7 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.vars.ORBITAL_PERIOD], False)
         return result
 
-    def GCS(self, packet: TransmissionPacket) -> list:
+    def GCS(self, packet: TransmissionPacket) -> list:  # TODO: IMPLEMENT CORRECTLY
         """
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
