@@ -389,9 +389,7 @@ class Iridium:
                 except:
                     self.sfr.vars.command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         
-        #TODO: error handling, use rtc instead of datetime
-        t = datetime.datetime.utcnow()
-        result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, (t.day, t.hour, t.minute), packet.return_data))
+        result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
         if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:

@@ -1,4 +1,4 @@
-import time
+import time, datetime
 import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.lib.exceptions import RedundantCommandInputError, InvalidCommandInputError
@@ -62,11 +62,13 @@ class CommandExecutor:
         }
         
 
-    def execute(self, packet: TransmissionPacket):
+    def execute(self):
         for command_packet in self.sfr.vars.command_buffer:
             try:
                 function = self.primary_registry[command_packet.command_string]
                 function(command_packet)
+                t = datetime.datetime.utcnow()
+                command_packet.timestamp = (t.day, t.hour, t.minute)
             except Exception as e:
                 self.transmit(command_packet, [repr(e)], True)
         self.sfr.vars.command_buffer.clear()
@@ -75,6 +77,8 @@ class CommandExecutor:
             try:
                 function = self.secondary_registry[command.command_string]
                 function(command)
+                t = datetime.datetime.utcnow()
+                command_packet.timestamp = (t.day, t.hour, t.minute)
             except Exception as e:
                 self.transmit(command, [repr(e)], True)
         self.sfr.vars.outreach_buffer.clear()

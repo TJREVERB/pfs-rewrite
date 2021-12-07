@@ -176,8 +176,7 @@ class APRS:
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
-        t = datetime.datetime.utcnow()
-        msg = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{t.day}-{t.hour}-{t.minute}:"
+        msg = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}-{packet.timestamp[1]}-{packet.timestamp[2]}:"
         if packet.return_code == "ERR":
             msg += packet.return_data[0]
         else:
