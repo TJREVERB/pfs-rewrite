@@ -7,12 +7,13 @@ from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDepl
 
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
-    def __init__(self, sfr):
+    def __init__(self, sfr, wait = 5 * 60):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
         self.last_iridium_poll_time = 0
+        self.PRIMARY_IRIDIUM_WAIT_TIME = wait # wait time for iridium polling if iridium is main radio (default to 5 minutes)
 
         self.instruct = {
             "Pin On": self.__turn_on_component,
@@ -81,7 +82,47 @@ class Mode:
         """
         Function for each mode to implement to determine how it will use the specific radios
         """
-        pass
+        # If primary radio is iridium and enough time has passed
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+            # get all messages from iridium, store them in sfr
+            try:
+                self.sfr.devices["Iridium"].next_msg()
+            except RuntimeError as e:
+                print(e)  # TODO: IMPLEMENT CONTINGENCIES
+            self.last_iridium_poll_time = time.time()
+        # If APRS is on for whatever reason
+        if self.sfr.devices["APRS"] is not None:
+            # add aprs messages to sfr
+            self.sfr.devices["APRS"].next_msg()
+        # commands will be executed in the mode.py's super method for execute_cycle using a command executor
+        
+        #TODO: Update Iridium time
+
+    def transmit_radio(self) -> None:
+        """
+        Transmit any messages in the transmit queue
+        :return: (bool) whether all transmit queue messages were sent
+        """
+        # If primary radio is iridium and enough time has passed
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+            while len(self.sfr.vars.transmit_buffer) > 0: # attempt to transmit transmit buffer
+                packet = self.vars.transmit_buffer.pop(0)
+                if not self.sfr.command_executor.transmit(packet):
+                    return False
+        # If primary radio is APRS
+        if self.sfr.vars.PRIMARY_RADIO == "APRS":
+            while len(self.sfr.vars.transmit_buffer) > 0: # attempt to transmit transmit buffer
+                packet = self.vars.transmit_buffer.pop(0)
+                if not self.sfr.command_executor.transmit(packet):
+                    return False
+        return True
+
+    def check_time(self) -> None:
+        """
+        Checks rtc time against iridium time, should be called AFTER all tx/rx functions
+        """
 
     def systems_check(self) -> list:
         """
