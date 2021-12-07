@@ -70,9 +70,7 @@ class Iridium:
             time.sleep(0.5)
         self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
         # return format: <x>, <y>, <z>, <time_stamp>
-        self.GEO_S = lambda: self.request("AT-MSGEOS")  # Current geolocation, spherical coordinates
-        # return format: <latitude>, <longitude>, <altitude>, <latitude_error>, <longitude_error>, <altitude_error>,
-        # <time_stamp> time_stamp uses same 32 bit format as MSSTM
+        # time_stamp uses same 32 bit format as MSSTM
 
         # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
         # Optional param location
@@ -440,7 +438,7 @@ class Iridium:
         if i == 3:
             raise RuntimeError("Message too long")
         self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
-        result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(", ")]
+        result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
         return result
 
     def next_msg(self):
@@ -468,7 +466,7 @@ class Iridium:
         result = [0, 0, 0, 0, 0, 1]
         lastqueued = []
         while result[5] >= 0:
-            result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(", ")]
+            result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
             lastqueued.append(result[5])
             if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
                 break # If GSS queue is not changing, don't bother to keep trying, just break
@@ -510,8 +508,16 @@ class Iridium:
     def processed_geolocation(self):
         """
         Requests, reads, processes, and returns current geolocation
-        :return: (tuple) lat, long, altitude
+        :return: (tuple) lat, long, altitude (0,0,0 if unable to retrieve)
         """
+        self.SBD_INITIATE_EX() # Use SBDIX to update geolocation
+        raw = self.process(self.GEO_C(), "MSGEO").split(",") # raw x, y, z, timestamp
+        if datetime.datetime.utcnow().timestamp() - (int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH) > 60: # Checks if time passed since last geolocation update has been more than 60 seconds
+            return (0, 0, 0) # Return 0, 0, 0 if SBDIX fails
+        lon = math.atan(float(raw[1])/float(raw[0]))
+        lat = math.atan(float(raw[2])/((float(raw[1])**2 + float(raw[0])**2)**0.5))
+        alt = (float(raw[0])**2 + float(raw[1])**2 + float(raw[2])**2)**0.5
+        return (lat, lon, alt)
         #TODO: Implement
 
     def request(self, command: str, timeout=0.5) -> str:
