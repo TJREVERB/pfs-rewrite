@@ -140,9 +140,9 @@ class StateFieldRegistry:
         :param signal: iridium signal strength
         :param t: time to log, defaults to time method is called
         """
-        data = np.array(t, location, signal)  # Concatenate arrays
+        data = np.array(t, *location, signal)  # Concatenate arrays
         np.insert(data, 0, time.time())  # Add timestamp
-        df = pd.DataFrame(data, columns=["timestamp", "geolocation", "signal"])  # Create dataframe from array
+        df = pd.DataFrame(data, columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
         df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
     
     def recent_power(self) -> list:

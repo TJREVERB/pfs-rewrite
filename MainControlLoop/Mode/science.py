@@ -59,7 +59,7 @@ class Science(Mode):
             self.sfr.command_executor.GSV(pckt)
             self.pings_performed += 1 
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].GEO_C(),
+            self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
                                  self.sfr.devices["Iridium"].RSSI())  # Log Iridium data
             self.pings_performed += 1
 

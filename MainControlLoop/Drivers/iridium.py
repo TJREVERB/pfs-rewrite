@@ -507,6 +507,13 @@ class Iridium:
         processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
 
+    def processed_geolocation(self):
+        """
+        Requests, reads, processes, and returns current geolocation
+        :return: (tuple) lat, long, altitude
+        """
+        #TODO: Implement
+
     def request(self, command: str, timeout=0.5) -> str:
         """
         Requests information from Iridium and returns unprocessed response
