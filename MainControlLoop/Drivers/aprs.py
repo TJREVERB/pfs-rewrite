@@ -103,8 +103,8 @@ class APRS:
         if self.enter_firmware_menu():
             self.change_setting("BANK", "0")
             time.sleep(0.1)
-            self.change_setting("ABAUD", "19200")
-            time.sleep(0.1)
+            #self.change_setting("ABAUD", "19200")
+            #time.sleep(0.1)
             if not self.exit_firmware_menu():
                 raise RuntimeError("Unable to exit firmware menu")
         else:
@@ -119,8 +119,8 @@ class APRS:
         if self.enter_firmware_menu():
             self.change_setting("BANK", "1")
             time.sleep(0.1)
-            self.change_setting("ABAUD", "19200")
-            time.sleep(0.1)
+            #self.change_setting("ABAUD", "19200")
+            #time.sleep(0.1)
             if not self.exit_firmware_menu():
                 raise RuntimeError("Unable to exit firmware menu")
         else:
