@@ -55,7 +55,7 @@ class StateFieldRegistry:
         self.transmission_log_path = "./MainControlLoop/lib/data/transmission_log.csv"
 
         self.eps = EPS(self)  # EPS never turns off
-        self.battery = Battery(self)
+        self.battery = Battery()
         self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
