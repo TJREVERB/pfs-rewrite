@@ -104,8 +104,6 @@ class StateFieldRegistry:
             self.LAST_MODE_SWITCH = time.time()
         
         def encode(self):
-            print("It worked!")
-
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
@@ -134,7 +132,7 @@ class StateFieldRegistry:
             result = {}
             for i in vars(self):
                 if not i.startswith("__") and i.isupper():
-                    result[i] = encoded.pop(0)
+                    result[i] = encoded[0]#encoded.pop(0)
             return result
     
     def load(self) -> Registry:
