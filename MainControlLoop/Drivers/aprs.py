@@ -179,10 +179,10 @@ class APRS:
         """
         if packet.simulate:
             return True
-        to_log = pd.DataFrame([
+        pd.DataFrame([
             {"timestamp": time.time()},
             {"radio": "APRS"},
-            {"data": str(packet)},
+            {"size": len(str(packet))},
         ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         return self.write(str(packet))
 

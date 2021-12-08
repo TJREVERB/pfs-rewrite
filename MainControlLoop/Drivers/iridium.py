@@ -374,7 +374,7 @@ class Iridium:
         pd.DataFrame([  # Log transmission
             {"timestamp": time.time()},
             {"radio": "Iridium"},
-            {"data": raw.decode("ascii")},
+            {"size": len(raw)},
         ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")

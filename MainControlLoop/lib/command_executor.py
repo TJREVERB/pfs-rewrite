@@ -394,8 +394,8 @@ class CommandExecutor:
                 packet.args[0].command_string, packet.args[0].return_code, packet.args[0].msn, 
                 packet.args[0].timestamp, packet.args[0].return_data)[6:])])
         else:  # APRS doesn't encode
-            # Only factor in size of return data, multiply by 8 to convert bytes to bits
-            self.transmit(packet, result := [len(':'.join(self.return_data)) * 8])
+            # Only factor in size of return data
+            self.transmit(packet, result := [len(':'.join(self.return_data))])
         return result
 
     def AMS(self, packet: TransmissionPacket) -> list:
