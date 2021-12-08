@@ -123,6 +123,17 @@ class StateFieldRegistry:
                 self.LAST_COMMAND_RUN,
                 self.LAST_MODE_SWITCH,
             ]
+        
+        def to_dict(self):
+            """
+            Converts vars to dictionary with encoded values
+            """
+            encoded = self.encode()
+            result = {}
+            for i in vars(self):
+                if not i.startswith("__") and i.isupper():
+                    result[i] = encoded.pop(0)
+            return result
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)
