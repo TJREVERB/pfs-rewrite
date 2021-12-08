@@ -17,14 +17,20 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
 3. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle. The following are the attributes of the **MainControlLoop** class.
    1. **command_registry** stores all the 3-digit codes we can send up from the ground station and the associated lambda functions. Format: `self.command_registry[COMMAND]()`
       1. “TST”: Test method, calls **log** and logs "Hello" NEEDS TESTING
-      2. “BVT”: Retrieves battery voltage from EPS and transmits the value to the ground station using **aprs.write**
-      3. “CHG”: Calls **charging_mode** and enters charging mode NEEDS TESTING
-      4. “SCI”: Calls **science_mode** and enters science mode NEEDS TESTING
-      5. “U00”: Sets minimum battery voltage for when satellite will enter SCIENCE mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
-      6. “L00”: Sets maximum battery voltage for when satellite will enter CHARGING mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
-      7. “RST”: Calls **reset_power** and power resets the entire cubesat NEEDS TESTING
-      8. “IRI”: Calls **iridium.wave** and transmits a simple hardcoded message back to the ground station over Iridium
-      9. “PWR”: Retrieves total power draw from EPS and transmits the result using **aprs.write** NEEDS TESTING
+      3. “BVT”: Retrieves battery voltage from EPS and transmits the value to the ground station using **aprs.write**
+      4. “MCH”: Switches to charging mode by changing corresponding value in state field registry NEEDS TESTING
+      5. “MSC”: Enters science mode by changing corresponding value in state field registry NEEDS TESTING
+      6. "MOU": Switches to outreach mode by changing corresponding value in state field registry NEEDS Testing
+      7. "MRP": Switches to repeater mode by changing corresponding value in state field registry NEEDS Testing
+      8. "MLK": Enables Mode Lock
+      9. "MDF": Disables Mode Lock
+      10. "DLK": Enables device lock
+      11. "DDK": Disables device lock
+      12. “U00”: Sets minimum battery voltage for when satellite will enter SCIENCE mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
+      13. “L00”: Sets maximum battery voltage for when satellite will enter CHARGING mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
+      14. “RST”: Calls **reset_power** and power resets the entire cubesat NEEDS TESTING
+      15. “IRI”: Calls **iridium.wave** and transmits a simple hardcoded message back to the ground station over Iridium
+      16. “PWR”: Retrieves total power draw from EPS and transmits the result using **aprs.write** NEEDS TESTING
    2. The **log** method calls **sfr.dump**, saving the current state of the **StateFieldRegistry**. This is a separate method in order to easily comment out logging across the entire satellite when testing and debugging.
    3. The **charging_mode** method disables Iridium
    4. The **science_mode** method enables Iridium
