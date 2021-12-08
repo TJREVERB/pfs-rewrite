@@ -9,4 +9,5 @@ class TransmissionPacket:
         self.return_data = []
 
     def __str__(self):
-        return f"{self.command_string}, ARGS: {self.args}, MSN: {self.msn}, EXECUTED AT {self.timestamp}, RETURN {self.return_code}, {self.return_data}"
+        return f"{self.command_string}:{self.return_code}:{self.msn}:{self.timestamp[0]}- \
+            {self.timestamp[1]}-{self.timestamp[2]}:{':'.join(self.return_data)}:"

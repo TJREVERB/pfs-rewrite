@@ -224,39 +224,19 @@ class Iridium:
             return True
         except UnicodeDecodeError:
             return False
-
-    def enable_notif(self):
-        """
-        Enable RSSI and service notifications
-        """
-        return self.CIER([1,1,1]).find("OK") != -1
     
-    def disable_notif(self):
+    def check_signal_passive(self):
         """
-        Disable RSSI and service notifications
+        Passively check signal strength, for transmit/receive timing
         """
-        return self.CIER([0,0,0]).find("OK") != -1
-
-    def check_notif(self, threshold=2):
-        """
-        Checks if any notification has been received
-        :return: (int) code: 0: signal status unchanged, 1: signal not present, 2: signal present
-        """
-        b = self.read()
-        if b.find("+CIEV:") == -1:
+        try:
+            raw = self.LAST_RSSI()
+            if raw.find("CSQ:") == -1:
+                return 0
+            return int(raw[raw.find("CSQ:") + 4: raw.find("CSQ:") + 5])
+        except:
             return 0
-        b = b[b.find("+CIEV:") + 6:].strip().split(",")
-        if int(b[0]) == 0:
-            if int(b[1]) >= threshold:
-                return 2
-            else:
-                return 1
-        if int(b[0]) == 1:
-            if int(b[1]) == 1:
-                return 2
-            else:
-                return 1
-
+        
     def process(self, data, cmd):
         """
         Clean up data string
@@ -308,22 +288,24 @@ class Iridium:
                     exp = abs(exp) + 1
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
                     exp = (1 << 4) - exp  # twos comp
-                    flt |= exp << 11
-                    flt |= 1 << 15
+                    flt |= exp << 19
+                    flt |= 1 << 23
                 else:
-                    flt |= (exp & 0xf) << 11  # make sure exp is 4 bits, cut off anything past the 4th, shift left 11
-                num = int((n / (10 ** exp)) * 100)  # num will always have three digits, with trailing zeros if necessary to fill it in
+                    flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
+                num = int((n / (10 ** exp)) * 10000)  # num will always have five digits, with trailing zeros if necessary to fill it in
                 if n < 0:
-                    num &= 0x3ff  # make sure num is 10 bits long
-                    num = (1 << 10) - num  # twos comp
+                    num &= 0x3ffff  # make sure num is 18 bits long
+                    num = (1 << 18) - num  # twos comp
                     flt |= num
-                    flt |= (1 << 10)  # set sign bit
+                    flt |= (1 << 18)  # set sign bit
                 else:
-                    flt |= num & 0x3ff  # make sure num is 10 bits long
-                byte1 = flt >> 8
-                byte2 = flt & 0xff
+                    flt |= num & 0x3ffff  # make sure num is 18 bits long
+                byte1 = (flt >> 16) & 0xff
+                byte2 = (flt >> 8) & 0xff
+                byte3 = flt & 0xff
                 encoded.append(byte1)  # MSB FIRST
-                encoded.append(byte2)  # LSB LAST
+                encoded.append(byte2)  
+                encoded.append(byte3)  # LSB LAST
         return encoded
 
     def decode(self, message):
@@ -352,22 +334,17 @@ class Iridium:
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
 
-        for i in range(1, len(msg) - 1):
-            num = msg[i] << 8 | msg[i+1]  # msb first
-            exp = num >> 11  # extract exponent
+        for i in range(1, len(msg) - 2, 3):
+            num = (msg[i] << 16) | (msg[i+1] << 8) | (msg[i+2])  # msb first
+            exp = num >> 19  # extract exponent
             if exp & (1 << 4) == 1:  # convert twos comp
                 exp &= 0x10  # truncate first bit
                 exp -= (1 << 4)
-            coef = num & 0x7ff  # extract coefficient
-            if coef & (1 << 10) == 1:  # convert twos comp
-                coef &= 0x3ff  # truncate first bit
-                coef -= (1 << 10)
-            if abs(coef) > 999:
-                coef /= 1000
-            elif abs(coef) > 99:  # Ideally, only this if condition should be used
-                coef /= 100
-            elif abs(coef) > 9:
-                coef /= 10
+            coef = num & 0x7ffff  # extract coefficient
+            if coef & (1 << 18) == 1:  # convert twos comp
+                coef &= 0x3ffff  # truncate first bit
+                coef -= (1 << 18)
+            coef /= 10**int(math.log10(abs(coef)))
             args.append(coef * 10 ** exp)
         return (decoded, args)
 
@@ -381,13 +358,6 @@ class Iridium:
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """
-        pd.DataFrame([  # Log transmission
-            {"timestamp": time.time()},
-            {"radio": "Iridium"},
-            {"data": f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]} \
-                -{packet.timestamp[1]}-{packet.timestamp[2]}:{':'.join(packet.return_data)}:"},
-            {"simulate": packet.simulate}
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         if packet.simulate:
             return True
         stat = self.SBD_STATUS()
@@ -400,7 +370,12 @@ class Iridium:
                     self.sfr.vars.command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
-        result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
+        result = self.transmit_raw(raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
+        pd.DataFrame([  # Log transmission
+            {"timestamp": time.time()},
+            {"radio": "Iridium"},
+            {"size": len(raw)},
+        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:

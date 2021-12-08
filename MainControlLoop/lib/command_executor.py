@@ -31,7 +31,6 @@ class CommandExecutor:
             "GSG": self.GSG,
             "GTB": self.GTB,
             "GMT": self.GMT,
-            "GST": self.GST,
             "GTS": self.GTS,
             "AAP": self.AAP,
             "APW": self.APW,
@@ -297,7 +296,7 @@ class CommandExecutor:
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
         """
-        self.transmit(packet, result := [str(i) for i in list(vars(self.sfr.vars).values())])
+        self.transmit(packet, result := [self.sfr.vars.encode()])
         return result
 
     def GSV(self, packet: TransmissionPacket) -> list:
@@ -329,13 +328,6 @@ class CommandExecutor:
         tum = self.sfr.imu.getTumble()
         mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
         self.transmit(packet, result := [mag])
-        return result
-
-    def GST(self, packet: TransmissionPacket) -> list:
-        """
-        Transmits RTC time currently
-        """
-        self.transmit(packet, result := [time.time()])  # TODO: FIX
         return result
 
     def GTS(self, packet: TransmissionPacket) -> list:
@@ -383,6 +375,27 @@ class CommandExecutor:
         """
         df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        return result
+    
+    def ARS(self, packet: TransmissionPacket) -> list:
+        """
+        Transmits expected size of a given command
+        """
+        packet.args[0].timestamp = ((t := time.time()).day, t.hour, t.minute)
+        packet.args[0].simulate = True  # Don't transmit results
+        try:  # Attempt to run command, store result
+            command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
+        except Exception as e:  # Store error as a string
+            command_result = [repr(e)]
+        # Transmit number of bytes taken up by command result
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
+            # Remove first 7 mandatory bytes from calculation
+            self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
+                packet.args[0].command_string, packet.args[0].return_code, packet.args[0].msn, 
+                packet.args[0].timestamp, packet.args[0].return_data)[6:])])
+        else:  # APRS doesn't encode
+            # Only factor in size of return data
+            self.transmit(packet, result := [len(':'.join(self.return_data))])
         return result
 
     def AMS(self, packet: TransmissionPacket) -> list:
@@ -437,7 +450,7 @@ class CommandExecutor:
             time.time() - self.sfr.vars.LAST_STARTUP,
             self.sfr.analytics.total_power_consumed(),
             self.sfr.analytics.total_power_generated(),
-            None,  # TODO: IMPLEMENT TOTAL DATA TRANSMITTED
+            self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "APRS"]),

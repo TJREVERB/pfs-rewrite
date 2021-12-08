@@ -177,16 +177,14 @@ class APRS:
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
-        to_log = pd.DataFrame([
-            {"timestamp": time.time()},
-            {"radio": "APRS"},
-            {"data": f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]} \
-                -{packet.timestamp[1]}-{packet.timestamp[2]}:{':'.join(packet.return_data)}:"},
-            {"simulate": packet.simulate}
-        ])
         if packet.simulate:
             return True
-        return self.write(to_log["data"])
+        pd.DataFrame([
+            {"timestamp": time.time()},
+            {"radio": "APRS"},
+            {"size": len(str(packet))},
+        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
+        return self.write(str(packet))
 
     def next_msg(self):
         """

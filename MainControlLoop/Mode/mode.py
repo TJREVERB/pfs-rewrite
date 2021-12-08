@@ -7,14 +7,15 @@ from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDepl
 
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
-    def __init__(self, sfr, wait = 5 * 60):
+    def __init__(self, sfr, wait = 40, thresh = 2):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
         self.last_iridium_poll_time = 0
-        self.PRIMARY_IRIDIUM_WAIT_TIME = wait # wait time for iridium polling if iridium is main radio (default to 5 minutes)
-
+        self.PRIMARY_IRIDIUM_WAIT_TIME = wait # wait time for iridium polling if iridium is main radio (default to 40 seconds)
+                                            # Actual time between read/write will depend on signal availability
+        self.SIGNAL_THRESHOLD = thresh # Lower threshold to read or transmit
         self.instruct = {
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
@@ -84,7 +85,8 @@ class Mode:
         """
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
+                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
@@ -106,7 +108,8 @@ class Mode:
         """
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME:
+                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
+                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
             while len(self.sfr.vars.transmit_buffer) > 0: # attempt to transmit transmit buffer
                 packet = self.vars.transmit_buffer.pop(0)
                 if not self.sfr.command_executor.transmit(packet):
