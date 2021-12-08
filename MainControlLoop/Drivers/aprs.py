@@ -101,7 +101,7 @@ class APRS:
         Enables Hardware Digipeating
         """
         if self.enter_firmware_menu():
-            self.change_setting("BANK", "1")
+            self.change_setting("BANK", "0")
             time.sleep(0.1)
             self.change_setting("ABAUD", "19200")
             time.sleep(0.1)
@@ -117,7 +117,7 @@ class APRS:
         This should also be run after initialization to set the default bank to 0
         """
         if self.enter_firmware_menu():
-            self.change_setting("BANK", "0")
+            self.change_setting("BANK", "1")
             time.sleep(0.1)
             self.change_setting("ABAUD", "19200")
             time.sleep(0.1)
