@@ -458,7 +458,7 @@ class CommandExecutor:
             time.time() - self.sfr.vars.LAST_STARTUP,
             self.sfr.analytics.total_power_consumed(),
             self.sfr.analytics.total_power_generated(),
-            None,  # TODO: IMPLEMENT TOTAL DATA TRANSMITTED
+            self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "APRS"]),

@@ -360,11 +360,6 @@ class Iridium:
         """
         if packet.simulate:
             return True
-        pd.DataFrame([  # Log transmission
-            {"timestamp": time.time()},
-            {"radio": "Iridium"},
-            {"data": str(packet)},
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
@@ -375,7 +370,12 @@ class Iridium:
                     self.sfr.vars.command_buffer.append(("GRB", [], int(ls[3]))) # Append garbled message indicator and msn
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
-        result = self.transmit_raw(self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
+        result = self.transmit_raw(raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp, packet.return_data))
+        pd.DataFrame([  # Log transmission
+            {"timestamp": time.time()},
+            {"radio": "Iridium"},
+            {"data": raw.decode("ascii")},
+        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         if result[0] not in [0, 1, 2, 3, 4]:
             raise RuntimeError("Error transmitting buffer")
         if result[2] == 1:

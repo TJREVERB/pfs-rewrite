@@ -139,5 +139,6 @@ class Analytics:
         """
         Calculates and returns total amount of data transmitted by satellite
         """
-        df = pd.read_csv(self.sfr.command_log)
-        return sum([8 * len(i) for i in df["result"]])
+        df = pd.read_csv(self.sfr.transmission_log_path)
+        return df[df["radio"] == "APRS"]["result"].str.len().sum() * 8 + \
+            df[df["radio"] == "Iridium"]["result"].str.encode("ascii").apply(len).sum()
