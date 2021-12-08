@@ -112,7 +112,7 @@ class StateFieldRegistry:
                 self.LAST_ECLIPSE_ENTRY,
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
-                list(StateFieldRegistry.modes_list.keys()).index(str(self.MODE)),
+                list(StateFieldRegistry.modes_list.keys()).index(""+str(self.MODE)),
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
