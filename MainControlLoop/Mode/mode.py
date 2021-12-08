@@ -31,7 +31,6 @@ class Mode:
         }
 
     def __str__(self):  # returns mode name as string
-        return "Testing"
         pass
 
     def start(self) -> None:
