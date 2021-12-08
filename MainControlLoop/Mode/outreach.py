@@ -10,7 +10,7 @@ class Outreach(Mode):
             "Low Battery": False
         }
 
-    def __str__(self):
+    def __repr__(self):
         return "Outreach"
 
     def start(self) -> None:

@@ -11,7 +11,7 @@ class Charging(Mode):
             "Low Battery": True  # don't want to shift out of charging prematurely
         }
 
-    def __str__(self):
+    def __repr__(self):
         return "Charging"
 
     def start(self) -> None:
