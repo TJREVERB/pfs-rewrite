@@ -31,7 +31,6 @@ class CommandExecutor:
             "GSG": self.GSG,
             "GTB": self.GTB,
             "GMT": self.GMT,
-            "GST": self.GST,
             "GTS": self.GTS,
             "AAP": self.AAP,
             "APW": self.APW,
@@ -329,13 +328,6 @@ class CommandExecutor:
         tum = self.sfr.imu.getTumble()
         mag = (tum[0][0]**2 + tum[0][1]**2 + tum[0][2]**2)**0.5
         self.transmit(packet, result := [mag])
-        return result
-
-    def GST(self, packet: TransmissionPacket) -> list:
-        """
-        Transmits RTC time currently
-        """
-        self.transmit(packet, result := [time.time()])  # TODO: FIX
         return result
 
     def GTS(self, packet: TransmissionPacket) -> list:
