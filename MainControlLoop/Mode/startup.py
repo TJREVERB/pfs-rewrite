@@ -19,7 +19,7 @@ class Startup(Mode):
         }
 
     def __str__(self):
-        return "Testing Startup"
+        return "Startup"
 
     def start(self) -> None:
         super(Startup, self).start()

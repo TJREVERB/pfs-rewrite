@@ -104,6 +104,8 @@ class StateFieldRegistry:
             self.LAST_MODE_SWITCH = time.time()
         
         def encode(self):
+            print(StateFieldRegistry.modes_list.keys())
+            print(str(self.MODE))
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
