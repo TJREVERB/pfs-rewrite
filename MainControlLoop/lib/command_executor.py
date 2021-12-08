@@ -384,6 +384,27 @@ class CommandExecutor:
         df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
+    
+    def ARS(self, packet: TransmissionPacket) -> list:
+        """
+        Transmits expected size of a given command
+        """
+        packet.args[0].timestamp = ((t := time.time()).day, t.hour, t.minute)
+        packet.args[0].simulate = True  # Don't transmit results
+        try:  # Attempt to run command, store result
+            command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
+        except Exception as e:  # Store error as a string
+            command_result = [repr(e)]
+        # Transmit number of bytes taken up by command result
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
+            # Remove first 7 mandatory bytes from calculation
+            self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
+                packet.args[0].command_string, packet.args[0].return_code, packet.args[0].msn, 
+                packet.args[0].timestamp, packet.args[0].return_data)[6:])])
+        else:  # APRS doesn't encode
+            # Only factor in size of return data, multiply by 8 to convert bytes to bits
+            self.transmit(packet, result := [len(':'.join(self.return_data)) * 8])
+        return result
 
     def AMS(self, packet: TransmissionPacket) -> list:
         """
