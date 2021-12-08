@@ -95,6 +95,9 @@ class Battery:
         :return: (float) telemetry value
         """
         raw = self.request(0x10, tle, 2)
+        print(raw[0])
+        print(raw[1])
+        print(multiplier)
         return (raw[0] << 8 | raw[1]) * multiplier
 
     def charging_power(self) -> float:
