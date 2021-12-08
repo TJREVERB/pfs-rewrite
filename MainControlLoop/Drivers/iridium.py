@@ -288,22 +288,24 @@ class Iridium:
                     exp = abs(exp) + 1
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
                     exp = (1 << 4) - exp  # twos comp
-                    flt |= exp << 11
-                    flt |= 1 << 15
+                    flt |= exp << 19
+                    flt |= 1 << 23
                 else:
-                    flt |= (exp & 0xf) << 11  # make sure exp is 4 bits, cut off anything past the 4th, shift left 11
-                num = int((n / (10 ** exp)) * 100)  # num will always have three digits, with trailing zeros if necessary to fill it in
+                    flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
+                num = int((n / (10 ** exp)) * 10000)  # num will always have five digits, with trailing zeros if necessary to fill it in
                 if n < 0:
-                    num &= 0x3ff  # make sure num is 10 bits long
-                    num = (1 << 10) - num  # twos comp
+                    num &= 0x3ffff  # make sure num is 18 bits long
+                    num = (1 << 18) - num  # twos comp
                     flt |= num
-                    flt |= (1 << 10)  # set sign bit
+                    flt |= (1 << 18)  # set sign bit
                 else:
-                    flt |= num & 0x3ff  # make sure num is 10 bits long
-                byte1 = flt >> 8
-                byte2 = flt & 0xff
+                    flt |= num & 0x3ffff  # make sure num is 18 bits long
+                byte1 = (flt >> 16) & 0xff
+                byte2 = (flt >> 8) & 0xff
+                byte3 = flt & 0xff
                 encoded.append(byte1)  # MSB FIRST
-                encoded.append(byte2)  # LSB LAST
+                encoded.append(byte2)  
+                encoded.append(byte3)  # LSB LAST
         return encoded
 
     def decode(self, message):
@@ -332,22 +334,17 @@ class Iridium:
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
 
-        for i in range(1, len(msg) - 1):
-            num = msg[i] << 8 | msg[i+1]  # msb first
-            exp = num >> 11  # extract exponent
+        for i in range(1, len(msg) - 2, 3):
+            num = (msg[i] << 16) | (msg[i+1] << 8) | (msg[i+2])  # msb first
+            exp = num >> 19  # extract exponent
             if exp & (1 << 4) == 1:  # convert twos comp
                 exp &= 0x10  # truncate first bit
                 exp -= (1 << 4)
-            coef = num & 0x7ff  # extract coefficient
-            if coef & (1 << 10) == 1:  # convert twos comp
-                coef &= 0x3ff  # truncate first bit
-                coef -= (1 << 10)
-            if abs(coef) > 999:
-                coef /= 1000
-            elif abs(coef) > 99:  # Ideally, only this if condition should be used
-                coef /= 100
-            elif abs(coef) > 9:
-                coef /= 10
+            coef = num & 0x7ffff  # extract coefficient
+            if coef & (1 << 18) == 1:  # convert twos comp
+                coef &= 0x3ffff  # truncate first bit
+                coef -= (1 << 18)
+            coef /= 10**int(math.log10(abs(coef)))
             args.append(coef * 10 ** exp)
         return (decoded, args)
 
