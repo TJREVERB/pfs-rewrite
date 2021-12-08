@@ -30,7 +30,7 @@ class Mode:
             "Antenna Deployer": AntennaDeployer
         }
 
-    def __repr__(self):  # returns mode name as string
+    def __str__(self):  # returns mode name as string
         pass
 
     def start(self) -> None:

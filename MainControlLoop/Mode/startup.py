@@ -18,7 +18,7 @@ class Startup(Mode):
             "Low Battery": False,
         }
 
-    def __repr__(self):
+    def __str__(self):
         return "Startup"
 
     def start(self) -> None:

@@ -18,7 +18,7 @@ class Science(Mode):
             "Iridium Status": True  # if iridium works (not locked off), True
         }
 
-    def __repr__(self):
+    def __str__(self):
         return "Science"
 
     def start(self) -> None:

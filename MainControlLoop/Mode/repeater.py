@@ -9,7 +9,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
             "Low Battery": False
         }
 
-    def __repr__(self):
+    def __str__(self):
         return "Repeater"
 
     def start(self) -> None:
