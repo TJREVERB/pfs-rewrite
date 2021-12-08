@@ -16,6 +16,28 @@ from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
 
 class StateFieldRegistry:
+    modes_list = {
+        "Startup": Startup,
+        "Charging": Charging,
+        "Science": Science,
+        "Outreach": Outreach,
+        "Repeater": Repeater,
+    }
+    component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
+        "Iridium": "UART-RS232",
+        "APRS": "SPI-UART"
+    }
+    components = [
+        "APRS",
+        "Iridium",
+        "IMU",
+        "Antenna Deployer",
+        "EPS",
+        "RTC",
+        "UART-RS232",  # Iridium Serial Converter
+        "SPI-UART",  # APRS Serial Converter
+        "USB-UART"
+    ]
     def __init__(self):
         """
         Variables common across our pfs
@@ -49,17 +71,6 @@ class StateFieldRegistry:
             "APRS": None,
             "Antenna Deployer": None,
         }
-        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
-            "Iridium": "UART-RS232",
-            "APRS": "SPI-UART"
-        }
-        self.modes_list = {
-            "Startup": Startup,
-            "Charging": Charging,
-            "Science": Science,
-            "Outreach": Outreach,
-            "Repeater": Repeater,
-        }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
@@ -91,6 +102,27 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
+        
+        def encode(self):
+            return [
+                int(self.ANTENNA_DEPLOYED),
+                self.BATTERY_CAPACITY_INT,
+                sum([2 ** StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                self.LAST_DAYLIGHT_ENTRY,
+                self.LAST_ECLIPSE_ENTRY,
+                self.ORBITAL_PERIOD,
+                self.LOWER_THRESHOLD,
+                list(StateFieldRegistry.modes_list.keys()).index(str(self.MODE)),
+                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
+                self.SIGNAL_STRENGTH_VARIABILITY,
+                int(self.MODE_LOCK),
+                sum([2 ** StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys()) 
+                    if self.LOCKED_DEVICES[i]]),
+                int(self.CONTACT_ESTABLISHED),
+                self.START_TIME,
+                self.LAST_COMMAND_RUN,
+                self.LAST_MODE_SWITCH,
+            ]
     
     def load(self) -> Registry:
         defaults = self.Registry(self.eps, self.analytics)
