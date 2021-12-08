@@ -2,7 +2,7 @@ import time
 import os
 import pandas as pd
 import numpy as np
-import pickle
+import pickle, json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
 from MainControlLoop.Drivers.bno055 import IMU_I2C
@@ -159,6 +159,8 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "wb") as f:
             pickle.dump(self.vars, f)
+        with open(self.readable_log_path, "w") as f:
+            json.dump(self.vars.to_dict(), f)
 
     def enter_sunlight(self) -> None:
         """
