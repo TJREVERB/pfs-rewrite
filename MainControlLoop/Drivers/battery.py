@@ -94,8 +94,10 @@ class Battery:
         :parm multiplier: = multiplier
         :return: (float) telemetry value
         """
+        raw = bytes()
         raw = self.request(0x10, tle, 2)
-        print("Raw: " + raw)
+        print("Raw:")
+        print(raw)
         return (raw[0] << 8 | raw[1]) * multiplier
 
     def charging_power(self) -> float:
