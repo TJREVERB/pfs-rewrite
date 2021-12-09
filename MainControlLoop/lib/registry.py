@@ -199,7 +199,12 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
-        return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
+        print(df)
+        datapoints = ["buspower"]
+        for i in range(1, 11):
+            datapoints.append(df[f"0x0{str(hex(i))}_pwr"])
+        return datapoints
+        #return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
     
     def recent_gen(self) -> list:
         """
