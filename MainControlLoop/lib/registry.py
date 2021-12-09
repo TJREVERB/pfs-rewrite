@@ -204,9 +204,10 @@ class StateFieldRegistry:
 
         #buspower
         for k in range(13):
-            end_index = df["buspower"].index('\n')
-            print(df["buspower"].index(k)[4:end_index])
-            datapoints[0] += df["buspower"].index(k)[4:end_index]
+            #end_index = df["buspower"].index('\n')
+            #print(df["buspower"].index(k)[4:end_index])
+            #datapoints[0] += df["buspower"].index(k)[4:end_index]
+            print(df["buspower"][0])
 
         for i in range(1, 11):
             datapoints.append(df[f"0x0{str(hex(i)).upper()[2:]}_pwr"])
