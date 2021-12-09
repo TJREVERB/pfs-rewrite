@@ -200,10 +200,17 @@ class StateFieldRegistry:
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
 
-        print(df)
-        datapoints = ["buspower"]
+        datapoints = []
+
+        #buspower
+        for k in range(13):
+            end_index = df["buspower"].index('\n')
+            print(df["buspower"].index(k)[4:end_index])
+            datapoints[0] += df["buspower"].index(k)[4:end_index]
+
         for i in range(1, 11):
             datapoints.append(df[f"0x0{str(hex(i)).upper()[2:]}_pwr"])
+
         return datapoints
         #return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
     
