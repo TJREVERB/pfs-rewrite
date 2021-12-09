@@ -94,11 +94,10 @@ class Battery:
         :parm multiplier: = multiplier
         :return: (float) telemetry value
         """
-        raw = bytes()
         raw = self.request(0x10, tle, 2)
-        print("Raw:")
-        print(raw)
-        return (raw[0] << 8 | raw[1]) * multiplier
+        if raw != False:
+            return (raw[0] << 8 | raw[1]) * multiplier
+        return -1 # TODO: Actually handle the error
 
     def charging_power(self) -> float:
         """
