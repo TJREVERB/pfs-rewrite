@@ -168,7 +168,7 @@ class StateFieldRegistry:
         """
         self.LAST_DAYLIGHT_ENTRY = time.time()
         # Add data to dataframe
-        df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "sunlight"], columns=["timestamp", "phase"])
+        df = pd.DataFrame(data={"daylight": self.LAST_DAYLIGHT_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     def enter_eclipse(self) -> None:
@@ -177,7 +177,7 @@ class StateFieldRegistry:
         """
         self.LAST_ECLIPSE_ENTRY = time.time()
         # Add data to dataframe
-        df = pd.DataFrame([self.LAST_DAYLIGHT_ENTRY, "eclipse"], columns=["timestamp", "phase"])
+        df = pd.DataFrame(data={"eclipse": self.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     def log_iridium(self, location, signal, t=time.time()):
@@ -241,3 +241,4 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "w") as f:
             f.write("")
+
