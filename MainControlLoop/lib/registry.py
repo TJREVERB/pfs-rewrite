@@ -209,7 +209,8 @@ class StateFieldRegistry:
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
             return self.eps.raw_solar_gen()
         print(df)
-        return list(df["bcr1", "bcr2", "bcr3"][-1])
+        #return list(df["bcr1", "bcr2", "bcr3"][-1])
+        return list(df["bcr1"][-1], df["bcr2"][-1], df["bcr3"][-1])
     
     def clear_logs(self):
         """
