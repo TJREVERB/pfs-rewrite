@@ -210,7 +210,7 @@ class StateFieldRegistry:
             return self.eps.raw_solar_gen()
 
         #return list(df["bcr1", "bcr2", "bcr3"][-1])
-        return list(0,0,0)
+        return [0,0,0]
     
     def clear_logs(self):
         """
