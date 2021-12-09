@@ -200,7 +200,7 @@ class StateFieldRegistry:
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
 
-        datapoints = []
+        datapoints = [0] * 12
 
         for k in range(13):
             datapoints[0] += df["buspower"][k]
