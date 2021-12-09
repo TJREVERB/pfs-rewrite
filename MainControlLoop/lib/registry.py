@@ -202,7 +202,7 @@ class StateFieldRegistry:
         print(df)
         datapoints = ["buspower"]
         for i in range(1, 11):
-            datapoints.append(df[f"{str(hex(i))}_pwr"])
+            datapoints.append(df[f"0x{str(hex(i))[2:]}_pwr"])
         return datapoints
         #return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
     
