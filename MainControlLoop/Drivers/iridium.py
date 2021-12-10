@@ -3,16 +3,7 @@ import math
 import pandas as pd
 from serial import Serial
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from exceptions import *
-
-
-def wrap_errors(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            raise IridiumError(e)
-    return wrapper
+from exceptions import decorate_all_callables, wrap_errors, IridiumError
 
 
 # https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
@@ -75,7 +66,7 @@ class Iridium:
         "ERR"  # 1, MSG received and read, but error executing or reading
     ]
 
-    @wrap_errors
+    @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
@@ -173,18 +164,16 @@ class Iridium:
         # param type: buffers to clear. 0 = mobile originated, 1 = mobile terminated, 2 = both
         # returns bool if buffer wasnt cleared successfully (1 = error, 0 = successful)
         self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type))
+        decorate_all_callables(self, IridiumError)
 
-    @wrap_errors
     def __del__(self):
         self.write("AT*F")  # SHUTDOWN
         time.sleep(1)
         self.serial.close()
 
-    @wrap_errors
     def __str__(self):
         return "Iridium"
 
-    @wrap_errors
     def serial_test(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed) and verifies that AT returns OK
@@ -209,7 +198,6 @@ class Iridium:
         except UnicodeDecodeError:
             return False
 
-    @wrap_errors
     def functional(self):
         """
         Tests Iridium by loading a message into one buffer, transferring to the other, and reading the message
@@ -241,7 +229,6 @@ class Iridium:
         except UnicodeDecodeError:
             return False
     
-    @wrap_errors
     def check_signal_passive(self):
         """
         Passively check signal strength, for transmit/receive timing
@@ -254,7 +241,6 @@ class Iridium:
         except:
             return 0
         
-    @wrap_errors
     def process(self, data, cmd):
         """
         Clean up data string
@@ -263,7 +249,6 @@ class Iridium:
         """
         return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
-    @wrap_errors
     def encode(self, descriptor, return_code, msn, time, data):
         """
         Encodes string for transmit using numbered codes
@@ -328,7 +313,6 @@ class Iridium:
                 encoded.append(byte3)  # LSB LAST
         return encoded
 
-    @wrap_errors
     def decode(self, message):
         """
         Decodes received and processed string from SBDRB and converts to string
@@ -369,7 +353,6 @@ class Iridium:
             args.append(coef * 10 ** exp)
         return (decoded, args)
 
-    @wrap_errors
     def transmit(self, packet: TransmissionPacket, discardmtbuf = False) -> bool:
         """
         Loads message into MO buffer, then transmits
@@ -409,7 +392,6 @@ class Iridium:
             raise RuntimeError("Error clearing buffers")
         return True
 
-    @wrap_errors
     def transmit_raw(self, message):
         """
         Transmits raw message using SBDWB, ignore MT buffer
@@ -448,7 +430,6 @@ class Iridium:
         result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
         return result
 
-    @wrap_errors
     def next_msg(self):
         """
         Stores next received messages in sfr
@@ -500,7 +481,6 @@ class Iridium:
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise RuntimeError("Error clearing buffers")
 
-    @wrap_errors
     def processed_time(self):
         """
         Requests, reads, processes, and returns current system time retrieved from network
@@ -514,7 +494,6 @@ class Iridium:
         processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
 
-    @wrap_errors
     def processed_geolocation(self):
         """
         Requests, reads, processes, and returns current geolocation
@@ -534,7 +513,6 @@ class Iridium:
         alt = (float(raw[0])**2 + float(raw[1])**2 + float(raw[2])**2)**0.5
         return (lat, lon, alt)
 
-    @wrap_errors
     def request(self, command: str, timeout=0.5) -> str:
         """
         Requests information from Iridium and returns unprocessed response
@@ -557,7 +535,6 @@ class Iridium:
         print(result)
         raise RuntimeError("Incomplete response")
 
-    @wrap_errors
     def write(self, command: str) -> bool:
         """
         Write a command to the serial port.
@@ -572,7 +549,6 @@ class Iridium:
             return False
         return True
 
-    @wrap_errors
     def read(self) -> str:
         """
         Reads in as many available bytes as it can if timeout permits.

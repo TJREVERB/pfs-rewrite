@@ -1,21 +1,23 @@
 import pigpio
 import time
 import os
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 class SoftwareUART():
     """Bitbang uart driver using pigpio and interrupts"""
     
+    @wrap_errors(SystemError)
     def __init__(self, RX, TX, baud):
         os.system("sudo pigpiod")
         time.sleep(1)
         self.pi = pigpio.pi()
-            
         self.RXPin = RX
         self.TXPin = TX
         self.baudrate = baud
         self.wave = None
         self.pi.set_mode(TX, pigpio.OUTPUT)
         self.pi.bb_serial_read_open(self.RXPin, self.baudrate)
+        decorate_all_callables(SystemError)
 
     def __del__(self):
         pigpio.exceptions = False #fatal excpetions off in case bbserial doesnt exists

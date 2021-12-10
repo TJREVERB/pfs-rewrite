@@ -4,8 +4,10 @@ Methods to analyze our data
 import pandas as pd
 import numpy as np
 import time
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
+@wrap_errors(SystemError)
 def line_eq(a: tuple, b: tuple) -> callable:
     slope = (b[1] - a[1]) / (b[0] - a[1])
     y_int = a[1] - slope * a[0]
@@ -13,8 +15,10 @@ def line_eq(a: tuple, b: tuple) -> callable:
 
 
 class Analytics:
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         self.sfr = sfr
+        decorate_all_callables(self, SystemError)
 
     def volt_to_charge(self, voltage: float) -> float:
         """

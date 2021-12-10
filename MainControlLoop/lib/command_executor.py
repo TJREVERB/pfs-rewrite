@@ -2,10 +2,11 @@ import time, datetime
 import pandas as pd
 import os
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import RedundantCommandInputError, InvalidCommandInputError
+from exceptions import *
 
 
 class CommandExecutor:
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.TJ_PREFIX = "TJ;"
@@ -61,6 +62,7 @@ class CommandExecutor:
             "IPC": self.IPC
         }
 
+    @wrap_errors(SystemError)
     def execute(self):
         for command_packet in self.sfr.vars.command_buffer:
             to_log = pd.DataFrame([
@@ -102,6 +104,7 @@ class CommandExecutor:
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
 
+    @wrap_errors(SystemError)
     def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
         Transmit a message over primary radio
@@ -118,7 +121,7 @@ class CommandExecutor:
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
-        except RuntimeError as e:
+        except IridiumError as e:
             print(e)
             self.sfr.vars.transmit_buffer.append(packet)
             return False
@@ -128,7 +131,7 @@ class CommandExecutor:
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            raise RedundantCommandInputError("Already in Charging")
+            raise CommandExecutionError("Already in Charging")
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
         self.transmit(packet, result := [])
         return result
@@ -138,7 +141,7 @@ class CommandExecutor:
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            raise RedundantCommandInputError("Already in Science")
+            raise CommandExecutionError("Already in Science")
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
         self.transmit(packet, result := [])
         return result
@@ -148,7 +151,7 @@ class CommandExecutor:
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            raise RedundantCommandInputError("Already in Outreach")
+            raise CommandExecutionError("Already in Outreach")
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
         self.transmit(packet, result := [])
         return result
@@ -158,7 +161,7 @@ class CommandExecutor:
         Switches current mode to Repeater mode
         """
         if str(self.sfr.mode_obj) == "Repeater":
-            raise RedundantCommandInputError("Already in Repeater")
+            raise CommandExecutionError("Already in Repeater")
         self.sfr.vars.MODE = self.sfr.modes_list["Repeater"]
         self.transmit(packet, result := [])
         return result
@@ -191,9 +194,9 @@ class CommandExecutor:
             "Antenna Deployer"
         ]
         if dcode < 0 or dcode >= len(device_codes):
-            raise InvalidCommandInputError("Invalid Device Code")
+            raise CommandExecutionError("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
-            raise RedundantCommandInputError("Device already locked")
+            raise CommandExecutionError("Device already locked")
         else:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
             self.transmit(packet, result := [dcode])
@@ -211,12 +214,12 @@ class CommandExecutor:
             "Antenna Deployer"
         ]
         if dcode < 0 or dcode >= len(device_codes):
-            raise InvalidCommandInputError("Invalid Device Code")
+            raise CommandExecutionError("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = False
             self.transmit(packet, result := [dcode])
         else:
-            raise RedundantCommandInputError("Device not locked")
+            raise CommandExecutionError("Device not locked")
         return result
 
     def GCR(self, packet: TransmissionPacket) -> list:
@@ -410,7 +413,7 @@ class CommandExecutor:
             # Transmit last element of log with given msn if duplicates exist
             self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
         else:
-            raise RuntimeError("Command does not exist in log!")
+            raise CommandExecutionError("Command does not exist in log!")
         return result
 
     def SUV(self, packet: TransmissionPacket) -> list:

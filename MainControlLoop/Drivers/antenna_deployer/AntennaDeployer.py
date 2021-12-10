@@ -1,6 +1,7 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class AntennaDeployerCommand(Enum):
@@ -75,9 +76,11 @@ class AntennaDeployer():
         AntennaDeployerCommand.GET_UPTIME_4: 2,
     }
 
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.bus = SMBus()
+        decorate_all_callables(self, SystemError)
 
     def write(self, command: AntennaDeployerCommand, parameter: int) -> bool or None:
         """

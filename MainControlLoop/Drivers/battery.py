@@ -1,12 +1,14 @@
 from smbus2 import SMBus
 import time
 import math
+from exceptions import decorate_all_callables, wrap_errors, BatteryError
 # Datasheet https://drive.google.com/file/d/13GKtzXyufFxrbeQ7wEGgo796i91W1dQt/view 
 
 class Battery:
     """
     Class to interface with Clydespace battery TTC node
     """
+    @wrap_errors(BatteryError)
     def __init__(self):
         self.addr = 0x2a
         self.bus = SMBus(1)
@@ -55,6 +57,7 @@ class Battery:
             "TBAT4": lambda: self.telemetry_request([0xE3, 0xC8], 0.397600), # Batt4 temperature in K
             "HBAT4": lambda: int(self.telemetry_request([0xE3, 0xCF], 1 / 512)) # 1 = heater on, 0 = heater off
         }
+        decorate_all_callables(self, BatteryError)
     
     def request(self, register, data, length) -> bytes:
         """

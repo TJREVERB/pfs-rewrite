@@ -21,8 +21,10 @@ import time
 import numpy as np
 from math import atan
 from math import degrees
+from exceptions import decorate_all_callables, wrap_errors, IMUError
 
 
+@wrap_errors(IMUError)
 def _twos_comp_to_signed(val, bits):
     # Convert an unsigned integer in 2's compliment form of the specified bit
     # length to its signed integer value and return it.
@@ -31,6 +33,7 @@ def _twos_comp_to_signed(val, bits):
     return val
 
 
+@wrap_errors(IMUError)
 def _signed_to_twos_comp(val, bits):
     # Convert a signed integer to unsigned int in 2's complement form
     # bits is number of bits, with sign bit
@@ -171,8 +174,10 @@ class IMU:
     _RADIUS_ACCEL_REGISTER = (0x67, 0x68)
     _RADIUS_MAGNET_REGISTER = (0x69, 0x6A)
 
+    @wrap_errors(IMUError)
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
+        decorate_all_callables(self, IMUError)
         
     
     def start(self):
@@ -846,6 +851,7 @@ class IMU_I2C(IMU):
     Driver for the BNO055 9DOF IMU sensor via I2C.
     """
 
+    @wrap_errors(IMUError)
     def __init__(self, state_field_registry=None, addr=0x28):
         self.buffer = bytearray(2)
         self.address = addr

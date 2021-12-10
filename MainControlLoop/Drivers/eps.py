@@ -1,6 +1,7 @@
 from smbus2 import SMBus
 import time
 import math
+from exceptions import decorate_all_callables, wrap_errors, EPSError
 
 
 class EPS:
@@ -19,6 +20,7 @@ class EPS:
         "IMU": [0x09],
     }
 
+    @wrap_errors(EPSError)
     def __init__(self, state_field_registry):
         self.bus = SMBus(1)
         self.addr = 0x2b
@@ -178,6 +180,7 @@ class EPS:
             "3.3V": [0x04],
             "12V": [0x08],
         }
+        decorate_all_callables(self, EPSError)
 
     def request(self, register, data, length) -> bytes:
         """

@@ -13,6 +13,7 @@ import datetime
 import os
 import time
 from smbus2 import SMBus
+from exceptions import decorate_all_callables, wrap_errors, RTCError
 
 class RTC:
     # DS3232 Register Addresses
@@ -74,10 +75,12 @@ class RTC:
     FREQ_4_096KHz = (1, 0)
     FREQ_8_192KHZ = (1, 1)
 
+    @wrap_errors(RTCError)
     def __init__(self):
         # DS3232 I2C Address
         self.addr = 0x68
         self.bus = SMBus(1)
+        decorate_all_callables(self, RTCError)
 
     @property
     def OSF(self):

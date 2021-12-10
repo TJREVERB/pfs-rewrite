@@ -1,12 +1,15 @@
 from smbus2 import SMBus
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 class Serial:
     """
     Custom class for i2c to serial functionality of second core
     """
+    @wrap_errors(SystemError)
     def __init__(self):
         self.bus = SMBus(1)
         self.addr = 0x45
+        decorate_all_callables(self, SystemError)
     
     def write(self, data):
         self.bus.write_i2c_block_data(self.addr, 0, list(data))
