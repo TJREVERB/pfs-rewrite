@@ -5,15 +5,6 @@ from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from exceptions import decorate_all_callables, wrap_errors, APRSError
 
 
-def wrap_errors(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            raise APRSError(e)
-    return wrapper
-
-
 class APRS:
     """
     Class for APRS

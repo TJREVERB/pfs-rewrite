@@ -7,7 +7,9 @@ class MissionControl():
         self.mcl = MainControlLoop()
     
     def main(self):
-        self.mcl.run()
+        self.mcl.start()
+        while True:
+            self.mcl.run()
 
 
 if __name__ == "__main__":

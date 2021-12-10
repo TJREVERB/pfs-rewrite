@@ -84,7 +84,7 @@ class CommandExecutor:
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
-        for command in self.sfr.vars.outreach_buffer:
+        for command_packet in self.sfr.vars.outreach_buffer:
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -95,9 +95,9 @@ class CommandExecutor:
             ])
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.secondary_registry[command.command_string](command)
+                to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
             except Exception as e:
-                self.transmit(command, [repr(e)], True)
+                self.transmit(command_packet, [repr(e)], True)
                 to_log["result"] = "ERR:" + type(e).__name__
             finally:
                 to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
@@ -346,7 +346,7 @@ class CommandExecutor:
         Transmits average power draw over n data points
         """
         self.transmit(packet, result := [
-            self.sfr.analytics.historical_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], packet.args[0])])
+            self.sfr.analytics.historical_consumption([1 for _ in range(10)], packet.args[0])])
         return result
 
     def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
@@ -381,11 +381,11 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
     
-    def ARS(self, packet: TransmissionPacket) -> list:
+    def ARS(self, packet: TransmissionPacket) -> list:  #TODO: FIX
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := time.time()).day, t.hour, t.minute)
+        packet.args[0].timestamp = (t := (time.time()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
             command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
@@ -488,8 +488,11 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
     
-    def IRB(self, packet: TransmissionPacket) -> list:
+    def IRB(self, packet: TransmissionPacket) -> None:
         """
         Reboot pi
         """
+        self.transmit(packet, result := [])
+        time.sleep(5)
         os.system("sudo reboot")
+
