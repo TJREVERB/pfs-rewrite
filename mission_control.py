@@ -9,7 +9,7 @@ class MissionControl():
     def main(self):
         self.mcl.start()
         while True:
-            self.mcl.run()
+            self.mcl.loop()
 
 
 if __name__ == "__main__":
