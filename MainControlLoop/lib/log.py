@@ -1,14 +1,17 @@
 import time
 import pandas as pd
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class Logger:
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.last_log_time = time.perf_counter()
         self.last_orbit_update = self.last_log_time
         self.LOG_DELAY = 10  # Seconds
         self.ORBIT_CHECK_DELAY = 60
+        decorate_all_callables(SystemError)
 
     def log_pwr(self, buspower, pdm_states, pwr, t=0) -> None:
         """

@@ -1,15 +1,18 @@
 import time
 from MainControlLoop.lib.registry import StateFieldRegistry
 from MainControlLoop.lib.log import Logger
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class MainControlLoop:
+    @wrap_errors(SystemError)
     def __init__(self):
         """
         Create all the objects
         Each object should take in the state field registry
         """
         self.sfr = StateFieldRegistry()
+        decorate_all_callables(SystemError)
 
     def run(self):  # Repeat main control loop forever
         print("MCL Start")

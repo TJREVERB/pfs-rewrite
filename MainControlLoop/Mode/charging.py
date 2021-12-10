@@ -1,8 +1,10 @@
 from MainControlLoop.Mode.mode import Mode
 import time
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class Charging(Mode):
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         super(Charging, self).__init__(sfr)
 
@@ -10,6 +12,7 @@ class Charging(Mode):
             "Science Mode Status": False,  # this is False if science mode is not complete
             "Low Battery": True  # don't want to shift out of charging prematurely
         }
+        decorate_all_callables(self, SystemError)
 
     def __str__(self):
         return "Charging"

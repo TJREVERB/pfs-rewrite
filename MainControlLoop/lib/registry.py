@@ -14,6 +14,7 @@ from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 class StateFieldRegistry:
     modes_list = {
@@ -38,6 +39,7 @@ class StateFieldRegistry:
         "SPI-UART",  # APRS Serial Converter
         "USB-UART"
     ]
+    @wrap_errors(SystemError)
     def __init__(self):
         """
         Variables common across our pfs
@@ -78,8 +80,10 @@ class StateFieldRegistry:
         }
         self.vars = self.load()
         self.vars.LAST_STARTUP = time.time()
+        decorate_all_callables(self, SystemError)
     
     class Registry:
+        @wrap_errors(SystemError)
         def __init__(self, eps, analytics):
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
@@ -102,6 +106,7 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
+            decorate_all_callables(self, SystemError)
         
         def encode(self):
             return [

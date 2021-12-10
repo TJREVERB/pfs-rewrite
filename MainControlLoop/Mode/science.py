@@ -1,9 +1,11 @@
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class Science(Mode):
+    @wrap_errors(SystemError)
     def __init__(self, sfr):
         super().__init__(sfr)
         self.last_ping = time.time()
@@ -17,6 +19,7 @@ class Science(Mode):
             "Low Battery": False,
             "Iridium Status": True  # if iridium works (not locked off), True
         }
+        decorate_all_callables(self, SystemError)
 
     def __str__(self):
         return "Science"

@@ -3,10 +3,12 @@ from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
+from exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
+    @wrap_errors(SystemError)
     def __init__(self, sfr, wait = 40, thresh = 2):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
@@ -29,6 +31,7 @@ class Mode:
             "IMU": IMU,
             "Antenna Deployer": AntennaDeployer
         }
+        decorate_all_callables(self, SystemError)
 
     def __str__(self):  # returns mode name as string
         pass
