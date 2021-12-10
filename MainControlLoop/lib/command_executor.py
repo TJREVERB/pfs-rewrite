@@ -115,6 +115,8 @@ class CommandExecutor:
         else:
             packet.return_code = "0OK"
         packet.return_data = data
+        d = datetime.datetime.utcnow()
+        packet.timestamp = (d.day, d.hour, d.minute)
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
