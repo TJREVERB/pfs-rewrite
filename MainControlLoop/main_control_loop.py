@@ -39,5 +39,5 @@ class MainControlLoop:
                 self.sfr.command_executor.execute()  # Execute commands
                 self.sfr.logger.log()  # Logs data
             except:
-                # go into rce mode
+                # call rce execute
                 pass
