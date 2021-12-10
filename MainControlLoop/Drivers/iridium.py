@@ -274,7 +274,7 @@ class Iridium:
         encoded.append((msn >> 8) & 0xff) # third and fourth bytes msn, msb first
         encoded.append(msn & 0xff)
 
-        print("Time: " + time)
+        print("Time: " + str(time))
         date = (time[0] << 11) | (time[1] << 6) | time[2] # fifth and sixth bytes date, msb first
 
         encoded.append((date >> 8) & 0xff)
