@@ -2,6 +2,17 @@ from serial import Serial
 import time, datetime
 import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from exceptions import *
+
+
+def wrap_errors(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            raise APRSError(e)
+    return wrapper
+
 
 class APRS:
     """
@@ -11,18 +22,22 @@ class APRS:
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
 
+    @wrap_errors
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
 
+    @wrap_errors
     def __del__(self):
         self.serial.close()
 
+    @wrap_errors
     def __str__(self):
         return "APRS"
 
+    @wrap_errors
     def enter_firmware_menu(self) -> bool:
         """
         Enter APRS firmware menu
@@ -57,6 +72,7 @@ class APRS:
             return False
         return True
     
+    @wrap_errors
     def exit_firmware_menu(self) -> bool:
         """
         Exit APRS firmware menu
@@ -71,6 +87,7 @@ class APRS:
             return False
         return True
 
+    @wrap_errors
     def functional(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed)
@@ -96,6 +113,7 @@ class APRS:
         
         return True
 
+    @wrap_errors
     def enable_digi(self): #TODO: Test these
         """
         Enables Hardware Digipeating
@@ -111,6 +129,7 @@ class APRS:
             raise RuntimeError("Unable to enter firmware menu")
         return True
 
+    @wrap_errors
     def disable_digi(self):
         """
         Disables Hardware Digipeating
@@ -127,6 +146,7 @@ class APRS:
             raise RuntimeError("Unable to enter firmware menu")
         return True
     
+    @wrap_errors
     def request_setting(self, setting) -> str:
         """
         Requests and returns value of given firmware setting. 
@@ -140,6 +160,7 @@ class APRS:
         except:
             raise RuntimeError("Failed to read setting")
 
+    @wrap_errors
     def change_setting(self, setting, value) -> bool:
         """
         Changes value of given setting
@@ -158,6 +179,7 @@ class APRS:
         except:
             raise RuntimeError("Failed to read setting")
 
+    @wrap_errors
     def clear_data_lines(self) -> None:
         """
         Switch off USB bus power, then switch it back on.
@@ -171,6 +193,7 @@ class APRS:
             f.write(str(1))
         time.sleep(5)
 
+    @wrap_errors
     def transmit(self, packet: TransmissionPacket) -> bool:
         """
         Takes a descriptor and data, and transmits
@@ -186,6 +209,7 @@ class APRS:
         ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         return self.write(str(packet))
 
+    @wrap_errors
     def next_msg(self):
         """
         Reads in any messages, process, and add to queue
@@ -204,6 +228,7 @@ class APRS:
             processed = processed[:-1] # Ignore anything after last :
             self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
 
+    @wrap_errors
     def write(self, message: str) -> bool:
         """
         Writes the message to the APRS radio through the serial port
@@ -217,6 +242,7 @@ class APRS:
         except:
             return False
 
+    @wrap_errors
     def read(self) -> str:
         """
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
@@ -235,4 +261,3 @@ class APRS:
             if next_byte == '\n'.encode('utf-8'):
                 break
         return output.decode('utf-8')
-        
