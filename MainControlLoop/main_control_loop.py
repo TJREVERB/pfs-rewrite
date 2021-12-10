@@ -13,6 +13,7 @@ class MainControlLoop:
         self.sfr = StateFieldRegistry()
         self.current_time = time.time()
         decorate_all_callables(SystemError)
+        self.current_time = time.time()
     
     def start(self):
         print("MCL Start")
@@ -21,11 +22,18 @@ class MainControlLoop:
         self.sfr.mode_obj.start()
 
     def run(self):  # Repeat main control loop forever
+<<<<<<< Updated upstream
         while True:  # Iterate forever
             if not isinstance(self.sfr.mode_obj, self.sfr.vars.MODE):
                 self.sfr.mode_obj.terminate_mode()  # terminates current old mode
                 self.sfr.mode_obj = self.sfr.vars.MODE(self.sfr)
                 self.sfr.mode_obj.start()
+=======
+        if not isinstance(self.sfr.mode_obj, self.sfr.vars.MODE):
+            self.sfr.mode_obj.terminate_mode()  # terminates current old mode
+            self.sfr.mode_obj = self.sfr.vars.MODE(self.sfr)
+            self.sfr.mode_obj.start()
+>>>>>>> Stashed changes
 
             # Update the conditions dictionary periodically for this mode:
             if self.current_time + 1 <= time.time():  # if waited 1 second or more, update conditions dict in mode

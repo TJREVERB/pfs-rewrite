@@ -16,7 +16,7 @@ class CommandExecutionError(CustomException):
 class SystemError(CustomException): pass
 
 
-def wrap_errors(exception: CustomException) -> callable:
+def wrap_errors(exception: callable) -> callable:
     """
     Decorator to catch all errors which aren't CustomExceptions
     And re-raise wrapped by a given CustomException
