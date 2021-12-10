@@ -2,7 +2,7 @@ import time, datetime
 import pandas as pd
 import os
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import RedundantCommandInputError, InvalidCommandInputError
+from MainControlLoop.lib.exceptions import *
 
 
 class CommandExecutor:
@@ -82,7 +82,7 @@ class CommandExecutor:
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
-        for command in self.sfr.vars.outreach_buffer:
+        for command_packet in self.sfr.vars.outreach_buffer:
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -93,9 +93,9 @@ class CommandExecutor:
             ])
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.secondary_registry[command.command_string](command)
-            except Exception as e:
-                self.transmit(command, [repr(e)], True)
+                to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
+            except (InvalidCommandInputError, RedundantCommandInputError) as e:
+                self.transmit(command_packet, [repr(e)], True)
                 to_log["result"] = "ERR:" + type(e).__name__
             finally:
                 to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
@@ -115,13 +115,9 @@ class CommandExecutor:
         else:
             packet.return_code = "0OK"
         packet.return_data = data
-        try:
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
-            return True
-        except RuntimeError as e:
-            print(e)
-            self.sfr.vars.transmit_buffer.append(packet)
-            return False
+        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        self.sfr.vars.transmit_buffer.append(packet)
+
 
     def MCH(self, packet: TransmissionPacket) -> list:
         """
@@ -343,7 +339,7 @@ class CommandExecutor:
         Transmits average power draw over n data points
         """
         self.transmit(packet, result := [
-            self.sfr.analytics.historical_consumption([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], packet.args[0])])
+            self.sfr.analytics.historical_consumption([1 for _ in range(10)], packet.args[0])])
         return result
 
     def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
@@ -378,11 +374,11 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
     
-    def ARS(self, packet: TransmissionPacket) -> list:
+    def ARS(self, packet: TransmissionPacket) -> list:  #TODO: FIX
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := time.time()).day, t.hour, t.minute)
+        packet.args[0].timestamp = (t := (time.time()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
             command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
@@ -410,7 +406,7 @@ class CommandExecutor:
             # Transmit last element of log with given msn if duplicates exist
             self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
         else:
-            raise RuntimeError("Command does not exist in log!")
+            raise CommandExecutorRuntimeException("Command does not exist in log!")
         return result
 
     def SUV(self, packet: TransmissionPacket) -> list:
@@ -485,8 +481,11 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
     
-    def IRB(self, packet: TransmissionPacket) -> list:
+    def IRB(self, packet: TransmissionPacket) -> None:
         """
         Reboot pi
         """
+        self.transmit(packet, result := [])
+        time.sleep(5)
         os.system("sudo reboot")
+
