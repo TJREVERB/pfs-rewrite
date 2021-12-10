@@ -270,7 +270,7 @@ class Iridium:
         encoded.append((msn >> 8) & 0xff) # third and fourth bytes msn, msb first
         encoded.append(msn & 0xff)
 
-        print("Time: " + str(time))
+        # print("Time: " + str(time))
         date = (time[0] << 11) | (time[1] << 6) | time[2] # fifth and sixth bytes date, msb first
 
         encoded.append((date >> 8) & 0xff)
@@ -399,7 +399,7 @@ class Iridium:
             raise RuntimeError("No Signal")
         length = len(message)
         checksum = sum(message) & 0xffff
-        print(checksum, length, message)
+        # print(checksum, length, message)
         message.append(checksum >> 8) # add checksum bytes
         message.append(checksum & 0xff)
         self.SBD_WB(length) #Specify bytes to write
@@ -414,7 +414,7 @@ class Iridium:
             if time.perf_counter() - t> 5:
                 raise RuntimeError("Serial Timeout")
             result += self.read()
-        print(result)
+        # print(result)
         i = int(result.split("\r\n")[1]) #'\r\n0\r\n\r\nOK\r\n' format
         if i == 1:
             raise RuntimeError("Serial Timeout")
@@ -441,7 +441,7 @@ class Iridium:
                     if time.perf_counter() - t > 5:
                         raise RuntimeError("Serial Timeout")
                     raw += self.serial.read(50)
-                print(raw)
+                # print(raw)
                 raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
             except Exception as e:
@@ -464,7 +464,7 @@ class Iridium:
                         if time.perf_counter() - t > 5:
                             raise RuntimeError("Serial Timeout")
                         raw += self.serial.read(50)
-                    print(raw)
+                    # print(raw)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3]) ))
                 except Exception as e:
@@ -526,9 +526,9 @@ class Iridium:
             if result.find("ERROR") != -1:
                 return command[2:] + "ERROR" + "\n"  # formatted so that process() can still decode properly
             if result.find("OK") != -1:
-                print(result)
+                # print(result)
                 return result
-        print(result)
+        # print(result)
         raise RuntimeError("Incomplete response")
 
     def write(self, command: str) -> bool:
@@ -538,7 +538,7 @@ class Iridium:
         :return: (bool) if the serial write worked
         """
         command = command + "\r\n"
-        print(command)
+        # print(command)
         try:
             self.serial.write(command.encode("utf-8"))
         except:
@@ -559,5 +559,5 @@ class Iridium:
             if next_byte == bytes():
                 break
             output += next_byte
-        print(output)
+        # print(output)
         return output.decode("utf-8")
