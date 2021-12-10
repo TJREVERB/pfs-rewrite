@@ -1,8 +1,8 @@
 from MainControlLoop.main_control_loop import MainControlLoop
-from exceptions import *
+from MainControlLoop.lib.exceptions import *
 
 
-class MissionControl():
+class MissionControl:
     SIGNAL_THRESHOLD = 2
     def __init__(self):
         self.mcl = MainControlLoop()
@@ -29,6 +29,12 @@ class MissionControl():
             except Exception as e:
                 self.remote_code_execution(e)
 
+    def turn_on(self, component):
+        pass
+
+    def turn_off(self, component):
+        pass
+
     def remote_code_execution(self, e: Exception):
         """
         Continiously listen for messages from main radio
@@ -41,7 +47,7 @@ class MissionControl():
             self.sfr.instruct["Pin On"]("Iridium")
             self.sfr.iridium.transmit(repr(e))
         except Exception:
-            print("anoda L")
+            print("pfs team took the L")
         while not troubleshooting_completed:
             try:
                 if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
@@ -58,6 +64,7 @@ class MissionControl():
                 print("Pfs team took an L")  # not actually this but 12am humor
 
 
+    def charge(self):
 if __name__ == "__main__":
     mission_control = MissionControl()
     mission_control.main()

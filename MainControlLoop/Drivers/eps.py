@@ -1,7 +1,7 @@
 from smbus2 import SMBus
 import time
 import math
-from exceptions import decorate_all_callables, wrap_errors, EPSError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, EPSError
 
 
 class EPS:

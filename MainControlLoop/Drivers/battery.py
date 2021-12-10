@@ -1,7 +1,6 @@
 from smbus2 import SMBus
 import time
-import math
-from exceptions import decorate_all_callables, wrap_errors, BatteryError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, BatteryError
 # Datasheet https://drive.google.com/file/d/13GKtzXyufFxrbeQ7wEGgo796i91W1dQt/view 
 
 class Battery:

@@ -1,7 +1,7 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
-from exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class AntennaDeployerCommand(Enum):

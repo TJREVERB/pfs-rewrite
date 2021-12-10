@@ -9,11 +9,8 @@ GNU GPL v3.0, https://www.gnu.org/licenses/gpl.html
 
 #https://datasheets.maximintegrated.com/en/ds/DS3232.pdf
 
-import datetime
-import os
-import time
 from smbus2 import SMBus
-from exceptions import decorate_all_callables, wrap_errors, RTCError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, RTCError
 
 class RTC:
     # DS3232 Register Addresses

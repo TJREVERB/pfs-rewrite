@@ -14,7 +14,7 @@ from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
-from exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
 
 class StateFieldRegistry:
     modes_list = {

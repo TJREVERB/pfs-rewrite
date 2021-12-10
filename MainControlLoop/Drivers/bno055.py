@@ -21,7 +21,7 @@ import time
 import numpy as np
 from math import atan
 from math import degrees
-from exceptions import decorate_all_callables, wrap_errors, IMUError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, IMUError
 
 
 @wrap_errors(IMUError)

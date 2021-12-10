@@ -3,7 +3,7 @@ from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
 
 
 class Mode:
@@ -22,7 +22,7 @@ class Mode:
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
             "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off,
+            "All Off": self.__turn_all_off
         }
 
         self.component_to_class = {  # returns class from component name
