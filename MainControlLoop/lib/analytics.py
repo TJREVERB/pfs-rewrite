@@ -37,7 +37,7 @@ class Analytics:
         return line(voltage)
 
     @wrap_errors(LogicalError)
-    def historical_consumption(self, pdm_states: list, n: int) -> float:
+    def historical_consumption(self, pdm_states: list, n: int) -> pd.Series:
         """
         Get power consumption over last n datapoints
         """
