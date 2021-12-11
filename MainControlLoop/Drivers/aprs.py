@@ -191,17 +191,11 @@ class APRS:
         Reads in any messages, process, and add to queue
         """
         msg = self.read()
-        if msg.find(self.sfr.command_executor.TJ_PREFIX) != -1:
-            prefix = self.sfr.command_executor.TJ_PREFIX
-            processed = msg[msg.find(prefix) + len(prefix):].strip()
-            processed = msg.split(":")
-            processed = processed[:-1] # Ignore anything after last :
+        if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
+            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
-        elif msg.find(self.sfr.command_executor.OUTREACH_PREFIX) != -1:
-            prefix = self.sfr.command_executor.OUTREACH_PREFIX
-            processed = msg[msg.find(prefix) + len(prefix):].strip()
-            processed = msg.split(":")
-            processed = processed[:-1] # Ignore anything after last :
+        elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
 
     def write(self, message: str) -> bool:
