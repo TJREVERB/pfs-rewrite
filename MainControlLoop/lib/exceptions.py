@@ -1,6 +1,7 @@
 class CustomException(Exception):
-    def __init__(self, exception: Exception = None):
+    def __init__(self, exception: Exception = None, details: str = None):
         self.exception = exception
+        self.details = details
 
 
 class APRSError(CustomException): pass
@@ -23,8 +24,7 @@ class BatteryError(CustomException): pass
 
 class CommandExecutionError(CustomException):
     def __init__(self, details, exception: Exception = None):
-        super().__init__(exception)
-        self.details = details
+        super().__init__(exception, details)
 
 
 class LogicalError(CustomException): pass
