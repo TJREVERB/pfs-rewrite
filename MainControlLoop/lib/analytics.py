@@ -1,6 +1,3 @@
-"""
-Methods to analyze our data
-"""
 import pandas as pd
 import numpy as np
 import time
@@ -13,6 +10,9 @@ def line_eq(a: tuple, b: tuple) -> callable:
 
 
 class Analytics:
+    """
+    Methods to analyze our data
+    """
     def __init__(self, sfr):
         self.sfr = sfr
 
@@ -33,7 +33,7 @@ class Analytics:
                         self.sfr.voltage_energy_map["energy"][max_index]))
         return line(voltage)
     
-    def historical_consumption(self, pdm_states: list, n: int) -> float:
+    def historical_consumption(self, pdm_states: list, n: int) -> pd.Series:
         """
         Get power consumption over last n datapoints
         """
@@ -41,7 +41,7 @@ class Analytics:
         pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
         pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
         # Add either the last 50 datapoints or entire dataset for each pdm which is on
-        total = pd.DataFrame([df[df[i + "_state"] == 1][i + "_pwr"] for i in pdms_on]).sum(axis=1)
+        return pd.DataFrame([df[df[i + "_state"] == 1][i + "_pwr"] for i in pdms_on]).sum(axis=1)
 
     def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
         """
