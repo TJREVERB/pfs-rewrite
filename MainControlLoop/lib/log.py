@@ -55,15 +55,13 @@ class Logger:
         Integrate charge in Joules
         """
         # Log total power, store values into variables
-        self.log_pwr((pdms_on := self.sfr.eps.power_pdms_on())[1], 
-            buspower := self.sfr.eps.bus_power(), pdms_on[0])
+        self.log_pwr((pdms_on := self.sfr.eps.power_pdms_on())[1], self.sfr.eps.bus_power(), pdms_on[0])
         # Log solar generation, store list into variable gen
-        self.log_solar(gen := self.sfr.eps.raw_solar_gen())
+        self.log_solar(self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
         self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.battery.charging_power() * \
             (t := time.perf_counter() - self.last_log_time)
-        # Update previous_time, accounts for rollover
-        self.last_log_time = t
+        self.last_log_time = t  # Update previous_time, accounts for rollover
     
     def update_orbits(self):
         """
