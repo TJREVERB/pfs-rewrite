@@ -62,6 +62,7 @@ class CommandExecutor:
         }
 
     def execute(self):
+        command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
@@ -82,7 +83,7 @@ class CommandExecutor:
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
-        for command in self.sfr.vars.outreach_buffer:
+        for command_packet in self.sfr.vars.outreach_buffer:
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -93,9 +94,9 @@ class CommandExecutor:
             ])
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.secondary_registry[command.command_string](command)
+                to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
             except Exception as e:
-                self.transmit(command, [repr(e)], True)
+                self.transmit(command_packet, [repr(e)], True)
                 to_log["result"] = "ERR:" + type(e).__name__
             finally:
                 to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
@@ -384,7 +385,7 @@ class CommandExecutor:
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := time.time()).day, t.hour, t.minute)
+        packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
             command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
@@ -398,7 +399,7 @@ class CommandExecutor:
                 packet.args[0].timestamp, packet.args[0].return_data)[6:])])
         else:  # APRS doesn't encode
             # Only factor in size of return data
-            self.transmit(packet, result := [len(':'.join(self.return_data))])
+            self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
         return result
 
     def AMS(self, packet: TransmissionPacket) -> list:
@@ -477,7 +478,8 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    def IPC(self, packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
+    # TODO: Implement, how to power cycle satelitte without touching CPU power
+    def IPC(self, packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
@@ -487,7 +489,7 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
     
-    def IRB(self, packet: TransmissionPacket) -> list:
+    def IRB(self, packet: TransmissionPacket):
         """
         Reboot pi
         """
