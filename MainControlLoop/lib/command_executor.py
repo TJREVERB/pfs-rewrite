@@ -2,7 +2,7 @@ import time, datetime
 import pandas as pd
 import os
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, CommandExecutionError, IridiumError
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
 class CommandExecutor:
@@ -77,7 +77,7 @@ class CommandExecutor:
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
                 to_log["result"] = self.primary_registry[command_packet.command_string](command_packet)
-            except CommandExecutionError as e:
+            except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
@@ -97,7 +97,7 @@ class CommandExecutor:
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
                 to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
-            except CommandExecutionError as e:
+            except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
@@ -124,56 +124,56 @@ class CommandExecutor:
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
-        except IridiumError as e:
+        except NoSignalException as e:
             print(e)
             self.sfr.vars.transmit_buffer.append(packet)
             return False
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to charging mode
         """
         if str(self.sfr.mode_obj) == "Charging":
-            raise CommandExecutionError("Already in Charging")
+            raise CommandExecutionException("Already in Charging")
         self.sfr.vars.MODE = self.sfr.modes_list["Charging"]
         self.transmit(packet, result := [])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MSC(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to science mode
         """
         if str(self.sfr.mode_obj) == "Science":
-            raise CommandExecutionError("Already in Science")
+            raise CommandExecutionException("Already in Science")
         self.sfr.vars.MODE = self.sfr.modes_list["Science"]
         self.transmit(packet, result := [])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MOU(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to outreach mode
         """
         if str(self.sfr.mode_obj) == "Outreach":
-            raise CommandExecutionError("Already in Outreach")
+            raise CommandExecutionException("Already in Outreach")
         self.sfr.vars.MODE = self.sfr.modes_list["Outreach"]
         self.transmit(packet, result := [])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MRP(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to Repeater mode
         """
         if str(self.sfr.mode_obj) == "Repeater":
-            raise CommandExecutionError("Already in Repeater")
+            raise CommandExecutionException("Already in Repeater")
         self.sfr.vars.MODE = self.sfr.modes_list["Repeater"]
         self.transmit(packet, result := [])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Mode Lock
@@ -182,7 +182,7 @@ class CommandExecutor:
         self.transmit(packet, result := [])  # OK code
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def MDF(self, packet: TransmissionPacket) -> list:
         """
         Disable mode lock
@@ -191,7 +191,7 @@ class CommandExecutor:
         self.transmit(packet, result := [])  # OK code
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def DLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Device Lock
@@ -204,15 +204,15 @@ class CommandExecutor:
             "Antenna Deployer"
         ]
         if dcode < 0 or dcode >= len(device_codes):
-            raise CommandExecutionError("Invalid Device Code")
+            raise CommandExecutionException("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
-            raise CommandExecutionError("Device already locked")
+            raise CommandExecutionException("Device already locked")
         else:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
             self.transmit(packet, result := [dcode])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def DDF(self, packet: TransmissionPacket) -> list:
         """
         Disable Device Lock
@@ -225,15 +225,15 @@ class CommandExecutor:
             "Antenna Deployer"
         ]
         if dcode < 0 or dcode >= len(device_codes):
-            raise CommandExecutionError("Invalid Device Code")
+            raise CommandExecutionException("Invalid Device Code")
         if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
             self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = False
             self.transmit(packet, result := [dcode])
         else:
-            raise CommandExecutionError("Device not locked")
+            raise CommandExecutionException("Device not locked")
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GCR(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last command run
@@ -241,7 +241,7 @@ class CommandExecutor:
         self.transmit(packet, result := [time.time() - self.sfr.LAST_COMMAND_RUN])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GVT(self, packet: TransmissionPacket) -> list:
         """
         Reads and Transmits Battery Voltage
@@ -249,7 +249,7 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"]()])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GPL(self, packet: TransmissionPacket) -> list:
         """
         Transmit proof of life
@@ -260,7 +260,7 @@ class CommandExecutor:
                                          sum(self.sfr.recent_power())])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GCD(self, packet: TransmissionPacket) -> list:
         """
         Transmits detailed critical data
@@ -296,7 +296,7 @@ class CommandExecutor:
         self.transmit(packet, result)
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GPW(self, packet: TransmissionPacket) -> list:
         """
         Transmit total power draw of satellite
@@ -304,7 +304,7 @@ class CommandExecutor:
         self.transmit(packet, result := [sum(self.sfr.recent_power())])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GOP(self, packet: TransmissionPacket) -> list:
         """
         Transmits current orbital period
@@ -312,7 +312,7 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.vars.ORBITAL_PERIOD], False)
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GCS(self, packet: TransmissionPacket) -> list:
         """
         Transmits down information about the satellite's current status
@@ -321,7 +321,7 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.vars.encode()])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GSV(self, packet: TransmissionPacket) -> list:
         """
         Transmit signal strength variability
@@ -329,7 +329,7 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GSG(self, packet: TransmissionPacket) -> list:
         """
         Transmit solar generation
@@ -337,7 +337,7 @@ class CommandExecutor:
         self.transmit(packet, result := [sum(self.sfr.recent_gen())])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GTB(self, packet: TransmissionPacket) -> list:
         """
         Transmit full IMU tumble
@@ -346,7 +346,7 @@ class CommandExecutor:
         self.transmit(packet, result := [*tum[0], *tum[1]])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GMT(self, packet: TransmissionPacket) -> list:
         """
         Transmit magnitude IMU tumble
@@ -356,7 +356,7 @@ class CommandExecutor:
         self.transmit(packet, result := [mag])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def GTS(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last mode switch
@@ -364,7 +364,7 @@ class CommandExecutor:
         self.transmit(packet, result := [time.time() - self.sfr.LAST_MODE_SWITCH])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def AAP(self, packet: TransmissionPacket) -> list:
         """
         Transmits average power draw over n data points
@@ -373,7 +373,7 @@ class CommandExecutor:
             self.sfr.analytics.historical_consumption([1 for _ in range(10)], packet.args[0])])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n power draw datapoints
@@ -382,7 +382,7 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ASV(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n signal strength datapoints
@@ -391,7 +391,7 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n solar generation datapoints
@@ -400,7 +400,7 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ATB(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n IMU tumble datapoints
@@ -409,7 +409,7 @@ class CommandExecutor:
         self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ARS(self, packet: TransmissionPacket) -> list:  # TODO: FIX
         """
         Transmits expected size of a given command
@@ -431,7 +431,7 @@ class CommandExecutor:
             self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def AMS(self, packet: TransmissionPacket) -> list:
         """
         Repeat result of command with given MSN
@@ -443,10 +443,10 @@ class CommandExecutor:
             # Transmit last element of log with given msn if duplicates exist
             self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
         else:
-            raise CommandExecutionError("Command does not exist in log!")
+            raise CommandExecutionException("Command does not exist in log!")
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def SUV(self, packet: TransmissionPacket) -> list:
         """
         Set upper threshold for mode switch
@@ -456,7 +456,7 @@ class CommandExecutor:
         self.transmit(packet, result := [v])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def SLV(self, packet: TransmissionPacket) -> list:
         """
         Set lower threshold for mode switch
@@ -466,7 +466,7 @@ class CommandExecutor:
         self.transmit(packet, result := [v])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
@@ -496,7 +496,7 @@ class CommandExecutor:
         ])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ULG(self, packet: TransmissionPacket) -> list:
         """
         Transmit full rssi data logs
@@ -505,7 +505,7 @@ class CommandExecutor:
             self.transmit(packet, result := [f.read()])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def ITM(self, packet: TransmissionPacket) -> list:
         """
         Transmits an OK code
@@ -514,7 +514,7 @@ class CommandExecutor:
         return result
 
     # TODO: Implement, how to power cycle satelitte without touching CPU power
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def IPC(self,
             packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
         """
@@ -526,7 +526,7 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    @wrap_errors(CommandExecutionError)
+    @wrap_errors(CommandExecutionException)
     def IRB(self, packet: TransmissionPacket) -> None:
         """
         Reboot pi
