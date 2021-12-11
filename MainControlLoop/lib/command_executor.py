@@ -64,6 +64,7 @@ class CommandExecutor:
 
     @wrap_errors(LogicalError)
     def execute(self):
+        command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
@@ -413,7 +414,7 @@ class CommandExecutor:
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = (t := (time.time()).day, t.hour, t.minute)
+        packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
             command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
@@ -427,7 +428,7 @@ class CommandExecutor:
                 packet.args[0].timestamp, packet.args[0].return_data)[6:])])
         else:  # APRS doesn't encode
             # Only factor in size of return data
-            self.transmit(packet, result := [len(':'.join(self.return_data))])
+            self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
         return result
 
     @wrap_errors(CommandExecutionError)
@@ -512,6 +513,7 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
+    # TODO: Implement, how to power cycle satelitte without touching CPU power
     @wrap_errors(CommandExecutionError)
     def IPC(self,
             packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
