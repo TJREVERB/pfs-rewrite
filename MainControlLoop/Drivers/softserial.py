@@ -1,12 +1,13 @@
 import pigpio
 import time
 import os
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import wrap_errors, APRSError
+
 
 class SoftwareUART():
     """Bitbang uart driver using pigpio and interrupts"""
-    
-    @wrap_errors(LogicalError)
+
+    @wrap_errors(APRSError)
     def __init__(self, RX, TX, baud):
         os.system("sudo pigpiod")
         time.sleep(1)
@@ -17,15 +18,16 @@ class SoftwareUART():
         self.wave = None
         self.pi.set_mode(TX, pigpio.OUTPUT)
         self.pi.bb_serial_read_open(self.RXPin, self.baudrate)
-        decorate_all_callables(LogicalError)
 
+    @wrap_errors(APRSError)
     def __del__(self):
-        pigpio.exceptions = False #fatal excpetions off in case bbserial doesnt exists
+        pigpio.exceptions = False  # fatal excpetions off in case bbserial doesnt exists
         self.pi.wave_delete(self.wave)
         self.pi.bb_serial_read_close(self.RXPin)
         self.pi.stop()
-        pigpio.exceptions = True 
-    
+        pigpio.exceptions = True
+
+    @wrap_errors(APRSError)
     def write(self, msg):
         """Writes a message over bitbang serial
         :param msg: (bytes) message to write"""
@@ -38,6 +40,7 @@ class SoftwareUART():
         self.pi.bb_serial_read_open(self.RXPin, self.baudrate)
         return 1
 
+    @wrap_errors(APRSError)
     def read(self, len):
         """Reads and returns message over bitbang serial
         :return: (tuple) error code (1 if succesful), message"""
