@@ -4,28 +4,30 @@ from MainControlLoop.lib.exceptions import *
 
 class MissionControl:
     SIGNAL_THRESHOLD = 2
+
     def __init__(self):
         self.mcl = MainControlLoop()
         self.sfr = self.mcl.sfr
 
     def main(self):
-        while True:
+        while True:  # Run forever
             try:
-                self.mcl.run()
-            except APRSError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except IridiumError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except EPSError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except RTCError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except IMUError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except BatteryError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-            except SystemError as e:
-                pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                try:
+                    self.mcl.iterate()  # Run a single iteration of MCL
+                except APRSError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except IridiumError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except EPSError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except RTCError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except IMUError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except BatteryError as e:
+                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+                except LogicalError:
+                    raise  # Because we can't troubleshoot a logical error
             except Exception as e:
                 self.remote_code_execution(e)
 
@@ -46,7 +48,7 @@ class MissionControl:
         try:
             self.sfr.instruct["Pin On"]("Iridium")
             self.sfr.iridium.transmit(repr(e))
-        except Exception:
+        except:
             print("pfs team took the L")
         while not troubleshooting_completed:
             try:
@@ -63,8 +65,10 @@ class MissionControl:
             except:  # add specific errors that would pertain to iridium not working
                 print("Pfs team took an L")  # not actually this but 12am humor
 
-
     def charge(self):
+        pass
+
+
 if __name__ == "__main__":
     mission_control = MissionControl()
     mission_control.main()

@@ -3,10 +3,10 @@ Methods to analyze our data
 """
 import pandas as pd
 import time
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, LogicalError
 
 
-@wrap_errors(SystemError)
+@wrap_errors(LogicalError)
 def line_eq(a: tuple, b: tuple) -> callable:
     slope = (b[1] - a[1]) / (b[0] - a[1])
     y_int = a[1] - slope * a[0]
@@ -14,10 +14,10 @@ def line_eq(a: tuple, b: tuple) -> callable:
 
 
 class Analytics:
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def __init__(self, sfr):
         self.sfr = sfr
-        decorate_all_callables(self, SystemError)
+        decorate_all_callables(self, LogicalError)
 
     def volt_to_charge(self, voltage: float) -> float:
         """

@@ -2,11 +2,11 @@ import time, datetime
 import pandas as pd
 import os
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import *
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, CommandExecutionError, IridiumError
 
 
 class CommandExecutor:
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.TJ_PREFIX = "TJ;"
@@ -62,7 +62,7 @@ class CommandExecutor:
             "IPC": self.IPC
         }
 
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def execute(self):
         for command_packet in self.sfr.vars.command_buffer:
             to_log = pd.DataFrame([
@@ -104,7 +104,7 @@ class CommandExecutor:
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
 
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def transmit(self, packet: TransmissionPacket, data: list, error=False):
         """
         Transmit a message over primary radio

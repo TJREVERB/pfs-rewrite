@@ -1,11 +1,11 @@
 import time
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, LogicalError
 
 
 class Startup(Mode):
-    wrap_errors(SystemError)
+    wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
         Sets up constants
@@ -19,7 +19,7 @@ class Startup(Mode):
         self.conditions = {
             "Low Battery": False,
         }
-        decorate_all_callables(self, SystemError)
+        decorate_all_callables(self, LogicalError)
 
     def __str__(self):
         return "Startup"

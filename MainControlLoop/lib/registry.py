@@ -14,7 +14,7 @@ from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 
 
 class StateFieldRegistry:
@@ -41,7 +41,7 @@ class StateFieldRegistry:
         "USB-UART"
     ]
 
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def __init__(self):
         """
         Variables common across our pfs
@@ -84,7 +84,7 @@ class StateFieldRegistry:
         self.vars.LAST_STARTUP = time.time()
 
     class Registry:
-        @wrap_errors(SystemError)
+        @wrap_errors(LogicalError)
         def __init__(self, eps, analytics):
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
@@ -108,6 +108,7 @@ class StateFieldRegistry:
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
 
+        @wrap_errors(LogicalError)
         def encode(self):
             return [
                 int(self.ANTENNA_DEPLOYED),
@@ -129,6 +130,7 @@ class StateFieldRegistry:
                 self.LAST_MODE_SWITCH,
             ]
 
+        @wrap_errors(LogicalError)
         def to_dict(self):
             """
             Converts vars to dictionary with encoded values
@@ -140,6 +142,7 @@ class StateFieldRegistry:
                     result[i] = encoded[0]  # encoded.pop(0)
             return result
 
+    @wrap_errors(LogicalError)
     def load(self) -> Registry:
         """
         Load sfr fields from log
@@ -162,6 +165,7 @@ class StateFieldRegistry:
             fields = defaults
         return fields
 
+    @wrap_errors(LogicalError)
     def dump(self) -> None:
         """
         Dump values of all state fields into state_field_log and readable log
@@ -171,6 +175,7 @@ class StateFieldRegistry:
         with open(self.readable_log_path, "w") as f:
             json.dump(self.vars.to_dict(), f)
 
+    @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
         """
         Update LAST_DAYLIGHT_ENTRY and log new data
@@ -180,6 +185,7 @@ class StateFieldRegistry:
         df = pd.DataFrame(data={"daylight": self.vars.LAST_DAYLIGHT_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
+    @wrap_errors(LogicalError)
     def enter_eclipse(self) -> None:
         """
         Update LAST_ECLIPSE_ENTRY and log new data
@@ -189,6 +195,7 @@ class StateFieldRegistry:
         df = pd.DataFrame(data={"eclipse": self.vars.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
+    @wrap_errors(LogicalError)
     def log_iridium(self, location, signal, t=time.time()):
         """
         Logs iridium data
@@ -202,6 +209,7 @@ class StateFieldRegistry:
                           columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
         df.to_csv(self.iridium_data_path, mode="a", header=False)  # Append data to log
 
+    @wrap_errors(LogicalError)
     def recent_power(self) -> list:
         """
         Returns list of buspower and power draws for all pdms
@@ -211,6 +219,7 @@ class StateFieldRegistry:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
         return df[["buspower"] + [f"0x0{str(hex(i)).upper()[2:]}_pwr" for i in range(1, 11)]][-1].tolist()
 
+    @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
         """
         Returns list of input power from all bcrs
@@ -221,6 +230,7 @@ class StateFieldRegistry:
 
         return df[["bcr1", "bcr2", "bcr3"]][-1].tolist()
 
+    @wrap_errors(LogicalError)
     def clear_logs(self):
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
@@ -233,6 +243,7 @@ class StateFieldRegistry:
         os.remove(self.log_path)
         print("Logs cleared")
 
+    @wrap_errors(LogicalError)
     def reset(self):
         """
         Resets state field registry log

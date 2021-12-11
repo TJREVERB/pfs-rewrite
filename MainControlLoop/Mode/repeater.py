@@ -1,16 +1,16 @@
 from MainControlLoop.Mode.mode import Mode
 import time
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
+from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, LogicalError
 
 
 class Repeater(Mode):  # TODO: IMPLEMENT
-    @wrap_errors(SystemError)
+    @wrap_errors(LogicalError)
     def __init__(self, sfr):
         super().__init__(sfr)
         self.conditions = {
             "Low Battery": False
         }
-        decorate_all_callables(self, SystemError)
+        decorate_all_callables(self, LogicalError)
 
     def __str__(self):
         return "Repeater"
