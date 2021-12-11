@@ -37,12 +37,14 @@ def wrap_errors(exception: callable) -> callable:
     :param exception: exception to wrap errors with
     :return: (callable) decorator
     """
+
     def decorator(func: callable) -> callable:
         """
         Dynamically generate a decorator depending on argument
         :param func: function to wrap
         :return: (callable) decorated function
         """
+
         def wrapper(*args, **kwargs) -> callable:
             """
             Attempt to run function
@@ -55,5 +57,7 @@ def wrap_errors(exception: callable) -> callable:
                 raise
             except Exception as e:
                 raise exception(e)
+
         return wrapper
+
     return decorator
