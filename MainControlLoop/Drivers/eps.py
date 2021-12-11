@@ -1,7 +1,7 @@
 from smbus2 import SMBus
 import time
 import math
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, EPSError
+from MainControlLoop.lib.exceptions import wrap_errors, EPSError
 
 
 class EPS:
@@ -180,8 +180,8 @@ class EPS:
             "3.3V": [0x04],
             "12V": [0x08],
         }
-        decorate_all_callables(self, EPSError)
 
+    @wrap_errors(EPSError)
     def request(self, register, data, length) -> bytes:
         """
         Requests and returns uninterpreted bytes object
@@ -199,6 +199,7 @@ class EPS:
         time.sleep(.1)
         return result
 
+    @wrap_errors(EPSError)
     def command(self, register, data) -> bool:
         """
         Sends command to EPS
@@ -213,6 +214,7 @@ class EPS:
         time.sleep(.1)
         return result
 
+    @wrap_errors(EPSError)
     def telemetry_request(self, tle, multiplier) -> float:
         """
         Requests and returns interpreted telemetry data
@@ -222,7 +224,8 @@ class EPS:
         """
         raw = self.request(0x10, tle, 2)
         return (raw[0] << 8 | raw[1]) * multiplier
-    
+
+    @wrap_errors(EPSError)
     def bus_power(self) -> float:
         """
         Returns total bus power draw
@@ -232,7 +235,8 @@ class EPS:
             self.telemetry["IBATBUS"]() * self.telemetry["VBATBUS"]() + \
             self.telemetry["I5VBUS"]() * self.telemetry["V5VBUS"]() + \
             self.telemetry["I3V3BUS"]() * self.telemetry["V3V3BUS"]()
-    
+
+    @wrap_errors(EPSError)
     def raw_pdm_draw(self) -> tuple:
         """
         Returns which pdms are on, power draw of each pdm
@@ -251,7 +255,8 @@ class EPS:
         for pdm in range(1, 11):
             pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
         return pdm_states, ls
-    
+
+    @wrap_errors(EPSError)
     def power_pdms_on(self) -> tuple:
         """
         Returns total power for a list of pdms
@@ -260,6 +265,7 @@ class EPS:
         """
         return (raw := self.raw_pdm_draw())[0], sum(raw[1])
 
+    @wrap_errors(EPSError)
     def total_power(self, mode) -> tuple:
         """
         Returns total power draw based on EPS telemetry
@@ -308,7 +314,8 @@ class EPS:
                 self.bitsToTelem[i][1]]() for i in range(1, 11)]
             return buspower + sum(ls), time.perf_counter() - t
         return -1, -1
-    
+
+    @wrap_errors(EPSError)
     def raw_solar_gen(self) -> list:
         """
         Returns solar generation of all three busses
@@ -317,6 +324,7 @@ class EPS:
         return [self.telemetry["VBCR" + str(i)]() * max([self.telemetry["IBCR" + str(i) + j]()
                                                                for j in ["A", "B"]]) for i in range(1, 4)]
 
+    @wrap_errors(EPSError)
     def solar_power(self) -> float:
         """
         Returns net solar power gain
@@ -324,6 +332,7 @@ class EPS:
         """
         return sum(self.raw_solar_gen())
 
+    @wrap_errors(EPSError)
     def sun_detected(self) -> bool:
         """
         :return: (bool) Whether sun is detected
