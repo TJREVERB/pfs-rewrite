@@ -14,22 +14,50 @@ class MissionControl:
             try:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
-                except APRSError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except IridiumError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except EPSError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except RTCError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except IMUError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except BatteryError as e:
-                    pass  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
-                except LogicalError:
-                    raise  # Because we can't troubleshoot a logical error
-            except Exception as e:
-                self.remote_code_execution(e)
+                except CustomException as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
+                    if type(e.exception) == KeyboardInterrupt:
+                        raise e.exception
+                    elif type(e) == APRSError:
+                        self.aprs_troubleshoot(e)
+                    elif type(e) == IridiumError:
+                        self.iridium_troubleshoot(e)
+                    elif type(e) == EPSError:
+                        self.eps_troubleshoot(e)
+                    elif type(e) == RTCError:
+                        self.rtc_troubleshoot(e)
+                    elif type(e) == IMUError:
+                        self.imu_troubleshoot(e)
+                    elif type(e) == BatteryError:
+                        self.battery_troubleshoot(e)
+                    elif type(e) == LogicalError:
+                        raise e  # We shouldn't troubleshoot a problem with high level code
+                    continue  # Move on with MCL if troubleshooting solved problem (no additional exception)
+                # If a leak happens (impossible), exception will travel up to next try-except block (safe mode)
+            except Exception as e:  # If another exception happens during troubleshooting (troubleshooting fails)
+                if type(e) == KeyboardInterrupt:  # If we ended the program
+                    self.sfr.clear_logs()  # Reset sfr
+                    exit(0)  # Cleanly exit
+                else:  # If error is genuine
+                    # self.safe_mode(e)  # Safe mode to allow ground to solve the problem
+                    self.testing_mode(e)  # DEBUG
+
+    def aprs_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+
+    def iridium_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+
+    def eps_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+
+    def rtc_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+
+    def imu_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+
+    def battery_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def turn_on(self, component):
         pass
@@ -37,7 +65,20 @@ class MissionControl:
     def turn_off(self, component):
         pass
 
-    def remote_code_execution(self, e: Exception):
+    def testing_mode(self, e: Exception):
+        """
+        DEBUG ONLY!!!
+        Print current mode, values of sfr, exception's repr
+        Then cleanly exit
+        """
+        print("ERROR!!!")
+        print(f"Currently in {self.sfr.vars.MODE}")
+        print("State field registry fields:")
+        print(self.sfr.vars.to_dict())
+        print("Exception:")
+        print(repr(e))
+
+    def safe_mode(self, e: Exception):
         """
         Continiously listen for messages from main radio
         if there is message, attempt to exec method
