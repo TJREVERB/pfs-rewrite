@@ -76,8 +76,7 @@ class RTC:
     def __init__(self):
         # DS3232 I2C Address
         self.addr = 0x68
-        self.bus = SMBus(1)
-        decorate_all_callables(self, RTCError)
+        self.bus = SMBus(0)
 
     @property
     def OSF(self):

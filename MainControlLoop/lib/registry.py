@@ -16,6 +16,7 @@ from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
 from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, SystemError
 
+
 class StateFieldRegistry:
     modes_list = {
         "Startup": Startup,
@@ -39,6 +40,7 @@ class StateFieldRegistry:
         "SPI-UART",  # APRS Serial Converter
         "USB-UART"
     ]
+
     @wrap_errors(SystemError)
     def __init__(self):
         """
@@ -80,8 +82,7 @@ class StateFieldRegistry:
         }
         self.vars = self.load()
         self.vars.LAST_STARTUP = time.time()
-        decorate_all_callables(self, SystemError)
-    
+
     class Registry:
         @wrap_errors(SystemError)
         def __init__(self, eps, analytics):
@@ -89,11 +90,11 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            sun = eps.sun_detected()
-            self.LAST_DAYLIGHT_ENTRY = [time.time() - 45 * 60, time.time()][sun]
-            self.LAST_ECLIPSE_ENTRY = [time.time(), time.time() - 45 * 60][sun]
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := eps.sun_detected()) else time.time()
+            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
             self.ORBITAL_PERIOD = 90 * 60
-            self.LOWER_THRESHOLD = 133732.8 * (0.3)  # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+            self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
@@ -106,8 +107,7 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
-            decorate_all_callables(self, SystemError)
-        
+
         def encode(self):
             return [
                 int(self.ANTENNA_DEPLOYED),
@@ -117,18 +117,18 @@ class StateFieldRegistry:
                 self.LAST_ECLIPSE_ENTRY,
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
-                list(StateFieldRegistry.modes_list.keys()).index(self.MODE.__str__(self.MODE)),
+                list(StateFieldRegistry.modes_list.keys()).index(str(self.MODE)),
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
-                sum([2 ** StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys()) 
-                    if self.LOCKED_DEVICES[i]]),
+                sum([2 ** StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                     if self.LOCKED_DEVICES[i]]),
                 int(self.CONTACT_ESTABLISHED),
                 self.START_TIME,
                 self.LAST_COMMAND_RUN,
                 self.LAST_MODE_SWITCH,
             ]
-        
+
         def to_dict(self):
             """
             Converts vars to dictionary with encoded values
@@ -137,30 +137,34 @@ class StateFieldRegistry:
             result = {}
             for i in vars(self):
                 if not i.startswith("__") and i.isupper():
-                    result[i] = encoded[0]#encoded.pop(0)
+                    result[i] = encoded[0]  # encoded.pop(0)
             return result
-    
+
     def load(self) -> Registry:
+        """
+        Load sfr fields from log
+        :return: (Registry) loaded registry
+        """
         defaults = self.Registry(self.eps, self.analytics)
         try:
             with open(self.log_path, "rb") as f:
-                vars = pickle.load(f)
+                fields = pickle.load(f)
             # If all variable names are the same and all types of values are the same
             # Checks if log is valid and up-to-date
-            if not [[i[0], type(i[1])] for i in vars.__dict__.items()] == \
+            if not [[i[0], type(i[1])] for i in fields.__dict__.items()] == \
                    [[i[0], type(i[1])] for i in defaults.__dict__.items()]:
                 print("Invalid log, loading default sfr...")
-                vars = defaults
+                fields = defaults
             print("Loading sfr from log...")
         except Exception as e:
             print("Unknown error, loading default sfr...")
             print(e)
-            vars = defaults
-        return vars
+            fields = defaults
+        return fields
 
     def dump(self) -> None:
         """
-        Dump values of all state fields into state_field_log
+        Dump values of all state fields into state_field_log and readable log
         """
         with open(self.log_path, "wb") as f:
             pickle.dump(self.vars, f)
@@ -171,16 +175,16 @@ class StateFieldRegistry:
         """
         Update LAST_DAYLIGHT_ENTRY and log new data
         """
-        self.LAST_DAYLIGHT_ENTRY = time.time()
+        self.vars.LAST_DAYLIGHT_ENTRY = time.time()
         # Add data to dataframe
-        df = pd.DataFrame(data={"daylight": self.LAST_DAYLIGHT_ENTRY}, columns=["timestamp", "phase"])
+        df = pd.DataFrame(data={"daylight": self.vars.LAST_DAYLIGHT_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     def enter_eclipse(self) -> None:
         """
         Update LAST_ECLIPSE_ENTRY and log new data
         """
-        self.LAST_ECLIPSE_ENTRY = time.time()
+        self.vars.LAST_ECLIPSE_ENTRY = time.time()
         # Add data to dataframe
         df = pd.DataFrame(data={"eclipse": self.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
@@ -194,9 +198,10 @@ class StateFieldRegistry:
         """
         data = np.array(t, *location, signal)  # Concatenate arrays
         np.insert(data, 0, time.time())  # Add timestamp
-        df = pd.DataFrame(data, columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
-        df.to_csv(path_or_buf=self.iridium_data_path, mode="a", header=False)  # Append data to log
-    
+        df = pd.DataFrame(data,
+                          columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
+        df.to_csv(self.iridium_data_path, mode="a", header=False)  # Append data to log
+
     def recent_power(self) -> list:
         """
         Returns list of buspower and power draws for all pdms
@@ -204,19 +209,8 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
+        return df[["buspower"] + [f"0x0{str(hex(i)).upper()[2:]}_pwr" for i in range(1, 11)]][-1].tolist()
 
-        datapoints = [0] * 12
-
-        for k in range(13):
-            datapoints[0] += df["buspower"][k]
-
-        for i in range(1, 11):
-            for k in range(13):
-                datapoints[i] += df[f"0x0{str(hex(i)).upper()[2:]}_pwr"][k]
-
-        return datapoints
-        #return list(df[["buspower"] + [f"0x0{str(hex(i))}_pwr" for i in range(1, 11)]][-1])
-    
     def recent_gen(self) -> list:
         """
         Returns list of input power from all bcrs
@@ -225,9 +219,8 @@ class StateFieldRegistry:
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
             return self.eps.raw_solar_gen()
 
-        #return list(df["bcr1", "bcr2", "bcr3"][-1])
-        return [df["bcr1"], df["bcr2"], df["bcr3"]]
-    
+        return df[["bcr1", "bcr2", "bcr3"]][-1].tolist()
+
     def clear_logs(self):
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
@@ -246,4 +239,3 @@ class StateFieldRegistry:
         """
         with open(self.log_path, "w") as f:
             f.write("")
-

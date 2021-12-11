@@ -16,7 +16,7 @@ class Serial:
 
     def read(self):
         self.bus.write_byte(self.addr, 1)
-        return self.bus.read_i2c_block_data(self.addr, 0, 255)
+        return self.bus.read_i2c_block_data(self.addr, 0, 32) #TODO: REDO
 
     def flush(self):
         self.read()
