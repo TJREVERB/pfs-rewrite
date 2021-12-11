@@ -183,7 +183,7 @@ class StateFieldRegistry:
         """
         self.vars.LAST_ECLIPSE_ENTRY = time.time()
         # Add data to dataframe
-        df = pd.DataFrame(data={"eclipse": self.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
+        df = pd.DataFrame(data={"eclipse": self.vars.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     def log_iridium(self, location, signal, t=time.time()):
