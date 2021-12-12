@@ -342,11 +342,18 @@ class Iridium:
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
             if not discardmtbuf:
                 try:
-                    self.sfr.vars.command_buffer.append((*self.decode(self.process(self.SBD_RB(), "SBDRB").strip()),
-                                                         int(ls[3])))  # append message, args, msn number
-                except:
-                    self.sfr.vars.command_buffer.append(
-                        ("GRB", [], int(ls[3])))  # Append garbled message indicator and msn
+                    self.SBD_RB()
+                    raw = self.serial.read(50)
+                    t = time.perf_counter()
+                    while raw.find(b'OK') == -1:
+                        if time.perf_counter() - t > 5:
+                            raise IridiumError(details="Serial Timeout")
+                        raw += self.serial.read(50)
+                    # print(raw)
+                    raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                    self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
+                except Exception as e:
+                    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3]))) # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         result = self.transmit_raw(
@@ -360,8 +367,19 @@ class Iridium:
         if result[0] not in [0, 1, 2, 3, 4]:
             raise IridiumError(details="Error transmitting buffer")
         if result[2] == 1:
-            self.sfr.vars.command_buffer.append(  # If this fails, serial is broken and decorator raises exception
-                (*self.decode(self.process(self.SBD_RB(), "SBDRB").strip()), int(result[3])))
+            try:
+                self.SBD_RB()
+                raw = self.serial.read(50)
+                t = time.perf_counter()
+                while raw.find(b'OK') == -1:
+                    if time.perf_counter() - t > 5:
+                        raise IridiumError(details="Serial Timeout")
+                    raw += self.serial.read(50)
+                # print(raw)
+                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3])))
+            except Exception as e:
+                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(result[3]))) # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         return True
@@ -415,13 +433,12 @@ class Iridium:
                 self.SBD_RB()
                 raw = self.serial.read(50)
                 t = time.perf_counter()
-                while raw.decode("utf-8").find("OK") == -1:
+                while raw.find(b'OK') == -1:
                     if time.perf_counter() - t > 5:
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
-                # print(raw)
-                raw = raw[raw.find(b'SBDRB:') + 6:].split(b'\r\nOK')[0].strip()
-                self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(ls[3])))
+                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
             except Exception as e:
                 self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(
                     ls[3])))  # Append garbled message indicator and msn, args set to exception string to debug
