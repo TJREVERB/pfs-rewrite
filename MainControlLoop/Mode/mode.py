@@ -3,24 +3,27 @@ from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 
 
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
-    def __init__(self, sfr, wait = 40, thresh = 2):
+    @wrap_errors(LogicalError)
+    def __init__(self, sfr, wait=40, thresh=2):
         self.LOWER_THRESHOLD = 6  # Lower battery voltage threshold for switching to CHARGING mode
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
         self.last_iridium_poll_time = 0
-        self.PRIMARY_IRIDIUM_WAIT_TIME = wait # wait time for iridium polling if iridium is main radio (default to 40 seconds)
-                                            # Actual time between read/write will depend on signal availability
-        self.SIGNAL_THRESHOLD = thresh # Lower threshold to read or transmit
+        self.PRIMARY_IRIDIUM_WAIT_TIME = wait  # wait time for iridium polling if iridium is main radio (default to 40
+        # seconds)
+        # Actual time between read/write will depend on signal availability
+        self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
         self.instruct = {
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
             "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off,
+            "All Off": self.__turn_all_off
         }
 
         self.component_to_class = {  # returns class from component name
@@ -30,15 +33,18 @@ class Mode:
             "Antenna Deployer": AntennaDeployer
         }
 
+    @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
         pass
 
+    @wrap_errors(LogicalError)
     def start(self) -> None:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
         pass
 
+    @wrap_errors(LogicalError)
     def check_conditions(self) -> bool:
         """
         Checks whether conditions for mode to continue running are still true.
@@ -47,18 +53,21 @@ class Mode:
         """
         return True
 
+    @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         """
         Updates conditions dict in each mode
         """
         pass
 
+    @wrap_errors(LogicalError)
     def switch_mode(self):
         """
         Returns which mode to switch to
         """
         pass
 
+    @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         """
         Executes one iteration of mode
@@ -67,6 +76,7 @@ class Mode:
         """
         pass
 
+    @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
         """
         Safely terminates current mode.
@@ -79,6 +89,7 @@ class Mode:
         self.sfr.dump()
         pass
 
+    @wrap_errors(LogicalError)
     def read_radio(self) -> None:
         """
         Function for each mode to implement to determine how it will use the specific radios
@@ -86,7 +97,7 @@ class Mode:
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
             # get all messages from iridium, store them in sfr
             try:
                 self.sfr.devices["Iridium"].next_msg()
@@ -98,9 +109,10 @@ class Mode:
             # add aprs messages to sfr
             self.sfr.devices["APRS"].next_msg()
         # commands will be executed in the mode.py's super method for execute_cycle using a command executor
-        
-        #TODO: Update Iridium time
 
+        # TODO: Update Iridium time
+
+    @wrap_errors(LogicalError)
     def transmit_radio(self) -> None:
         """
         Transmit any messages in the transmit queue
@@ -109,24 +121,26 @@ class Mode:
         # If primary radio is iridium and enough time has passed
         if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
-            while len(self.sfr.vars.transmit_buffer) > 0: # attempt to transmit transmit buffer
+                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+            while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
                 packet = self.vars.transmit_buffer.pop(0)
                 if not self.sfr.command_executor.transmit(packet):
                     return False
         # If primary radio is APRS
         if self.sfr.vars.PRIMARY_RADIO == "APRS":
-            while len(self.sfr.vars.transmit_buffer) > 0: # attempt to transmit transmit buffer
+            while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
                 packet = self.vars.transmit_buffer.pop(0)
                 if not self.sfr.command_executor.transmit(packet):
                     return False
         return True
 
+    @wrap_errors(LogicalError)
     def check_time(self) -> None:
         """
         Checks rtc time against iridium time, should be called AFTER all tx/rx functions
         """
 
+    @wrap_errors(LogicalError)
     def systems_check(self) -> list:
         """
         Performs a systems check of components that are on and returns a list of component failures
@@ -142,6 +156,7 @@ class Mode:
                 result.append(device)
         return result
 
+    @wrap_errors(LogicalError)
     def __turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
@@ -153,7 +168,8 @@ class Mode:
             return None
 
         self.sfr.eps.commands["Pin On"](component)  # turns on component
-        self.sfr.devices[component] = self.component_to_class[component](self.sfr)  # registers component as on by setting component status in sfr to object instead of None
+        self.sfr.devices[component] = self.component_to_class[component](
+            self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
             self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
@@ -166,6 +182,7 @@ class Mode:
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
+    @wrap_errors(LogicalError)
     def __turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
@@ -176,7 +193,8 @@ class Mode:
         if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.sfr.devices["Iridium"] is not None: # Read in MT buffer to avoid wiping commands when mode switching
+        if component == "Iridium" and self.sfr.devices[
+            "Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
             try:
                 self.sfr.devices[component].next_msg()
             except Exception as e:
@@ -192,6 +210,7 @@ class Mode:
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
+    @wrap_errors(LogicalError)
     def __turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
@@ -215,6 +234,7 @@ class Mode:
             if not self.sfr.devices[key] and key not in exceptions:  # if device is off and not in exceptions
                 self.__turn_on_component(key)  # turn on device and serial converter if applicable
 
+    @wrap_errors(LogicalError)
     def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
