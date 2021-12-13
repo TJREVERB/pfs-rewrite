@@ -1,7 +1,7 @@
 import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
-from MainControlLoop.lib.exceptions import decorate_all_callables, wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import wrap_errors, AntennaError, LogicalError
 
 
 class AntennaDeployerCommand(Enum):
@@ -76,12 +76,12 @@ class AntennaDeployer():
         AntennaDeployerCommand.GET_UPTIME_4: 2,
     }
 
-    @wrap_errors(LogicalError)
+    @wrap_errors(AntennaError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.bus = SMBus()
-        decorate_all_callables(self, LogicalError)
 
+    @wrap_errors(AntennaError)
     def write(self, command: AntennaDeployerCommand, parameter: int) -> bool or None:
         """
         Wrapper for SMBus write word data
@@ -90,94 +90,73 @@ class AntennaDeployer():
         :return: (bool or None) success
         """
         if type(command) != AntennaDeployerCommand:
-            return
-
-        try:
-            self.bus.open(self.BUS_NUMBER)
-            self.bus.write_word_data(self.PRIMARY_ADDRESS, command.value, parameter)
-            self.bus.close()
-        except:
-            return False
-
+            raise LogicalError(details="Not an AntennaDeployerCommand!")
+        self.bus.open(self.BUS_NUMBER)
+        self.bus.write_word_data(self.PRIMARY_ADDRESS, command.value, parameter)
+        self.bus.close()
         return True
 
-    def read(self, command: AntennaDeployerCommand) -> bytes or None:
+    @wrap_errors(AntennaError)
+    def read(self, command: AntennaDeployerCommand) -> bytes:
         """
         Wrapper for SMBus to read from AntennaDeployer
         :param command: (AntennaDeployerCommand) The antenna deployer command to run
         :return: (ctypes.LP_c_char, bool) buffer, success
         """
         if type(command) != AntennaDeployerCommand:
-            return
-
-        success = self.write(command, 0x00)
-        if not success:
-            return None, False
-
+            raise LogicalError(details="Not an AntennaDeployerCommand!")
+        self.write(command, 0x00)
         time.sleep(0.5)
-        try:
-            i2c_obj = i2c_msg.read(self.PRIMARY_ADDRESS, self.EXPECTED_BYTES[command])
-            self.bus.open(self.BUS_NUMBER)
-            self.bus.i2c_rdwr(i2c_obj)
-            self.bus.close()
-            return i2c_obj.buf, True
-        except:
-            return None, False
+        i2c_obj = i2c_msg.read(self.PRIMARY_ADDRESS, self.EXPECTED_BYTES[command])
+        self.bus.open(self.BUS_NUMBER)
+        self.bus.i2c_rdwr(i2c_obj)
+        self.bus.close()
+        return i2c_obj.buf, True
 
+    @wrap_errors(AntennaError)
     def functional(self):
         """
         :return: (bool) i2c file opened by SMBus
         """
         return self.bus.fd is not None
 
+    @wrap_errors(AntennaError)
     def reset(self):
         """
         Resets the Microcontroller on the ISIS Antenna Deployer
         :return: (bool) no error
         """
-        try:
-            self.bus.open(self.BUS_NUMBER)
-            self.write(AntennaDeployerCommand.SYSTEM_RESET, 0x00)
-            self.bus.close()
-            return True
-        except:
-            return False
+        self.bus.open(self.BUS_NUMBER)
+        self.write(AntennaDeployerCommand.SYSTEM_RESET, 0x00)
+        self.bus.close()
+        return True
 
+    @wrap_errors(AntennaError)
     def disable(self):
         """
         Disarms the ISIS Antenna Deployer
         """
-        try:
-            self.bus.open(self.BUS_NUMBER)
-            self.write(AntennaDeployerCommand.DISARM_ANTS, 0x00)
-            self.bus.close()
-            return True
-        except:
-            return False
+        self.bus.open(self.BUS_NUMBER)
+        self.write(AntennaDeployerCommand.DISARM_ANTS, 0x00)
+        self.bus.close()
+        return True
 
+    @wrap_errors(AntennaError)
     def enable(self):
         """
         Arms the ISIS Antenna Deployer
         """
-        try:
-            self.bus.open(self.BUS_NUMBER)
-            self.write(AntennaDeployerCommand.ARM_ANTS, 0x00)
-            self.bus.close()
-            return True
-        except:
-            return False
+        self.bus.open(self.BUS_NUMBER)
+        self.write(AntennaDeployerCommand.ARM_ANTS, 0x00)
+        self.bus.close()
+        return True
     
+    @wrap_errors(AntennaError)
     def deploy(self) -> bool:
-        success = self.enable()
-        if not success:
-            return False
-
-        success = self.write(AntennaDeployerCommand.DEPLOY_1, 0x0A)
-        success &= self.write(AntennaDeployerCommand.DEPLOY_2, 0x0A)
-        success &= self.write(AntennaDeployerCommand.DEPLOY_3, 0x0A)
-        success &= self.write(AntennaDeployerCommand.DEPLOY_4, 0x0A)
-
-        if not success:
-            return False
+        self.enable()
+        self.write(AntennaDeployerCommand.DEPLOY_1, 0x0A)
+        self.write(AntennaDeployerCommand.DEPLOY_2, 0x0A)
+        self.write(AntennaDeployerCommand.DEPLOY_3, 0x0A)
+        self.write(AntennaDeployerCommand.DEPLOY_4, 0x0A)
         self.sfr.vars.ANTENNA_DEPLOYED = True
         return True

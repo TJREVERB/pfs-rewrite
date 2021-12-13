@@ -8,6 +8,11 @@ class CustomException(Exception):
             return repr(self.exception) + ": " + self.details
 
 
+class AntennaError(CustomException):
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
+
+
 class APRSError(CustomException):
     def __repr__(self):
         return "APRSError: " + super().__repr__()
