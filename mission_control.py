@@ -8,29 +8,30 @@ class MissionControl:
     def __init__(self):
         self.mcl = MainControlLoop()
         self.sfr = self.mcl.sfr
+        self.error_dict = {
+            APRSError: self.aprs_troubleshoot,
+            IridiumError: self.iridium_troubleshoot,
+            EPSError: self.eps_troubleshoot,
+            RTCError: self.rtc_troubleshoot,
+            IMUError: self.imu_troubleshoot,
+            BatteryError: self.battery_troubleshoot
+        }
 
     def main(self):
+        self.mcl.start()
         while True:  # Run forever
             try:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
-                except CustomException as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
-                    if type(e.exception) == KeyboardInterrupt:  # If we ended the program
-                        raise e.exception  # Raise up to next try-except block
-                    elif type(e) == APRSError:
-                        self.aprs_troubleshoot(e)
-                    elif type(e) == IridiumError:
-                        self.iridium_troubleshoot(e)
-                    elif type(e) == EPSError:
-                        self.eps_troubleshoot(e)
-                    elif type(e) == RTCError:
-                        self.rtc_troubleshoot(e)
-                    elif type(e) == IMUError:
-                        self.imu_troubleshoot(e)
-                    elif type(e) == BatteryError:
-                        self.battery_troubleshoot(e)
+                except Exception as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
+                    if e == KeyboardInterrupt:  # If we ended the program
+                        raise  # Raise up to next try-except block
+                    elif type(e) in self.error_dict:
+                        self.error_dict[type(e)](e)
                     elif type(e) == LogicalError:
-                        raise e  # We shouldn't troubleshoot a problem with high level code
+                        raise  # We shouldn't troubleshoot a problem with high level code
+                    else:  # built in error
+                        raise
                     continue  # Move on with MCL if troubleshooting solved problem (no additional exception)
                 # If a leak happens (impossible), exception will travel up to next try-except block (safe mode)
             except Exception as e:  # If another exception happens during troubleshooting (troubleshooting fails)
@@ -60,10 +61,46 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def turn_on(self, component):
-        pass
+        if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
+            return None
+        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
+            return None
+
+        self.sfr.eps.commands["Pin On"](component)  # turns on component
+        self.sfr.devices[component] = self.sfr.component_to_class[component](
+            self.sfr)  # registers component as on by setting component status in sfr to object instead of None
+        if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
+            serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
+            self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
+            self.sfr.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
+
+        if component == "APRS":
+            self.sfr.devices[component].disable_digi()
+        if component == "IMU":
+            self.sfr.devices[component].start()
+
+        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     def turn_off(self, component):
-        pass
+        if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
+            return None
+        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
+            return None
+
+        if component == "Iridium" and self.sfr.devices[
+            "Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
+            try:
+                self.sfr.devices[component].next_msg()
+            except Exception as e:
+                print(e)
+
+        self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
+        self.sfr.eps.commands["Pin Off"](component)  # turns component off
+        if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
+            # Same suggestion as for __turn_on_component
+            serial_converter = self.sfr.component_to_serial[component]  # get serial converter name for component
+            self.sfr.eps.commands["Pin Off"](serial_converter)  # turn off serial converter
+            self.sfr.serial_converters[serial_converter] = False  # sets serial converter status to False (off)
 
     def testing_mode(self, e: Exception):
         """
@@ -88,10 +125,10 @@ class MissionControl:
         """
         troubleshooting_completed = False
         try:
-            self.sfr.instruct["Pin On"]("Iridium")
-            self.sfr.iridium.transmit(repr(e))
-        except:
-            print("pfs team took the L")
+            self.sfr.turn_on(self.sfr.vars.PRIMARY_RADIO)
+            self.sfr.devies["Iridium"].transmit(repr(e))
+        except Exception as e:
+
         while not troubleshooting_completed:
             try:
                 if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:

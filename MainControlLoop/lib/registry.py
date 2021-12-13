@@ -15,6 +15,10 @@ from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.Drivers.aprs import APRS
+from MainControlLoop.Drivers.iridium import Iridium
+from MainControlLoop.Drivers.bno055 import IMU
+from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 
 
 class StateFieldRegistry:
@@ -40,6 +44,13 @@ class StateFieldRegistry:
         "SPI-UART",  # APRS Serial Converter
         "USB-UART"
     ]
+
+    component_to_class = {  # returns class from component name
+        "Iridium": Iridium,
+        "APRS": APRS,
+        "IMU": IMU,
+        "Antenna Deployer": AntennaDeployer
+    }
 
     @wrap_errors(LogicalError)
     def __init__(self):
