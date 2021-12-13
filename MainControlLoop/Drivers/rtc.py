@@ -123,7 +123,7 @@ class RTC:
     #@wrap_errors(RTCError)
     @property
     def hours(self):
-        self.bus.write_byte(self.addr, RTC.RCT_HOURS)
+        self.bus.write_byte(self.addr, RTC.RTC_HOURS)
         raw = self.bus.read_byte(self.addr)
         if (raw >> 6) & 1:  # 12 hour
             return 12 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
