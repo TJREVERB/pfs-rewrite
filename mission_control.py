@@ -1,3 +1,4 @@
+import os
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
@@ -128,7 +129,7 @@ class MissionControl:
             self.sfr.turn_on(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.devies["Iridium"].transmit(repr(e))
         except Exception as e:
-
+            os.system("sudo reboot")  # Pfs team took an L
         while not troubleshooting_completed:
             try:
                 if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
@@ -142,7 +143,7 @@ class MissionControl:
                     else:
                         exec(f"{messages.command_string}")
             except:  # add specific errors that would pertain to iridium not working
-                print("Pfs team took an L")  # not actually this but 12am humor
+                os.system("sudo reboot")
 
     def charge(self):
         pass
