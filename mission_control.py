@@ -15,8 +15,8 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except CustomException as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
-                    if type(e.exception) == KeyboardInterrupt:
-                        raise e.exception
+                    if type(e.exception) == KeyboardInterrupt:  # If we ended the program
+                        raise e.exception  # Raise up to next try-except block
                     elif type(e) == APRSError:
                         self.aprs_troubleshoot(e)
                     elif type(e) == IridiumError:
@@ -77,6 +77,7 @@ class MissionControl:
         print(self.sfr.vars.to_dict())
         print("Exception:")
         print(repr(e))
+        exit(1)
 
     def safe_mode(self, e: Exception):
         """
