@@ -10,7 +10,7 @@ class Startup(Mode):
         """
         super().__init__(sfr)
         # CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 
-        self.THIRTY_MINUTES = 1800  # 1800 seconds in 30 minutes
+        self.THIRTY_MINUTES = 15  # 1800 seconds in 30 minutes
         self.BEACON_WAIT_TIME = 120  # 2 minutes
 
         self.last_contact_attempt = 0
@@ -39,6 +39,7 @@ class Startup(Mode):
 
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
+        print(self.conditions["Low Battery"])
         if self.conditions["Low Battery"]:  # Execute cycle low battery
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
