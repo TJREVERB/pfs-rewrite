@@ -8,70 +8,44 @@ class CustomException(Exception):
             return repr(self.exception) + ": " + self.details
 
 
-class AntennaError(CustomException):
-    def __repr__(self):
-        return "AntennaError: " + super().__repr__()
+class AntennaError(CustomException): pass
 
 
-class APRSError(CustomException):
-    def __repr__(self):
-        return "APRSError: " + super().__repr__()
+class APRSError(CustomException): pass
 
 
-class IridiumError(CustomException):
-    def __repr__(self):
-        return "IridiumError: " + super().__repr__()
+class IridiumError(CustomException): pass
 
 
-class SignalStrengthException(CustomException):
-    def __repr__(self):
-        return "SignalStrengthException: " + super().__repr__()
+class SignalStrengthException(CustomException): pass
 
 
-class EPSError(CustomException):
-    def __repr__(self):
-        return "EPSError: " + super().__repr__()
+class EPSError(CustomException): pass
 
 
-class RTCError(CustomException):
-    def __repr__(self):
-        return "RTCError: " + super().__repr__()
+class RTCError(CustomException): pass
 
 
-class IMUError(CustomException):
-    def __repr__(self):
-        return "IMUError: " + super().__repr__()
+class IMUError(CustomException): pass
 
 
-class BatteryError(CustomException):
-    def __repr__(self):
-        return "BatteryError: " + super().__repr__()
+class BatteryError(CustomException): pass
 
 
 class CommandExecutionException(CustomException):
     def __init__(self, details, exception: Exception = None):
         super().__init__(exception, details)
 
-    def __repr__(self):
-        return "CommandExecutionException: " + super().__repr__()
-
 
 class InvalidCommandException(CustomException):
     def __init__(self, details, exception: Exception = None):
         super().__init__(exception, details)
 
-    def __repr__(self):
-        return "InvalidCommandException: " + super().__repr__()
+
+class NoSignalException(CustomException): pass
 
 
-class NoSignalException(CustomException):
-    def __repr__(self):
-        return "NoSignalException: " + super().__repr__()
-
-
-class LogicalError(CustomException):
-    def __repr__(self):
-        return "LogicalError: " + super().__repr__()
+class LogicalError(CustomException): pass
 
 
 def wrap_errors(exception: callable) -> callable:
