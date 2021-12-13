@@ -193,7 +193,7 @@ class RTC:
     @wrap_errors(RTCError)
     def year(self):
         self.bus.write_byte(self.addr, RTC.RTC_YEAR)
-        raw = self.bus.read_bytes(self.addr)
+        raw = self.bus.read_byte(self.addr)
         return (raw >> 4) * 10 + (raw & 0x0F)
 
     @year.setter
