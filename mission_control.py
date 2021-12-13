@@ -15,7 +15,8 @@ class MissionControl:
             EPSError: self.eps_troubleshoot,
             RTCError: self.rtc_troubleshoot,
             IMUError: self.imu_troubleshoot,
-            BatteryError: self.battery_troubleshoot
+            BatteryError: self.battery_troubleshoot,
+            AntennaError: self.antenna_troubleshoot
         }
 
     def main(self):
@@ -59,6 +60,9 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def battery_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+    
+    def antenna_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def turn_on(self, component):
