@@ -73,54 +73,54 @@ class RTC:
     FREQ_4_096KHz = (1, 0)
     FREQ_8_192KHZ = (1, 1)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     def __init__(self):
         # DS3232 I2C Address
         self.addr = 0x68
-        self.bus = SMBus(0)
+        self.bus = SMBus(1)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def OSF(self):
         self.bus.write_byte(self.addr, RTC.RTC_STATUS)
         raw = self.bus.read_byte(self.addr)
         return (raw >> RTC.MASK_OSF) & 1
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     def clr_OSF(self):  # Clear oscillator stop flag
         self.bus.write_byte(self.addr, RTC.RTC_STATUS)
         raw = self.bus.read_byte(self.addr)
         self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, raw | (1 << RTC.MASK_OSF))
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def seconds(self):
         self.bus.write_byte(self.addr, RTC.RTC_SECONDS)
         raw = self.bus.read_byte(self.addr)
         return (10 * ((raw >> 4) & 0x07)) + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @seconds.setter
     def seconds(self, new_seconds):
         b = ((new_seconds // 10) << 4) | (new_seconds % 10)
         self.bus.write_byte_data(self.addr, RTC.RTC_SECONDS, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def minutes(self):
         self.bus.write_byte(self.addr, RTC.RTC_MINUTES)
         raw = self.bus.read_byte(self.addr)
         return (10 * ((raw >> 4) & 0x07)) + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @minutes.setter
     def minutes(self, new_minutes):
         b = ((new_minutes // 10) << 4) | (new_minutes % 10)
         self.bus.write_byte_data(self.addr, RTC.RTC_MINUTES, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def hours(self):
         self.bus.write_byte(self.addr, RTC.RCT_HOURS)
@@ -130,7 +130,7 @@ class RTC:
         else:  # 24 hour
             return 20 * ((raw >> 5) & 1) + 10 * ((raw >> 4) & 1) + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @hours.setter
     def hours(self, new_hours, mode=0):
         """
@@ -144,13 +144,13 @@ class RTC:
         self.bus.write_byte_data(self.addr, RTC.RTC_HOURS, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def day(self):
         self.bus.write_byte(self.addr, RTC.RTC_DAY)
         return self.bus.read_byte(self.addr)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @day.setter
     def day(self, new_day):
         """
@@ -159,28 +159,28 @@ class RTC:
         self.bus.write_byte_data(self.addr, RTC.RTC_DAY, new_day)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def date(self):
         self.bus.write_byte(self.addr, RTC.RTC_DATE)
         raw = self.bus.read_byte(self.addr)
         return (raw >> 4) * 10 + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @date.setter
     def date(self, new_date):
         b = (new_date // 10 << 4) | (new_date % 10)
         self.bus.write_byte_data(self.addr, RTC.RTC_DATE, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def month(self):
         self.bus.write_byte(self.addr, RTC.RTC_MONTH)
         raw = self.bus.read_byte(self.addr) & (0x1F)  # Ignore century bit
         return (raw >> 4) * 10 + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @month.setter
     def month(self, new_month):
         self.bus.write_byte(self.addr, RTC.RTC_MONTH)
@@ -189,21 +189,21 @@ class RTC:
         self.bus.write_byte_data(self.addr, RTC.RTC_MONTH, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @property
     def year(self):
         self.bus.write_byte(self.addr, RTC.RTC_YEAR)
         raw = self.bus.read_bytes(self.addr)
         return (raw >> 4) * 10 + (raw & 0x0F)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     @year.setter
     def year(self, new_year):
         b = (new_year // 10 << 4) | (new_year % 10)
         self.bus.write_byte_data(self.addr, RTC.RTC_YEAR, b)
         self.clr_OSF()
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     def square_wave(self, freq):
         """
         Enables or disables square wave output
@@ -222,7 +222,7 @@ class RTC:
         ls[1] = (ls[1] & ~(1 << RTC.MASK_RS1)) | (freq[1] << RTC.MASK_RS1)  # Set RS1 bit
         self.bus.write_i2c_block_data(self.addr, RTC.RTC_CONTROL, ls)
 
-    @wrap_errors(RTCError)
+    #@wrap_errors(RTCError)
     def temperature(self):
         """
         Reads and returns temperature in C
