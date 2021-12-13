@@ -189,6 +189,7 @@ class RTC:
         self.bus.write_byte_data(self.addr, RTC.RTC_MONTH, b)
         self.clr_OSF()
     
+    #NOTE: YEAR IS LAST TWO DIGITS OF YEAR ONLY i.e. 21
     @property
     @wrap_errors(RTCError)
     def year(self):
