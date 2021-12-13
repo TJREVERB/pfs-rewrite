@@ -26,12 +26,7 @@ class Mode:
             "All Off": self.__turn_all_off
         }
 
-        self.component_to_class = {  # returns class from component name
-            "Iridium": Iridium,
-            "APRS": APRS,
-            "IMU": IMU,
-            "Antenna Deployer": AntennaDeployer
-        }
+
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
@@ -168,7 +163,7 @@ class Mode:
             return None
 
         self.sfr.eps.commands["Pin On"](component)  # turns on component
-        self.sfr.devices[component] = self.component_to_class[component](
+        self.sfr.devices[component] = self.sfr.component_to_class[component](
             self.sfr)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
