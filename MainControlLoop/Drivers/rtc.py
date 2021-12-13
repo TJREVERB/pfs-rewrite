@@ -90,7 +90,7 @@ class RTC:
     def clr_OSF(self):  # Clear oscillator stop flag
         self.bus.write_byte(self.addr, RTC.RTC_STATUS)
         raw = self.bus.read_byte(self.addr)
-        self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, raw | ~(1 << RTC.MASK_OSF))
+        self.bus.write_byte_data(self.addr, RTC.RTC_STATUS, raw & ~(1 << RTC.MASK_OSF))
 
     @property
     @wrap_errors(RTCError)
