@@ -21,8 +21,10 @@ import time
 import numpy as np
 from math import atan
 from math import degrees
+from MainControlLoop.lib.exceptions import wrap_errors, IMUError
 
 
+@wrap_errors(IMUError)
 def _twos_comp_to_signed(val, bits):
     # Convert an unsigned integer in 2's compliment form of the specified bit
     # length to its signed integer value and return it.
@@ -31,6 +33,7 @@ def _twos_comp_to_signed(val, bits):
     return val
 
 
+@wrap_errors(IMUError)
 def _signed_to_twos_comp(val, bits):
     # Convert a signed integer to unsigned int in 2's complement form
     # bits is number of bits, with sign bit
@@ -171,15 +174,16 @@ class IMU:
     _RADIUS_ACCEL_REGISTER = (0x67, 0x68)
     _RADIUS_MAGNET_REGISTER = (0x69, 0x6A)
 
+    @wrap_errors(IMUError)
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
-        
-    
+
+    @wrap_errors(IMUError)
     def start(self):
         # Start the IMU; MUST BE RUN BEFORE TRYING TO READ ANYTHING
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:
-            raise RuntimeError("bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
+            raise IMUError(details="bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
         self._reset()
         self._write_register(IMU._POWER_REGISTER, IMU._POWER_NORMAL)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
@@ -191,6 +195,7 @@ class IMU:
         self.mode = IMU.NDOF_MODE
         time.sleep(0.01)
 
+    @wrap_errors(IMUError)
     def _reset(self):
         """Resets the sensor to default settings."""
         self.mode = IMU.CONFIG_MODE
@@ -201,6 +206,7 @@ class IMU:
         # wait for the chip to reset (650 ms typ.)
         time.sleep(0.7)
 
+    @wrap_errors(IMUError)
     @property
     def mode(self):
         """
@@ -311,6 +317,7 @@ class IMU:
         """
         return self._read_register(IMU._MODE_REGISTER) & 0b00001111  # Datasheet Table 4-2
 
+    @wrap_errors(IMUError)
     @mode.setter
     def mode(self, new_mode):
         self._write_register(IMU._MODE_REGISTER, IMU.CONFIG_MODE)  # Empirically necessary
@@ -319,6 +326,7 @@ class IMU:
             self._write_register(IMU._MODE_REGISTER, new_mode)
             time.sleep(0.01)  # Table 3.6
 
+    @wrap_errors(IMUError)
     def get_tup_data(self, registers, scale):
         """gets and returns xyz tuple data from corresponding register range, with scale multiplied"""
         raw = []
@@ -328,6 +336,7 @@ class IMU:
             raw.append(_twos_comp_to_signed(lsb + (msb << 8), 16))
         return tuple(np.array(raw) * scale)
 
+    @wrap_errors(IMUError)
     def write_tup_data(self, tup, registers, scale):
         """sets xyz tuple data from register range, dividing by scale"""
         i = 0
@@ -338,6 +347,7 @@ class IMU:
             self._write_register(addr, lsb)
             self._write_register(addr + 1, msb)
 
+    @wrap_errors(IMUError)
     @property
     def calibration_status(self):
         """Tuple containing sys, gyro, accel, and mag calibration data."""
@@ -348,6 +358,7 @@ class IMU:
         mag = calibration_data & 0x03
         return sys, gyro, accel, mag
 
+    @wrap_errors(IMUError)
     @property
     def calibrated(self):
         """Boolean indicating calibration status."""
@@ -355,6 +366,7 @@ class IMU:
         return sys == gyro == accel == mag == 0x03
 
     # Calibration offsets for accelerometer
+    @wrap_errors(IMUError)
     @property
     def offsets_accelerometer(self):
         old_mode = self.mode
@@ -363,6 +375,7 @@ class IMU:
         self.mode = old_mode
         return result
 
+    @wrap_errors(IMUError)
     @offsets_accelerometer.setter
     def offsets_accelerometer(self, new_offsets):
         old_mode = self.mode
@@ -371,6 +384,7 @@ class IMU:
         self.mode = old_mode
 
     # Calibration offsets for the magnetometer
+    @wrap_errors(IMUError)
     @property
     def offsets_magnetometer(self):
         old_mode = self.mode
@@ -379,6 +393,7 @@ class IMU:
         self.mode = old_mode
         return result
 
+    @wrap_errors(IMUError)
     @offsets_magnetometer.setter
     def offsets_magnetometer(self, new_offsets):
         old_mode = self.mode
@@ -387,6 +402,7 @@ class IMU:
         self.mode = old_mode
 
     # Calibration offsets for the gyroscope
+    @wrap_errors(IMUError)
     @property
     def offsets_gyroscope(self):
         old_mode = self.mode
@@ -395,6 +411,7 @@ class IMU:
         self.mode = old_mode
         return result
 
+    @wrap_errors(IMUError)
     @offsets_gyroscope.setter
     def offsets_gyroscope(self, new_offsets):
         old_mode = self.mode
@@ -403,6 +420,7 @@ class IMU:
         self.mode = old_mode
 
     # Radius for accelerometer (cm?)
+    @wrap_errors(IMUError)
     @property
     def radius_accelerometer(self):
         old_mode = self.mode
@@ -413,6 +431,7 @@ class IMU:
         data = _twos_comp_to_signed(lsb + (msb << 8), 16)
         return data
 
+    @wrap_errors(IMUError)
     @radius_accelerometer.setter
     def radius_accelerometer(self, new_rad):
         old_mode = self.mode
@@ -425,6 +444,7 @@ class IMU:
         self.mode = old_mode
 
     # Radius for magnetometer (cm?)
+    @wrap_errors(IMUError)
     @property
     def radius_magnetometer(self):
         old_mode = self.mode
@@ -435,6 +455,7 @@ class IMU:
         data = _twos_comp_to_signed(lsb + (msb << 8), 16)
         return data
 
+    @wrap_errors(IMUError)
     @radius_magnetometer.setter
     def radius_magnetometer(self, new_rad):
         old_mode = self.mode
@@ -446,6 +467,7 @@ class IMU:
         self._write_register(IMU._RADIUS_MAGNET_REGISTER[1], msb)
         self.mode = old_mode
 
+    @wrap_errors(IMUError)
     @property
     def external_crystal(self):
         """Switches the use of external crystal on or off."""
@@ -456,6 +478,7 @@ class IMU:
         self.mode = last_mode
         return value == 0x80
 
+    @wrap_errors(IMUError)
     @external_crystal.setter
     def use_external_crystal(self, value):
         last_mode = self.mode
@@ -465,16 +488,19 @@ class IMU:
         self.mode = last_mode
         time.sleep(0.01)
 
+    @wrap_errors(IMUError)
     @property
     def temperature(self):
         """Measures the temperature of the chip in degrees Celsius."""
         return self._temperature
 
+    @wrap_errors(IMUError)
     @property
     def _temperature(self):
         # return _twos_comp_to_signed(self._read_register(IMU.TEMP_REGISTER), 8)
         return self._read_register(IMU.TEMP_REGISTER)
 
+    @wrap_errors(IMUError)
     @property
     def acceleration(self):
         """Gives the raw accelerometer readings, in m/s.
@@ -484,10 +510,12 @@ class IMU:
             return self._acceleration
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _acceleration(self):
         return self.get_tup_data(IMU.ACCEL_REGISTER, IMU.ACCEL_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def magnetic(self):
         """Gives the raw magnetometer readings in microteslas.
@@ -497,10 +525,12 @@ class IMU:
             return self._magnetic
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _magnetic(self):
         return self.get_tup_data(IMU.MAG_REGISTER, IMU.MAG_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def gyro(self):
         """Gives the raw gyroscope reading in radians per second.
@@ -510,10 +540,12 @@ class IMU:
             return self._gyro
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _gyro(self):
         return self.get_tup_data(IMU.GYRO_REGISTER, IMU.GYRO_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def euler(self):
         """Gives the calculated orientation angles, in degrees.
@@ -523,10 +555,12 @@ class IMU:
             return self._euler
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _euler(self):
         return self.get_tup_data(IMU.EULER_REGISTER, IMU.EULER_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def quaternion(self):
         """Gives the calculated orientation as a quaternion.
@@ -536,10 +570,12 @@ class IMU:
             return self._quaternion
         return (None, None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _quaternion(self):
         return self.get_tup_data(IMU.QUATERNION_REGISTER, IMU.QUATERNION_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def linear_acceleration(self):
         """Returns the linear acceleration, without gravity, in m/s.
@@ -549,10 +585,12 @@ class IMU:
             return self._linear_acceleration
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _linear_acceleration(self):
         return self.get_tup_data(IMU.LIA_REGISTER, IMU.LIA_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def gravity(self):
         """Returns the gravity vector, without acceleration in m/s.
@@ -562,10 +600,12 @@ class IMU:
             return self._gravity
         return (None, None, None)
 
+    @wrap_errors(IMUError)
     @property
     def _gravity(self):
         return self.get_tup_data(IMU.GRAV_REGISTER, IMU.GRAV_SCALE)
 
+    @wrap_errors(IMUError)
     @property
     def accel_range(self):
         """Switch the accelerometer range and return the new range. Default value: +/- 4g
@@ -576,6 +616,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00000011 & value
 
+    @wrap_errors(IMUError)
     @accel_range.setter
     def accel_range(self, rng=ACCEL_4G):
         self._write_register(IMU._PAGE_REGISTER, 0x01)
@@ -584,6 +625,7 @@ class IMU:
         self._write_register(IMU._ACCEL_CONFIG_REGISTER, masked_value | rng)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def accel_bandwidth(self):
         """Switch the accelerometer bandwidth and return the new bandwidth. Default value: 62.5 Hz
@@ -594,6 +636,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00011100 & value
 
+    @wrap_errors(IMUError)
     @accel_bandwidth.setter
     def accel_bandwidth(self, bandwidth=ACCEL_62_5HZ):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -604,6 +647,7 @@ class IMU:
         self._write_register(IMU._ACCEL_CONFIG_REGISTER, masked_value | bandwidth)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def accel_mode(self):
         """Switch the accelerometer mode and return the new mode. Default value: Normal
@@ -614,6 +658,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b11100000 & value
 
+    @wrap_errors(IMUError)
     @accel_mode.setter
     def accel_mode(self, mode=ACCEL_NORMAL_MODE):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -624,6 +669,7 @@ class IMU:
         self._write_register(IMU._ACCEL_CONFIG_REGISTER, masked_value | mode)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def gyro_range(self):
         """Switch the gyroscope range and return the new range. Default value: 2000 dps
@@ -634,6 +680,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00000111 & value
 
+    @wrap_errors(IMUError)
     @gyro_range.setter
     def gyro_range(self, rng=GYRO_2000_DPS):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -644,6 +691,7 @@ class IMU:
         self._write_register(IMU._GYRO_CONFIG_0_REGISTER, masked_value | rng)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def gyro_bandwidth(self):
         """Switch the gyroscope bandwidth and return the new bandwidth. Default value: 32 Hz
@@ -654,6 +702,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00111000 & value
 
+    @wrap_errors(IMUError)
     @gyro_bandwidth.setter
     def gyro_bandwidth(self, bandwidth=GYRO_32HZ):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -664,6 +713,7 @@ class IMU:
         self._write_register(IMU._GYRO_CONFIG_0_REGISTER, masked_value | bandwidth)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def gyro_mode(self):
         """Switch the gyroscope mode and return the new mode. Default value: Normal
@@ -674,6 +724,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00000111 & value
 
+    @wrap_errors(IMUError)
     @gyro_mode.setter
     def gyro_mode(self, mode=GYRO_NORMAL_MODE):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -684,6 +735,7 @@ class IMU:
         self._write_register(IMU._GYRO_CONFIG_1_REGISTER, masked_value | mode)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def magnet_rate(self):
         """Switch the magnetometer data output rate and return the new rate. Default value: 20Hz
@@ -694,6 +746,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00000111 & value
 
+    @wrap_errors(IMUError)
     @magnet_rate.setter
     def magnet_rate(self, rate=MAGNET_20HZ):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -704,6 +757,7 @@ class IMU:
         self._write_register(IMU._MAGNET_CONFIG_REGISTER, masked_value | rate)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def magnet_operation_mode(self):
         """Switch the magnetometer operation mode and return the new mode. Default value: Regular
@@ -714,6 +768,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b00011000 & value
 
+    @wrap_errors(IMUError)
     @magnet_operation_mode.setter
     def magnet_operation_mode(self, mode=MAGNET_REGULAR_MODE):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -724,6 +779,7 @@ class IMU:
         self._write_register(IMU._MAGNET_CONFIG_REGISTER, masked_value | mode)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     @property
     def magnet_mode(self):
         """Switch the magnetometer power mode and return the new mode. Default value: Forced
@@ -734,6 +790,7 @@ class IMU:
         self._write_register(IMU._PAGE_REGISTER, 0x00)
         return 0b01100000 & value
 
+    @wrap_errors(IMUError)
     @magnet_mode.setter
     def magnet_mode(self, mode=MAGNET_FORCEMODE_MODE):
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
@@ -744,12 +801,15 @@ class IMU:
         self._write_register(IMU._MAGNET_CONFIG_REGISTER, masked_value | mode)
         self._write_register(IMU._PAGE_REGISTER, 0x00)
 
+    @wrap_errors(IMUError)
     def _write_register(self, register, value):
         raise NotImplementedError("Must be implemented.")
 
+    @wrap_errors(IMUError)
     def _read_register(self, register):
         raise NotImplementedError("Must be implemented.")
 
+    @wrap_errors(IMUError)
     @property
     def axis_remap(self):
         """Return a tuple with the axis remap register values.
@@ -782,6 +842,7 @@ class IMU:
         # Return the results as a tuple of all 3 values.
         return (x, y, z, x_sign, y_sign, z_sign)
 
+    @wrap_errors(IMUError)
     @axis_remap.setter
     def axis_remap(self, remap):
         """Pass a tuple consisting of x, y, z, x_sign, y-sign, and z_sign.
@@ -816,6 +877,7 @@ class IMU:
         # Go back to normal operation mode.
         self._write_register(IMU._MODE_REGISTER, current_mode)
 
+    @wrap_errors(IMUError)
     def getTumble(self):
         """
         Returns tumble taken from gyro and magnetometer, in degrees/s
@@ -846,12 +908,14 @@ class IMU_I2C(IMU):
     Driver for the BNO055 9DOF IMU sensor via I2C.
     """
 
+    @wrap_errors(IMUError)
     def __init__(self, state_field_registry=None, addr=0x28):
         self.buffer = bytearray(2)
         self.address = addr
         self.bus = SMBus(1)
         super().__init__(state_field_registry)
 
+    @wrap_errors(IMUError)
     def _write_register(self, register, value):
         self.buffer[0] = register
         self.buffer[1] = value
@@ -859,6 +923,7 @@ class IMU_I2C(IMU):
         time.sleep(.02)
         return result
 
+    @wrap_errors(IMUError)
     def _read_register(self, register):
         self.buffer[0] = register
         self.bus.write_byte(self.address, self.buffer[0])

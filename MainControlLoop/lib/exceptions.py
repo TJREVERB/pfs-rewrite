@@ -1,8 +1,102 @@
-#Error means non-critical error (i.e. wrong input for commands)
-#Exception means critical error (i.e. antenna not working, failures, etc)
+class CustomException(Exception):
+    def __init__(self, exception: Exception = None, details: str = None):
+        self.exception = exception
+        self.details = details
 
-class InvalidCommandInputError(Exception):
-    pass
+    def __repr__(self):
+        if self.exception is not None:
+            return repr(self.exception) + ": " + self.details
 
-class RedundantCommandInputError(Exception):
-    pass
+
+class APRSError(CustomException):
+    def __repr__(self):
+        return "APRSError: " + super().__repr__()
+
+
+class IridiumError(CustomException):
+    def __repr__(self):
+        return "IridiumError: " + super().__repr__()
+
+
+class SignalStrengthException(CustomException):
+    def __repr__(self):
+        return "SignalStrengthException: " + super().__repr__()
+
+
+class EPSError(CustomException):
+    def __repr__(self):
+        return "EPSError: " + super().__repr__()
+
+
+class RTCError(CustomException):
+    def __repr__(self):
+        return "RTCError: " + super().__repr__()
+
+
+class IMUError(CustomException):
+    def __repr__(self):
+        return "IMUError: " + super().__repr__()
+
+
+class BatteryError(CustomException):
+    def __repr__(self):
+        return "BatteryError: " + super().__repr__()
+
+
+class CommandExecutionException(CustomException):
+    def __init__(self, details, exception: Exception = None):
+        super().__init__(exception, details)
+
+    def __repr__(self):
+        return "CommandExecutionException: " + super().__repr__()
+
+
+class InvalidCommandException(CustomException):
+    def __init__(self, details, exception: Exception = None):
+        super().__init__(exception, details)
+
+    def __repr__(self):
+        return "InvalidCommandException: " + super().__repr__()
+
+
+class NoSignalException(CustomException):
+    def __repr__(self):
+        return "NoSignalException: " + super().__repr__()
+
+
+class LogicalError(CustomException):
+    def __repr__(self):
+        return "LogicalError: " + super().__repr__()
+
+
+def wrap_errors(exception: callable) -> callable:
+    """
+    Decorator to catch all errors which aren't CustomExceptions
+    And re-raise wrapped by a given CustomException
+    :param exception: exception to wrap errors with
+    :return: (callable) decorator
+    """
+
+    def decorator(func: callable) -> callable:
+        """
+        Dynamically generate a decorator depending on argument
+        :param func: function to wrap
+        :return: (callable) decorated function
+        """
+
+        def wrapper(*args, **kwargs) -> callable:
+            """
+            Attempt to run function
+            If CustomException is caught, raise it up to MissionControl
+            If another exception is caught, wrap it with given exception
+            """
+            try:  # Attempt to run function
+                return func(*args, **kwargs)
+            except CustomException:  # If the exception was already wrapped
+                raise  # Don't wrap again
+            except Exception as e:  # If the exception wasn't wrapped
+                raise exception(e)  # Wrap with given exception
+
+        return wrapper
+
+    return decorator

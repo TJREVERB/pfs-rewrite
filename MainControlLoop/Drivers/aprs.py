@@ -1,7 +1,9 @@
 from serial import Serial
-import time, datetime
+import time
 import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from MainControlLoop.lib.exceptions import wrap_errors, APRSError, LogicalError
+
 
 class APRS:
     """
@@ -11,18 +13,22 @@ class APRS:
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
 
+    @wrap_errors(APRSError)
     def __init__(self, state_field_registry):
         self.sfr = state_field_registry
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
 
+    @wrap_errors(APRSError)
     def __del__(self):
         self.serial.close()
 
+    @wrap_errors(LogicalError)
     def __str__(self):
         return "APRS"
 
+    @wrap_errors(APRSError)
     def enter_firmware_menu(self) -> bool:
         """
         Enter APRS firmware menu
@@ -37,9 +43,9 @@ class APRS:
             time.sleep(1)
             serinput += str(self.serial.read(100))
             print(serinput)
-            attempts+=1
+            attempts += 1
         if attempts > 2:
-            return False
+            raise APRSError()
 
         serinput = ""
         attempts = 0
@@ -54,9 +60,10 @@ class APRS:
             print(serinput)
             attempts += 1
         if attempts > 2:
-            return False
+            raise APRSError()
         return True
-    
+
+    @wrap_errors(APRSError)
     def exit_firmware_menu(self) -> bool:
         """
         Exit APRS firmware menu
@@ -68,9 +75,10 @@ class APRS:
         time.sleep(.5)
         result = str(self.serial.read(100))
         if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
-            return False
+            raise APRSError()
         return True
 
+    @wrap_errors(APRSError)
     def functional(self) -> bool:
         """
         Checks the state of the serial port (initializing it if needed)
@@ -78,55 +86,39 @@ class APRS:
         :return: (bool) APRS and serial connection are working
         """
         if self.serial is None:
-            try:
-                self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
-            except:
-                raise RuntimeError("Serial port can't be created")
-        if not self.serial.is_open:
-            try:
-                self.serial.open()
-            except:
-                raise RuntimeError("Serial port can't be opened")
-        
-        if not self.enter_firmware_menu():
-            raise RuntimeError("Failed to open firmware menu")
-        
-        if not self.exit_firmware_menu():
-            raise RuntimeError("Failed to exit firmware menu")
-        
+            self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)
+        self.enter_firmware_menu()
+        self.exit_firmware_menu()
         return True
 
-    def enable_digi(self): #TODO: Test these
+    @wrap_errors(APRSError)
+    def enable_digi(self):  # TODO: Test these
         """
         Enables Hardware Digipeating
         """
-        if self.enter_firmware_menu():
-            self.change_setting("BANK", "0")
-            time.sleep(0.1)
-            #self.change_setting("ABAUD", "19200")
-            #time.sleep(0.1)
-            if not self.exit_firmware_menu():
-                raise RuntimeError("Unable to exit firmware menu")
-        else:
-            raise RuntimeError("Unable to enter firmware menu")
+        self.enter_firmware_menu()
+        self.change_setting("BANK", "0")
+        time.sleep(0.1)
+        # self.change_setting("ABAUD", "19200")
+        # time.sleep(0.1)
+        self.exit_firmware_menu()
         return True
 
+    @wrap_errors(APRSError)
     def disable_digi(self):
         """
         Disables Hardware Digipeating
         This should also be run after initialization to set the default bank to 0
         """
-        if self.enter_firmware_menu():
-            self.change_setting("BANK", "1")
-            time.sleep(0.1)
-            #self.change_setting("ABAUD", "19200")
-            #time.sleep(0.1)
-            if not self.exit_firmware_menu():
-                raise RuntimeError("Unable to exit firmware menu")
-        else:
-            raise RuntimeError("Unable to enter firmware menu")
+        self.enter_firmware_menu()
+        self.change_setting("BANK", "1")
+        time.sleep(0.1)
+        # self.change_setting("ABAUD", "19200")
+        # time.sleep(0.1)
+        self.exit_firmware_menu()
         return True
-    
+
+    @wrap_errors(APRSError)
     def request_setting(self, setting) -> str:
         """
         Requests and returns value of given firmware setting. 
@@ -135,11 +127,9 @@ class APRS:
         :return: (str) text that APRS returns
         """
         self.serial.write((setting + "\x0d").encode("utf-8"))
-        try:
-            return self.serial.read(50).decode("utf-8")
-        except:
-            raise RuntimeError("Failed to read setting")
+        return self.serial.read(50).decode("utf-8")
 
+    @wrap_errors(APRSError)
     def change_setting(self, setting, value) -> bool:
         """
         Changes value of given setting
@@ -149,15 +139,14 @@ class APRS:
         :return: (bool) whether process worked
         """
         self.serial.write((setting + " " + str(value) + "\x0d").encode("utf-8"))
-        try:
-            result = self.serial.read(100).decode("utf-8")
-            if result.find("COMMAND NOT FOUND") != -1:
-                raise RuntimeError("No such setting")
-            if result.find("is") == -1 and result.find("was") == -1:
-                raise RuntimeError("Failed to change setting")
-        except:
-            raise RuntimeError("Failed to read setting")
+        result = self.serial.read(100).decode("utf-8")
+        if result.find("COMMAND NOT FOUND") != -1:
+            raise LogicalError(details="No such setting")
+        if result.find("is") == -1 and result.find("was") == -1:
+            raise APRSError(details="Failed to change setting")
+        return True
 
+    @wrap_errors(LogicalError)
     def clear_data_lines(self) -> None:
         """
         Switch off USB bus power, then switch it back on.
@@ -171,6 +160,7 @@ class APRS:
             f.write(str(1))
         time.sleep(5)
 
+    @wrap_errors(APRSError)
     def transmit(self, packet: TransmissionPacket) -> bool:
         """
         Takes a descriptor and data, and transmits
@@ -186,37 +176,31 @@ class APRS:
         ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
         return self.write(str(packet))
 
+    @wrap_errors(APRSError)
     def next_msg(self):
         """
         Reads in any messages, process, and add to queue
         """
         msg = self.read()
-        if msg.find(self.sfr.command_executor.TJ_PREFIX) != -1:
-            prefix = self.sfr.command_executor.TJ_PREFIX
-            processed = msg[msg.find(prefix) + len(prefix):].strip()
-            processed = msg.split(":")
-            processed = processed[:-1] # Ignore anything after last :
+        if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
+            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
-        elif msg.find(self.sfr.command_executor.OUTREACH_PREFIX) != -1:
-            prefix = self.sfr.command_executor.OUTREACH_PREFIX
-            processed = msg[msg.find(prefix) + len(prefix):].strip()
-            processed = msg.split(":")
-            processed = processed[:-1] # Ignore anything after last :
+        elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
 
+    @wrap_errors(APRSError)
     def write(self, message: str) -> bool:
         """
         Writes the message to the APRS radio through the serial port
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
-        try:
-            self.serial.write((message + "\x0d").encode("utf-8"))
-            self.serial.flush()
-            return True
-        except:
-            return False
+        self.serial.write((message + "\x0d").encode("utf-8"))
+        self.serial.flush()
+        return True
 
+    @wrap_errors(APRSError)
     def read(self) -> str:
         """
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
@@ -235,4 +219,3 @@ class APRS:
             if next_byte == '\n'.encode('utf-8'):
                 break
         return output.decode('utf-8')
-        
