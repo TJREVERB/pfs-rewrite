@@ -1,7 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import NoSignalException, wrap_errors, LogicalError
 
 
 class Science(Mode):
@@ -68,10 +68,15 @@ class Science(Mode):
             self.pings_performed += 1 
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
             print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                 self.sfr.devices["Iridium"].RSSI())  # Log Iridium data
-            self.last_ping = time.time()
-            self.pings_performed += 1
+            try:
+                self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
+                                    self.sfr.devices["Iridium"].RSSI())  # Log Iridium data
+            except NoSignalException:
+                pass  # If there's no signal, wait for DATAPOINT_SPACING
+            else:  # If data was successfully recorded, increase pings performed
+                self.pings_performed += 1
+            finally:  # Always update last_ping time to prevent spamming pings
+                self.last_ping = time.time()
 
     @wrap_errors(LogicalError)
     def read_radio(self):
