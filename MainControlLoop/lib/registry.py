@@ -168,18 +168,18 @@ class StateFieldRegistry:
                 fields = pickle.load(f)
             # If all variable names are the same and all types of values are the same
             # Checks if log is valid and up-to-date
-            print(list(fields.to_dict().keys()))
-            print(list(defaults.to_dict().keys()))
-            if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
-                print("Loading sfr from log...")
-            else:
-                print("Invalid log, loading default sfr...")
-                fields = defaults
+            loaded_keys = list(fields.to_dict().keys())
+            default_keys = list(defaults.to_dict().keys())
+            if len(loaded_keys) == len(default_keys):
+                if all([loaded_keys[i] == default_keys[i] for i in default_keys]):
+                    print("Loading sfr from log...")
+                    return fields
+            print("Invalid log, loading default sfr...")
+            return defaults
         except Exception as e:
             print("Unknown error, loading default sfr...")
             print(e)
-            fields = defaults
-        return fields
+            return defaults
 
     @wrap_errors(LogicalError)
     def dump(self) -> None:
