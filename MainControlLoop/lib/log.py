@@ -54,7 +54,7 @@ class Logger:
         Integrate charge in Joules
         """
         # Log total power, store values into variables
-        self.log_pwr((pdms_on := self.sfr.eps.power_pdms_on())[1], self.sfr.eps.bus_power(), pdms_on[0])
+        self.log_pwr(self.sfr.eps.bus_power(), (pdms_on := self.sfr.eps.power_pdms_on())[0], pdms_on[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
