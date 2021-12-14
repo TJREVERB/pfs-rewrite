@@ -261,7 +261,10 @@ class Iridium:
             for n in data:
                 # convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
-                exp = int(math.log10(abs(n)))
+                if n != 0:
+                    exp = int(math.log10(abs(n)))
+                else:
+                    exp = 0
                 if exp < 0:
                     exp = abs(exp) + 1
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
@@ -320,7 +323,8 @@ class Iridium:
             if coef & (1 << 18) == 1:  # convert twos comp
                 coef &= 0x3ffff  # truncate first bit
                 coef -= (1 << 18)
-            coef /= 10 ** int(math.log10(abs(coef)))
+            if coef != 0:
+                coef /= 10 ** int(math.log10(abs(coef)))
             args.append(coef * 10 ** exp)
         return (decoded, args)
 
