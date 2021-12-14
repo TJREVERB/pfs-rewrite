@@ -23,7 +23,7 @@ class Logger:
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
         with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(str(t) + "," + ",".join(pdm_states) + "," + ",".join(pwr) + "\n")
+            f.write(str(t) + "," + str(buspower) + ",".join(pdm_states) + "," + ",".join(pwr) + "\n")
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
