@@ -29,7 +29,7 @@ class MissionControl:
             # Include parts of traceback which don't originate from wrapper
             if (line := tb[0].strip(" ")).startswith("File"):
                 if not line.endswith("in wrapper"):
-                    result += tb.pop(0) + "\n" + tb.pop(0)
+                    result += tb.pop(0) + "\n" + tb.pop(0) + "\n"
                 else:
                     tb = tb[2:]
             else:  # If this line isn't part of traceback, add
