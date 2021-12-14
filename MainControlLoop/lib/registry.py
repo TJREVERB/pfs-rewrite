@@ -238,7 +238,7 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
             return self.eps.raw_solar_gen()
-        return df.tolist()[1:]
+        return df.iloc[-1].tolist()[1:]
 
     @wrap_errors(LogicalError)
     def clear_logs(self):
