@@ -14,12 +14,15 @@ class Serial:
 
     @wrap_errors(LogicalError)
     def write(self, data):
-        self.bus.write_i2c_block_data(self.addr, 0, list(data))
+        for d in list(data):
+            self.bus.write_byte_data(self.addr, 0, d)
 
     @wrap_errors(LogicalError)
-    def read(self):
-        self.bus.write_byte(self.addr, 1)
-        return self.bus.read_i2c_block_data(self.addr, 0, 32)  # TODO: REDO
+    def read(self, length=255):
+        result = []
+        for _ in range(length):
+            result.append(self.bus.read_byte_data(self.addr, 1))
+        return result
 
     @wrap_errors(LogicalError)
     def flush(self):
