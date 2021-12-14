@@ -241,6 +241,21 @@ class StateFieldRegistry:
         return df[cols].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
+    def sun_detected(self) -> bool:
+        """
+        Checks if sun is detected
+        :return: (bool)
+        """
+        solar = sum(self.eps.raw_solar_gen())
+        if solar > self.eps.SUN_DETECTION_THRESHOLD: # Threshold of 1W
+            return True
+        if self.battery.telemetry["VBAT"]() > self.eps.V_EOC: # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
+            pcharge = self.battery.charging_power()
+            if pcharge > (-1*self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD): # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
+                return True
+        return False
+
+    @wrap_errors(LogicalError)
     def clear_logs(self):
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
