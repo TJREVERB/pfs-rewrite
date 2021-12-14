@@ -251,7 +251,8 @@ class StateFieldRegistry:
             os.remove(f)
             with open(f, "w") as new:
                 new.write(",".join(list(headers)))
-        os.remove(self.log_path)
+        if os.path.exists(self.log_path):
+            os.remove(self.log_path)
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
