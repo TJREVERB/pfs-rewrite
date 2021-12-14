@@ -228,8 +228,8 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
-        cols = ["buspower"] + [f"0x0{str(hex(i))[2:].upper()}" for i in range(1, 11)]
-        return df.loc[cols].iloc[-1].tolist()
+        cols = ["buspower"] + [f"0x0{str(hex(i))[2:].upper()}_pwr" for i in range(1, 11)]
+        return df[cols].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
