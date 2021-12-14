@@ -22,9 +22,8 @@ class Logger:
         :param t: time to log data, defaults to time method is called
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
-        # Format data into pandas series
-        data = pd.concat([pd.Series([t, buspower]), pd.Series(pdm_states), pd.Series(pwr)])
-        data.to_frame().to_csv(path_or_buf=self.sfr.pwr_log_path, mode="a", header=False)  # Append data to log
+        with open(self.sfr.pwr_log_path, "a") as f:
+            f.write(str(t) + "," + ",".join(pdm_states) + "," + ",".join(pwr) + "\n")
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -34,8 +33,8 @@ class Logger:
         :param t: time to log data, defaults to time method is called
         """
         print("Solar: ", t := time.time(), gen)
-        data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
-        data.to_frame().to_csv(path_or_buf=self.sfr.solar_log_path, mode="a", header=False)  # Append data to log
+        with open(self.sfr.solar_log_path, "a") as f:
+            f.write(str(t) + "," + ",".join(gen) + "\n")
 
     @wrap_errors(LogicalError)
     def log_imu(self, tumble: list) -> None: # Probably scuffed
