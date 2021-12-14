@@ -67,6 +67,7 @@ class CommandExecutor:
     def execute(self):
         command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
+            print("Command received: " + command_packet.command_string)
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
