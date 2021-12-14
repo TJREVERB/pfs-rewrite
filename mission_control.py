@@ -1,5 +1,6 @@
 import os
 import traceback
+import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
@@ -49,7 +50,11 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def iridium_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.turn_off("Iridium")
+        time.sleep(1)
+        self.turn_on("Iridium")
+        time.sleep(5)
+        self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
     def eps_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
