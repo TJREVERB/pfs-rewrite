@@ -11,7 +11,8 @@ class Science(Mode):
         self.last_ping = time.time()
         self.pings_performed = 0
         self.DATAPOINT_SPACING = 5  # in seconds, TODO: MAKE 60
-        self.NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
+        # self.NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
+        self.NUMBER_OF_REQUIRED_PINGS = 5  # DEBUG
         self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
         self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
         self.conditions = {
@@ -60,7 +61,7 @@ class Science(Mode):
         self.check_time()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
             print("Transmitting results...")
             # Transmit signal strength variability
             pckt = TransmissionPacket("GSV", [], 0)
