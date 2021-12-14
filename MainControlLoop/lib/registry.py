@@ -107,7 +107,7 @@ class StateFieldRegistry:
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Outreach  # DEBUG!!!
+            self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
