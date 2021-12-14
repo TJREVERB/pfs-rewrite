@@ -27,7 +27,7 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def start(self) -> None:
         super(Science, self).start()
-        if self.sfr.vars["PRIMARY_RADIO"] == "APRS":
+        if self.sfr.vars.PRIMARY_RADIO == "APRS":
             self.instruct["Pin On"]("APRS")
         self.instruct["Pin On"]("Iridium")
         self.instruct["All Off"](exceptions=["APRS", "Iridium"])
