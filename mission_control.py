@@ -33,7 +33,7 @@ class MissionControl:
                 else:
                     tb = tb[2:]
             else:  # If this line isn't part of traceback, add
-                result += tb.pop(0)
+                result += tb.pop(0) + "\n"
         return result
 
     def main(self):
