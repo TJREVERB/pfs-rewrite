@@ -10,7 +10,7 @@ class Science(Mode):
         super().__init__(sfr)
         self.last_ping = time.time()
         self.pings_performed = 0
-        self.DATAPOINT_SPACING = 60  # in seconds
+        self.DATAPOINT_SPACING = 5  # in seconds, TODO: MAKE 60
         self.NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
         self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
         self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
