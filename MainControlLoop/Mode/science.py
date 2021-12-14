@@ -71,7 +71,7 @@ class Science(Mode):
             print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
             try:
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                    self.sfr.devices["Iridium"].RSSI())  # Log Iridium data
+                                    self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
             except NoSignalException:
                 print("No signal strength!")  # If there's no signal, wait for DATAPOINT_SPACING
             else:  # If data was successfully recorded, increase pings performed
