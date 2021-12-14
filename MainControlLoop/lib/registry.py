@@ -228,7 +228,7 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
-        return df[["buspower"] + [f"0x0{str(i)}_pwr" for i in range(1, 10)] + ["0x0A_pwr"]].iloc[-1].tolist()
+        return df.iloc[-1].tolist()[1:]
 
     @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
@@ -238,7 +238,7 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
             return self.eps.raw_solar_gen()
-        return df[["bcr1", "bcr2", "bcr3"]].iloc[-1].tolist()
+        return df.tolist()[1:]
 
     @wrap_errors(LogicalError)
     def clear_logs(self):
