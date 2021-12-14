@@ -45,7 +45,6 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
-        print(self.conditions["Low Battery"])
         if self.conditions["Low Battery"]:  # Execute cycle low battery
             self.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
