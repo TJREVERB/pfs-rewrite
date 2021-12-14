@@ -4,7 +4,7 @@ from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-import datetime
+import datetime, os
 
 
 class Mode:
@@ -138,8 +138,8 @@ class Mode:
             current_datetime = datetime.datetime.utcnow()
             iridium_datetime = self.sfr.devices["Iridium"].processed_time()
             if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-                self.sfr.rtc.updatetime(iridium_datetime)
-                #TODO: FINISH THIS AND IMPLEMENT INTO RTC DRIVER
+                os.system(f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """) # Update system time
+                os.system("""sudo hwclock -w""") # Write to RTC
 
 
     @wrap_errors(LogicalError)

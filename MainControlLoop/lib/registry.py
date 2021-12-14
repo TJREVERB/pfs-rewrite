@@ -17,7 +17,6 @@ from MainControlLoop.lib.log import Logger
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.rtc import RTC
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 
 
@@ -72,7 +71,6 @@ class StateFieldRegistry:
         self.eps = EPS(self)  # EPS never turns off
         self.battery = Battery()
         self.imu = IMU_I2C(self)
-        self.rtc = RTC()
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
