@@ -483,7 +483,7 @@ class Iridium:
         raw = self.NETWORK_TIME()
         if raw.find("OK") == -1:
             raise IridiumError()
-        if raw.find("no network service") == -1:
+        if raw.find("no network service") != -1:
             raise NoSignalException()
         processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
         return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)

@@ -214,4 +214,5 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
+        print(output.decode("utf-8"))
         return output.decode('utf-8')
