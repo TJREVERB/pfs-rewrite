@@ -43,7 +43,8 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
-                    if e == KeyboardInterrupt:  # If we ended the program
+                    # If we ended the program
+                    if type(e) == KeyboardInterrupt or type(e.exception) == KeyboardInterrupt:
                         raise  # Raise up to next try-except block
                     elif type(e) in self.error_dict:
                         self.error_dict[type(e)](e)
