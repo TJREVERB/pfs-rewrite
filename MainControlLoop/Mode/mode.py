@@ -94,10 +94,7 @@ class Mode:
                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
                 and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
             # get all messages from iridium, store them in sfr
-            try:
-                self.sfr.devices["Iridium"].next_msg()
-            except RuntimeError as e:
-                print(e)  # TODO: IMPLEMENT CONTINGENCIES
+            self.sfr.devices["Iridium"].next_msg()
             self.last_iridium_poll_time = time.time()
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
@@ -158,9 +155,9 @@ class Mode:
         :param component: (str) component to turn on
         """
         if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
-            return None
+            return
         if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
-            return None
+            return
 
         self.sfr.eps.commands["Pin On"](component)  # turns on component
         self.sfr.devices[component] = self.sfr.component_to_class[component](

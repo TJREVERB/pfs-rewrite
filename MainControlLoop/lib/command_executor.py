@@ -67,6 +67,7 @@ class CommandExecutor:
     def execute(self):
         command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
+            print("Command received: " + command_packet.command_string)
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -87,6 +88,7 @@ class CommandExecutor:
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
+            print("Command received: " + command_packet.command_string)
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -126,7 +128,7 @@ class CommandExecutor:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
         except NoSignalException as e:
-            print(e)
+            print("No Iridium connectivity, appending to buffer...")
             self.sfr.vars.transmit_buffer.append(packet)
             return False
 
@@ -255,8 +257,6 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        print(self.sfr.recent_gen())
-        print(self.sfr.recent_power())
         self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power())])

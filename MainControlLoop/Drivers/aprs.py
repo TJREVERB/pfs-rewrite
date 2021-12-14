@@ -36,7 +36,7 @@ class APRS:
         """
         serinput = ""
         attempts = 0
-        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 or attempts > 2:
+        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts > 2:
             self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x0d".encode("utf-8"))
@@ -49,7 +49,7 @@ class APRS:
 
         serinput = ""
         attempts = 0
-        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 or attempts > 2:
+        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 and attempts > 2:
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x1b".encode("utf-8"))
@@ -99,8 +99,6 @@ class APRS:
         self.enter_firmware_menu()
         self.change_setting("BANK", "0")
         time.sleep(0.1)
-        # self.change_setting("ABAUD", "19200")
-        # time.sleep(0.1)
         self.exit_firmware_menu()
         return True
 
@@ -113,8 +111,6 @@ class APRS:
         self.enter_firmware_menu()
         self.change_setting("BANK", "1")
         time.sleep(0.1)
-        # self.change_setting("ABAUD", "19200")
-        # time.sleep(0.1)
         self.exit_firmware_menu()
         return True
 
@@ -206,6 +202,7 @@ class APRS:
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
+        print("Read called")
         output = bytes()  # create an output variable
         for loop in range(50):
             try:
@@ -218,4 +215,5 @@ class APRS:
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
+        print(output.decode("utf-8"))
         return output.decode('utf-8')

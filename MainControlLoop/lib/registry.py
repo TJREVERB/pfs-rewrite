@@ -106,7 +106,9 @@ class StateFieldRegistry:
             self.ORBITAL_PERIOD = 90 * 60
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
-            self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
+            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
+            self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
@@ -118,6 +120,7 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
+            self.LAST_STARTUP = 0
 
         @wrap_errors(LogicalError)
         def encode(self):
@@ -129,6 +132,7 @@ class StateFieldRegistry:
                 self.LAST_ECLIPSE_ENTRY,
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
+                self.UPPER_THRESHOLD,
                 list(StateFieldRegistry.modes_list.keys()).index(self.MODE.__name__),
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
@@ -160,21 +164,19 @@ class StateFieldRegistry:
         :return: (Registry) loaded registry
         """
         defaults = self.Registry(self.eps, self.analytics)
+        return defaults  # DEBUG
         try:
             with open(self.log_path, "rb") as f:
                 fields = pickle.load(f)
-            # If all variable names are the same and all types of values are the same
-            # Checks if log is valid and up-to-date
-            if list(fields.to_dict().keys()) != list(defaults.to_dict().keys()):
-                print("Invalid log, loading default sfr...")
-                fields = defaults
-            else:
+            if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
                 print("Loading sfr from log...")
+                return fields
+            print("Invalid log, loading default sfr...")
+            return defaults
         except Exception as e:
             print("Unknown error, loading default sfr...")
             print(e)
-            fields = defaults
-        return fields
+            return defaults
 
     @wrap_errors(LogicalError)
     def dump(self) -> None:
@@ -207,18 +209,15 @@ class StateFieldRegistry:
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location, signal, t=time.time()):
+    def log_iridium(self, location, signal):
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         :param t: time to log, defaults to time method is called
         """
-        data = np.array(t, *location, signal)  # Concatenate arrays
-        np.insert(data, 0, time.time())  # Add timestamp
-        df = pd.DataFrame(data,
-                          columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
-        df.to_csv(self.iridium_data_path, mode="a", header=False)  # Append data to log
+        with open(self.iridium_data_path, "a") as f:
+            f.write(str(time.time()) + "," + ",".join(map(str, location)) + "," + str(signal) + "\n")
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:
@@ -228,7 +227,8 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
-        return df[["buspower"] + [f"0x0{str(hex(i)).upper()[2:]}_pwr" for i in range(1, 11)]].iloc[-1].tolist()
+        cols = ["buspower"] + [f"0x0{str(hex(i))[2:].upper()}_pwr" for i in range(1, 11)]
+        return df[cols].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
@@ -238,7 +238,8 @@ class StateFieldRegistry:
         """
         if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
             return self.eps.raw_solar_gen()
-        return df[["bcr1", "bcr2", "bcr3"]].iloc[-1].tolist()
+        cols = ["bcr1", "bcr2", "bcr3"]
+        return df[cols].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def clear_logs(self):

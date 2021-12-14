@@ -485,7 +485,7 @@ class Iridium:
         :return: (datetime) current time (use str() to parse to string if needed)
         """
         raw = self.NETWORK_TIME()
-        if raw.find("OK") != -1:
+        if raw.find("OK") == -1:
             raise IridiumError()
         if raw.find("no network service") != -1:
             raise NoSignalException()

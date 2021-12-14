@@ -43,7 +43,8 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
-                    if e == KeyboardInterrupt:  # If we ended the program
+                    # If we ended the program
+                    if type(e) == KeyboardInterrupt:
                         raise  # Raise up to next try-except block
                     elif type(e) in self.error_dict:
                         self.error_dict[type(e)](e)
@@ -54,12 +55,8 @@ class MissionControl:
                     continue  # Move on with MCL if troubleshooting solved problem (no additional exception)
                 # If a leak happens (impossible), exception will travel up to next try-except block (safe mode)
             except Exception as e:  # If another exception happens during troubleshooting (troubleshooting fails)
-                if type(e) == KeyboardInterrupt:  # If we ended the program
-                    self.sfr.clear_logs()  # Reset sfr
-                    exit(0)  # Cleanly exit
-                else:  # If error is genuine
-                    # self.safe_mode(e)  # Safe mode to allow ground to solve the problem
-                    self.testing_mode(e)  # DEBUG
+                # self.safe_mode(e)  # Safe mode to allow ground to solve the problem
+                self.testing_mode(e)  # DEBUG
 
     def aprs_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
@@ -142,7 +139,7 @@ class MissionControl:
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback(e))
-        # self.sfr.clear_logs()
+        self.sfr.clear_logs()
         exit(1)
 
     def get_other_radio(self, current_radio):

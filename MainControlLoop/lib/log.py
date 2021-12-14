@@ -23,7 +23,7 @@ class Logger:
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
         with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(str(t) + "," + str(buspower) + ",".join(map(str, pdm_states)) + 
+            f.write(str(t) + "," + str(buspower) + "," + ",".join(map(str, pdm_states)) + 
                 "," + ",".join(map(str, pwr)) + "\n")
 
     @wrap_errors(LogicalError)
