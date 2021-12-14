@@ -39,8 +39,8 @@ class Startup(Mode):
                 # Enable power to antenna deployer
                 self.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
-                if not self.sfr.devices["Antenna Deployer"].deploy():  # Deploy antenna
-                    raise RuntimeError("ANTENNA FAILED TO DEPLOY")  # TODO: handle this somehow
+                self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
+                print("Antenna Deployed")
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
@@ -50,18 +50,15 @@ class Startup(Mode):
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
             self.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
-            # TODO: HANDLE THIS BETTER
-            try:
-                self.read_radio()  # only reads radio if not low battery
-                self.transmit_radio()
-                self.check_time()
-            except RuntimeError as e:
-                print(e)
+            self.read_radio()  # only reads radio if not low battery
+            self.transmit_radio()
+            self.check_time()
             # wait for BEACON_WAIT_TIME to not spam beacons
             if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 # TOOD: HANDLE THIS BETTER
+                print("Transmitting proof of life...")
                 self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
                 self.last_contact_attempt = time.time()
 
