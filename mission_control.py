@@ -30,6 +30,9 @@ class MissionControl:
             if line := tb[0].strip(" ").startswith("File"):
                 if not line.endswith("in wrapper"):
                     result += tb.pop(0) + "\n" + tb.pop(0)
+                else:
+                    del tb[0]
+                    del tb[0]
             else:  # If this line isn't part of traceback, add
                 result += tb.pop(0)
         return result
