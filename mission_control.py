@@ -123,6 +123,12 @@ class MissionControl:
         traceback.print_exc()
         exit(1)
 
+    def get_other_radio(self, current_radio):
+        if current_radio == "Iridium":
+            return "APRS"
+        else:
+            return "Iridium"
+
     def safe_mode(self, e: Exception):
         """
         Continiously listen for messages from main radio
@@ -130,12 +136,21 @@ class MissionControl:
         Should only switch back to mcl from confirmation from ground
         Should we put something to attempt to switch back to mcl if too much time passed?
         """
-        troubleshooting_completed = False
-        try:
-            self.sfr.turn_on(self.sfr.vars.PRIMARY_RADIO)
-            self.sfr.devies["Iridium"].transmit(repr(e))
-        except Exception as e:
+
+        is_working_radio = False
+        for _ in range(2):
+            try:
+                self.sfr.turn_on(self.sfr.vars.PRIMARY_RADIO)
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(repr(e))
+            except Exception as e:
+                self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
+            else:
+                is_working_radio = True
+                break
+        if not is_working_radio:
             os.system("sudo reboot")  # Pfs team took an L
+
+        troubleshooting_completed = False
         while not troubleshooting_completed:
             try:
                 if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
