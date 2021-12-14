@@ -5,31 +5,52 @@ class CustomException(Exception):
 
     def __repr__(self):
         if self.exception is not None:
-            return repr(self.exception) + ": " + self.details
+            if self.details is not None:
+                return repr(self.exception) + ": " + self.details
+            return repr(self.exception)
+        elif self.details is not None:
+            return self.details
+        return ""
 
 
-class AntennaError(CustomException): pass
+class AntennaError(CustomException):
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class APRSError(CustomException): pass
+class APRSError(CustomException):
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class IridiumError(CustomException): pass
+class IridiumError(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class SignalStrengthException(CustomException): pass
+class SignalStrengthException(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class EPSError(CustomException): pass
+class EPSError(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class RTCError(CustomException): pass
+class RTCError(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class IMUError(CustomException): pass
+class IMUError(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
-class BatteryError(CustomException): pass
+class BatteryError(CustomException): 
+    def __repr__(self):
+        return "AntennaError: " + super().__repr__()
 
 
 class CommandExecutionException(CustomException):
