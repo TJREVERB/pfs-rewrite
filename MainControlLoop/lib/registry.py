@@ -120,6 +120,7 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
+            self.LAST_STARTUP = 0
 
         @wrap_errors(LogicalError)
         def encode(self):
