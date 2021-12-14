@@ -164,6 +164,7 @@ class StateFieldRegistry:
         :return: (Registry) loaded registry
         """
         defaults = self.Registry(self.eps, self.analytics)
+        return defaults  # DEBUG
         try:
             with open(self.log_path, "rb") as f:
                 fields = pickle.load(f)
@@ -208,18 +209,15 @@ class StateFieldRegistry:
         df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location, signal, t=time.time()):
+    def log_iridium(self, location, signal):
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         :param t: time to log, defaults to time method is called
         """
-        data = np.array(t, *location, signal)  # Concatenate arrays
-        np.insert(data, 0, time.time())  # Add timestamp
-        df = pd.DataFrame(data,
-                          columns=["timestamp", "lat", "long", "altitude", "signal"])  # Create dataframe from array
-        df.to_csv(self.iridium_data_path, mode="a", header=False)  # Append data to log
+        with open(self.iridium_data_path, "a") as f:
+            f.write(time.time() + "," + ",".join(location) + "," + signal + "\n")
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:
