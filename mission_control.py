@@ -1,5 +1,6 @@
 import os
 import traceback
+import sys
 import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
@@ -20,6 +21,9 @@ class MissionControl:
             BatteryError: self.battery_troubleshoot,
             AntennaError: self.antenna_troubleshoot
         }
+    
+    def get_traceback(self, e: Exception):
+        tb = traceback.extract_tb(sys.exc_info()[2])
 
     def main(self):
         self.mcl.start()
@@ -50,7 +54,7 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def iridium_troubleshoot(self, e: CustomException):
-        traceback.print_exc()
+        print(self.get_traceback(e))
         self.turn_off("Iridium")
         time.sleep(1)
         self.turn_on("Iridium")
@@ -126,7 +130,7 @@ class MissionControl:
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
-        traceback.print_exc()
+        print(self.get_traceback(e))
         exit(1)
 
     def get_other_radio(self, current_radio):
