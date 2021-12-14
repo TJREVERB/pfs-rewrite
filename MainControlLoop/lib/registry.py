@@ -171,7 +171,7 @@ class StateFieldRegistry:
             loaded_keys = list(fields.to_dict().keys())
             default_keys = list(defaults.to_dict().keys())
             if len(loaded_keys) == len(default_keys):
-                if all([loaded_keys[i] == default_keys[i] for i in default_keys]):
+                if all([loaded_keys[i] == default_keys[i] for i in range(len(default_keys))]):
                     print("Loading sfr from log...")
                     return fields
             print("Invalid log, loading default sfr...")
