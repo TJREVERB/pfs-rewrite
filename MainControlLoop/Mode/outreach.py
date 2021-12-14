@@ -44,6 +44,7 @@ class Outreach(Mode):
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
+        print(self.sfr.devices["APRS"])
         self.read_radio()
         self.transmit_radio()
         self.check_time()
