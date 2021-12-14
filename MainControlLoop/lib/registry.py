@@ -166,6 +166,8 @@ class StateFieldRegistry:
                 fields = pickle.load(f)
             # If all variable names are the same and all types of values are the same
             # Checks if log is valid and up-to-date
+            print(list(fields.to_dict().keys()))
+            print(list(defaults.to_dict().keys()))
             if list(fields.to_dict().keys()) != list(defaults.to_dict().keys()):
                 print("Invalid log, loading default sfr...")
                 fields = defaults
