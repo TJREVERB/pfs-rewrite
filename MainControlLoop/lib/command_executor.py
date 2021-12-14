@@ -257,8 +257,6 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        print(self.sfr.recent_gen())
-        print(self.sfr.recent_power())
         self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power())])

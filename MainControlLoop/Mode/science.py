@@ -38,7 +38,6 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def check_conditions(self) -> bool:
         super(Science, self).check_conditions()
-        print(self.conditions)
 
         return self.conditions["Low Battery"] or self.conditions["Collection Complete"]
 
