@@ -246,14 +246,14 @@ class EPS:
         actual_on = raw[2] << 8 | raw[3]
         ls = []
         for i in range(1, 11):
-            b = actual_on & int(math.pow(2, i)) >> i
+            b = (actual_on >> i) & 1
             if b:
                 ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
             else:
                 ls.append(0)
         pdm_states = []
         for pdm in range(1, 11):
-            pdm_states.append(actual_on & int(math.pow(2, pdm)) >> pdm)
+            pdm_states.append((actual_on >> pdm) & 1)
         return pdm_states, ls
 
     @wrap_errors(EPSError)
@@ -286,7 +286,7 @@ class EPS:
             expected_on = raw[2] << 8 | raw[3]
             ls = []
             for i in range(1, 11):
-                b = expected_on & int(math.pow(2, i)) >> i
+                b = (expected_on >> i) & 1
                 if b:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
@@ -297,7 +297,7 @@ class EPS:
             actual_on = raw[2] << 8 | raw[3]
             ls = []
             for i in range(1, 11):
-                b = actual_on & int(math.pow(2, i)) >> i
+                b = (actual_on >> i) & 1
                 if b:
                     ls.append(self.telemetry[self.bitsToTelem[i][0]]() * self.telemetry[self.bitsToTelem[i][1]]())
                 else:
