@@ -106,6 +106,7 @@ class StateFieldRegistry:
             self.ORBITAL_PERIOD = 90 * 60
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
+            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
             self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
@@ -130,6 +131,7 @@ class StateFieldRegistry:
                 self.LAST_ECLIPSE_ENTRY,
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
+                self.UPPER_THRESHOLD,
                 list(StateFieldRegistry.modes_list.keys()).index(self.MODE.__name__),
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
@@ -168,11 +170,11 @@ class StateFieldRegistry:
             # Checks if log is valid and up-to-date
             print(list(fields.to_dict().keys()))
             print(list(defaults.to_dict().keys()))
-            if list(fields.to_dict().keys()) != list(defaults.to_dict().keys()):
+            if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
+                print("Loading sfr from log...")
+            else:
                 print("Invalid log, loading default sfr...")
                 fields = defaults
-            else:
-                print("Loading sfr from log...")
         except Exception as e:
             print("Unknown error, loading default sfr...")
             print(e)
