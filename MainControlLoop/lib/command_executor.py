@@ -44,7 +44,8 @@ class CommandExecutor:
             "USM": self.USM,
             "ULG": self.ULG,
             "ITM": self.ITM,
-            "IPC": self.IPC
+            "IPC": self.IPC,
+            "ICE": self.ICE
         }
 
         # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -534,3 +535,11 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         time.sleep(5)
         os.system("sudo reboot")
+
+    @wrap_errors(CommandExecutionException)
+    def ICE(self, packet: TransmissionPacket):
+        """Runs exec on string"""
+        command = packet.args[0]
+        exec(f"{command}")
+        self.transmit(packet, result:= [])
+        return result
