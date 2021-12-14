@@ -87,6 +87,7 @@ class CommandExecutor:
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
+            print("Command received: " + command_packet.command_string)
             to_log = pd.DataFrame([
                 {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
                 {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
@@ -126,7 +127,7 @@ class CommandExecutor:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
         except NoSignalException as e:
-            print(e)
+            print("No Iridium connectivity, appending to buffer...")
             self.sfr.vars.transmit_buffer.append(packet)
             return False
 
