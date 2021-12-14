@@ -217,7 +217,7 @@ class StateFieldRegistry:
         :param t: time to log, defaults to time method is called
         """
         with open(self.iridium_data_path, "a") as f:
-            f.write(time.time() + "," + ",".join(location) + "," + signal + "\n")
+            f.write(str(time.time()) + "," + ",".join(map(str, location)) + "," + str(signal) + "\n")
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:
