@@ -23,7 +23,16 @@ class MissionControl:
         }
     
     def get_traceback(self, e: Exception):
-        return traceback.format_exc()
+        tb = traceback.format_exc().split("\n")
+        result = ""
+        while len(tb) > 0:
+            # Include parts of traceback which don't originate from wrapper
+            if line := tb[0].strip(" ").startswith("File"):
+                if not line.endswith("in wrapper"):
+                    result += tb.pop(0) + "\n" + tb.pop(0)
+            else:  # If this line isn't part of traceback, add
+                result += tb.pop(0)
+        return result
 
     def main(self):
         self.mcl.start()
