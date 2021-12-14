@@ -23,7 +23,8 @@ class Logger:
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
         with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(str(t) + "," + str(buspower) + ",".join(pdm_states) + "," + ",".join(pwr) + "\n")
+            f.write(str(t) + "," + str(buspower) + ",".join(map(str, pdm_states)) + 
+                "," + ",".join(map(str, pwr)) + "\n")
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -34,7 +35,7 @@ class Logger:
         """
         print("Solar: ", t := time.time(), gen)
         with open(self.sfr.solar_log_path, "a") as f:
-            f.write(str(t) + "," + ",".join(gen) + "\n")
+            f.write(str(t) + "," + ",".join(map(str, gen)) + "\n")
 
     @wrap_errors(LogicalError)
     def log_imu(self, tumble: list) -> None: # Probably scuffed
