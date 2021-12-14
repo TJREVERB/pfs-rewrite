@@ -50,6 +50,7 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def iridium_troubleshoot(self, e: CustomException):
+        traceback.print_exc()
         self.turn_off("Iridium")
         time.sleep(1)
         self.turn_on("Iridium")
