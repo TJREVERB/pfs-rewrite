@@ -131,6 +131,7 @@ class MissionControl:
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback(e))
+        self.sfr.clear_logs()
         exit(1)
 
     def get_other_radio(self, current_radio):
