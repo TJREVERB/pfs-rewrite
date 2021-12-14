@@ -1,4 +1,5 @@
 import os
+import traceback
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
@@ -119,6 +120,7 @@ class MissionControl:
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
+        traceback.print_exc()
         exit(1)
 
     def safe_mode(self, e: Exception):
