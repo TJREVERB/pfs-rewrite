@@ -33,6 +33,7 @@ class MainControlLoop:
 
         # If the conditions of this mode aren't met and we are allowed to switch:
         if not self.sfr.mode_obj.check_conditions() and not self.sfr.vars.MODE_LOCK:
+            print("Switching to " + self.sfr.mode_obj.switch_mode().__name__)
             # change the mode to be whatever our current mode wants to switch to
             self.sfr.vars.MODE = self.sfr.mode_obj.switch_mode()
 
