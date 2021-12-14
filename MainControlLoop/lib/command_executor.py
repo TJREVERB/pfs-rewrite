@@ -328,7 +328,7 @@ class CommandExecutor:
         """
         Transmit signal strength variability
         """
-        self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENTH_VARIABILITY])
+        self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
 
     @wrap_errors(CommandExecutionException)
