@@ -40,7 +40,7 @@ class Science(Mode):
         super(Science, self).check_conditions()
         print(self.conditions)
 
-        return (not self.conditions["Low Battery"]) and (not self.conditions["Collection Complete"])
+        return self.conditions["Low Battery"] or self.conditions["Collection Complete"]
 
     @wrap_errors(LogicalError)
     def switch_mode(self):
