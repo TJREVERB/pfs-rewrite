@@ -21,6 +21,7 @@ class Outreach(Mode):
         super(Outreach, self).start()
         self.instruct["Pin On"]("Iridium")
         self.instruct["Pin On"]("APRS")
+        print(self.sfr.devices["APRS"])
         self.instruct["All Off"](exceptions=["Iridium", "APRS"])
 
     @wrap_errors(LogicalError)
@@ -44,6 +45,7 @@ class Outreach(Mode):
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
+        print("Mode executing")
         print(self.sfr.devices["APRS"])
         self.read_radio()
         self.transmit_radio()
