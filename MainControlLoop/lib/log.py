@@ -13,7 +13,7 @@ class Logger:
         self.ORBIT_CHECK_DELAY = 60
 
     @wrap_errors(LogicalError)
-    def log_pwr(self, buspower, pdm_states, pwr, t=0) -> None:
+    def log_pwr(self, buspower, pdm_states, pwr) -> None:
         """
         Logs the power draw of every pdm
         :param buspower: power draw of bus
@@ -21,35 +21,29 @@ class Logger:
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         :param t: time to log data, defaults to time method is called
         """
-        if t == 0:
-            t = time.time()
-        print("Power: ", t, pdm_states, pwr)
+        print("Power: ", t := time.time(), pdm_states, pwr)
         # Format data into pandas series
         data = pd.concat([pd.Series([t, buspower]), pd.Series(pdm_states), pd.Series(pwr)])
         data.to_frame().to_csv(path_or_buf=self.sfr.pwr_log_path, mode="a", header=False)  # Append data to log
 
     @wrap_errors(LogicalError)
-    def log_solar(self, gen: list, t=0) -> None:
+    def log_solar(self, gen: list) -> None:
         """
         Logs the solar power generation from each panel (sum of A and B)
         :param gen: array of power inputs from each panel, in W.
         :param t: time to log data, defaults to time method is called
         """
-        if t == 0:
-            t = time.time()
-        print("Solar: ", t, gen)
+        print("Solar: ", t := time.time(), gen)
         data = pd.concat([pd.Series([t]), pd.Series(gen)])  # Format data into pandas series
         data.to_frame().to_csv(path_or_buf=self.sfr.solar_log_path, mode="a", header=False)  # Append data to log
 
     @wrap_errors(LogicalError)
-    def log_imu(self, tumble: list, t=0) -> None: # Probably scuffed
+    def log_imu(self, tumble: list) -> None: # Probably scuffed
         """
         Logs IMU datapoints
         :param tumble: result of getTumble() call
         """
-        if t == 0:
-            t = time.time()
-        print("Imu: ", t, tumble)
+        print("Imu: ", t := time.time(), tumble)
 
         # Format data into pandas series
         data = pd.concat(pd.Series([t]), pd.Series(tumble[0]), pd.Series(tumble[1]))
