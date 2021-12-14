@@ -174,6 +174,8 @@ class StateFieldRegistry:
                 if all([loaded_keys[i] == default_keys[i] for i in range(len(default_keys))]):
                     print("Loading sfr from log...")
                     return fields
+            print([i for i in default_keys if i not in loaded_keys])
+            print([i for i in loaded_keys if i not in default_keys])
             print("Invalid log, loading default sfr...")
             return defaults
         except Exception as e:
