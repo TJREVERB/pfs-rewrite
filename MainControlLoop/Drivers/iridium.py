@@ -210,6 +210,16 @@ class Iridium:
         return True
 
     @wrap_errors(IridiumError)
+    def check_signal_active(self):
+        """
+        Passively check signal strength, for transmit/receive timing
+        """
+        raw = self.RSSI()
+        if raw.find("CSQ:") == -1:
+            return 0
+        return int(raw[raw.find("CSQ:") + 4: raw.find("CSQ:") + 5])
+    
+    @wrap_errors(IridiumError)
     def check_signal_passive(self):
         """
         Passively check signal strength, for transmit/receive timing

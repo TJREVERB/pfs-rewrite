@@ -5,7 +5,7 @@ import numpy as np
 import pickle, json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C
+from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -17,7 +17,7 @@ from MainControlLoop.lib.log import Logger
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.bno055 import IMU
+from MainControlLoop.Drivers.rtc import RTC
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 
 
@@ -72,6 +72,7 @@ class StateFieldRegistry:
         self.eps = EPS(self)  # EPS never turns off
         self.battery = Battery()
         self.imu = IMU_I2C(self)
+        self.rtc = RTC()
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)

@@ -4,6 +4,7 @@ from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+import datetime
 
 
 class Mode:
@@ -19,6 +20,7 @@ class Mode:
         # seconds)
         # Actual time between read/write will depend on signal availability
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
+        self.TIME_ERR_THRESHOLD = 120 # Two minutes acceptable time error between iridium network and rtc
         self.instruct = {
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
@@ -131,6 +133,14 @@ class Mode:
         """
         Checks rtc time against iridium time, should be called AFTER all tx/rx functions
         """
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium" \
+                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+            current_datetime = datetime.datetime.utcnow()
+            iridium_datetime = self.sfr.devices["Iridium"].processed_time()
+            if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
+                self.sfr.rtc.updatetime(iridium_datetime)
+                #TODO: FINISH THIS AND IMPLEMENT INTO RTC DRIVER
+
 
     @wrap_errors(LogicalError)
     def systems_check(self) -> list:
