@@ -23,7 +23,7 @@ class MissionControl:
         }
     
     def get_traceback(self, e: Exception):
-        return traceback.format_exc(sys.exc_info()[2])
+        return traceback.format_exc()
 
     def main(self):
         self.mcl.start()
