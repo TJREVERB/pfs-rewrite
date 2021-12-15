@@ -72,7 +72,7 @@ class Science(Mode):
             try:
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
                                     self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
-            except NoSignalException:
+            except NoSignalException:  # TODO: DEBUG
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(), 0)
             else:  # If data was successfully recorded, increase pings performed
                 self.pings_performed += 1
