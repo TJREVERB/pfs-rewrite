@@ -4,7 +4,7 @@ from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.bno055 import IMU
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-import datetime
+import datetime, os
 
 
 class Mode:
@@ -21,14 +21,12 @@ class Mode:
         # Actual time between read/write will depend on signal availability
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
         self.TIME_ERR_THRESHOLD = 120 # Two minutes acceptable time error between iridium network and rtc
-        self.instruct = {
+        self.sfr.instruct = {
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
             "All On": self.__turn_all_on,
             "All Off": self.__turn_all_off
         }
-
-
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
@@ -138,8 +136,8 @@ class Mode:
             current_datetime = datetime.datetime.utcnow()
             iridium_datetime = self.sfr.devices["Iridium"].processed_time()
             if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-                self.sfr.rtc.updatetime(iridium_datetime)
-                #TODO: FINISH THIS AND IMPLEMENT INTO RTC DRIVER
+                os.system(f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """) # Update system time
+                os.system("""sudo hwclock -w""") # Write to RTC
 
 
     @wrap_errors(LogicalError)
@@ -158,103 +156,4 @@ class Mode:
                 result.append(device)
         return result
 
-    @wrap_errors(LogicalError)
-    def __turn_on_component(self, component: str) -> None:
-        """
-        Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-        :param component: (str) component to turn on
-        """
-        if self.sfr.devices[component] is not None:  # if component is already on, stop method from running further
-            return
-        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
-            return
 
-        self.sfr.eps.commands["Pin On"](component)  # turns on component
-        self.sfr.devices[component] = self.sfr.component_to_class[component](
-            self.sfr)  # registers component as on by setting component status in sfr to object instead of None
-        if component in self.sfr.component_to_serial:  # see if component has a serial converter to open
-            serial_converter = self.sfr.component_to_serial[component]  # gets serial converter name of component
-            self.sfr.eps.commands["Pin On"](serial_converter)  # turns on serial converter
-            self.sfr.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
-
-        if component == "APRS":
-            self.sfr.devices[component].disable_digi()
-        if component == "IMU":
-            self.sfr.devices[component].start()
-
-        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
-
-    @wrap_errors(LogicalError)
-    def __turn_off_component(self, component: str) -> None:
-        """
-        Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-        :param component: (str) component to turn off
-        """
-        if self.sfr.devices[component] is None:  # if component is off, stop method from running further.
-            return None
-        if self.sfr.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
-            return None
-
-        if component == "Iridium" and self.sfr.devices[
-            "Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
-            try:
-                self.sfr.devices[component].next_msg()
-            except Exception as e:
-                print(e)
-
-        self.sfr.devices[component] = None  # sets device object in sfr to None instead of object
-        self.sfr.eps.commands["Pin Off"](component)  # turns component off
-        if component in self.sfr.component_to_serial:  # see if component has a serial converter to close
-            # Same suggestion as for __turn_on_component
-            serial_converter = self.sfr.component_to_serial[component]  # get serial converter name for component
-            self.sfr.eps.commands["Pin Off"](serial_converter)  # turn off serial converter
-            self.sfr.serial_converters[serial_converter] = False  # sets serial converter status to False (off)
-
-        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
-
-    @wrap_errors(LogicalError)
-    def __turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
-        """
-        Turns all components on automatically, except for Antenna Deployer.
-        Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
-        :param exceptions: (list) components to not turn on, default is ["Antenna Deployer, IMU"]
-        :param override_default_exceptions: (bool) whether or not to use default exceptions
-        :return: None
-        """
-
-        if override_default_exceptions:  # if True no default exceptions
-            default_exceptions = []
-        else:  # normally exceptions
-            default_exceptions = ["Antenna Deployer", "IMU"]
-        if exceptions is not None:
-            for exception in exceptions:  # loops through custom device exceptions and adds to exceptions list
-                default_exceptions.append(exception)
-
-        exceptions = default_exceptions  # sets to exceptions list
-
-        for key in self.sfr.devices:
-            if not self.sfr.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.__turn_on_component(key)  # turn on device and serial converter if applicable
-
-    @wrap_errors(LogicalError)
-    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
-        """
-        Turns all components off automatically, except for Antenna Deployer.
-        Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
-        :param exceptions: (list) components to not turn off, default is ["Antenna Deployer, IMU"]
-        :param override_default_exceptions: (bool) whether or not to use default exceptions
-        :return: None
-        """
-        if override_default_exceptions:
-            default_exceptions = []
-        else:
-            default_exceptions = ["Antenna Deployer", "IMU"]
-        if exceptions is not None:
-            for exception in exceptions:
-                default_exceptions.append(exception)
-
-        exceptions = default_exceptions
-
-        for key in self.sfr.devices:
-            if self.sfr.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.__turn_off_component(key)  # turn off device and serial converter if applicable

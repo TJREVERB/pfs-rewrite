@@ -19,9 +19,9 @@ class Outreach(Mode):
     @wrap_errors(LogicalError)
     def start(self) -> None:
         super(Outreach, self).start()
-        self.instruct["Pin On"]("Iridium")
-        self.instruct["Pin On"]("APRS")
-        self.instruct["All Off"](exceptions=["Iridium", "APRS"])
+        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.instruct["Pin On"]("APRS")
+        self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
 
     @wrap_errors(LogicalError)
     def check_conditions(self) -> bool:

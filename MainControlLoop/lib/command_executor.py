@@ -45,7 +45,8 @@ class CommandExecutor:
             "ULG": self.ULG,
             "ITM": self.ITM,
             "IPC": self.IPC,
-            "ICE": self.ICE
+            "ICE": self.ICE,
+            "IGO": self.IGO
         }
 
         # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -60,7 +61,8 @@ class CommandExecutor:
             "GOP": self.GOP,
             "GCS": self.GCS,
             "USM": self.USM,
-            "IPC": self.IPC
+            "IPC": self.IPC,
+            "ICE": self.ICE
         }
 
     @wrap_errors(LogicalError)
@@ -241,7 +243,8 @@ class CommandExecutor:
         """
         Transmits time since last command run
         """
-        self.transmit(packet, result := [time.time() - self.sfr.LAST_COMMAND_RUN])
+        dif = time.time() - self.sfr.LAST_COMMAND_RUN
+        self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -363,7 +366,8 @@ class CommandExecutor:
         """
         Transmits time since last mode switch
         """
-        self.transmit(packet, result := [time.time() - self.sfr.LAST_MODE_SWITCH])
+        dif = time.time() - self.sfr.LAST_MODE_SWITCH
+        self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -484,9 +488,13 @@ class CommandExecutor:
         9. Total number of iridium signal strength measurements taken
         10. Total number of power consumption/generation measurements
         """
+        startdif = time.time() - self.sfr.vars.START_TIME
+        laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
         self.transmit(packet, result := [
-            time.time() - self.sfr.vars.START_TIME,
-            time.time() - self.sfr.vars.LAST_STARTUP,
+            int(startdif / 100000) * 100000, 
+            int(startdif % 100000),
+            int(laststartdif / 100000) * 100000, 
+            int(laststartdif % 100000),
             self.sfr.analytics.total_power_consumed(),
             self.sfr.analytics.total_power_generated(),
             self.sfr.analytics.total_data_transmitted(),
@@ -522,7 +530,7 @@ class CommandExecutor:
         """
         Power cycle satellite
         """
-        self.sfr.mode_obj.instruct["All Off"](exceptions=[])
+        self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
         self.transmit(packet, result := [])
@@ -542,5 +550,11 @@ class CommandExecutor:
         """Runs exec on string"""
         command = packet.args[0]
         exec(f"{command}")
-        self.transmit(packet, result:= [])
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def IGO(self, packet: TransmissionPacket):
+        self.sfr.vars.ENABLE_SAFE_MODE = False
+        self.transmit(packet, result := [])
         return result

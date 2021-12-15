@@ -8,7 +8,7 @@ class EPS:
     """
     Class for EPS
     """
-    SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W/m^2 for sun to be "detected"
+    
     # ARBITRARY VALUE!!!
     COMPONENTS = {
         "APRS": [0x04],
@@ -19,6 +19,8 @@ class EPS:
         "USB-UART": [0x07],  # Alternate APRS Serial Converter (WILL BE ON SW10 FOR REDESIGN)
         "IMU": [0x09],
     }
+    V_EOC = 8.1 # EOC Voltage threshold
+    SUN_DETECTION_THRESHOLD = 1  # Threshold production of solar panels in W
 
     @wrap_errors(EPSError)
     def __init__(self, state_field_registry):
@@ -331,11 +333,3 @@ class EPS:
         :return: (float) power gain in W
         """
         return sum(self.raw_solar_gen())
-
-    @wrap_errors(EPSError)
-    def sun_detected(self) -> bool:
-        """
-        :return: (bool) Whether sun is detected
-        """
-        return self.telemetry["SDBCR1A"]() + self.telemetry["SDBCR2A"]() + self.telemetry["SDBCR1B"]() + \
-               self.telemetry["SDBCR2B"]() > EPS.SUN_DETECTION_THRESHOLD
