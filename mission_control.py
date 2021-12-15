@@ -40,7 +40,10 @@ class MissionControl:
         return result
 
     def main(self):
-        self.mcl.start()
+        try:
+            self.mcl.start()
+        except Exception as e:
+            self.testing_mode(e)
         while True:  # Run forever
             try:
                 self.mcl.iterate()  # Run a single iteration of MCL
@@ -64,7 +67,7 @@ class MissionControl:
         self.sfr.instruct["Pin Off"]("Iridium")
         time.sleep(1)
         self.sfr.instruct["Pin On"]("Iridium")
-        time.sleep(5)
+        time.sleep(10)
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
     def eps_troubleshoot(self, e: CustomException):
