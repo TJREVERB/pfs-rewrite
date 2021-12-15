@@ -71,7 +71,7 @@ class CommandExecutor:
             print("Command received: " + command_packet.command_string)
             to_log = {
                 "timestamp": (t := datetime.datetime.utcnow()).timestamp(),
-                "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
+                "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
                 "command": command_packet.command_string,
                 "arg": ":".join(command_packet.args),
                 "registry": "Primary",
