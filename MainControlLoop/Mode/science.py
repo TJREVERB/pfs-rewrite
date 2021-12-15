@@ -1,3 +1,4 @@
+from numpy import NaN
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
@@ -72,8 +73,8 @@ class Science(Mode):
             try:
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
                                     self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
-            except NoSignalException:  # TODO: DEBUG
-                self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(), 0)
+            except NoSignalException:
+                self.sfr.log_iridium((NaN, NaN, NaN), 0)
             else:  # If data was successfully recorded, increase pings performed
                 self.pings_performed += 1
             finally:  # Always update last_ping time to prevent spamming pings
