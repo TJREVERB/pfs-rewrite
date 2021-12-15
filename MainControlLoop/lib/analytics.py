@@ -96,7 +96,9 @@ class Analytics:
         Calculate orbital period over last 50 orbits
         :return: average orbital period over last 50 orbits
         """
-        df = self.sfr.logs["orbits"].read()  # Reads in data
+        df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
+        if len(df) < 3:
+            return 90
         # Calculates on either last 50 points or whole dataset
         sunlight = df[df["phase"] == "sunlight"]
         eclipse = df[df["phase"] == "eclipse"]
