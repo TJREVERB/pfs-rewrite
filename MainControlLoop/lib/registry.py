@@ -100,7 +100,7 @@ class StateFieldRegistry:
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := eps.sun_detected()) else time.time()
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := self.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
             self.ORBITAL_PERIOD = 90 * 60
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
@@ -127,9 +127,11 @@ class StateFieldRegistry:
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
-                sum([2 ** StateFieldRegistry.components.index(i) for i in self.FAILURES]),
-                self.LAST_DAYLIGHT_ENTRY,
-                self.LAST_ECLIPSE_ENTRY,
+                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+                int(self.LAST_DAYLIGHT_ENTRY % 100000),
+                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+                int(self.LAST_ECLIPSE_ENTRY % 100000),
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
@@ -137,12 +139,15 @@ class StateFieldRegistry:
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
-                sum([2 ** StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
                      if self.LOCKED_DEVICES[i]]),
                 int(self.CONTACT_ESTABLISHED),
-                self.START_TIME,
-                self.LAST_COMMAND_RUN,
-                self.LAST_MODE_SWITCH,
+                int(self.START_TIME / 100000) * 100000,
+                int(self.START_TIME % 100000),
+                int(self.LAST_COMMAND_RUN / 100000) * 100000,
+                int(self.LAST_COMMAND_RUN % 100000),
+                int(self.LAST_MODE_SWITCH / 100000) * 100000,
+                int(self.LAST_MODE_SWITCH % 100000)
             ]
 
         @wrap_errors(LogicalError)
@@ -217,7 +222,7 @@ class StateFieldRegistry:
         :param t: time to log, defaults to time method is called
         """
         with open(self.iridium_data_path, "a") as f:
-            f.write(str(time.time()) + "," + ",".join(map(str, location)) + "," + str(signal) + "\n")
+            f.write(f"""{int(time.time()/100000)*100000},{int(time.time()%100000)},{",".join(map(str, location))},{str(signal)}\n""")
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:

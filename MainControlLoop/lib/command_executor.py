@@ -243,7 +243,8 @@ class CommandExecutor:
         """
         Transmits time since last command run
         """
-        self.transmit(packet, result := [time.time() - self.sfr.LAST_COMMAND_RUN])
+        dif = time.time() - self.sfr.LAST_COMMAND_RUN
+        self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -365,7 +366,8 @@ class CommandExecutor:
         """
         Transmits time since last mode switch
         """
-        self.transmit(packet, result := [time.time() - self.sfr.LAST_MODE_SWITCH])
+        dif = time.time() - self.sfr.LAST_MODE_SWITCH
+        self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -486,9 +488,13 @@ class CommandExecutor:
         9. Total number of iridium signal strength measurements taken
         10. Total number of power consumption/generation measurements
         """
+        startdif = time.time() - self.sfr.vars.START_TIME
+        laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
         self.transmit(packet, result := [
-            time.time() - self.sfr.vars.START_TIME,
-            time.time() - self.sfr.vars.LAST_STARTUP,
+            int(startdif / 100000) * 100000, 
+            int(startdif % 100000),
+            int(laststartdif / 100000) * 100000, 
+            int(laststartdif % 100000),
             self.sfr.analytics.total_power_consumed(),
             self.sfr.analytics.total_power_generated(),
             self.sfr.analytics.total_data_transmitted(),
