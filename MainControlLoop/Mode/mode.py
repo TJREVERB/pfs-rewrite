@@ -22,10 +22,10 @@ class Mode:
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
         self.TIME_ERR_THRESHOLD = 120 # Two minutes acceptable time error between iridium network and rtc
         self.sfr.instruct = {
-            "Pin On": self.__turn_on_component,
-            "Pin Off": self.__turn_off_component,
-            "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off
+            "Pin On": self.sfr.turn_on_component,
+            "Pin Off": self.sfr.turn_off_component,
+            "All On": self.sfr.turn_all_on,
+            "All Off": self.sfr.turn_all_off
         }
 
     @wrap_errors(LogicalError)
