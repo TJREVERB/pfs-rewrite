@@ -166,7 +166,8 @@ class APRS:
         if packet.simulate:
             return True
         self.sfr.logs["transmission"].write({
-            "timestamp": time.time(),
+            "ts0": (t := time.time()) // 100000,
+            "ts1": int(t % 100000),
             "radio": "APRS",
             "size": len(str(packet)),
         })

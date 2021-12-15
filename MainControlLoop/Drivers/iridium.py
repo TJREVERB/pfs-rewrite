@@ -379,7 +379,8 @@ class Iridium:
             raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp,
                                packet.return_data))
         self.sfr.logs["transmission"].write({  # Log transmission
-            "timestamp": time.time(),
+            "ts0": (t := time.time()) // 100000,
+            "ts1": int(t % 100000),
             "radio": "Iridium",
             "size": len(raw),
         })
