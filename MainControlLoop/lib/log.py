@@ -29,6 +29,7 @@ class Logger:
         }
         for i in range(len(pdm_states)):
             data[f"0x0{str(hex(i))[2:].upper()}_state"] = pdm_states[i]
+        for i in range(len(pwr)):
             data[f"0x0{str(hex(i))[2:].upper()}_pwr"] = pwr[i]
         print(data)
         self.sfr.logs["power"].write(data)
