@@ -68,7 +68,7 @@ class StateFieldRegistry:
             """
             Reset log
             """
-            if self.ext == "csv":  # For csv files
+            if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
                 with open(self.path, "w") as f:  # Open file
                     f.write(",".join(self.headers) + "\n")  # Write headers + newline
             elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
@@ -344,8 +344,7 @@ class StateFieldRegistry:
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
         for i in self.logs.keys():
-            if i != "voltage_charge":
-                self.logs[i].clear()
+            self.logs[i].clear()
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
