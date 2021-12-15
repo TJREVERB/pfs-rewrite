@@ -106,7 +106,7 @@ class StateFieldRegistry:
             :return: dataframe if csv, object if pickle, dictionary if json
             """
             if self.ext == "csv":  # Return dataframe if csv
-                return pd.read_csv(self.path)
+                return pd.read_csv(self.path, header=0)
             if self.ext == "pkl":  # Return object if pickle
                 with open(self.path, "rb") as f:
                     return pickle.load(f)

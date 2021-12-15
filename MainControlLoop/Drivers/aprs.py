@@ -165,11 +165,11 @@ class APRS:
         """
         if packet.simulate:
             return True
-        pd.DataFrame([
-            {"timestamp": time.time()},
-            {"radio": "APRS"},
-            {"size": len(str(packet))},
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
+        self.sfr.logs["transmission"].write({
+            "timestamp": time.time(),
+            "radio": "APRS",
+            "size": len(str(packet)),
+        })
         return self.write(str(packet))
 
     @wrap_errors(APRSError)

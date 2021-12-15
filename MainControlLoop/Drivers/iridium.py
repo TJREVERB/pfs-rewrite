@@ -379,11 +379,11 @@ class Iridium:
         result = self.transmit_raw(
             raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp,
                                packet.return_data))
-        pd.DataFrame([  # Log transmission
-            {"timestamp": time.time()},
-            {"radio": "Iridium"},
-            {"size": len(raw)},
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
+        self.sfr.logs["transmission"].write({  # Log transmission
+            "timestamp": time.time(),
+            "radio": "Iridium",
+            "size": len(raw),
+        })
         if result[0] not in [0, 1, 2, 3, 4]:
             raise IridiumError(details="Error transmitting buffer")
         if result[2] == 1:
