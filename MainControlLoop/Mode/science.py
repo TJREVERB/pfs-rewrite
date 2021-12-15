@@ -33,6 +33,8 @@ class Science(Mode):
             self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
+        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
+        self.sfr.logs["iridium"].clear()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
@@ -62,9 +64,11 @@ class Science(Mode):
         self.check_time()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS and \
+                self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1:
             print("Transmitting results...")
             # Transmit signal strength variability
+            self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
             pckt = TransmissionPacket("GSV", [], 0)
             self.sfr.command_executor.GSV(pckt)
             self.pings_performed += 1 
