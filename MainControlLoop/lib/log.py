@@ -23,8 +23,7 @@ class Logger:
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
         with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(str(t) + "," + str(buspower) + "," + ",".join(map(str, pdm_states)) + 
-                "," + ",".join(map(str, pwr)) + "\n")
+            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{str(buspower)},{",".join(map(str, pdm_states))},{",".join(map(str, pwr))}\n""")
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -35,7 +34,7 @@ class Logger:
         """
         print("Solar: ", t := time.time(), gen)
         with open(self.sfr.solar_log_path, "a") as f:
-            f.write(str(t) + "," + ",".join(map(str, gen)) + "\n")
+            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{",".join(map(str, gen))}\n""")
 
     @wrap_errors(LogicalError)
     def log_imu(self, tumble: list) -> None: # Probably scuffed
@@ -46,7 +45,7 @@ class Logger:
         print("Imu: ", t := time.time(), tumble)
 
         # Format data into pandas series
-        data = pd.concat(pd.Series([t]), pd.Series(tumble[0]), pd.Series(tumble[1]))
+        data = pd.concat(pd.Series([int(t/100000)*100000, int(t%100000)]), pd.Series(tumble[0]), pd.Series(tumble[1]))
         data.to_frame().to_csv(path_or_buf=self.sfr.imu_log_path)
 
     @wrap_errors(LogicalError)
