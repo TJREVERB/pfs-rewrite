@@ -115,12 +115,12 @@ class StateFieldRegistry:
 
     class Registry:
         @wrap_errors(LogicalError)
-        def __init__(self, eps, analytics):
+        def __init__(self, sfr):
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
-            self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
+            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.eps.telemetry["VBCROUT"]())
             self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := self.sun_detected()) else time.time()
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
             self.ORBITAL_PERIOD = 90 * 60
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
@@ -235,7 +235,7 @@ class StateFieldRegistry:
         Load sfr fields from log
         :return: (Registry) loaded registry
         """
-        defaults = self.Registry(self.eps, self.analytics)
+        defaults = self.Registry(self)
         return defaults  # DEBUG
         try:
             fields = self.logs["sfr"].read()
