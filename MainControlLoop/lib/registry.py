@@ -51,47 +51,69 @@ class StateFieldRegistry:
         "Antenna Deployer": AntennaDeployer
     }
 
-    @wrap_errors(LogicalError)
-    def __init__(self):
-        """
-        Variables common across our pfs
-        Vars in the "vars" object get logged
-        """
-        self.log_path = "./MainControlLoop/lib/data/state_field_log.pkl"
-        self.readable_log_path = "./MainControlLoop/lib/data/state_field_log.json"
-        self.pwr_log_path = "./MainControlLoop/lib/data/pwr_draw_log.csv"
-        self.solar_log_path = "./MainControlLoop/lib/data/solar_generation_log.csv"
-        self.volt_energy_map_path = "./MainControlLoop/lib/data/volt-energy-map.csv"
-        self.orbit_log_path = "./MainControlLoop/lib/data/orbit_log.csv"
-        self.iridium_data_path = "./MainControlLoop/lib/data/iridium_data.csv"
-        self.imu_log_path = "./MainControlLoop/lib/data/imu_data.csv"  # Scuffed implementation
-        self.command_log_path = "./MainControlLoop/lib/data/command_log.csv"
-        self.transmission_log_path = "./MainControlLoop/lib/data/transmission_log.csv"
+    class Log:
+        @wrap_errors(LogicalError)
+        def __init__(self, path, headers):
+            self.path = path
+            self.headers = headers
+            self.ext = path.split(".")[-1]
+            if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+                self.clear()
+            elif self.ext == "csv":  # For csv files
+                if pd.read_csv(self.path).columns.tolist() != self.headers:
+                    self.clear()  # Clear log if columns don't match up (out of date log)
+        
+        @wrap_errors(LogicalError)
+        def clear(self):
+            """
+            Reset log
+            """
+            if self.ext == "csv":  # For csv files
+                if not os.path.exists(self.path):  # If the file doesn't exist
+                    open(self.path, "x").close()  # Create the file
+                with open(self.path, "w") as f:  # Open file
+                    f.write(",".join(self.headers) + "\n")  # Write headers + newline
+            elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
+                os.remove(self.path)  # Delete
+            elif self.ext == "json":  # For json files
+                if os.path.exists(self.path):  # IF file exists
+                    os.remove(self.path)  # Delete
+                open(self.path, "x").close()  # Create empty file
 
-        self.eps = EPS(self)  # EPS never turns off
-        self.battery = Battery()
-        self.imu = IMU_I2C(self)
-        self.analytics = Analytics(self)
-        self.command_executor = CommandExecutor(self)
-        self.logger = Logger(self)
-
-        # Data for power draw and solar generation logs
-        self.pwr_draw_log_headers = pd.read_csv(self.pwr_log_path, header=0).columns
-        self.solar_generation_log_headers = pd.read_csv(self.solar_log_path, header=0).columns
-        self.voltage_energy_map = pd.read_csv(self.volt_energy_map_path)
-
-        self.devices = {
-            "Iridium": None,
-            "APRS": None,
-            "Antenna Deployer": None,
-        }
-        self.serial_converters = {  # False if off, True if on
-            "UART-RS232": False,  # Iridium Serial Converter
-            "SPI-UART": False,  # APRS Serial Converter
-            "USB-UART": False  # Alternate APRS Serial Converter
-        }
-        self.vars = self.load()
-        self.vars.LAST_STARTUP = time.time()
+        @wrap_errors(LogicalError)
+        def write(self, data):
+            """
+            Append one line of data to a csv log or dump to a pickle or json log
+            :param data: dictionary of the form {"column_name": value} if csv log
+                object if pkl log
+                dictionary of the form {"field": float_val} if json log
+            """
+            if self.ext == "csv":
+                if list(data.keys()) != self.headers:  # Raise error if keys are wrong
+                    raise LogicalError(details="Incorrect keys for logging")
+                # Append to log
+                pd.DataFrame.from_dict({k : [v] for (k, v) in data.items()}).to_csv(
+                    self.path, mode="a", header=False)
+            elif self.ext == "pkl":  # If log is pkl
+                with open(self.path, "wb") as f:
+                    pickle.dump(data, f)  # Dump to file
+            elif self.ext == "json":  # If log is json
+                with open(self.path, "w") as f:
+                    json.dump(data, f)  # Dump to file
+        
+        @wrap_errors(LogicalError)
+        def read(self):
+            """
+            Read and return entire log
+            :return: dataframe if csv, object if pickle, dictionary if json
+            """
+            if self.ext == "csv":  # Return dataframe if csv
+                return pd.read_csv(self.path)
+            if self.ext == "pkl":  # Return object if pickle
+                with open(self.path, "rb") as f:
+                    return pickle.load(f)
+            with open(self.path, "r") as f:
+                return json.load(f)  # Return dict if json
 
     class Registry:
         @wrap_errors(LogicalError)
@@ -163,6 +185,53 @@ class StateFieldRegistry:
             return result
 
     @wrap_errors(LogicalError)
+    def __init__(self):
+        """
+        Variables common across our pfs
+        Vars in the "vars" object get logged
+        """
+        self.logs = {
+            "sfr": self.Log("./MainControlLoop/lib/data/state_field_log.pkl", None),
+            "sfr_readable": self.Log("./MainControlLoop/lib/data/state_field_log.json", None),
+            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv", 
+                ["ts0","ts1","buspower","0x01_state","0x02_state","0x03_state","0x04_state","0x05_state","0x06_state","0x07_state","0x08_state","0x09_state","0x0A_state","0x01_pwr","0x02_pwr","0x03_pwr","0x04_pwr","0x05_pwr","0x06_pwr","0x07_pwr","0x08_pwr","0x09_pwr","0x0A_pwr"]),
+            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv", 
+                ["ts0","ts1","bcr1","bcr2","bcr3"]),
+            "voltage_energy": self.Log("./MainControlLoop/lib/data/volt-energy-map.csv",
+                ["voltage","energy"]),
+            "orbits": self.Log("./MainControlLoop/lib/data/orbit_log.csv",
+                ["ts0","ts1","phase"]),
+            "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
+                ["ts0","ts1","latitude","longitude","altitude","signal"]),
+            "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
+                ["ts0", "ts1", "xgyro", "ygyro"]),
+            "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
+                ["ts0","ts1","radio","command","arg","registry","msn","result"]),
+            "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
+                ["ts0","ts1","radio","size"]),
+        }
+
+        self.eps = EPS(self)  # EPS never turns off
+        self.battery = Battery()
+        self.imu = IMU_I2C(self)
+        self.analytics = Analytics(self)
+        self.command_executor = CommandExecutor(self)
+        self.logger = Logger(self)
+
+        self.devices = {
+            "Iridium": None,
+            "APRS": None,
+            "Antenna Deployer": None,
+        }
+        self.serial_converters = {  # False if off, True if on
+            "UART-RS232": False,  # Iridium Serial Converter
+            "SPI-UART": False,  # APRS Serial Converter
+            "USB-UART": False  # Alternate APRS Serial Converter
+        }
+        self.vars = self.load()
+        self.vars.LAST_STARTUP = time.time()
+
+    @wrap_errors(LogicalError)
     def load(self) -> Registry:
         """
         Load sfr fields from log
@@ -171,27 +240,25 @@ class StateFieldRegistry:
         defaults = self.Registry(self.eps, self.analytics)
         return defaults  # DEBUG
         try:
-            with open(self.log_path, "rb") as f:
-                fields = pickle.load(f)
+            fields = self.logs["sfr"].read()
             if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
                 print("Loading sfr from log...")
                 return fields
             print("Invalid log, loading default sfr...")
             return defaults
-        except Exception as e:
-            print("Unknown error, loading default sfr...")
-            print(e)
-            return defaults
+        except LogicalError as e:
+            if type(e.exception) == FileNotFoundError:
+                print("Log missing, loading default sfr...")
+                return defaults
+            raise
 
     @wrap_errors(LogicalError)
     def dump(self) -> None:
         """
         Dump values of all state fields into state_field_log and readable log
         """
-        with open(self.log_path, "wb") as f:
-            pickle.dump(self.vars, f)
-        with open(self.readable_log_path, "w") as f:
-            json.dump(self.vars.to_dict(), f)
+        self.logs["sfr"].write(self.vars)
+        self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
@@ -199,9 +266,11 @@ class StateFieldRegistry:
         Update LAST_DAYLIGHT_ENTRY and log new data
         """
         self.vars.LAST_DAYLIGHT_ENTRY = time.time()
-        # Add data to dataframe
-        df = pd.DataFrame(data={"daylight": self.vars.LAST_DAYLIGHT_ENTRY}, columns=["timestamp", "phase"])
-        df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
+        self.logs["orbits"].write({  # Append data to log
+            "ts0": self.vars.LAST_DAYLIGHT_ENTRY // 100000 * 100000,
+            "ts1": int(self.vars.LAST_DAYLIGHT_ENTRY % 100000),
+            "phase": "daylight",
+        })
 
     @wrap_errors(LogicalError)
     def enter_eclipse(self) -> None:
@@ -209,20 +278,28 @@ class StateFieldRegistry:
         Update LAST_ECLIPSE_ENTRY and log new data
         """
         self.vars.LAST_ECLIPSE_ENTRY = time.time()
-        # Add data to dataframe
-        df = pd.DataFrame(data={"eclipse": self.vars.LAST_ECLIPSE_ENTRY}, columns=["timestamp", "phase"])
-        df.to_csv(self.orbit_log_path, mode="a", header=False)  # Append data to log
+        self.logs["orbits"].write({  # Append data to log
+            "ts0": self.vars.LAST_ECLIPSE_ENTRY // 100000 * 100000,
+            "ts1": int(self.vars.LAST_ECLIPSE_ENTRY % 100000),
+            "phase": "eclipse",
+        })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location, signal):
+    def log_iridium(self, location: tuple, signal):
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         :param t: time to log, defaults to time method is called
         """
-        with open(self.iridium_data_path, "a") as f:
-            f.write(f"""{int(time.time()/100000)*100000},{int(time.time()%100000)},{",".join(map(str, location))},{str(signal)}\n""")
+        self.logs["iridium"].write({
+            "ts0": (t := time.time()) // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "latitude": location[0],
+            "longitude": location[1],
+            "altitude": location[2],
+            "signal": signal,
+        })
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:
@@ -230,10 +307,10 @@ class StateFieldRegistry:
         Returns list of buspower and power draws for all pdms
         :return: (list) [buspower, 0x01, 0x02... 0x0A]
         """
-        if len(df := pd.read_csv(self.pwr_log_path, header=0)) == 0:
+        if len(df := self.logs["power"].read()) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
-        cols = ["buspower"] + [f"0x0{str(hex(i))[2:].upper()}_pwr" for i in range(1, 11)]
-        return df[cols].iloc[-1].tolist()
+        # Get last row, only include columns which store information about power
+        return df[[i for i in self.logs["power"].headers if i.endswith("_pwr")]].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
@@ -241,10 +318,10 @@ class StateFieldRegistry:
         Returns list of input power from all bcrs
         :return: (list) [bcr1, bcr2, bcr3]
         """
-        if len(df := pd.read_csv(self.solar_log_path, header=0)) == 0:
+        if len(df := self.logs["solar"].read()) == 0:
             return self.eps.raw_solar_gen()
-        cols = ["bcr1", "bcr2", "bcr3"]
-        return df[cols].iloc[-1].tolist()
+        # Get last row, exclude timestamp columns
+        return df[[i for i in self.logs["solar"].headers if i.find("ts") == -1]].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def sun_detected(self) -> bool:
@@ -255,9 +332,11 @@ class StateFieldRegistry:
         solar = sum(self.eps.raw_solar_gen())
         if solar > self.eps.SUN_DETECTION_THRESHOLD: # Threshold of 1W
             return True
-        if self.battery.telemetry["VBAT"]() > self.eps.V_EOC: # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
+        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
+        if self.battery.telemetry["VBAT"]() > self.eps.V_EOC:
             pcharge = self.battery.charging_power()
-            if pcharge > (-1*self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD): # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
+            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
+            if pcharge > (-1*self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
                 return True
         return False
 
@@ -266,13 +345,8 @@ class StateFieldRegistry:
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
-        for f in [self.pwr_log_path, self.solar_log_path, self.orbit_log_path, self.iridium_data_path]:
-            headers = pd.read_csv(f, header=0).columns
-            os.remove(f)
-            with open(f, "w") as new:
-                new.write(",".join(list(headers)) + "\n")
-        if os.path.exists(self.log_path):
-            os.remove(self.log_path)
+        for i in self.logs.keys():
+            self.logs[i].clear()
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
@@ -280,11 +354,10 @@ class StateFieldRegistry:
         """
         Resets state field registry log
         """
-        with open(self.log_path, "w") as f:
-            f.write("")
+        self.logs["sfr"].write(self.Registry())  # Write default log
 
     @wrap_errors(LogicalError)
-    def __turn_on_component(self, component: str) -> None:
+    def turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
@@ -309,7 +382,7 @@ class StateFieldRegistry:
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def __turn_off_component(self, component: str) -> None:
+    def turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
@@ -337,7 +410,7 @@ class StateFieldRegistry:
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def __turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
+    def turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
@@ -361,7 +434,7 @@ class StateFieldRegistry:
                 self.__turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
