@@ -69,8 +69,6 @@ class StateFieldRegistry:
             Reset log
             """
             if self.ext == "csv":  # For csv files
-                if not os.path.exists(self.path):  # If the file doesn't exist
-                    open(self.path, "x").close()  # Create the file
                 with open(self.path, "w") as f:  # Open file
                     f.write(",".join(self.headers) + "\n")  # Write headers + newline
             elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
