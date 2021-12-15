@@ -252,7 +252,7 @@ class CommandExecutor:
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"]()])
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -260,7 +260,7 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"](),
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power())])
         return result

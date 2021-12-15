@@ -32,7 +32,7 @@ class Science(Mode):
             self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
 
@@ -50,7 +50,7 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         super(Science, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
 
