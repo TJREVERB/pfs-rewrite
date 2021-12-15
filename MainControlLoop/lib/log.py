@@ -27,13 +27,10 @@ class Logger:
             "ts1": int(t % 100000),
             "buspower": str(buspower),
         }
-        print(pdm_states)
-        print(pwr)
         for i in range(len(pdm_states)):
-            data[f"0x0{str(hex(i))[2:].upper()}_state"] = pdm_states[i]
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_state"] = pdm_states[i]
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i))[2:].upper()}_pwr"] = pwr[i]
-        print(data)
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = pwr[i]
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
