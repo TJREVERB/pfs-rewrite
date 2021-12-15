@@ -75,9 +75,8 @@ class Science(Mode):
                                     self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
             except NoSignalException:
                 self.sfr.log_iridium((NaN, NaN, NaN), 0)
-            else:  # If data was successfully recorded, increase pings performed
-                self.pings_performed += 1
             finally:  # Always update last_ping time to prevent spamming pings
+                self.pings_performed += 1
                 self.last_ping = time.time()
 
     @wrap_errors(LogicalError)
