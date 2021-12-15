@@ -61,8 +61,7 @@ class CommandExecutor:
             "GOP": self.GOP,
             "GCS": self.GCS,
             "USM": self.USM,
-            "IPC": self.IPC,
-            "ICE": self.ICE
+            "ITM": self.ITM
         }
 
     @wrap_errors(LogicalError)
@@ -70,14 +69,14 @@ class CommandExecutor:
         command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
             print("Command received: " + command_packet.command_string)
-            to_log = pd.DataFrame([
-                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
-                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
-                {"command": command_packet.command_string},
-                {"arg": ":".join(command_packet.args)},
-                {"registry": "Primary"},
-                {"msn": command_packet.msn}
-            ])
+            to_log = {
+                "timestamp": (t := datetime.datetime.utcnow()).timestamp(),
+                "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
+                "command": command_packet.command_string,
+                "arg": ":".join(command_packet.args),
+                "registry": "Primary",
+                "msn": command_packet.msn
+            }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
                 to_log["result"] = self.primary_registry[command_packet.command_string](command_packet)
@@ -85,20 +84,20 @@ class CommandExecutor:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
-                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.logs["command"].write(to_log)
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
             print("Command received: " + command_packet.command_string)
-            to_log = pd.DataFrame([
-                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
-                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
-                {"command": command_packet.command_string},
-                {"arg": ":".join(command_packet.args)},
-                {"registry": "Secondary"},
-                {"msn": command_packet.msn}
-            ])
+            to_log = {
+                "timestamp": (t := datetime.datetime.utcnow()).timestamp(),
+                "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
+                "command": command_packet.command_string,
+                "arg": ":".join(command_packet.args),
+                "registry": "Secondary",
+                "msn": command_packet.msn
+            }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
                 to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
@@ -106,7 +105,7 @@ class CommandExecutor:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
-                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.logs["command"].write(to_log)
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
 

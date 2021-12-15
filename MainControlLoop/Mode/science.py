@@ -1,3 +1,4 @@
+from numpy import NaN
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
@@ -32,6 +33,8 @@ class Science(Mode):
             self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
+        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
+        self.sfr.logs["iridium"].clear()
         self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
@@ -61,9 +64,11 @@ class Science(Mode):
         self.check_time()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS and \
+                self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1:
             print("Transmitting results...")
             # Transmit signal strength variability
+            self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
             pckt = TransmissionPacket("GSV", [], 0)
             self.sfr.command_executor.GSV(pckt)
             self.pings_performed += 1 
@@ -73,10 +78,9 @@ class Science(Mode):
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
                                     self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
             except NoSignalException:
-                self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(), 0)
-            else:  # If data was successfully recorded, increase pings performed
-                self.pings_performed += 1
+                self.sfr.log_iridium((NaN, NaN, NaN), 0)
             finally:  # Always update last_ping time to prevent spamming pings
+                self.pings_performed += 1
                 self.last_ping = time.time()
 
     @wrap_errors(LogicalError)

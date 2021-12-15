@@ -45,7 +45,6 @@ class Iridium:
         "GSG",
         "GTB",
         "GMT",
-        "GST",
         "GTS",
         "AAP",
         "APW",
@@ -59,7 +58,11 @@ class Iridium:
         "ULG",
         "ITM",
         "IPC",
+        "ICE",
+        "IGO",
     ]
+
+    ASCII_ARGS = {"ICE"} # Commands whose arguments should be decoded as ascii
 
     RETURN_CODES = [
         "0OK",  # 0, MSG received and executed
@@ -323,19 +326,22 @@ class Iridium:
         decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
 
-        for i in range(1, len(msg) - 2, 3):
-            num = (msg[i] << 16) | (msg[i + 1] << 8) | (msg[i + 2])  # msb first
-            exp = num >> 19  # extract exponent
-            if exp & (1 << 4) == 1:  # convert twos comp
-                exp &= 0x10  # truncate first bit
-                exp -= (1 << 4)
-            coef = num & 0x7ffff  # extract coefficient
-            if coef & (1 << 18) == 1:  # convert twos comp
-                coef &= 0x3ffff  # truncate first bit
-                coef -= (1 << 18)
-            if coef != 0:
-                coef /= 10 ** int(math.log10(abs(coef)))
-            args.append(coef * 10 ** exp)
+        if decoded in Iridium.ASCII_ARGS:
+            args = ["".join([chr(i) for i in msg[1:]])]
+        else:
+            for i in range(1, len(msg) - 2, 3):
+                num = (msg[i] << 16) | (msg[i + 1] << 8) | (msg[i + 2])  # msb first
+                exp = num >> 19  # extract exponent
+                if exp & (1 << 4) == 1:  # convert twos comp
+                    exp &= 0x10  # truncate first bit
+                    exp -= (1 << 4)
+                coef = num & 0x7ffff  # extract coefficient
+                if coef & (1 << 18) == 1:  # convert twos comp
+                    coef &= 0x3ffff  # truncate first bit
+                    coef -= (1 << 18)
+                if coef != 0:
+                    coef /= 10 ** int(math.log10(abs(coef)))
+                args.append(coef * 10 ** exp)
         return (decoded, args)
 
     @wrap_errors(IridiumError)
@@ -363,7 +369,6 @@ class Iridium:
                         if time.perf_counter() - t > 5:
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
-                    # print(raw)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
                 except Exception as e:
@@ -373,11 +378,12 @@ class Iridium:
         result = self.transmit_raw(
             raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp,
                                packet.return_data))
-        pd.DataFrame([  # Log transmission
-            {"timestamp": time.time()},
-            {"radio": "Iridium"},
-            {"size": len(raw)},
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
+        self.sfr.logs["transmission"].write({  # Log transmission
+            "ts0": (t := time.time()) // 100000,
+            "ts1": int(t % 100000),
+            "radio": "Iridium",
+            "size": len(raw),
+        })
         if result[0] not in [0, 1, 2, 3, 4]:
             raise IridiumError(details="Error transmitting buffer")
         if result[2] == 1:
@@ -389,7 +395,6 @@ class Iridium:
                     if time.perf_counter() - t > 5:
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
-                # print(raw)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3])))
             except Exception as e:
@@ -474,7 +479,6 @@ class Iridium:
                         if time.perf_counter() - t > 5:
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
-                    # print(raw)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(result[3])))
                 except Exception as e:

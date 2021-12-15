@@ -22,8 +22,16 @@ class Logger:
         :param t: time to log data, defaults to time method is called
         """
         print("Power: ", t := time.time(), pdm_states, pwr)
-        with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{str(buspower)},{",".join(map(str, pdm_states))},{",".join(map(str, pwr))}\n""")
+        data = {
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "buspower": str(buspower),
+        }
+        for i in range(len(pdm_states)):
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_state"] = pdm_states[i]
+        for i in range(len(pwr)):
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = pwr[i]
+        self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -33,8 +41,13 @@ class Logger:
         :param t: time to log data, defaults to time method is called
         """
         print("Solar: ", t := time.time(), gen)
-        with open(self.sfr.solar_log_path, "a") as f:
-            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{",".join(map(str, gen))}\n""")
+        self.sfr.logs["solar"].write({
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "bcr1": gen[0],
+            "bcr2": gen[1],
+            "bcr3": gen[2],
+        })
 
     @wrap_errors(LogicalError)
     def log_imu(self, tumble: list) -> None: # Probably scuffed
@@ -43,10 +56,12 @@ class Logger:
         :param tumble: result of getTumble() call
         """
         print("Imu: ", t := time.time(), tumble)
-
-        # Format data into pandas series
-        data = pd.concat(pd.Series([int(t/100000)*100000, int(t%100000)]), pd.Series(tumble[0]), pd.Series(tumble[1]))
-        data.to_frame().to_csv(path_or_buf=self.sfr.imu_log_path)
+        self.sfr.logs["imu"].write({
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "xgyro": tumble[0],
+            "ygyro": tumble[1],
+        })
 
     @wrap_errors(LogicalError)
     def integrate_charge(self) -> None:
@@ -67,7 +82,7 @@ class Logger:
         """
         Update orbits log when sun is detected
         """
-        if sun := self.sfr.eps.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
+        if sun := self.sfr.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
         elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
