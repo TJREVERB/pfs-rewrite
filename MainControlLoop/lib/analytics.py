@@ -29,8 +29,7 @@ class Analytics:
         for i in range(len(df)):
             if df["voltage"][i] > voltage:
                 max_index = i
-        min_index = max_index - 1
-        line = line_eq((df["voltage"][min_index], df["energy"][min_index]),
+        line = line_eq((df["voltage"][max_index - 1], df["energy"][max_index - 1]),
                        (df["voltage"][max_index], df["energy"][max_index]))
         return line(voltage)
 

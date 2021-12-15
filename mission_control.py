@@ -10,17 +10,20 @@ class MissionControl:
     SIGNAL_THRESHOLD = 2
 
     def __init__(self):
-        self.mcl = MainControlLoop()
-        self.sfr = self.mcl.sfr
-        self.error_dict = {
-            APRSError: self.aprs_troubleshoot,
-            IridiumError: self.iridium_troubleshoot,
-            EPSError: self.eps_troubleshoot,
-            RTCError: self.rtc_troubleshoot,
-            IMUError: self.imu_troubleshoot,
-            BatteryError: self.battery_troubleshoot,
-            AntennaError: self.antenna_troubleshoot
-        }
+        try:
+            self.mcl = MainControlLoop()
+            self.sfr = self.mcl.sfr
+            self.error_dict = {
+                APRSError: self.aprs_troubleshoot,
+                IridiumError: self.iridium_troubleshoot,
+                EPSError: self.eps_troubleshoot,
+                RTCError: self.rtc_troubleshoot,
+                IMUError: self.imu_troubleshoot,
+                BatteryError: self.battery_troubleshoot,
+                AntennaError: self.antenna_troubleshoot
+            }
+        except Exception as e:
+            self.testing_mode(e)
     
     def get_traceback(self, e: Exception):
         tb = traceback.format_exc().split("\n")
