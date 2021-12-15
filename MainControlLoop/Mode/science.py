@@ -29,9 +29,9 @@ class Science(Mode):
     def start(self) -> None:
         super(Science, self).start()
         if self.sfr.vars.PRIMARY_RADIO == "APRS":
-            self.instruct["Pin On"]("APRS")
-        self.instruct["Pin On"]("Iridium")
-        self.instruct["All Off"](exceptions=["APRS", "Iridium"])
+            self.sfr.instruct["Pin On"]("APRS")
+        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD
         self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None

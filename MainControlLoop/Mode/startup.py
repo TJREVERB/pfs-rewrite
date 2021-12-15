@@ -27,8 +27,8 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def start(self) -> None:
         super(Startup, self).start()
-        self.instruct["Pin On"]("Iridium")
-        self.instruct["All Off"](exceptions=["Iridium"])
+        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.instruct["All Off"](exceptions=["Iridium"])
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
@@ -37,7 +37,7 @@ class Startup(Mode):
             # if 30 minutes have elapsed
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
-                self.instruct["Pin On"]("Antenna Deployer")
+                self.sfr.instruct["Pin On"]("Antenna Deployer")
                 time.sleep(5)
                 self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
                 print("Antenna Deployed")
@@ -46,10 +46,10 @@ class Startup(Mode):
     def execute_cycle(self) -> None:
         super(Startup, self).execute_cycle()
         if self.conditions["Low Battery"]:  # Execute cycle low battery
-            self.instruct["All Off"]()  # turn everything off
+            self.sfr.instruct["All Off"]()  # turn everything off
             time.sleep(60 * 90)  # sleep for one full orbit
         else:  # Execute cycle normal
-            self.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
+            self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
             self.read_radio()  # only reads radio if not low battery
             self.transmit_radio()
             self.check_time()

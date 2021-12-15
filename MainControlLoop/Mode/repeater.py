@@ -19,9 +19,9 @@ class Repeater(Mode):  # TODO: IMPLEMENT
     def start(self) -> None:
         super(Repeater, self).start()
         self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
-        self.instruct["Pin On"]("Iridium")
-        self.instruct["Pin On"]("APRS")
-        self.instruct["All Off"](exceptions=["Iridium", "APRS"])
+        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.instruct["Pin On"]("APRS")
+        self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
         self.sfr.devices["APRS"].enable_digi()
 
     @wrap_errors(LogicalError)
