@@ -202,7 +202,6 @@ class APRS:
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        print("Read called")
         output = bytes()  # create an output variable
         for loop in range(50):
             try:

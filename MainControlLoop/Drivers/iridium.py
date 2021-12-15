@@ -369,7 +369,6 @@ class Iridium:
                         if time.perf_counter() - t > 5:
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
-                    # print(raw)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(ls[3])))
                 except Exception as e:
@@ -395,7 +394,6 @@ class Iridium:
                     if time.perf_counter() - t > 5:
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
-                # print(raw)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(TransmissionPacket( *self.decode(list(raw)) , int(result[3])))
             except Exception as e:
@@ -480,7 +478,6 @@ class Iridium:
                         if time.perf_counter() - t > 5:
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
-                    # print(raw)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(result[3])))
                 except Exception as e:
