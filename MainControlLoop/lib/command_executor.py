@@ -61,8 +61,7 @@ class CommandExecutor:
             "GOP": self.GOP,
             "GCS": self.GCS,
             "USM": self.USM,
-            "IPC": self.IPC,
-            "ICE": self.ICE
+            "ITM": self.ITM
         }
 
     @wrap_errors(LogicalError)
