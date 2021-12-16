@@ -64,20 +64,21 @@ class Science(Mode):
         self.check_time()
         super(Science, self).execute_cycle()
 
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS and \
-                self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1:
+        if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've already calculated SSV
+            pass  # Do nothing
+        elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've performed enough pings
             print("Transmitting results...")
             # Transmit signal strength variability
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
             pckt = TransmissionPacket("GSV", [], 0)
             self.sfr.command_executor.GSV(pckt)
-            self.pings_performed += 1 
-        elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:
+            self.pings_performed += 1
+        elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:  # If it's time to perform a ping
             print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
-            try:
+            try:  # Log Iridium data
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                    self.sfr.devices["Iridium"].check_signal_active())  # Log Iridium data
-            except NoSignalException:
+                                     self.sfr.devices["Iridium"].check_signal_active())
+            except NoSignalException:  # Log NaN geolocation, 0 signal strength
                 self.sfr.log_iridium((NaN, NaN, NaN), 0)
             finally:  # Always update last_ping time to prevent spamming pings
                 self.pings_performed += 1

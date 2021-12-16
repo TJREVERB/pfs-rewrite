@@ -110,21 +110,17 @@ class Mode:
         Transmit any messages in the transmit queue
         :return: (bool) whether all transmit queue messages were sent
         """
-        # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+        if self.sfr.vars.PRIMARY_RADIO == "APRS" or (self.sfr.vars.PRIMARY_RADIO == "Iridium" and
+            time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME and
+            self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD):
+            print("Attempting to transmit queue")
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                packet = self.vars.transmit_buffer.pop(0)
-                if not self.sfr.command_executor.transmit(packet):
-                    return False
-        # If primary radio is APRS
-        if self.sfr.vars.PRIMARY_RADIO == "APRS":
-            while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                packet = self.vars.transmit_buffer.pop(0)
-                if not self.sfr.command_executor.transmit(packet):
-                    return False
-        return True
+                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer.pop(0)):
+                    print("Signal strength lost!")
+                    break
+                print("Transmitted " + p.command_string)
+        else:
+            print("No signal strength!")
 
     @wrap_errors(LogicalError)
     def check_time(self) -> None:
