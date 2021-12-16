@@ -111,7 +111,7 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, error=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, error = False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -123,7 +123,8 @@ class CommandExecutor:
             packet.return_code = "ERR"
         else:
             packet.return_code = "0OK"
-        packet.return_data = data
+        if data is not None:
+            packet.return_data = data
         d = datetime.datetime.utcnow()
         packet.timestamp = (d.day, d.hour, d.minute)
         try:
