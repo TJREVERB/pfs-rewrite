@@ -89,9 +89,9 @@ class StateFieldRegistry:
             if self.ext == "csv":
                 if list(data.keys()) != self.headers:  # Raise error if keys are wrong
                     raise LogicalError(details="Incorrect keys for logging")
+                print(df := pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}))
                 # Append to log
-                pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
-                    self.path, mode="a", header=False)
+                df.to_csv(self.path, mode="a", header=False)
             elif self.ext == "pkl":  # If log is pkl
                 with open(self.path, "wb") as f:
                     pickle.dump(data, f)  # Dump to file

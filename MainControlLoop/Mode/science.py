@@ -78,8 +78,10 @@ class Science(Mode):
             try:  # Log Iridium data
                 self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
                                      self.sfr.devices["Iridium"].check_signal_active())
+                print("Logged with connectivity")
             except NoSignalException:  # Log NaN geolocation, 0 signal strength
                 self.sfr.log_iridium((NaN, NaN, NaN), 0)
+                print("Logged 0 connectivity")
             finally:  # Always update last_ping time to prevent spamming pings
                 self.pings_performed += 1
                 self.last_ping = time.time()

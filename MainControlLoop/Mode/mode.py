@@ -107,7 +107,7 @@ class Mode:
         Transmit any messages in the transmit queue
         :return: (bool) whether all transmit queue messages were sent
         """
-        print("Signal strength: " + str(ss := self.sfr.devices["Iridium"].check_signal_passive()))
+        print("Signal strength: " + str(ss := self.sfr.devices["Iridium"].check_signal_active()))
         if self.sfr.vars.PRIMARY_RADIO == "APRS" or (self.sfr.vars.PRIMARY_RADIO == "Iridium" and
                  time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME and
                  ss >= self.SIGNAL_THRESHOLD):
