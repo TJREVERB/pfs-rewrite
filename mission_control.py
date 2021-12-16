@@ -98,6 +98,7 @@ class MissionControl:
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback(e))
+        self.sfr.turn_all_off()
         self.sfr.clear_logs()
         exit(1)
 
