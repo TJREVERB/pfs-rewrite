@@ -95,10 +95,6 @@ class Mode:
                 self.last_iridium_poll_time = time.time()
                 self.sfr.LAST_IRIDIUM_RECEIVED = time.time()
             elif time.time() - self.sfr.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
-                print("Current system time:", time.time())
-                print("Last iridium received time:", self.sfr.LAST_IRIDIUM_RECEIVED)
-                print("Cutoff time:", self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF)
-                # haven't been able to read anything in a while so change the radio
                 self.sfr.set_primary_radio("APRS")  # TODO: should this turn off the old radio?
 
         # If APRS is on for whatever reason
