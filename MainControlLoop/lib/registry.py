@@ -1,8 +1,8 @@
 import time
 import os
 import pandas as pd
-import numpy as np
-import pickle, json
+import pickle
+import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
 from MainControlLoop.Drivers.bno055 import IMU_I2C
