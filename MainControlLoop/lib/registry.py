@@ -155,8 +155,8 @@ class StateFieldRegistry:
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
             self.LAST_STARTUP = 0
-            self.LAST_IRIDIUM_SENT = None
-            self.LAST_IRIDIUM_RECEIVED = None
+            self.LAST_IRIDIUM_SENT = time.time()
+            self.LAST_IRIDIUM_RECEIVED = time.time()
 
         @wrap_errors(LogicalError)
         def encode(self):
@@ -481,6 +481,7 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
+        # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if turn_off_old:
