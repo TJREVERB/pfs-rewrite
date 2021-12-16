@@ -96,6 +96,7 @@ class Analytics:
         """
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         # Calculates on either last 50 points or whole dataset
+        print(df)
         sunlight = ((tmp := df[df["phase"] == "sunlight"])["ts0"] + tmp["ts1"]).tolist()
         eclipse = ((tmp := df[df["phase"] == "eclipse"])["ts0"] + tmp["ts1"]).tolist()
         # Appends eclipse data to deltas
