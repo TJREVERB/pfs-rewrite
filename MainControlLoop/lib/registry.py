@@ -156,7 +156,6 @@ class StateFieldRegistry:
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
             self.LAST_STARTUP = 0
-            self.LAST_IRIDIUM_SENT = time.time()
             self.LAST_IRIDIUM_RECEIVED = time.time()
 
         @wrap_errors(LogicalError)
