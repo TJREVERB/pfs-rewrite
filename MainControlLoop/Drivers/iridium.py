@@ -2,6 +2,7 @@ import time, datetime
 import math
 import pandas as pd
 from serial import Serial
+import copy
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
     NoSignalException
@@ -23,6 +24,8 @@ from MainControlLoop.lib.exceptions import wrap_errors, IridiumError, LogicalErr
 class Iridium:
     PORT = '/dev/serial0'
     BAUDRATE = 19200
+
+    MAX_DATASIZE = 294 # Maximum permissible data size not including descriptor size, in bytes. Hardware limitation should be 340 bytes total, or 334 for just data
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
@@ -344,6 +347,26 @@ class Iridium:
                     coef /= 10 ** int(math.log10(abs(coef)))
                 args.append(coef * 10 ** exp)
         return (decoded, args)
+
+    @wrap_errors(IridiumError)
+    def split_packet(self, packet: TransmissionPacket) -> list:
+        """
+        Splits the packet into a list of packets which abide by size limits
+        """
+        FLOAT_LEN = 3
+        if packet.return_code == "ERR":
+            data = packet.return_data()[0]
+            ls = [data[0 + i:Iridium.MAX_DATASIZE + i] for i in range(0, len(data), Iridium.MAX_DATASIZE)]
+            result = [copy.deepcopy(packet) for _ in range(len(ls))]
+            for _ in range(len(ls)):
+                result[_].return_data = [ls[_]]
+        else:
+            data = packet.return_data()
+            ls = [data[0 + i:Iridium.MAX_DATASIZE/FLOAT_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE/FLOAT_LEN)]
+            result = [copy.deepcopy(packet) for _ in range(len(ls))]
+            for _ in range(len(ls)):
+                result[_].return_data = ls[_]
+        return result
 
     @wrap_errors(IridiumError)
     def transmit(self, packet: TransmissionPacket, discardmtbuf=False) -> bool:
