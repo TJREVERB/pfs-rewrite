@@ -231,7 +231,7 @@ class Iridium:
         raw = self.LAST_RSSI()
         if raw.find("CSQF:") == -1:
             return 0
-        return int(raw[raw.find("CSQF:") + 4: raw.find("CSQF:") + 5])
+        return int(raw[raw.find("CSQF:") + 5: raw.find("CSQF:") + 6])
 
     @wrap_errors(IridiumError)
     def process(self, data, cmd):
