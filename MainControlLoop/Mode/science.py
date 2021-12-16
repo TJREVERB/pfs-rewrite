@@ -1,4 +1,4 @@
-from numpy import NaN
+from numpy import nan
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
@@ -80,7 +80,7 @@ class Science(Mode):
                                      self.sfr.devices["Iridium"].check_signal_active())
                 print("Logged with connectivity")
             except NoSignalException:  # Log NaN geolocation, 0 signal strength
-                self.sfr.log_iridium((NaN, NaN, NaN), 0)
+                self.sfr.log_iridium((nan, nan, nan), 0)
                 print("Logged 0 connectivity")
             finally:  # Always update last_ping time to prevent spamming pings
                 self.pings_performed += 1
