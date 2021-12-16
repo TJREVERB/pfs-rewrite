@@ -40,6 +40,7 @@ class MainControlLoop:
             self.sfr.vars.MODE = self.sfr.mode_obj.switch_mode()
 
         print("Cycle")
+        print(self.sfr.predicted_generation(5))
         self.sfr.mode_obj.execute_cycle()  # Execute single cycle of mode
         self.sfr.command_executor.execute()  # Execute commands
         self.sfr.logger.log()  # Logs data
