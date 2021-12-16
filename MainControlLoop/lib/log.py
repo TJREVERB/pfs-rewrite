@@ -41,7 +41,7 @@ class Logger:
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
-        print("Power: ", t := time.time(), pdm_states, pwr)
+        print("Power: ", t := time.time(), pdm_states, pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
@@ -50,7 +50,7 @@ class Logger:
         for i in range(len(pdm_states)):
             data[f"0x0{str(hex(i + 1))[2:].upper()}_state"] = pdm_states[i]
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = round(pwr[i], 3)
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = pwr[i]
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
@@ -59,13 +59,13 @@ class Logger:
         Logs the solar power generation from each panel (sum of A and B)
         :param gen: array of power inputs from each panel, in W.
         """
-        print("Solar: ", t := time.time(), gen)
+        print("Solar: ", t := time.time(), gen := [round(i, 3) for i in gen])
         self.sfr.logs["solar"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
-            "bcr1": round(gen[0], 3),
-            "bcr2": round(gen[1], 3),
-            "bcr3": round(gen[2], 3),
+            "bcr1": gen[0],
+            "bcr2": gen[1],
+            "bcr3": gen[2],
         })
 
     @wrap_errors(LogicalError)
@@ -73,12 +73,12 @@ class Logger:
         """
         Logs IMU data
         """
-        print("Imu: ", t := time.time(), tumble := self.sfr.imu.getTumble()[0])
+        print("Imu: ", t := time.time(), tbl := [round(i, 3) for i in self.sfr.imu.getTumble()[0]])
         self.sfr.logs["imu"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
-            "xgyro": round(tumble[0], 3),
-            "ygyro": round(tumble[1], 3),
+            "xgyro": tbl[0],
+            "ygyro": tbl[1],
         })
 
     @wrap_errors(LogicalError)
