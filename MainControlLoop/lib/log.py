@@ -41,10 +41,6 @@ class Logger:
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
-        import inspect
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 3)
-        print('Log pwr caller name:', calframe[2][3])
         print("Power: ", t := time.time(), pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
@@ -88,6 +84,10 @@ class Logger:
         """
         Integrate charge in Joules
         """
+        import inspect
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 3)
+        print('Log pwr caller name:', calframe[2][3])
         # Log total power, store values into variables
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
