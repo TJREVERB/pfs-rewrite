@@ -18,6 +18,7 @@ from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
+from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
@@ -489,4 +490,7 @@ class StateFieldRegistry:
             self.vars.PRIMARY_RADIO = new_radio
             if self.devices[new_radio] is None:  # initialize it
                 self.turn_on_component(new_radio)
-
+            # transmit update to groundstation
+            encoded_radio = self.sfr.components.index(new_radio)
+            packet = TransmissionPacket("GPR", [], 0)
+            self.command_executor.transmit(packet, [encoded_radio])
