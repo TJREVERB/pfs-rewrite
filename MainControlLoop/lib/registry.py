@@ -62,7 +62,7 @@ class StateFieldRegistry:
             elif self.ext == "csv":  # For csv files
                 if pd.read_csv(self.path).columns.tolist() != self.headers:
                     self.clear()  # Clear log if columns don't match up (out of date log)
-        
+
         @wrap_errors(LogicalError)
         def clear(self):
             """
@@ -90,7 +90,7 @@ class StateFieldRegistry:
                 if list(data.keys()) != self.headers:  # Raise error if keys are wrong
                     raise LogicalError(details="Incorrect keys for logging")
                 # Append to log
-                pd.DataFrame.from_dict({k : [v] for (k, v) in data.items()}).to_csv(
+                pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
                     self.path, mode="a", header=False)
             elif self.ext == "pkl":  # If log is pkl
                 with open(self.path, "wb") as f:
@@ -98,7 +98,7 @@ class StateFieldRegistry:
             elif self.ext == "json":  # If log is json
                 with open(self.path, "w") as f:
                     json.dump(data, f)  # Dump to file
-        
+
         @wrap_errors(LogicalError)
         def read(self):
             """
@@ -191,22 +191,25 @@ class StateFieldRegistry:
         self.logs = {
             "sfr": self.Log("./MainControlLoop/lib/data/state_field_log.pkl", None),
             "sfr_readable": self.Log("./MainControlLoop/lib/data/state_field_log.json", None),
-            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv", 
-                ["ts0","ts1","buspower","0x01_state","0x02_state","0x03_state","0x04_state","0x05_state","0x06_state","0x07_state","0x08_state","0x09_state","0x0A_state","0x01_pwr","0x02_pwr","0x03_pwr","0x04_pwr","0x05_pwr","0x06_pwr","0x07_pwr","0x08_pwr","0x09_pwr","0x0A_pwr"]),
-            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv", 
-                ["ts0","ts1","bcr1","bcr2","bcr3"]),
+            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv",
+                              ["ts0", "ts1", "buspower", "0x01_state", "0x02_state", "0x03_state", "0x04_state",
+                               "0x05_state", "0x06_state", "0x07_state", "0x08_state", "0x09_state", "0x0A_state",
+                               "0x01_pwr", "0x02_pwr", "0x03_pwr", "0x04_pwr", "0x05_pwr", "0x06_pwr", "0x07_pwr",
+                               "0x08_pwr", "0x09_pwr", "0x0A_pwr"]),
+            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv",
+                              ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
             "voltage_energy": self.Log("./MainControlLoop/lib/data/volt-energy-map.csv",
-                ["voltage","energy"]),
+                                       ["voltage", "energy"]),
             "orbits": self.Log("./MainControlLoop/lib/data/orbit_log.csv",
-                ["ts0","ts1","phase"]),
+                               ["ts0", "ts1", "phase"]),
             "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
-                ["ts0","ts1","latitude","longitude","altitude","signal"]),
+                                ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
             "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
-                ["ts0", "ts1", "xgyro", "ygyro"]),
+                            ["ts0", "ts1", "xgyro", "ygyro"]),
             "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
-                ["ts0","ts1","radio","command","arg","registry","msn","result"]),
+                                ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
-                ["ts0","ts1","radio","size"]),
+                                     ["ts0", "ts1", "radio", "size"]),
         }
 
         self.eps = EPS(self)  # EPS never turns off
@@ -328,13 +331,13 @@ class StateFieldRegistry:
         :return: (bool)
         """
         solar = sum(self.eps.raw_solar_gen())
-        if solar > self.eps.SUN_DETECTION_THRESHOLD: # Threshold of 1W
+        if solar > self.eps.SUN_DETECTION_THRESHOLD:  # Threshold of 1W
             return True
         # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
         if self.battery.telemetry["VBAT"]() > self.eps.V_EOC:
             pcharge = self.battery.charging_power()
             # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
-            if pcharge > (-1*self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
+            if pcharge > (-1 * self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
                 return True
         return False
 
@@ -366,7 +369,8 @@ class StateFieldRegistry:
             return
 
         self.eps.commands["Pin On"](component)  # turns on component
-        self.devices[component] = self.component_to_class[component](self)   # registers component as on by setting component status in sfr to object instead of None
+        self.devices[component] = self.component_to_class[component](
+            self)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.component_to_serial[component]  # gets serial converter name of component
             self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
