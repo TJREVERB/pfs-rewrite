@@ -5,7 +5,7 @@ import numpy as np
 import pickle, json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
+from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -47,7 +47,7 @@ class StateFieldRegistry:
     component_to_class = {  # returns class from component name
         "Iridium": Iridium,
         "APRS": APRS,
-        "IMU": IMU,
+        "IMU": IMU_I2C,
         "Antenna Deployer": AntennaDeployer
     }
 
