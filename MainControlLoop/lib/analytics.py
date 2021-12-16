@@ -65,9 +65,13 @@ class Analytics:
         panels = ["bcr1", "bcr2", "bcr3"]  # List of panels to average
         solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
-        if len(orbits) < 3:  # If we haven't logged any orbits
+        print(orbits)
+        print(solar)
+        if len(orbits) < 4:  # If we haven't logged any orbits
             print("orbits log bad")
             if len(solar) > 0:  # If we have solar data
+                print(solar.sum(axis=1))
+                print(solar.sum(axis=1)).mean()
                 return solar.sum(axis=1).mean() * duration  # Estimate based on what we have
             else:  # If we haven't logged any solar data
                 return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
