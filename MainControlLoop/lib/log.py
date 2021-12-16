@@ -19,9 +19,9 @@ class Logger:
             Execute a single cycle of the clock.
             Run func if enough time has passed, do nothing otherwise
             """
-            if time.perf_counter() > self.last_iteration + self.delay:
+            if time.time() > self.last_iteration + self.delay:
                 self.func()
-                self.last_iteration = time.perf_counter()
+                self.last_iteration = time.time()
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
