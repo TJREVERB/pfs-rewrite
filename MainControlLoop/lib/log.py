@@ -69,12 +69,11 @@ class Logger:
         })
 
     @wrap_errors(LogicalError)
-    def log_imu(self, tumble: list) -> None: # Probably scuffed
+    def log_imu(self) -> None:  # Probably scuffed
         """
-        Logs IMU datapoints
-        :param tumble: result of getTumble() call
+        Logs IMU data
         """
-        print("Imu: ", t := time.time(), tumble)
+        print("Imu: ", t := time.time(), tumble := self.sfr.imu.getTumble())
         self.sfr.logs["imu"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
@@ -93,7 +92,7 @@ class Logger:
         self.log_solar(self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
         self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.battery.charging_power() * \
-            (time.perf_counter() - self.loggers["power"].last_iteration)
+                                              (time.perf_counter() - self.loggers["power"].last_iteration)
 
     @wrap_errors(LogicalError)
     def update_orbits(self):
