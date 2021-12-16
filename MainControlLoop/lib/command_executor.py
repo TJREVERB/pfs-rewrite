@@ -123,7 +123,7 @@ class CommandExecutor:
             packet.return_code = "ERR"
         else:
             packet.return_code = "0OK"
-        if data is not None:
+        if packet.return_data is None:
             packet.return_data = data
         d = datetime.datetime.utcnow()
         packet.timestamp = (d.day, d.hour, d.minute)
