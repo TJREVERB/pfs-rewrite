@@ -84,7 +84,7 @@ class Analytics:
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
             min([t % orbital_period, sunlight_period]) * solar_gen
         # Set start time for simulation
-        start = current_time - orbits[orbits["phase"] == "sunlight"]["timestamp"][-1]
+        start = current_time - orbits[orbits["phase"] == "sunlight"]["timestamp"].iloc[-1]
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
