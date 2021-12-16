@@ -73,7 +73,7 @@ class Logger:
         """
         Logs IMU data
         """
-        print("Imu: ", t := time.time(), tumble := self.sfr.imu.getTumble())
+        print("Imu: ", t := time.time(), tumble := self.sfr.imu.getTumble()[0])
         self.sfr.logs["imu"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
