@@ -97,18 +97,16 @@ class Analytics:
         :return: average orbital period over last 50 orbits
         """
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
-        if len(df) < 3:
-            return 90 * 60
         # Calculates on either last 50 points or whole dataset
-        sunlight = df[df["phase"] == "sunlight"]
-        eclipse = df[df["phase"] == "eclipse"]
+        sunlight = (tmp := df[df["phase"] == "sunlight"])["ts0"] + tmp["ts1"]
+        eclipse = (tmp := df[df["phase"] == "eclipse"])["ts0"] + tmp["ts1"]
         # Appends eclipse data to deltas
-        deltas = [sunlight.iloc[i + 1] - sunlight.iloc[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
-                 [eclipse.iloc[i + 1] - eclipse.iloc[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
+        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * len(sunlight), -1)] + \
+                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * len(eclipse), -1)]
         if len(deltas) > 0:
             return sum(deltas) / len(deltas)
         else:
-            return -1
+            return 90 * 60
 
     @wrap_errors(LogicalError)
     def signal_strength_variability(self) -> float:
