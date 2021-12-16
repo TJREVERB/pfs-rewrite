@@ -77,6 +77,7 @@ class Logger:
             "ts1": int(t % 100000),
             "xgyro": tbl[0],
             "ygyro": tbl[1],
+            "zgyro": tbl[2],
         })
 
     @wrap_errors(LogicalError)

@@ -203,7 +203,7 @@ class StateFieldRegistry:
             "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
                                 ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
             "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
-                            ["ts0", "ts1", "xgyro", "ygyro"]),
+                            ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
             "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
                                 ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
