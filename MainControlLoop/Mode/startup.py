@@ -77,6 +77,7 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
+        df = self.sfr.logs["imu"].read().tail(5) 
         return self.sfr.vars.CONTACT_ESTABLISHED is False  # if contact not established, stay in charging
 
     @wrap_errors(LogicalError)
