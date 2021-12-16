@@ -76,10 +76,14 @@ class Analytics:
         # Calculate sunlight period
         sunlight_period = orbits[orbits["phase"] == "sunlight"]["timestamp"].diff().mean(skipna=True)
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
+        print(sunlight_period)
+        print(orbital_period)
         # Filter out all data points which weren't taken in sunlight
         in_sun = solar[[orbits[orbits["timestamp"] < 
             row["timestamp"]]["phase"].iloc[-1] == "sunlight" for (_, row) in solar.iterrows()]]
+        print(in_sun)
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
+        print(solar_gen)
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
             min([t % orbital_period, sunlight_period]) * solar_gen
