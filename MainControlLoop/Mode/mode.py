@@ -113,9 +113,10 @@ class Mode:
                  ss >= self.SIGNAL_THRESHOLD):
             print("Attempting to transmit queue")
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer.pop(0)):
+                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer[0]):
                     print("Signal strength lost!")
                     break
+                self.sfr.vars.transmit_buffer.pop(0)
                 print("Transmitted " + p.command_string)
 
     @wrap_errors(LogicalError)

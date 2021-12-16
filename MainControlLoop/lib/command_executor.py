@@ -132,7 +132,7 @@ class CommandExecutor:
             return True
         except NoSignalException as e:
             print("No Iridium connectivity, appending to buffer...")
-            self.sfr.vars.transmit_buffer.append(packet)
+            self.sfr.vars.transmit_buffer.append(packet) #TODO: Correct this logic
             return False
 
     @wrap_errors(CommandExecutionException)
