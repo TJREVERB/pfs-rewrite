@@ -100,6 +100,18 @@ class StateFieldRegistry:
                     json.dump(data, f)  # Dump to file
 
         @wrap_errors(LogicalError)
+        def truncate(self, n):
+            """
+            Remove n rows from log file
+            """
+            if self.ext != "csv":
+                raise LogicalError(details="Attempted to truncate non-csv log!")
+            elif len(df := self.read()) <= n:
+                self.clear()
+            else:
+                df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
+
+        @wrap_errors(LogicalError)
         def read(self):
             """
             Read and return entire log
@@ -207,7 +219,7 @@ class StateFieldRegistry:
             "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
                                 ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
             "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
-                            ["ts0", "ts1", "xgyro", "ygyro"]),
+                            ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
             "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
                                 ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
