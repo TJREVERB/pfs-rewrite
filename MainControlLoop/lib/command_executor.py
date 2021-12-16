@@ -79,7 +79,7 @@ class CommandExecutor:
             }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.primary_registry[command_packet.command_string](command_packet)
+                to_log["result"] = ":".join(self.primary_registry[command_packet.command_string](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
@@ -91,7 +91,8 @@ class CommandExecutor:
         for command_packet in self.sfr.vars.outreach_buffer:
             print("Command received: " + command_packet.command_string)
             to_log = {
-                "timestamp": (t := datetime.datetime.utcnow()).timestamp(),
+                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
+                "ts1": int(t.timestamp() % 100000),
                 "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
                 "command": command_packet.command_string,
                 "arg": ":".join(command_packet.args),
@@ -100,7 +101,7 @@ class CommandExecutor:
             }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
+                to_log["result"] = ":".join(self.secondary_registry[command_packet.command_string](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
