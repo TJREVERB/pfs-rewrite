@@ -54,7 +54,6 @@ class Science(Mode):
     def update_conditions(self) -> None:
         super(Science, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
-        self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
         self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
 
     @wrap_errors(LogicalError)
