@@ -84,10 +84,6 @@ class Logger:
         """
         Integrate charge in Joules
         """
-        import inspect
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 3)
-        print('Log pwr caller name:', calframe[2][3])
         # Log total power, store values into variables
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
