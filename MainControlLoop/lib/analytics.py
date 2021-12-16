@@ -39,7 +39,7 @@ class Analytics:
         Get power consumption over last n datapoints
         """
         df = self.sfr.logs["power"].read().tail(n)
-        return df[[f"0x0{str(hex(i))[2:].upper()}" for i in range(1, 11)]].sum(axis=1)
+        return df[["buspower"] + [f"0x0{str(hex(i))[2:].upper()}" for i in range(1, 11)]].sum(axis=1)
 
     @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> tuple:
@@ -117,7 +117,7 @@ class Analytics:
         return df["signal"].std()
 
     @wrap_errors(LogicalError)
-    def total_power_consumed(self) -> float:
+    def total_power_consumed(self) -> float:  # TODO: MULTIPLY W * S TO GET ENERGY
         """
         Calculates and returns total power consumed by satellite over mission duration
         """

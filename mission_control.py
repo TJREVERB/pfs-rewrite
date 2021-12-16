@@ -20,7 +20,8 @@ class MissionControl:
                 RTCError: self.rtc_troubleshoot,
                 IMUError: self.imu_troubleshoot,
                 BatteryError: self.battery_troubleshoot,
-                AntennaError: self.antenna_troubleshoot
+                AntennaError: self.antenna_troubleshoot,
+                HighPowerDrawError: self.high_power_draw_troubleshoot,
             }
         except Exception as e:
             self.testing_mode(e)
@@ -83,6 +84,9 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
     
     def antenna_troubleshoot(self, e: CustomException):
+        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+    
+    def high_power_draw_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def testing_mode(self, e: Exception):

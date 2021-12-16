@@ -99,6 +99,18 @@ class StateFieldRegistry:
                 with open(self.path, "w") as f:
                     json.dump(data, f)  # Dump to file
 
+        @wrap_errors
+        def truncate(self, n):
+            """
+            Remove n rows from log file
+            """
+            if self.ext != "csv":
+                raise LogicalError(details="Attempted to truncate non-csv log!")
+            elif len(df := self.read()) <= n:
+                self.clear()
+            else:
+                df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
+
         @wrap_errors(LogicalError)
         def read(self):
             """

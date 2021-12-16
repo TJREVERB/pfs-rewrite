@@ -1,5 +1,5 @@
 import time
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
 
 
 class Logger:
@@ -89,9 +89,24 @@ class Logger:
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
-        # Subtract delta * time from BATTERY_CAPACITY_INT
-        self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.battery.charging_power() * \
-                                              (time.perf_counter() - self.loggers["power"].last_iteration)
+        delta = self.sfr.battery.charging_power() * (time.time() - self.loggers["power"].last_iteration)
+        # If we're drawing/gaining absurd amounts of power
+        if abs(delta) > 999:  # TODO: ARBITRARY THRESHOLD
+            # Verify we're actually drawing an absurd amount of power
+            total_draw = []
+            for i in range(5):
+                total_draw.append(self.sfr.eps.bus_power() + sum(self.sfr.eps.raw_pdm_draw()[1]))
+                time.sleep(1)
+            if (avg_draw := sum(total_draw) / 5) >= 999:  # TODO: ARBITRARY THRESHOLD
+                raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
+            else:  # If value was bogus, truncate logs and integrate charge based on historical data
+                self.sfr.logs["power"].truncate(1)
+                self.sfr.logs["solar"].truncate(1)
+                self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.analytics.predicted_generation(
+                    t := time.time() - self.loggers["power"].last_iteration) - (self.sfr.analytics.predicted_consumption(t))
+        else:
+            # Add delta * time to BATTERY_CAPACITY_INT
+            self.sfr.vars.BATTERY_CAPACITY_INT += delta
 
     @wrap_errors(LogicalError)
     def update_orbits(self):
