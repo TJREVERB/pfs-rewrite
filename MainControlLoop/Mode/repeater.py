@@ -18,7 +18,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
     @wrap_errors(LogicalError)
     def start(self) -> None:
         super(Repeater, self).start()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
@@ -40,7 +40,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
     @wrap_errors(LogicalError)
     def update_conditions(self):
         super(Repeater, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:

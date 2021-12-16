@@ -1,10 +1,7 @@
 import time
-from MainControlLoop.Drivers.aprs import APRS
-from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.bno055 import IMU
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-import datetime, os
+import datetime
+import os
 
 
 class Mode:
@@ -20,12 +17,12 @@ class Mode:
         # seconds)
         # Actual time between read/write will depend on signal availability
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
-        self.TIME_ERR_THRESHOLD = 120 # Two minutes acceptable time error between iridium network and rtc
+        self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.sfr.instruct = {
-            "Pin On": self.__turn_on_component,
-            "Pin Off": self.__turn_off_component,
-            "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off
+            "Pin On": self.sfr.turn_on_component,
+            "Pin Off": self.sfr.turn_off_component,
+            "All On": self.sfr.turn_all_on,
+            "All Off": self.sfr.turn_all_off
         }
 
     @wrap_errors(LogicalError)
@@ -110,21 +107,16 @@ class Mode:
         Transmit any messages in the transmit queue
         :return: (bool) whether all transmit queue messages were sent
         """
-        # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+        print("Signal strength: " + str(ss := self.sfr.devices["Iridium"].check_signal_active()))
+        if self.sfr.vars.PRIMARY_RADIO == "APRS" or (self.sfr.vars.PRIMARY_RADIO == "Iridium" and
+                 time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME and
+                 ss >= self.SIGNAL_THRESHOLD):
+            print("Attempting to transmit queue")
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                packet = self.vars.transmit_buffer.pop(0)
-                if not self.sfr.command_executor.transmit(packet):
-                    return False
-        # If primary radio is APRS
-        if self.sfr.vars.PRIMARY_RADIO == "APRS":
-            while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                packet = self.vars.transmit_buffer.pop(0)
-                if not self.sfr.command_executor.transmit(packet):
-                    return False
-        return True
+                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer.pop(0)):
+                    print("Signal strength lost!")
+                    break
+                print("Transmitted " + p.command_string)
 
     @wrap_errors(LogicalError)
     def check_time(self) -> None:
@@ -136,9 +128,9 @@ class Mode:
             current_datetime = datetime.datetime.utcnow()
             iridium_datetime = self.sfr.devices["Iridium"].processed_time()
             if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-                os.system(f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """) # Update system time
-                os.system("""sudo hwclock -w""") # Write to RTC
-
+                os.system(
+                    f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """)  # Update system time
+                os.system("""sudo hwclock -w""")  # Write to RTC
 
     @wrap_errors(LogicalError)
     def systems_check(self) -> list:
@@ -155,5 +147,3 @@ class Mode:
             if self.sfr.devices[device] is not None and not self.sfr.devices[device].functional():
                 result.append(device)
         return result
-
-

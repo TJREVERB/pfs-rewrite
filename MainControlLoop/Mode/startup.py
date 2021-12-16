@@ -29,7 +29,7 @@ class Startup(Mode):
         super(Startup, self).start()
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["All Off"](exceptions=["Iridium"])
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
     def antenna(self) -> None:
@@ -90,7 +90,7 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() < self.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:

@@ -19,7 +19,7 @@ from micropython import const
 from smbus2 import SMBus
 import time
 import numpy as np
-from math import atan
+from math import atan2
 from math import degrees
 from MainControlLoop.lib.exceptions import wrap_errors, IMUError
 
@@ -897,7 +897,7 @@ class IMU:
         magV = (magValues[1] - magValues[0]) / interval  # mag values velocity
 
         magRot = (
-        degrees(atan(magV[2] / magV[1])), degrees(magV[0] / magV[2]), degrees(atan(magV[1] / magV[0])))  # yz, xz, xy
+        degrees(atan2(magV[2] , magV[1])), degrees(atan2(magV[0] , magV[2])), degrees(atan2(magV[1] , magV[0])))  # yz, xz, xy
         # from https://forum.sparkfun.com/viewtopic.php?t=22252
 
         return (gyroValues, magRot)

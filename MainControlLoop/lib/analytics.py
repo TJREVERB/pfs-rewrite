@@ -25,30 +25,24 @@ class Analytics:
         :param voltage: battery voltage
         :return: (float) estimated charge in Joules
         """
-        max_index = len(self.sfr.voltage_energy_map["voltage"]) - 1
-        for i in range(len(self.sfr.voltage_energy_map["voltage"])):
-            if self.sfr.voltage_energy_map["voltage"][i] > voltage:
+        max_index = len(df := self.sfr.logs["voltage_energy"].read()) - 1
+        for i in range(len(df)):
+            if df["voltage"][i] > voltage:
                 max_index = i
-        min_index = max_index - 1
-        line = line_eq((self.sfr.voltage_energy_map["voltage"][min_index],
-                        self.sfr.voltage_energy_map["energy"][min_index]),
-                       (self.sfr.voltage_energy_map["voltage"][max_index],
-                        self.sfr.voltage_energy_map["energy"][max_index]))
+        line = line_eq((df["voltage"][max_index - 1], df["energy"][max_index - 1]),
+                       (df["voltage"][max_index], df["energy"][max_index]))
         return line(voltage)
 
     @wrap_errors(LogicalError)
-    def historical_consumption(self, pdm_states: list, n: int) -> pd.Series:
+    def historical_consumption(self, n: int) -> pd.Series:
         """
         Get power consumption over last n datapoints
         """
-        df = pd.read_csv(self.sfr.pwr_log_path, header=0).tail(n)
-        pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
-        pdms_on = [pdms[i] for i in range(len(pdms)) if pdm_states[i] == 1]  # Filter out pdms which are off
-        # Add either the last 50 datapoints or entire dataset for each pdm which is on
-        return pd.DataFrame([df[df[i + "_state"] == 1][i + "_pwr"] for i in pdms_on]).sum(axis=1)
+        df = self.sfr.logs["power"].read().tail(n)
+        return df[[f"0x0{str(hex(i))[2:].upper()}" for i in range(1, 11)]].sum(axis=1)
 
     @wrap_errors(LogicalError)
-    def predicted_consumption(self, pdm_states: list, duration: int) -> tuple:
+    def predicted_consumption(self, duration: int) -> tuple:
         """
         Uses empirical data to estimate how much energy we'd consume
         with a particular set of pdms enabled over a duration.
@@ -57,8 +51,7 @@ class Analytics:
         :param duration: time, in seconds, to remain in state
         :return: (tuple) (predicted amount of energy consumed, standard deviation)
         """
-        total = self.historical_consumption(pdm_states, 50)
-        return total.mean() * duration, total.stdev()
+        return (total := self.historical_consumption(50)).mean() * duration, total.stdev()
 
     @wrap_errors(LogicalError)
     def predicted_generation(self, duration) -> tuple:
@@ -70,8 +63,10 @@ class Analytics:
         """
         current_time = time.time()  # Set current time
         panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
-        solar = pd.read_csv(self.sfr.solar_log_path, header=0).tail(50)  # Read solar power log
-        orbits = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)  # Read orbits log
+        solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
+        orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
+        solar["timestamp"] = solar["ts0"] + solar["ts1"]
+        orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
         sunlight_period = pd.Series([orbits["timestamp"][i + 1] - orbits["timestamp"][i]
                                      for i in range(orbits.shape[0] - 1)
@@ -99,17 +94,18 @@ class Analytics:
         Calculate orbital period over last 50 orbits
         :return: average orbital period over last 50 orbits
         """
-        df = pd.read_csv(self.sfr.orbit_log_path, header=0)  # Reads in data
+        df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         # Calculates on either last 50 points or whole dataset
-        sunlight = df[df["phase"] == "sunlight"]
-        eclipse = df[df["phase"] == "eclipse"]
+        print(df)
+        sunlight = ((tmp := df[df["phase"] == "sunlight"])["ts0"] + tmp["ts1"]).tolist()
+        eclipse = ((tmp := df[df["phase"] == "eclipse"])["ts0"] + tmp["ts1"]).tolist()
         # Appends eclipse data to deltas
-        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
-                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
+        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * len(sunlight), -1)] + \
+                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * len(eclipse), -1)]
         if len(deltas) > 0:
             return sum(deltas) / len(deltas)
         else:
-            return -1
+            return 90 * 60
 
     @wrap_errors(LogicalError)
     def signal_strength_variability(self) -> float:
@@ -117,7 +113,7 @@ class Analytics:
         Calculates and returns signal strength variability based on Iridium data
         :return: (float) standard deviation of signal strength
         """
-        df = pd.read_csv(self.sfr.iridium_data_path, header=0)
+        df = self.sfr.logs["iridium"].read()
         return df["signal"].std()
 
     @wrap_errors(LogicalError)
@@ -125,23 +121,24 @@ class Analytics:
         """
         Calculates and returns total power consumed by satellite over mission duration
         """
-        df = pd.read_csv(self.sfr.pwr_log_path)
-        return df[[f"0x0{str(hex(i))}_pwr" for i in range(1, 11)].append("buspower")].sum().sum()
+        df = self.sfr.logs["power"].read()
+        return df[[f"0x0{str(hex(i))}" for i in range(1, 11)] + ["buspower"]].sum().sum()
 
     @wrap_errors(LogicalError)
     def total_power_generated(self) -> float:
         """
         Calculates and returns total power generated by satellite over mission duration
         """
-        df = pd.read_csv(self.sfr.solar_log_path)
-        return df[[f"bcr{i}" for i in range(1, 4)]].sum().sum()
+        df = self.sfr.logs["solar"].read()
+        return df[["bcr1", "bcr2", "bcr3"]].sum().sum()
 
     @wrap_errors(LogicalError)
     def orbital_decay(self) -> float:
         """
         Calculates and returns total orbital decay of satellite in seconds
         """
-        df = pd.read_csv(self.sfr.orbit_log_path)
+        df = self.sfr.logs["orbits"].read()
+        df["timestamp"] = df["ts0"] + df["ts1"]
         if len(df) < 3:
             raise RuntimeError("Not enough data!")
         return (df["timestamp"][-1] - df["timestamp"][-3]) - (df["timestamp"][2] - df["timestamp"][0])
@@ -151,4 +148,4 @@ class Analytics:
         """
         Calculates and returns total amount of data transmitted by satellite
         """
-        return pd.read_csv(self.sfr.transmission_log_path)["size"].sum()
+        return self.sfr.logs["transmission"].read()["size"].sum()

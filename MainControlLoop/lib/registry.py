@@ -1,11 +1,11 @@
 import time
 import os
 import pandas as pd
-import numpy as np
-import pickle, json
+import pickle
+import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
+from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -47,7 +47,7 @@ class StateFieldRegistry:
     component_to_class = {  # returns class from component name
         "Iridium": Iridium,
         "APRS": APRS,
-        "IMU": IMU,
+        "IMU": IMU_I2C,
         "Antenna Deployer": AntennaDeployer
     }
 
@@ -62,13 +62,13 @@ class StateFieldRegistry:
             elif self.ext == "csv":  # For csv files
                 if pd.read_csv(self.path).columns.tolist() != self.headers:
                     self.clear()  # Clear log if columns don't match up (out of date log)
-        
+
         @wrap_errors(LogicalError)
         def clear(self):
             """
             Reset log
             """
-            if self.ext == "csv":  # For csv files
+            if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
                 with open(self.path, "w") as f:  # Open file
                     f.write(",".join(self.headers) + "\n")  # Write headers + newline
             elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
@@ -90,15 +90,15 @@ class StateFieldRegistry:
                 if list(data.keys()) != self.headers:  # Raise error if keys are wrong
                     raise LogicalError(details="Incorrect keys for logging")
                 # Append to log
-                pd.DataFrame.from_dict({k : [v] for (k, v) in data.items()}).to_csv(
-                    self.path, mode="a", header=False)
+                pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
+                    self.path, mode="a", header=False, index=False)
             elif self.ext == "pkl":  # If log is pkl
                 with open(self.path, "wb") as f:
                     pickle.dump(data, f)  # Dump to file
             elif self.ext == "json":  # If log is json
                 with open(self.path, "w") as f:
                     json.dump(data, f)  # Dump to file
-        
+
         @wrap_errors(LogicalError)
         def read(self):
             """
@@ -106,7 +106,7 @@ class StateFieldRegistry:
             :return: dataframe if csv, object if pickle, dictionary if json
             """
             if self.ext == "csv":  # Return dataframe if csv
-                return pd.read_csv(self.path)
+                return pd.read_csv(self.path, header=0)
             if self.ext == "pkl":  # Return object if pickle
                 with open(self.path, "rb") as f:
                     return pickle.load(f)
@@ -115,12 +115,12 @@ class StateFieldRegistry:
 
     class Registry:
         @wrap_errors(LogicalError)
-        def __init__(self, eps, analytics):
+        def __init__(self, sfr):
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
-            self.BATTERY_CAPACITY_INT = analytics.volt_to_charge(eps.telemetry["VBCROUT"]())
+            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
             self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := self.sun_detected()) else time.time()
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
             self.ORBITAL_PERIOD = 90 * 60
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
@@ -191,22 +191,23 @@ class StateFieldRegistry:
         self.logs = {
             "sfr": self.Log("./MainControlLoop/lib/data/state_field_log.pkl", None),
             "sfr_readable": self.Log("./MainControlLoop/lib/data/state_field_log.json", None),
-            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv", 
-                ["ts0","ts1","buspower","0x01_state","0x02_state","0x03_state","0x04_state","0x05_state","0x06_state","0x07_state","0x08_state","0x09_state","0x0A_state","0x01_pwr","0x02_pwr","0x03_pwr","0x04_pwr","0x05_pwr","0x06_pwr","0x07_pwr","0x08_pwr","0x09_pwr","0x0A_pwr"]),
-            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv", 
-                ["ts0","ts1","bcr1","bcr2","bcr3"]),
+            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv",
+                              ["ts0", "ts1", "buspower", "0x01", "0x02", "0x03", "0x04", "0x05",
+                               "0x06", "0x07", "0x08", "0x09", "0x0A"]),
+            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv",
+                              ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
             "voltage_energy": self.Log("./MainControlLoop/lib/data/volt-energy-map.csv",
-                ["voltage","energy"]),
+                                       ["voltage", "energy"]),
             "orbits": self.Log("./MainControlLoop/lib/data/orbit_log.csv",
-                ["ts0","ts1","phase"]),
+                               ["ts0", "ts1", "phase"]),
             "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
-                ["ts0","ts1","latitude","longitude","altitude","signal"]),
+                                ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
             "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
-                ["ts0", "ts1", "xgyro", "ygyro"]),
+                            ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
             "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
-                ["ts0","ts1","radio","command","arg","registry","msn","result"]),
+                                ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
-                ["ts0","ts1","radio","size"]),
+                                     ["ts0", "ts1", "radio", "size"]),
         }
 
         self.eps = EPS(self)  # EPS never turns off
@@ -220,6 +221,7 @@ class StateFieldRegistry:
             "Iridium": None,
             "APRS": None,
             "Antenna Deployer": None,
+            "IMU": None
         }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
@@ -235,7 +237,7 @@ class StateFieldRegistry:
         Load sfr fields from log
         :return: (Registry) loaded registry
         """
-        defaults = self.Registry(self.eps, self.analytics)
+        defaults = self.Registry(self)
         return defaults  # DEBUG
         try:
             fields = self.logs["sfr"].read()
@@ -328,13 +330,15 @@ class StateFieldRegistry:
         :return: (bool)
         """
         solar = sum(self.eps.raw_solar_gen())
-        if solar > self.eps.SUN_DETECTION_THRESHOLD: # Threshold of 1W
+        if solar > self.eps.SUN_DETECTION_THRESHOLD:  # Threshold of 1W
             return True
-        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
+        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of
+        # actual sunlight
         if self.battery.telemetry["VBAT"]() > self.eps.V_EOC:
             pcharge = self.battery.charging_power()
-            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
-            if pcharge > (-1*self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
+            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e.,
+            # the satellite is in a power hungry mode)
+            if pcharge > (-1 * self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
                 return True
         return False
 
@@ -366,7 +370,8 @@ class StateFieldRegistry:
             return
 
         self.eps.commands["Pin On"](component)  # turns on component
-        self.devices[component] = self.component_to_class[component](self)   # registers component as on by setting component status in sfr to object instead of None
+        self.devices[component] = self.component_to_class[component](
+            self)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.component_to_serial[component]  # gets serial converter name of component
             self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
@@ -429,7 +434,7 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.__turn_on_component(key)  # turn on device and serial converter if applicable
+                self.turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
@@ -452,4 +457,4 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.__turn_off_component(key)  # turn off device and serial converter if applicable
+                self.turn_off_component(key)  # turn off device and serial converter if applicable

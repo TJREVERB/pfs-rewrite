@@ -40,7 +40,7 @@ class Outreach(Mode):
     @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         super(Outreach, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.vars.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() > self.sfr.vars.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
