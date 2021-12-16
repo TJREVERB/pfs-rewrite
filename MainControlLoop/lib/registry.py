@@ -481,6 +481,7 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
+        # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if turn_off_old:
