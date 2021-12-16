@@ -19,9 +19,9 @@ class Logger:
             Execute a single cycle of the clock.
             Run func if enough time has passed, do nothing otherwise
             """
-            if t := time.perf_counter() > self.last_iteration + self.delay:
+            if time.perf_counter() > self.last_iteration + self.delay:
                 self.func()
-                self.last_iteration = t
+                self.last_iteration = time.perf_counter()
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -41,6 +41,10 @@ class Logger:
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
+        import inspect
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        print('Log pwr caller name:', calframe[1][3])
         print("Power: ", t := time.time(), pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
