@@ -476,7 +476,7 @@ class StateFieldRegistry:
                 self.turn_off_component(key)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def set_primary_radio(self, new_radio, turn_off_old=False):
+    def set_primary_radio(self, new_radio: str, turn_off_old=False):
         """
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
@@ -487,5 +487,5 @@ class StateFieldRegistry:
                 self.turn_off_component(previous_radio)
             self.vars.PRIMARY_RADIO = new_radio
             if self.devices[new_radio] is None:  # initialize it
-                self.devices[new_radio] = self.component_to_class[new_radio](self)
+                self.turn_on_component(new_radio)
 
