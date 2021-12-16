@@ -332,10 +332,12 @@ class StateFieldRegistry:
         solar = sum(self.eps.raw_solar_gen())
         if solar > self.eps.SUN_DETECTION_THRESHOLD:  # Threshold of 1W
             return True
-        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of actual sunlight
+        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of
+        # actual sunlight
         if self.battery.telemetry["VBAT"]() > self.eps.V_EOC:
             pcharge = self.battery.charging_power()
-            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e., the satellite is in a power hungry mode)
+            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e.,
+            # the satellite is in a power hungry mode)
             if pcharge > (-1 * self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
                 return True
         return False
@@ -432,7 +434,7 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.__turn_on_component(key)  # turn on device and serial converter if applicable
+                self.turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
@@ -455,4 +457,4 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.__turn_off_component(key)  # turn off device and serial converter if applicable
+                self.turn_off_component(key)  # turn off device and serial converter if applicable
