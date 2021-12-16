@@ -98,13 +98,13 @@ class Analytics:
         """
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         if len(df) < 3:
-            return 90
+            return 90 * 60
         # Calculates on either last 50 points or whole dataset
         sunlight = df[df["phase"] == "sunlight"]
         eclipse = df[df["phase"] == "eclipse"]
         # Appends eclipse data to deltas
-        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
-                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
+        deltas = [sunlight.iloc[i + 1] - sunlight.iloc[i] for i in range(-2, -1 * min([len(sunlight), 50]), -1)] + \
+                 [eclipse.iloc[i + 1] - eclipse.iloc[i] for i in range(-2, -1 * min([len(eclipse), 50]), -1)]
         if len(deltas) > 0:
             return sum(deltas) / len(deltas)
         else:
