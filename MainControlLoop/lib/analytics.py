@@ -70,9 +70,8 @@ class Analytics:
         if len(orbits) < 4:  # If we haven't logged any orbits
             print("orbits log bad")
             if len(solar) > 0:  # If we have solar data
-                print(solar.sum(axis=1))
-                print(solar.sum(axis=1)).mean()
-                return solar.sum(axis=1).mean() * duration  # Estimate based on what we have
+                # Estimate based on what we have
+                return solar[["bcr1", "bcr2", "bcr3"]].sum(axis=1).mean() * duration
             else:  # If we haven't logged any solar data
                 return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
         # Generate timestamp columns
