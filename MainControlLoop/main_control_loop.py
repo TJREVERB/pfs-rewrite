@@ -18,6 +18,8 @@ class MainControlLoop:
     def start(self):
         print("MCL Start")
         self.current_time = time.time()
+        self.sfr.turn_on_component("IMU")
+        self.sfr.imu.start()
         self.sfr.mode_obj = self.sfr.vars.MODE(self.sfr)
         self.sfr.mode_obj.start()
 
