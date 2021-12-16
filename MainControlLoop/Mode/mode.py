@@ -117,12 +117,14 @@ class Mode:
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
                 packet = self.vars.transmit_buffer.pop(0)
                 if not self.sfr.command_executor.transmit(packet):
+                    self.vars.transmit_buffer.append(packet)
                     return False
         # If primary radio is APRS
         if self.sfr.vars.PRIMARY_RADIO == "APRS":
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
                 packet = self.vars.transmit_buffer.pop(0)
                 if not self.sfr.command_executor.transmit(packet):
+                    self.vars.transmit_buffer.append(packet)
                     return False
         return True
 
