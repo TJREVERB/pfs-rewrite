@@ -78,13 +78,13 @@ class Analytics:
         solar["timestamp"] = solar["ts0"] + solar["ts1"]
         orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
-        sunlight_period = orbits[orbits["phase"] == "sunlight"]["timestamp"].diff().mean(skipna=True)
+        sunlight_period = orbits[orbits["phase"] == "daylight"]["timestamp"].diff().mean(skipna=True)
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
         print(sunlight_period)
         print(orbital_period)
         # Filter out all data points which weren't taken in sunlight
         in_sun = solar[[orbits[orbits["timestamp"] < 
-            row["timestamp"]]["phase"].iloc[-1] == "sunlight" for (_, row) in solar.iterrows()]]
+            row["timestamp"]]["phase"].iloc[-1] == "daylight" for (_, row) in solar.iterrows()]]
         print(in_sun)
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         print(solar_gen)
@@ -92,7 +92,7 @@ class Analytics:
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
             min([t % orbital_period, sunlight_period]) * solar_gen
         # Set start time for simulation
-        start = current_time - orbits[orbits["phase"] == "sunlight"]["timestamp"].iloc[-1]
+        start = current_time - orbits[orbits["phase"] == "daylight"]["timestamp"].iloc[-1]
         # Calculate and return total energy production over duration
         return energy_over_time(start + duration) - energy_over_time(start)
 
