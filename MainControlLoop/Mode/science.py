@@ -64,7 +64,7 @@ class Science(Mode):
         self.check_time()
         super(Science, self).execute_cycle()
 
-        if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've already calculated SSV
+        if self.conditions["Collection Complete"]:  # If we've already calculated SSV
             pass  # Do nothing
         elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've performed enough pings
             print("Transmitting results...")
@@ -72,7 +72,7 @@ class Science(Mode):
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
             pckt = TransmissionPacket("GSV", [], 0)
             self.sfr.command_executor.GSV(pckt)
-            self.pings_performed += 1
+            self.conditions["Collection Complete"] = True
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:  # If it's time to perform a ping
             print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
             try:  # Log Iridium data
