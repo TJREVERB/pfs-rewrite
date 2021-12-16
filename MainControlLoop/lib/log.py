@@ -34,23 +34,21 @@ class Logger:
         }
 
     @wrap_errors(LogicalError)
-    def log_pwr(self, buspower, pdm_states, pwr) -> None:
+    def log_pwr(self, buspower, pwr) -> None:
         """
         Logs the power draw of every pdm
         :param buspower: power draw of bus
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
-        print("Power: ", t := time.time(), pdm_states, pwr := [round(i, 3) for i in pwr])
+        print("Power: ", t := time.time(), pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
             "buspower": str(buspower),
         }
-        for i in range(len(pdm_states)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}_state"] = pdm_states[i]
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = pwr[i]
+            data[f"0x0{str(hex(i + 1))[2:].upper()}"] = pwr[i]
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
@@ -87,7 +85,7 @@ class Logger:
         Integrate charge in Joules
         """
         # Log total power, store values into variables
-        self.log_pwr(self.sfr.eps.bus_power(), (pdms_on := self.sfr.eps.raw_pdm_draw())[0], pdms_on[1])
+        self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
         # Subtract delta * time from BATTERY_CAPACITY_INT
