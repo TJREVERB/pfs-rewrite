@@ -223,6 +223,7 @@ class StateFieldRegistry:
             "Iridium": None,
             "APRS": None,
             "Antenna Deployer": None,
+            "IMU": None
         }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
