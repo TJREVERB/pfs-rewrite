@@ -12,7 +12,7 @@ class Mode:
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
-        self.last_iridium_poll_time = 0
+        self.last_iridium_poll_time = 0  # used to determine whether the iridium has been able to send recently
         self.PRIMARY_IRIDIUM_WAIT_TIME = wait  # wait time for iridium polling if iridium is main radio (default to 40
         # seconds)
         # Actual time between read/write will depend on signal availability

@@ -126,6 +126,8 @@ class StateFieldRegistry:
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages via iridium for this amount of time, switch primary to APRS
+            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this amount of time, it will switch primary radio to APRS
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
             self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
@@ -141,6 +143,8 @@ class StateFieldRegistry:
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
             self.LAST_STARTUP = 0
+            self.LAST_IRIDIUM_SENT = 0
+            self.LAST_IRIDIUM_RECEIVED = 0
 
         @wrap_errors(LogicalError)
         def encode(self):
@@ -458,3 +462,18 @@ class StateFieldRegistry:
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
                 self.turn_off_component(key)  # turn off device and serial converter if applicable
+
+    @wrap_errors(LogicalError)
+    def set_primary_radio(self, new_radio, turn_off_old=False):
+        """
+        Takes care of switching sfr PRIMARY_RADIO field:
+        instantiates primary radio if necessary, kills the previous radio if requested
+        """
+        previous_radio = self.vars.PRIMARY_RADIO
+        if new_radio != previous_radio:  # if it's a new radio
+            if turn_off_old:
+                self.turn_off_component(previous_radio)
+            self.vars.PRIMARY_RADIO = new_radio
+            if self.devices[new_radio] is None:  # initialize it
+                self.devices[new_radio] = self.component_to_class[new_radio](self)
+
