@@ -229,9 +229,9 @@ class Iridium:
         Passively check signal strength, for transmit/receive timing
         """
         raw = self.LAST_RSSI()
-        if raw.find("CSQ:") == -1:
+        if raw.find("CSQF:") == -1:
             return 0
-        return int(raw[raw.find("CSQ:") + 4: raw.find("CSQ:") + 5])
+        return int(raw[raw.find("CSQF:") + 5: raw.find("CSQF:") + 6])
 
     @wrap_errors(IridiumError)
     def process(self, data, cmd):
