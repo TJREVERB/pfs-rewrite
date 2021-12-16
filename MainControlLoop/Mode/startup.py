@@ -17,7 +17,7 @@ class Startup(Mode):
 
         self.last_contact_attempt = 0
         self.conditions = {
-            "Low Battery": False,
+            "Tumbling": True
         }
 
     @wrap_errors(LogicalError)
