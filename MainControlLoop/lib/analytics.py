@@ -79,9 +79,8 @@ class Analytics:
         orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
         sunlight_period = orbits[orbits["phase"] == "daylight"]["timestamp"].diff().mean(skipna=True)
+        print(orbits[orbits["phase"] == "daylight"]["timestamp"].diff())
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
-        print(sunlight_period)
-        print(orbital_period)
         # Filter out all data points which weren't taken in sunlight
         in_sun = solar[[orbits[orbits["timestamp"] < 
             row["timestamp"]]["phase"].iloc[-1] == "daylight" for (_, row) in solar.iterrows()]]
@@ -105,6 +104,7 @@ class Analytics:
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
         if len(df) > 2:  # If we have enough rows
+            print(df["timestamp"].diff(periods=2))
             return df["timestamp"].diff(periods=2).mean(skipna=True)  # Return orbital period
         return 90 * 60  # Return assumed orbital period
 
