@@ -41,7 +41,7 @@ class Logger:
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
-        print("Power: ", t := time.time(), pwr := [round(i, 3) for i in pwr])
+        print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
@@ -57,7 +57,7 @@ class Logger:
         Logs the solar power generation from each panel (sum of A and B)
         :param gen: array of power inputs from each panel, in W.
         """
-        print("Solar: ", t := time.time(), gen := [round(i, 3) for i in gen])
+        print("Solar: ", int(t := time.time()), gen := [round(i, 3) for i in gen])
         self.sfr.logs["solar"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
