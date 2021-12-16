@@ -155,8 +155,8 @@ class StateFieldRegistry:
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
             self.LAST_STARTUP = 0
-            self.LAST_IRIDIUM_SENT = 0
-            self.LAST_IRIDIUM_RECEIVED = 0
+            self.LAST_IRIDIUM_SENT = None
+            self.LAST_IRIDIUM_RECEIVED = None
 
         @wrap_errors(LogicalError)
         def encode(self):
