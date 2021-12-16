@@ -30,7 +30,7 @@ class Logger:
         for i in range(len(pdm_states)):
             data[f"0x0{str(hex(i + 1))[2:].upper()}_state"] = pdm_states[i]
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = pwr[i]
+            data[f"0x0{str(hex(i + 1))[2:].upper()}_pwr"] = round(pwr[i], 2)
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
@@ -44,9 +44,9 @@ class Logger:
         self.sfr.logs["solar"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
-            "bcr1": gen[0],
-            "bcr2": gen[1],
-            "bcr3": gen[2],
+            "bcr1": round(gen[0], 2),
+            "bcr2": round(gen[1], 2),
+            "bcr3": round(gen[2], 2),
         })
 
     @wrap_errors(LogicalError)
