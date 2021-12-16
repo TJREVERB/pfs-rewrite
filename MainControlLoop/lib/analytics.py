@@ -66,6 +66,7 @@ class Analytics:
         solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
         if len(orbits) < 3:  # If we haven't logged any orbits
+            print("orbits log bad")
             if len(solar) > 0:  # If we have solar data
                 return solar.sum(axis=1).mean() * duration  # Estimate based on what we have
             else:  # If we haven't logged any solar data
