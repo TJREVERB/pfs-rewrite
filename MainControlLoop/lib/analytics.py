@@ -62,7 +62,7 @@ class Analytics:
         :return: (tuple) (estimated power generation, standard deviation of data, oldest data point)
         """
         current_time = time.time()  # Set current time
-        panels = ["panel1", "panel2", "panel3", "panel4"]  # List of panels to average
+        panels = ["bcr1", "bcr2", "bcr3"]  # List of panels to average
         solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
         solar["timestamp"] = solar["ts0"] + solar["ts1"]
