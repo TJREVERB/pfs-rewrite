@@ -44,7 +44,7 @@ class Logger:
         import inspect
         curframe = inspect.currentframe()
         calframe = inspect.getouterframes(curframe, 3)
-        print('Log pwr caller name:', calframe)
+        print('Log pwr caller name:', calframe[2][3])
         print("Power: ", t := time.time(), pwr := [round(i, 3) for i in pwr])
         data = {
             "ts0": t // 100000 * 100000,
