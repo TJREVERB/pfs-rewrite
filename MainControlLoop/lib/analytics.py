@@ -42,16 +42,16 @@ class Analytics:
         return df[["buspower"] + [f"0x0{str(hex(i))[2:].upper()}" for i in range(1, 11)]].sum(axis=1)
 
     @wrap_errors(LogicalError)
-    def predicted_consumption(self, duration: int) -> tuple:
+    def predicted_consumption(self, duration: int) -> float:
         """
         Uses empirical data to estimate how much energy we'd consume
         with a particular set of pdms enabled over a duration.
         Accounts for change over time in power draw of components.
         :param pdm_states: list containing states of all pdms as 1 or 0
         :param duration: time, in seconds, to remain in state
-        :return: (tuple) (predicted amount of energy consumed, standard deviation)
+        :return: (float) predicted amount of energy consumed
         """
-        return (total := self.historical_consumption(50)).mean() * duration, total.stdev()
+        return self.historical_consumption(50).mean()
 
     @wrap_errors(LogicalError)
     def predicted_generation(self, duration) -> tuple:
@@ -65,20 +65,19 @@ class Analytics:
         panels = ["bcr1", "bcr2", "bcr3"]  # List of panels to average
         solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
+        if len(orbits) < 3:  # If we haven't logged any orbits
+            if len(solar) > 0:  # If we have solar data
+                return solar.sum(axis=1).mean() * duration  # Estimate based on what we have
+            else:  # If we haven't logged any solar data
+                return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
+        # Generate timestamp columns
         solar["timestamp"] = solar["ts0"] + solar["ts1"]
         orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
-        sunlight_period = pd.Series([orbits["timestamp"][i + 1] - orbits["timestamp"][i]
-                                     for i in range(orbits.shape[0] - 1)
-                                     if orbits["phase"][i] == "sunlight"]).mean()
-        # Calculate orbital period
-        orbital_period = sunlight_period + pd.Series([orbits["timestamp"][i + 1] -
-                                                      orbits["timestamp"][i] for i in range(orbits.shape[0] - 1)
-                                                      if orbits["phase"][i] == "eclipse"]).mean()
+        sunlight_period = orbits[orbits["phase"] == "sunlight"]["timestamp"].diff().mean(skipna=True)
+        orbital_period = self.calc_orbital_period()  # Calculate orbital period
         # Filter out all data points which weren't taken in sunlight
-        in_sun = pd.DataFrame([solar[i] for i in range(solar.shape[0])
-                               if orbits[solar["timestamp"][i] -
-                                         orbits["timestamp"] > 0]["phase"][-1] == "sunlight"])
+        in_sun = solar[[orbits[orbits["timestamp"] < i["timestamp"]]["phase"][-1] == "sunlight" for i in solar]]
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
@@ -95,17 +94,10 @@ class Analytics:
         :return: average orbital period over last 50 orbits
         """
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
-        # Calculates on either last 50 points or whole dataset
-        print(df)
-        sunlight = ((tmp := df[df["phase"] == "sunlight"])["ts0"] + tmp["ts1"]).tolist()
-        eclipse = ((tmp := df[df["phase"] == "eclipse"])["ts0"] + tmp["ts1"]).tolist()
-        # Appends eclipse data to deltas
-        deltas = [sunlight[i + 1] - sunlight[i] for i in range(-2, -1 * len(sunlight), -1)] + \
-                 [eclipse[i + 1] - eclipse[i] for i in range(-2, -1 * len(eclipse), -1)]
-        if len(deltas) > 0:
-            return sum(deltas) / len(deltas)
-        else:
-            return 90 * 60
+        df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
+        if len(df) > 2:  # If we have enough rows
+            return df["timestamp"].diff(periods=2).mean(skipna=True)  # Return orbital period
+        return 90 * 60  # Return assumed orbital period
 
     @wrap_errors(LogicalError)
     def signal_strength_variability(self) -> float:
