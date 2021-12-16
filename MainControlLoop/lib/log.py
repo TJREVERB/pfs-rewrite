@@ -9,7 +9,7 @@ class Logger:
         self.sfr = sfr
         self.last_log_time = time.perf_counter()
         self.last_orbit_update = self.last_log_time
-        self.LOG_DELAY = 10  # Seconds
+        self.LOG_DELAY = 30  # Seconds
         self.ORBIT_CHECK_DELAY = 60
 
     @wrap_errors(LogicalError)
