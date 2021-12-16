@@ -93,8 +93,8 @@ class Mode:
                 # get all messages from iridium, store them in sfr
                 self.sfr.devices["Iridium"].next_msg()
                 self.last_iridium_poll_time = time.time()
-                self.sfr.LAST_IRIDIUM_RECEIVED = time.time()
-            elif time.time() - self.sfr.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
+                self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()
+            elif time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED > self.sfr.vars.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
                 # haven't been able to read anything in a while so change the radio
                 self.sfr.set_primary_radio("APRS")  # TODO: should this turn off the old one
 
