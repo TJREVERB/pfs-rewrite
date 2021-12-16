@@ -112,12 +112,14 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list = None, error = False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, error = False, appendtoqueue = True):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
+        :param appendtoqueue: (bool) whether to append to queue in case of failure. 
+        Defaults to true, but should be set false when transmitting a packet already in queue
         :return: (bool) transmission successful
         """
         if error:
@@ -128,13 +130,18 @@ class CommandExecutor:
             packet.return_data = data
         d = datetime.datetime.utcnow()
         packet.timestamp = (d.day, d.hour, d.minute)
-        try:
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        if packet.outreach:
+            self.sfr.devices["APRS"].transmit(packet)
             return True
-        except NoSignalException as e:
-            print("No Iridium connectivity, appending to buffer...")
-            self.sfr.vars.transmit_buffer.append(packet) #TODO: Correct this logic
-            return False
+        else:
+            try:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+                return True
+            except NoSignalException as e:
+                if appendtoqueue:
+                    print("No Iridium connectivity, appending to buffer...")
+                    self.sfr.vars.transmit_buffer.append(packet)
+                return False
 
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:

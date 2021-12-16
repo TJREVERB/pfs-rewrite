@@ -12,7 +12,7 @@ class Mode:
         self.UPPER_THRESHOLD = 8  # Upper battery voltage threshold for switching to SCIENCE mode
         self.previous_time = 0
         self.sfr = sfr
-        self.last_iridium_poll_time = 0
+        self.last_iridium_poll_time = 0  # used to determine whether the iridium has been able to send recently
         self.PRIMARY_IRIDIUM_WAIT_TIME = wait  # wait time for iridium polling if iridium is main radio (default to 40
         # seconds)
         # Actual time between read/write will depend on signal availability
@@ -87,12 +87,17 @@ class Mode:
         Function for each mode to implement to determine how it will use the specific radios
         """
         # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
-            # get all messages from iridium, store them in sfr
-            self.sfr.devices["Iridium"].next_msg()
-            self.last_iridium_poll_time = time.time()
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium":
+            if time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
+                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+                # get all messages from iridium, store them in sfr
+                self.sfr.devices["Iridium"].next_msg()
+                self.last_iridium_poll_time = time.time()
+                self.sfr.LAST_IRIDIUM_RECEIVED = time.time()
+            elif time.time() - self.sfr.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
+                # haven't been able to read anything in a while so change the radio
+                self.sfr.set_primary_radio("APRS")  # TODO: should this turn off the old one
+
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             # add aprs messages to sfr
@@ -113,7 +118,7 @@ class Mode:
                  ss >= self.SIGNAL_THRESHOLD):
             print("Attempting to transmit queue")
             while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit transmit buffer
-                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer[0]):
+                if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer[0], appendtoqueue = False):
                     print("Signal strength lost!")
                     break
                 self.sfr.vars.transmit_buffer.pop(0)
