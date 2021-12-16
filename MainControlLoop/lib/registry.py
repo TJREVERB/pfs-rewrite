@@ -396,6 +396,7 @@ class StateFieldRegistry:
         if component == "APRS":
             self.devices[component].disable_digi()
         if component == "IMU":
+            time.sleep(.5)
             self.devices[component].start()
 
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
