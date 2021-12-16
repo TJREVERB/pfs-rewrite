@@ -87,12 +87,17 @@ class Mode:
         Function for each mode to implement to determine how it will use the specific radios
         """
         # If primary radio is iridium and enough time has passed
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium" and \
-                time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
-                and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
-            # get all messages from iridium, store them in sfr
-            self.sfr.devices["Iridium"].next_msg()
-            self.last_iridium_poll_time = time.time()
+        if self.sfr.vars.PRIMARY_RADIO == "Iridium":
+            if time.time() - self.last_iridium_poll_time > self.PRIMARY_IRIDIUM_WAIT_TIME \
+                    and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
+                # get all messages from iridium, store them in sfr
+                self.sfr.devices["Iridium"].next_msg()
+                self.last_iridium_poll_time = time.time()
+                self.sfr.LAST_IRIDIUM_RECEIVED = time.time()
+            elif time.time() - self.sfr.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
+                # haven't been able to read anything in a while so change the radio
+                self.sfr.set_primary_radio("APRS")  # TODO: should this turn off the old one
+
         # If APRS is on for whatever reason
         if self.sfr.devices["APRS"] is not None:
             # add aprs messages to sfr
