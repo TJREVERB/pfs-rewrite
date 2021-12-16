@@ -142,7 +142,7 @@ class StateFieldRegistry:
             self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages via iridium for this amount of time, switch primary to APRS
             self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this amount of time, it will switch primary radio to APRS
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Startup  # DEBUG!!!
+            self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
