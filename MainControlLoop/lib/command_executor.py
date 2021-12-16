@@ -26,6 +26,7 @@ class CommandExecutor:
             "GPL": self.GPL,
             "GCD": self.GCD,
             "GPW": self.GPW,
+            "GPR": self.GPR,
             "GOP": self.GOP,
             "GCS": self.GCS,
             "GSV": self.GSV,
@@ -272,6 +273,11 @@ class CommandExecutor:
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power())])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def GPR(self, packet: TransmissionPacket):
+        self.transmit(packet, result := [self.sfr.components.index(self.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
