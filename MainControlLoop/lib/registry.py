@@ -99,7 +99,7 @@ class StateFieldRegistry:
                 with open(self.path, "w") as f:
                     json.dump(data, f)  # Dump to file
 
-        @wrap_errors
+        @wrap_errors(LogicalError)
         def truncate(self, n):
             """
             Remove n rows from log file
