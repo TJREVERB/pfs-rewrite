@@ -2,6 +2,7 @@ import os
 import traceback
 import sys
 import time
+from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
@@ -59,6 +60,19 @@ class MissionControl:
                     self.testing_mode(e)
                 else:  # built in exception leaked
                     self.testing_mode(e)
+            finally:
+                for messages in self.sfr.vars.transmit_buffer:
+                    if time.time() - 120*60 >= messages.timestamp:  # switch radios
+                        self.sfr.instruct["Pin Off"](self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
+                        # transmit radio switched to ground
+
+    def get_other_radio(self, radio):
+        if radio == "Iridium":
+            return "APRS"
+        else:
+            return "Iridium"
 
     def aprs_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
