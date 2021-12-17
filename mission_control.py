@@ -61,9 +61,9 @@ class MissionControl:
                     self.testing_mode(e)
                 else:  # built in exception leaked
                     self.testing_mode(e)
-            finally:
-                for messages in self.sfr.vars.transmit_buffer:
-                    if datetime.datetime.fromtimestamp(time.time()) - 120*60 >= messages.timestamp:  # switch radios
+            else:  # dont want to force run this after potential remote code exec session
+                for message_packet in self.sfr.vars.transmit_buffer:
+                    if message_packet.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT:  # switch radios
                         self.sfr.instruct["Pin Off"](self.sfr.vars.PRIMARY_RADIO)
                         self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
                         self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)

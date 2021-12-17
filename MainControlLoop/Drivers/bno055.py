@@ -902,9 +902,19 @@ class IMU:
 
         return (gyroValues, magRot)
 
-    def is_tumbling(self) -> bool:  # TODO: Implement
-        # df = self.sfr.logs["imu"].read().tail(5)
-        pass
+    @wrap_errors(IMUError)
+    def is_tumbling(self) -> bool:
+        "Checks if sat is tumbling. If is tumbling returns True, else returns False"
+        df = self.sfr.logs["imu"].read().tail(5)
+        x_tumble_values = df["xgyro"].values.tolist()
+        y_tumble_values = df["ygyro"].values.tolist()
+        x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
+        y_tumble_avg = sum(y_tumble_values)/len(y_tumble_values)
+        if  x_tumble_avg > self.sfr.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.DETUMBLE_THRESHOLD:
+            return True
+        else:
+            return False
+
 
 
 

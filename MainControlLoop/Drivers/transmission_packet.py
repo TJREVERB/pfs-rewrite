@@ -1,6 +1,7 @@
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 import datetime
 
+
 class TransmissionPacket:
     @wrap_errors(LogicalError)
     def __init__(self, command_string: str, args: list, msn: int, simulate=False, outreach=False):
@@ -18,7 +19,7 @@ class TransmissionPacket:
         return f"{self.command_string}:{self.return_code}:{self.msn}:{self.timestamp[0]}-\
             {self.timestamp[1]}-{self.timestamp[2]}:{':'.join(self.return_data)}:"
 
-    def timestamp_to_object(self):
+    def get_packet_age(self) -> float:
         current_datetime = datetime.datetime.utcnow()
         month = current_datetime.month
         year = current_datetime.year
