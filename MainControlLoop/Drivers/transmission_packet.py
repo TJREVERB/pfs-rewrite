@@ -19,4 +19,13 @@ class TransmissionPacket:
             {self.timestamp[1]}-{self.timestamp[2]}:{':'.join(self.return_data)}:"
 
     def timestamp_to_object(self):
-        
+        current_datetime = datetime.datetime.utcnow()
+        month = current_datetime.month
+        year = current_datetime.year
+        if self.timestamp[0] > current_datetime.day: # Step month
+            if month > 1:
+                month -= 1
+            else:
+                month = 12
+                year -= 1
+        return datetime.datetime(year, month, self.timestamp[0], self.timestamp[1], self.timestamp[2], 0)
