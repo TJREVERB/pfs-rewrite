@@ -25,7 +25,8 @@ class TransmissionPacket:
         if self.timestamp[0] > current_datetime.day: # Step month
             if month > 1:
                 month -= 1
-            else:
+            else: # prevent y2k
                 month = 12
                 year -= 1
-        return datetime.datetime(year, month, self.timestamp[0], self.timestamp[1], self.timestamp[2], 0)
+        dif = current_datetime - datetime.datetime(year, month, self.timestamp[0], self.timestamp[1], self.timestamp[2], 0)
+        return dif.total_seconds()
