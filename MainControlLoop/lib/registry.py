@@ -5,7 +5,7 @@ import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C
+from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
