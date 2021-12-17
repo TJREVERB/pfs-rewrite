@@ -33,7 +33,7 @@ class Science(Mode):
         super().suggested_mode()
         if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
-        elif self.sfr.devices["Iridium"](self.sfr) is None:  # If Iridium is off
+        elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
