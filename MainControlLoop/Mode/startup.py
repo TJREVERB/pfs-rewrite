@@ -17,7 +17,8 @@ class Startup(Mode):
 
         self.last_contact_attempt = 0
         self.conditions = {
-            "Tumbling": True
+            "Low Battery": False,
+            "Is Tumbling": True
         }
 
     @wrap_errors(LogicalError)
@@ -28,12 +29,14 @@ class Startup(Mode):
     def start(self) -> None:
         super(Startup, self).start()
         self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["All Off"](exceptions=["Iridium"])
         self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
+        self.conditions["Is Tumbling"] = self.sfr.imu.is_tumbling()
 
     @wrap_errors(LogicalError)
     def antenna(self) -> None:
-        if not self.sfr.vars.ANTENNA_DEPLOYED:
+        if not self.sfr.vars.ANTENNA_DEPLOYED and not self.conditions["Is Tumbling"]:
             # if 30 minutes have elapsed
             if time.time() - self.sfr.vars.START_TIME > self.THIRTY_MINUTES:
                 # Enable power to antenna deployer
@@ -77,7 +80,10 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def check_conditions(self) -> bool:
         super(Startup, self).check_conditions()
-        return self.sfr.vars.CONTACT_ESTABLISHED is False  # if contact not established, stay in charging
+        if self.conditions["Is Tumbling"] or self.sfr.vars.CONTACT_ESTABLISHED is False or self.sfr.vars.ANTENNA_DEPLOYED is False:
+            return True
+        else:
+            return False
 
     @wrap_errors(LogicalError)
     def switch_mode(self):
@@ -91,6 +97,7 @@ class Startup(Mode):
     def update_conditions(self) -> None:
         super(Startup, self).update_conditions()
         self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
+        self.conditions["Is Tumbling"] = self.sfr.imu.is_tumbling()
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:

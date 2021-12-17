@@ -65,10 +65,7 @@ class Analytics:
         panels = ["bcr1", "bcr2", "bcr3"]  # List of panels to average
         solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
-        print(orbits)
-        print(solar)
         if len(orbits) < 4:  # If we haven't logged any orbits
-            print("orbits log bad")
             if len(solar) > 0:  # If we have solar data
                 # Estimate based on what we have
                 return solar[["bcr1", "bcr2", "bcr3"]].sum(axis=1).mean() * duration
@@ -79,14 +76,11 @@ class Analytics:
         orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
         sunlight_period = orbits[orbits["phase"] == "daylight"]["timestamp"].diff().mean(skipna=True)
-        print(orbits[orbits["phase"] == "daylight"]["timestamp"].diff())
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
         # Filter out all data points which weren't taken in sunlight
         in_sun = solar[[orbits[orbits["timestamp"] < 
             row["timestamp"]]["phase"].iloc[-1] == "daylight" for (_, row) in solar.iterrows()]]
-        # print(in_sun)
         solar_gen = in_sun[panels].sum(axis=1).mean()  # Calculate average solar power generation
-        # print(solar_gen)
         # Function to calculate energy generation over a given time since entering sunlight
         energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
             min([t % orbital_period, sunlight_period]) * solar_gen
@@ -104,7 +98,6 @@ class Analytics:
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
         if len(df) > 2:  # If we have enough rows
-            print(df["timestamp"].diff(periods=2))
             return df["timestamp"].diff(periods=2).mean(skipna=True)  # Return orbital period
         return 90 * 60  # Return assumed orbital period
 

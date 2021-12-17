@@ -5,7 +5,7 @@ import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C
+from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -51,6 +51,7 @@ class StateFieldRegistry:
         "IMU": IMU_I2C,
         "Antenna Deployer": AntennaDeployer
     }
+
 
     class Log:
         @wrap_errors(LogicalError)
@@ -141,6 +142,8 @@ class StateFieldRegistry:
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
             self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages via iridium for this amount of time, switch primary to APRS
             self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this amount of time, it will switch primary radio to APRS
+            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
+            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
             self.MODE = Science  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
@@ -243,6 +246,41 @@ class StateFieldRegistry:
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
+        }
+        self.modes_list = {
+            "Startup": Startup,
+            "Charging": Charging,
+            "Science": Science,
+            "Outreach": Outreach,
+            "Repeater": Repeater,
+        }
+        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
+            "Iridium": "UART-RS232",
+            "APRS": "SPI-UART"
+        }
+        self.components = [
+            "APRS",
+            "Iridium",
+            "IMU",
+            "Antenna Deployer",
+            "EPS",
+            "RTC",
+            "UART-RS232",  # Iridium Serial Converter
+            "SPI-UART",  # APRS Serial Converter
+            "USB-UART"
+        ]
+
+        self.component_to_class = {  # returns class from component name
+            "Iridium": Iridium,
+            "APRS": APRS,
+            "IMU": IMU_I2C,
+            "Antenna Deployer": AntennaDeployer
+        }
+        self.instruct = {
+            "Pin On": self.turn_on_component,
+            "Pin Off": self.turn_off_component,
+            "All On": self.turn_all_on,
+            "All Off": self.turn_all_off
         }
         self.vars = self.load()
         self.vars.LAST_STARTUP = time.time()
@@ -354,7 +392,7 @@ class StateFieldRegistry:
             pcharge = self.battery.charging_power()
             # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e.,
             # the satellite is in a power hungry mode)
-            if pcharge > (-1 * self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
+            if pcharge > (-1 * self.eps.total_power(2)[0]):
                 return True
         return False
 
@@ -386,8 +424,7 @@ class StateFieldRegistry:
             return
 
         self.eps.commands["Pin On"](component)  # turns on component
-        self.devices[component] = self.component_to_class[component](
-            self)  # registers component as on by setting component status in sfr to object instead of None
+        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.component_to_serial[component]  # gets serial converter name of component
             self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
@@ -412,8 +449,7 @@ class StateFieldRegistry:
         if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.devices[
-            "Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
+        if component == "Iridium" and self.devices["Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
             try:
                 self.devices[component].next_msg()
             except Exception as e:

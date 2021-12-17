@@ -19,6 +19,7 @@ class Repeater(Mode):  # TODO: IMPLEMENT
     def start(self) -> None:
         super(Repeater, self).start()
         self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.LOWER_THRESHOLD
+        self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
