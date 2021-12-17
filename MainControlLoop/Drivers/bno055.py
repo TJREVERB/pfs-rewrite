@@ -896,8 +896,7 @@ class IMU:
 
         magV = (magValues[1] - magValues[0]) / interval  # mag values velocity
 
-        magRot = (
-        degrees(atan2(magV[2] , magV[1])), degrees(atan2(magV[0] , magV[2])), degrees(atan2(magV[1] , magV[0])))  # yz, xz, xy
+        magRot = (degrees(atan2(magV[2] , magV[1])), degrees(atan2(magV[0] , magV[2])), degrees(atan2(magV[1] , magV[0])))  # yz, xz, xy
         # from https://forum.sparkfun.com/viewtopic.php?t=22252
 
         return (gyroValues, magRot)
@@ -910,10 +909,7 @@ class IMU:
         y_tumble_values = df["ygyro"].values.tolist()
         x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
         y_tumble_avg = sum(y_tumble_values)/len(y_tumble_values)
-        if  x_tumble_avg > self.sfr.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.DETUMBLE_THRESHOLD:
-            return True
-        else:
-            return False
+        return x_tumble_avg > self.sfr.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.DETUMBLE_THRESHOLD
 
 
 
