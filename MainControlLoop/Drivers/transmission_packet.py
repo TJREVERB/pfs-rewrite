@@ -17,3 +17,6 @@ class TransmissionPacket:
     def __str__(self):
         return f"{self.command_string}:{self.return_code}:{self.msn}:{self.timestamp[0]}-\
             {self.timestamp[1]}-{self.timestamp[2]}:{':'.join(self.return_data)}:"
+
+    def timestamp_to_object(self):
+        
