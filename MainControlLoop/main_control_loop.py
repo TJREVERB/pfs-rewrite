@@ -16,16 +16,16 @@ class MainControlLoop:
     @wrap_errors(LogicalError)
     def start(self):
         print("MCL Start")
-        self.sfr.vars.MODE.start()
+        self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
     def iterate(self):  # Repeat main control loop forever
-        self.sfr.vars.MODE.execute_cycle()  # Execute single cycle of mode
+        self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
         if not self.sfr.vars.MODE_LOCK:
-            if not isinstance(self.sfr.vars.MODE, type(new_mode := self.sfr.vars.MODE.suggested_mode())):
-                self.sfr.vars.MODE.terminate_mode()
-                self.sfr.vars.MODE = new_mode
-                self.sfr.vars.MODE.start()
+            if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
+                self.sfr.MODE.terminate_mode()
+                self.sfr.MODE = new_mode
+                self.sfr.MODE.start()
 
         print("Cycle")
         self.sfr.command_executor.execute()  # Execute commands

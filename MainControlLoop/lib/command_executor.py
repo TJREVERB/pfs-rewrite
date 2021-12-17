@@ -151,10 +151,10 @@ class CommandExecutor:
         """
         if str(self.sfr.mode_obj) == "Charging":
             raise CommandExecutionException("Already in Charging")
-        self.sfr.vars.MODE.terminate_mode()
-        self.sfr.vars.MODE = self.sfr.modes_list["Charging"](self.sfr,
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
             self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
-        self.sfr.vars.MODE.start()
+        self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
 
@@ -165,9 +165,9 @@ class CommandExecutor:
         """
         if str(self.sfr.mode_obj) == "Science":
             raise CommandExecutionException("Already in Science")
-        self.sfr.vars.MODE.terminate_mode()
-        self.sfr.vars.MODE = self.sfr.modes_list["Science"](self.sfr)
-        self.sfr.vars.MODE.start()
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Science"](self.sfr)
+        self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
 
@@ -178,9 +178,9 @@ class CommandExecutor:
         """
         if str(self.sfr.mode_obj) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
-        self.sfr.vars.MODE.terminate_mode()
-        self.sfr.vars.MODE = self.sfr.modes_list["Outreach"](self.sfr)
-        self.sfr.vars.MODE.start()
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Outreach"](self.sfr)
+        self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
 
@@ -191,9 +191,9 @@ class CommandExecutor:
         """
         if str(self.sfr.mode_obj) == "Repeater":
             raise CommandExecutionException("Already in Repeater")
-        self.sfr.vars.MODE.terminate_mode()
-        self.sfr.vars.MODE = self.sfr.modes_list["Repeater"](self.sfr)
-        self.sfr.vars.MODE.start()
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Repeater"](self.sfr)
+        self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
 
