@@ -52,6 +52,7 @@ class StateFieldRegistry:
         "Antenna Deployer": AntennaDeployer
     }
 
+
     class Log:
         @wrap_errors(LogicalError)
         def __init__(self, path, headers):
@@ -243,6 +244,12 @@ class StateFieldRegistry:
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
+        }
+        self.instruct = {
+            "Pin On": self.turn_on_component,
+            "Pin Off": self.turn_off_component,
+            "All On": self.turn_all_on,
+            "All Off": self.turn_all_off
         }
         self.vars = self.load()
         self.vars.LAST_STARTUP = time.time()
