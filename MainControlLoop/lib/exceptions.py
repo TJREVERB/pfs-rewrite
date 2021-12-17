@@ -74,6 +74,11 @@ class NoSignalException(CustomException):
         return "NoSignalException: " + super().__repr__()
 
 
+class HighPowerDrawError(CustomException):
+    def __repr__(self):
+        return "HighPowerDrawError: " + super().__repr__()
+
+
 class LogicalError(CustomException): 
     def __repr__(self):
         return "LogicalError: " + super().__repr__()

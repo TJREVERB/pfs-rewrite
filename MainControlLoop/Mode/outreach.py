@@ -19,6 +19,7 @@ class Outreach(Mode):
     @wrap_errors(LogicalError)
     def start(self) -> None:
         super(Outreach, self).start()
+        self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
@@ -40,7 +41,7 @@ class Outreach(Mode):
     @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         super(Outreach, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() > self.sfr.vars.LOWER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() > self.sfr.vars.LOWER_THRESHOLD
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:

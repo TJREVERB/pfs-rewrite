@@ -21,10 +21,11 @@ class Charging(Mode):
     def start(self) -> None:
         super(Charging, self).start()
         # TODO: THIS LEAVES THE APRS ON DURING CHARGING MODE IF IT IS PRIMARY, IS THIS INTENTIONAL?
+        self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)  # turn on primary radio
         self.sfr.instruct["All Off"](exceptions=[self.sfr.vars.PRIMARY_RADIO])  # turn off any not required devices
 
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() <= self.sfr.vars.UPPER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() <= self.sfr.vars.UPPER_THRESHOLD
         self.conditions["Science Mode Status"] = self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY > -1
 
     @wrap_errors(LogicalError)
@@ -44,7 +45,7 @@ class Charging(Mode):
     @wrap_errors(LogicalError)
     def update_conditions(self) -> None:
         super(Charging, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.eps.telemetry["VBCROUT"]() <= self.UPPER_THRESHOLD
+        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() <= self.UPPER_THRESHOLD
         self.conditions["Science Mode Status"] = self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY > -1
 
     @wrap_errors(LogicalError)

@@ -19,7 +19,7 @@ from micropython import const
 from smbus2 import SMBus
 import time
 import numpy as np
-from math import atan
+from math import atan2
 from math import degrees
 from MainControlLoop.lib.exceptions import wrap_errors, IMUError
 
@@ -878,7 +878,7 @@ class IMU:
         self._write_register(IMU._MODE_REGISTER, current_mode)
 
     @wrap_errors(IMUError)
-    def getTumble(self):
+    def get_tumble(self):
         """
         Returns tumble taken from gyro and magnetometer, in degrees/s
         :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
@@ -896,11 +896,20 @@ class IMU:
 
         magV = (magValues[1] - magValues[0]) / interval  # mag values velocity
 
-        magRot = (
-        degrees(atan(magV[2] / magV[1])), degrees(magV[0] / magV[2]), degrees(atan(magV[1] / magV[0])))  # yz, xz, xy
+        magRot = (degrees(atan2(magV[2] , magV[1])), degrees(atan2(magV[0] , magV[2])), degrees(atan2(magV[1] , magV[0])))  # yz, xz, xy
         # from https://forum.sparkfun.com/viewtopic.php?t=22252
 
         return (gyroValues, magRot)
+
+    @wrap_errors(IMUError)
+    def is_tumbling(self) -> bool:
+        """Checks if sat is tumbling. If is tumbling returns True, else returns False"""
+        df = self.sfr.logs["imu"].read().tail(5)
+        x_tumble_values = df["xgyro"].values.tolist()
+        y_tumble_values = df["ygyro"].values.tolist()
+        x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
+        y_tumble_avg = sum(y_tumble_values)/len(y_tumble_values)
+        return x_tumble_avg > self.sfr.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.DETUMBLE_THRESHOLD
 
 
 class IMU_I2C(IMU):

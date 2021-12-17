@@ -165,11 +165,12 @@ class APRS:
         """
         if packet.simulate:
             return True
-        pd.DataFrame([
-            {"timestamp": time.time()},
-            {"radio": "APRS"},
-            {"size": len(str(packet))},
-        ]).to_csv(self.sfr.transmission_log_path, mode="a", header=False)
+        self.sfr.logs["transmission"].write({
+            "ts0": (t := time.time()) // 100000,
+            "ts1": int(t % 100000),
+            "radio": "APRS",
+            "size": len(str(packet)),
+        })
         return self.write(str(packet))
 
     @wrap_errors(APRSError)
@@ -183,7 +184,7 @@ class APRS:
             self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1], outreach=True)))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:
@@ -202,7 +203,6 @@ class APRS:
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        print("Read called")
         output = bytes()  # create an output variable
         for loop in range(50):
             try:

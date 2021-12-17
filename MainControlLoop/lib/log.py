@@ -1,52 +1,84 @@
 import time
-import pandas as pd
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
 
 
 class Logger:
+    class Clock:
+        @wrap_errors(LogicalError)
+        def __init__(self, func: callable, delay: float):
+            """
+            Run given function after given delay
+            :param func: function to run
+            :param delay: time to wait (seconds)
+            """
+            self.func, self.delay = func, delay
+            self.last_iteration = 0
+
+        def execute(self):
+            """
+            Execute a single cycle of the clock.
+            Run func if enough time has passed, do nothing otherwise
+            """
+            if time.time() > self.last_iteration + self.delay:
+                self.func()
+                self.last_iteration = time.time()
+
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         self.sfr = sfr
-        self.last_log_time = time.perf_counter()
-        self.last_orbit_update = self.last_log_time
-        self.LOG_DELAY = 10  # Seconds
-        self.ORBIT_CHECK_DELAY = 60
+        self.loggers = {
+            "sfr": self.Clock(self.sfr.dump, 0),
+            "imu": self.Clock(self.log_imu, 10),
+            "power": self.Clock(self.integrate_charge, 30),
+            "orbits": self.Clock(self.update_orbits, 60),
+        }
 
     @wrap_errors(LogicalError)
-    def log_pwr(self, buspower, pdm_states, pwr) -> None:
+    def log_pwr(self, buspower, pwr) -> None:
         """
         Logs the power draw of every pdm
         :param buspower: power draw of bus
         :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
-        :param t: time to log data, defaults to time method is called
         """
-        print("Power: ", t := time.time(), pdm_states, pwr)
-        with open(self.sfr.pwr_log_path, "a") as f:
-            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{str(buspower)},{",".join(map(str, pdm_states))},{",".join(map(str, pwr))}\n""")
+        print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
+        data = {
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "buspower": str(buspower),
+        }
+        for i in range(len(pwr)):
+            data[f"0x0{str(hex(i + 1))[2:].upper()}"] = pwr[i]
+        self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
         """
         Logs the solar power generation from each panel (sum of A and B)
         :param gen: array of power inputs from each panel, in W.
-        :param t: time to log data, defaults to time method is called
         """
-        print("Solar: ", t := time.time(), gen)
-        with open(self.sfr.solar_log_path, "a") as f:
-            f.write(f"""{int(t/100000)*100000},{int(t%100000)},{",".join(map(str, gen))}\n""")
+        print("Solar: ", int(t := time.time()), gen := [round(i, 3) for i in gen])
+        self.sfr.logs["solar"].write({
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "bcr1": gen[0],
+            "bcr2": gen[1],
+            "bcr3": gen[2],
+        })
 
     @wrap_errors(LogicalError)
-    def log_imu(self, tumble: list) -> None: # Probably scuffed
+    def log_imu(self) -> None:  # Probably scuffed
         """
-        Logs IMU datapoints
-        :param tumble: result of getTumble() call
+        Logs IMU data
         """
-        print("Imu: ", t := time.time(), tumble)
-
-        # Format data into pandas series
-        data = pd.concat(pd.Series([int(t/100000)*100000, int(t%100000)]), pd.Series(tumble[0]), pd.Series(tumble[1]))
-        data.to_frame().to_csv(path_or_buf=self.sfr.imu_log_path)
+        print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.imu.getTumble()[0]])
+        self.sfr.logs["imu"].write({
+            "ts0": t // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "xgyro": tbl[0],
+            "ygyro": tbl[1],
+            "zgyro": tbl[2],
+        })
 
     @wrap_errors(LogicalError)
     def integrate_charge(self) -> None:
@@ -54,34 +86,40 @@ class Logger:
         Integrate charge in Joules
         """
         # Log total power, store values into variables
-        self.log_pwr(self.sfr.eps.bus_power(), (pdms_on := self.sfr.eps.raw_pdm_draw())[0], pdms_on[1])
+        self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
-        # Subtract delta * time from BATTERY_CAPACITY_INT
-        self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.battery.charging_power() * \
-            (t := time.perf_counter() - self.last_log_time)
-        self.last_log_time = t  # Update previous_time, accounts for rollover
+        delta = self.sfr.battery.charging_power() * (time.time() - self.loggers["power"].last_iteration)
+        # If we're drawing/gaining absurd amounts of power
+        if abs(delta) > 999:  # TODO: ARBITRARY THRESHOLD
+            # Verify we're actually drawing an absurd amount of power
+            total_draw = []
+            for i in range(5):
+                total_draw.append(self.sfr.eps.bus_power() + sum(self.sfr.eps.raw_pdm_draw()[1]))
+                time.sleep(1)
+            if (avg_draw := sum(total_draw) / 5) >= 999:  # TODO: ARBITRARY THRESHOLD
+                raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
+            else:  # If value was bogus, truncate logs and integrate charge based on historical data
+                self.sfr.logs["power"].truncate(1)
+                self.sfr.logs["solar"].truncate(1)
+                self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.analytics.predicted_generation(
+                    t := time.time() - self.loggers["power"].last_iteration) - (self.sfr.analytics.predicted_consumption(t))
+        else:
+            # Add delta * time to BATTERY_CAPACITY_INT
+            self.sfr.vars.BATTERY_CAPACITY_INT += delta
 
     @wrap_errors(LogicalError)
     def update_orbits(self):
         """
         Update orbits log when sun is detected
         """
-        if sun := self.sfr.eps.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
+        if sun := self.sfr.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
         elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
         self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
-        self.last_orbit_update = time.perf_counter()
 
     @wrap_errors(LogicalError)
     def log(self):
-        if time.perf_counter() - self.last_log_time > self.LOG_DELAY:
-            print("Logging power")
-            self.integrate_charge()
-            self.last_log_time = time.perf_counter()
-        if time.perf_counter() - self.last_orbit_update > self.ORBIT_CHECK_DELAY:
-            print("Logging orbits")
-            self.update_orbits()
-            self.last_log_time = time.perf_counter()
-        self.sfr.dump()
+        for i in self.loggers.keys():
+            self.loggers[i].execute()

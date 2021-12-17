@@ -26,6 +26,7 @@ class CommandExecutor:
             "GPL": self.GPL,
             "GCD": self.GCD,
             "GPW": self.GPW,
+            "GPR": self.GPR,
             "GOP": self.GOP,
             "GCS": self.GCS,
             "GSV": self.GSV,
@@ -61,8 +62,7 @@ class CommandExecutor:
             "GOP": self.GOP,
             "GCS": self.GCS,
             "USM": self.USM,
-            "IPC": self.IPC,
-            "ICE": self.ICE
+            "ITM": self.ITM
         }
 
     @wrap_errors(LogicalError)
@@ -70,69 +70,79 @@ class CommandExecutor:
         command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
             print("Command received: " + command_packet.command_string)
-            to_log = pd.DataFrame([
-                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
-                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
-                {"command": command_packet.command_string},
-                {"arg": ":".join(command_packet.args)},
-                {"registry": "Primary"},
-                {"msn": command_packet.msn}
-            ])
+            to_log = {
+                "ts0": (t := datetime.datetime.utcnow()).timestamp(),
+                "ts1": (t := datetime.datetime.utcnow()).timestamp(), # TODO: I don't know what these are supposed to be
+                "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
+                "command": command_packet.command_string,
+                "arg": ":".join(command_packet.args),
+                "registry": "Primary",
+                "msn": command_packet.msn
+            }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.primary_registry[command_packet.command_string](command_packet)
+                to_log["result"] = ":".join(self.primary_registry[command_packet.command_string](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
-                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.logs["command"].write(to_log)
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
             print("Command received: " + command_packet.command_string)
-            to_log = pd.DataFrame([
-                {"timestamp": (t := datetime.datetime.utcnow()).timestamp()},
-                {"radio": self.sfr.PRIMARY_RADIO},  # TODO: FIX
-                {"command": command_packet.command_string},
-                {"arg": ":".join(command_packet.args)},
-                {"registry": "Secondary"},
-                {"msn": command_packet.msn}
-            ])
+            to_log = {
+                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
+                "ts1": int(t.timestamp() % 100000),
+                "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
+                "command": command_packet.command_string,
+                "arg": ":".join(command_packet.args),
+                "registry": "Secondary",
+                "msn": command_packet.msn
+            }
             command_packet.timestamp = (t.day, t.hour, t.minute)
             try:
-                to_log["result"] = self.secondary_registry[command_packet.command_string](command_packet)
+                to_log["result"] = ":".join(self.secondary_registry[command_packet.command_string](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
             finally:
-                to_log.to_csv(self.sfr.command_log_path, mode="a", header=False)
+                self.sfr.logs["command"].write(to_log)
                 self.sfr.LAST_COMMAND_RUN = time.time()
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, error=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, error = False, appendtoqueue = True):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
+        :param appendtoqueue: (bool) whether to append to queue in case of failure. 
+        Defaults to true, but should be set false when transmitting a packet already in queue
         :return: (bool) transmission successful
         """
         if error:
             packet.return_code = "ERR"
         else:
             packet.return_code = "0OK"
-        packet.return_data = data
+        if packet.return_data is None:
+            packet.return_data = data
         d = datetime.datetime.utcnow()
         packet.timestamp = (d.day, d.hour, d.minute)
-        try:
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        if packet.outreach:
+            self.sfr.devices["APRS"].transmit(packet)
             return True
-        except NoSignalException as e:
-            print("No Iridium connectivity, appending to buffer...")
-            self.sfr.vars.transmit_buffer.append(packet)
-            return False
+        else:
+            try:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+                return True
+            except NoSignalException as e:
+                if appendtoqueue:
+                    print("No Iridium connectivity, appending to buffer...")
+                    self.sfr.vars.transmit_buffer.append(packet)
+                return False
 
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
@@ -252,7 +262,7 @@ class CommandExecutor:
         """
         Reads and Transmits Battery Voltage
         """
-        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"]()])
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -260,9 +270,14 @@ class CommandExecutor:
         """
         Transmit proof of life
         """
-        self.transmit(packet, result := [self.sfr.eps.telemetry["VBCROUT"](),
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power())])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def GPR(self, packet: TransmissionPacket):
+        self.transmit(packet, result := [self.sfr.components.index(self.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
