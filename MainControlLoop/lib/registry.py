@@ -5,7 +5,7 @@ import pickle
 import json
 from MainControlLoop.Drivers.eps import EPS
 from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C, IMU
+from MainControlLoop.Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -51,7 +51,6 @@ class StateFieldRegistry:
         "IMU": IMU_I2C,
         "Antenna Deployer": AntennaDeployer
     }
-
 
     class Log:
         @wrap_errors(LogicalError)
@@ -136,7 +135,7 @@ class StateFieldRegistry:
             self.FAILURES = []
             self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = 90 * 60
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
@@ -146,8 +145,8 @@ class StateFieldRegistry:
             # amount of time, it will switch primary radio to APRS
             self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
             self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
-            # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Science  # DEBUG!!!
+            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
+            self.MODE = Science(sfr)  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
@@ -160,7 +159,7 @@ class StateFieldRegistry:
             self.START_TIME = time.time()
             self.LAST_COMMAND_RUN = time.time()
             self.LAST_MODE_SWITCH = time.time()
-            self.LAST_STARTUP = 0
+            self.LAST_STARTUP = time.time()
             self.LAST_IRIDIUM_RECEIVED = time.time()
 
         @wrap_errors(LogicalError)
@@ -176,7 +175,7 @@ class StateFieldRegistry:
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
-                list(StateFieldRegistry.modes_list.keys()).index(self.MODE.__name__),
+                list(StateFieldRegistry.modes_list.keys()).index(type(self.MODE).__name__),
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
@@ -346,7 +345,6 @@ class StateFieldRegistry:
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
-        :param t: time to log, defaults to time method is called
         """
         self.logs["iridium"].write({
             "ts0": (t := time.time()) // 100000 * 100000,
@@ -426,7 +424,8 @@ class StateFieldRegistry:
             return
 
         self.eps.commands["Pin On"](component)  # turns on component
-        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting component status in sfr to object instead of None
+        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
+        # component status in sfr to object instead of None
         if component in self.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.component_to_serial[component]  # gets serial converter name of component
             self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
@@ -451,7 +450,8 @@ class StateFieldRegistry:
         if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.devices["Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
+        if component == "Iridium" and self.devices["Iridium"] is not None:  # Read in MT buffer to avoid wiping
+            # commands when mode switching
             try:
                 self.devices[component].next_msg()
             except Exception as e:
@@ -468,24 +468,15 @@ class StateFieldRegistry:
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def turn_all_on(self, exceptions=None, override_default_exceptions=False) -> None:
+    def turn_all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
         :param exceptions: (list) components to not turn on, default is ["Antenna Deployer, IMU"]
-        :param override_default_exceptions: (bool) whether or not to use default exceptions
         :return: None
         """
-
-        if override_default_exceptions:  # if True no default exceptions
-            default_exceptions = []
-        else:  # normally exceptions
-            default_exceptions = ["Antenna Deployer", "IMU"]
-        if exceptions is not None:
-            for exception in exceptions:  # loops through custom device exceptions and adds to exceptions list
-                default_exceptions.append(exception)
-
-        exceptions = default_exceptions  # sets to exceptions list
+        if exceptions is None:  # If no argument provided
+            exceptions = ["Antenna Deployer", "IMU"]  # Set to default list
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
@@ -530,6 +521,6 @@ class StateFieldRegistry:
                 self.turn_on_component(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            encoded_radio = self.sfr.components.index(new_radio)
+            encoded_radio = self.components.index(new_radio)
             packet = TransmissionPacket("GPR", [], 0)
             self.command_executor.transmit(packet, [encoded_radio])

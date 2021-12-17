@@ -6,21 +6,17 @@ from MainControlLoop.lib.exceptions import NoSignalException, wrap_errors, Logic
 
 
 class Science(Mode):
+    DATAPOINT_SPACING = 5  # in seconds, TODO: MAKE 60
+    # NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
+    NUMBER_OF_REQUIRED_PINGS = 5
+    PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60
+    SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60
+
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         super().__init__(sfr)
         self.last_ping = time.time()
         self.pings_performed = 0
-        self.DATAPOINT_SPACING = 5  # in seconds, TODO: MAKE 60
-        # self.NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
-        self.NUMBER_OF_REQUIRED_PINGS = 5  # DEBUG
-        self.PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60  # wait time for iridium polling if iridium is main radio
-        self.SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60  # wait time for iridium polling if iridium is not main radio
-        self.conditions = {
-            "Collection Complete": False,
-            "Low Battery": False,
-            "Iridium Status": True  # if iridium works (not locked off), True
-        }
 
     @wrap_errors(LogicalError)
     def __str__(self):
@@ -28,51 +24,36 @@ class Science(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super(Science, self).start()
+        super().start()
         if self.sfr.vars.PRIMARY_RADIO == "APRS":
             self.sfr.instruct["Pin On"]("APRS")
         self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["Pin On"]("Iridium")
-        self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
+        self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium", "IMU", "Antenna Deployer"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
         self.sfr.logs["iridium"].clear()
-        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
-        self.conditions["Collection Complete"] = self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS
-        self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
 
     @wrap_errors(LogicalError)
-    def check_conditions(self) -> bool:
-        super(Science, self).check_conditions()
-
-        return self.conditions["Low Battery"] or self.conditions["Collection Complete"]
-
-    @wrap_errors(LogicalError)
-    def switch_mode(self):
-        self.sfr.LAST_MODE_SWITCH = time.time()
-        return self.sfr.modes_list["Charging"]
-
-    @wrap_errors(LogicalError)
-    def update_conditions(self) -> None:
-        super(Science, self).update_conditions()
-        self.conditions["Low Battery"] = self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.LOWER_THRESHOLD
-        self.conditions["Iridium Status"] = self.sfr.devices["Iridium"] is not None
+    def suggested_mode(self) -> Mode:
+        super().suggested_mode()
+        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # If we're on low battery
+            return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
+        elif self.sfr.devices["Iridium"](self.sfr) is None:  # If Iridium is off
+            return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
+        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
+            return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
+        return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
-        self.read_radio()
-        self.transmit_radio()
-        self.check_time()
-        super(Science, self).execute_cycle()
-
-        if self.conditions["Collection Complete"]:  # If we've already calculated SSV
+        super().execute_cycle()
+        if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've already calculated SSV
             pass  # Do nothing
         elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've performed enough pings
             print("Transmitting results...")
             # Transmit signal strength variability
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
-            pckt = TransmissionPacket("GSV", [], 0)
-            self.sfr.command_executor.GSV(pckt)
-            self.conditions["Collection Complete"] = True
+            self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
         elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:  # If it's time to perform a ping
             print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
             try:  # Log Iridium data
@@ -85,19 +66,3 @@ class Science(Mode):
             finally:  # Always update last_ping time to prevent spamming pings
                 self.pings_performed += 1
                 self.last_ping = time.time()
-
-    @wrap_errors(LogicalError)
-    def read_radio(self):
-        super(Science, self).read_radio()
-
-    @wrap_errors(LogicalError)
-    def transmit_radio(self):
-        return super(Science, self).transmit_radio()
-
-    @wrap_errors(LogicalError)
-    def check_time(self):
-        return super(Science, self).check_time()
-
-    @wrap_errors(LogicalError)
-    def terminate_mode(self) -> None:
-        super(Science, self).terminate_mode()
