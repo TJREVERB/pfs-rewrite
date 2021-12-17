@@ -1,9 +1,6 @@
 import os
 import traceback
-import sys
-import datetime
 import time
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
