@@ -52,6 +52,7 @@ class StateFieldRegistry:
         "Antenna Deployer": AntennaDeployer
     }
 
+
     class Log:
         @wrap_errors(LogicalError)
         def __init__(self, path, headers):
@@ -243,6 +244,41 @@ class StateFieldRegistry:
             "UART-RS232": False,  # Iridium Serial Converter
             "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
+        }
+        self.modes_list = {
+            "Startup": Startup,
+            "Charging": Charging,
+            "Science": Science,
+            "Outreach": Outreach,
+            "Repeater": Repeater,
+        }
+        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
+            "Iridium": "UART-RS232",
+            "APRS": "SPI-UART"
+        }
+        self.components = [
+            "APRS",
+            "Iridium",
+            "IMU",
+            "Antenna Deployer",
+            "EPS",
+            "RTC",
+            "UART-RS232",  # Iridium Serial Converter
+            "SPI-UART",  # APRS Serial Converter
+            "USB-UART"
+        ]
+
+        self.component_to_class = {  # returns class from component name
+            "Iridium": Iridium,
+            "APRS": APRS,
+            "IMU": IMU_I2C,
+            "Antenna Deployer": AntennaDeployer
+        }
+        self.instruct = {
+            "Pin On": self.turn_on_component,
+            "Pin Off": self.turn_off_component,
+            "All On": self.turn_all_on,
+            "All Off": self.turn_all_off
         }
         self.vars = self.load()
         self.vars.LAST_STARTUP = time.time()

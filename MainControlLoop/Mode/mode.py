@@ -19,12 +19,7 @@ class Mode:
         # Actual time between read/write will depend on signal availability
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.sfr.instruct = {
-            "Pin On": self.sfr.turn_on_component,
-            "Pin Off": self.sfr.turn_off_component,
-            "All On": self.sfr.turn_all_on,
-            "All Off": self.sfr.turn_all_off
-        }
+
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
