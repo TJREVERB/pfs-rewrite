@@ -23,10 +23,7 @@ class Startup(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start()
-        self.sfr.instruct["Pin On"]("Iridium")
-        self.sfr.instruct["Pin On"]("IMU")
-        self.sfr.instruct["All Off"](exceptions=["Iridium", "IMU", "Antenna Deployer"])
+        super().start(["Iridium", self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
     def antenna(self) -> None:

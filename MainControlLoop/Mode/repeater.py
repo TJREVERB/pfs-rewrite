@@ -9,11 +9,7 @@ class Repeater(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start()
-        self.sfr.instruct["Pin On"]("IMU")
-        self.sfr.instruct["Pin On"]("Iridium")
-        self.sfr.instruct["Pin On"]("APRS")
-        self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS"])
+        super().start(["Iridium", "APRS"])
         self.sfr.devices["APRS"].enable_digi()
 
     @wrap_errors(LogicalError)

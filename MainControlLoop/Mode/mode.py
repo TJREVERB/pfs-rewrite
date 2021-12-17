@@ -1,6 +1,5 @@
 import time
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import datetime
 import os
 
@@ -25,11 +24,14 @@ class Mode:
         pass
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self, enabled_components: list) -> None:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
+        :param enabled_components: list of components which are enabled in this mode
         """
-        pass
+        self.sfr.turn_all_off()
+        for i in enabled_components:
+            self.sfr.turn_on_component(i)
 
     @wrap_errors(LogicalError)
     def suggested_mode(self):

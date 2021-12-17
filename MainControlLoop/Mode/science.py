@@ -24,12 +24,7 @@ class Science(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start()
-        if self.sfr.vars.PRIMARY_RADIO == "APRS":
-            self.sfr.instruct["Pin On"]("APRS")
-        self.sfr.instruct["Pin On"]("IMU")
-        self.sfr.instruct["Pin On"]("Iridium")
-        self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium", "IMU", "Antenna Deployer"])
+        super().start(["Iridium", "APRS"] if self.sfr.vars.PRIMARY_RADIO == "APRS" else ["Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
         self.sfr.logs["iridium"].clear()
 

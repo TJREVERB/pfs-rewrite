@@ -1,5 +1,4 @@
 from MainControlLoop.Mode.mode import Mode
-import time
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 
 
@@ -10,10 +9,7 @@ class Outreach(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super(Outreach, self).start()
-        self.sfr.instruct["Pin On"]("Iridium")
-        self.sfr.instruct["Pin On"]("APRS")
-        self.sfr.instruct["All Off"](exceptions=["Iridium", "APRS", "Antenna Deployer", "IMU"])
+        super().start(["Iridium", "APRS"])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

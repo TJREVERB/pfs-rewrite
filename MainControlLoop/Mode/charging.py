@@ -15,12 +15,7 @@ class Charging(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start()
-        # TODO: THIS LEAVES THE APRS ON DURING CHARGING MODE IF IT IS PRIMARY, IS THIS INTENTIONAL?
-        self.sfr.instruct["Pin On"]("IMU")
-        self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)  # turn on primary radio
-        # turn off any not required devices
-        self.sfr.instruct["All Off"](exceptions=[self.sfr.vars.PRIMARY_RADIO, "IMU", "Antenna Deployer"])
+        super().start([self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
