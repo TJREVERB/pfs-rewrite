@@ -491,6 +491,7 @@ class StateFieldRegistry:
             if self.devices[new_radio] is None:  # initialize it
                 self.turn_on_component(new_radio)
             # transmit update to groundstation
+            self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             encoded_radio = self.sfr.components.index(new_radio)
             packet = TransmissionPacket("GPR", [], 0)
             self.command_executor.transmit(packet, [encoded_radio])
