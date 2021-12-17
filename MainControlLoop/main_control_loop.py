@@ -23,9 +23,9 @@ class MainControlLoop:
     def iterate(self):  # Repeat main control loop forever
         self.sfr.vars.MODE.execute_cycle()  # Execute single cycle of mode
         if not self.sfr.vars.MODE_LOCK:
-            if isinstance(self.sfr.vars.MODE, obj := self.sfr.vars.MODE.suggested_mode()):
+            if isinstance(self.sfr.vars.MODE, new_mode := self.sfr.vars.MODE.suggested_mode()):
                 self.sfr.vars.MODE.terminate_mode()
-                self.sfr.vars.MODE = obj
+                self.sfr.vars.MODE = new_mode
                 self.sfr.vars.MODE.start()
 
         print("Cycle")
