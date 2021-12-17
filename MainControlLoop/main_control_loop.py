@@ -12,7 +12,6 @@ class MainControlLoop:
         """
         self.sfr = StateFieldRegistry()
         self.current_time = time.time()
-        self.current_time = time.time()
 
     @wrap_errors(LogicalError)
     def start(self):
