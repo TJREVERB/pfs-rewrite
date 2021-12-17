@@ -18,6 +18,7 @@ class Repeater(Mode):
         if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # If low battery
             # Switch to charging, then outreach
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
+        return self
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
