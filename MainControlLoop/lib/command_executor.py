@@ -286,7 +286,7 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
-        self.transmit(packet, result := [self.sfr.components.index(self.PRIMARY_RADIO)])
+        self.transmit(packet, result := [self.sfr.components.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
