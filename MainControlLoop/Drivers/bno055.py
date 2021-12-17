@@ -878,7 +878,7 @@ class IMU:
         self._write_register(IMU._MODE_REGISTER, current_mode)
 
     @wrap_errors(IMUError)
-    def getTumble(self):
+    def get_tumble(self):
         """
         Returns tumble taken from gyro and magnetometer, in degrees/s
         :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
@@ -901,6 +901,11 @@ class IMU:
         # from https://forum.sparkfun.com/viewtopic.php?t=22252
 
         return (gyroValues, magRot)
+
+    def is_tumbling(self) -> bool:  # TODO: Implement
+        #df = self.sfr.logs["imu"].read().tail(5)
+
+
 
 
 class IMU_I2C(IMU):

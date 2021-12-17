@@ -31,6 +31,7 @@ class Science(Mode):
         super(Science, self).start()
         if self.sfr.vars.PRIMARY_RADIO == "APRS":
             self.sfr.instruct["Pin On"]("APRS")
+        self.sfr.instruct["Pin On"]("IMU")
         self.sfr.instruct["Pin On"]("Iridium")
         self.sfr.instruct["All Off"](exceptions=["APRS", "Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1

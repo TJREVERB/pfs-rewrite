@@ -386,8 +386,7 @@ class StateFieldRegistry:
             return
 
         self.eps.commands["Pin On"](component)  # turns on component
-        self.devices[component] = self.component_to_class[component](
-            self)  # registers component as on by setting component status in sfr to object instead of None
+        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting component status in sfr to object instead of None
         if component in self.component_to_serial:  # see if component has a serial converter to open
             serial_converter = self.component_to_serial[component]  # gets serial converter name of component
             self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
@@ -412,8 +411,7 @@ class StateFieldRegistry:
         if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.devices[
-            "Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
+        if component == "Iridium" and self.devices["Iridium"] is not None:  # Read in MT buffer to avoid wiping commands when mode switching
             try:
                 self.devices[component].next_msg()
             except Exception as e:
