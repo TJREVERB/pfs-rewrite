@@ -9,7 +9,7 @@ class Repeater(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start(["Iridium", "APRS"])
+        super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
         self.sfr.devices["APRS"].enable_digi()
 
     @wrap_errors(LogicalError)

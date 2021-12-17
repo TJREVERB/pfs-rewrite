@@ -24,7 +24,7 @@ class Science(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start(["Iridium", "APRS"] if self.sfr.vars.PRIMARY_RADIO == "APRS" else ["Iridium"])
+        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
         self.sfr.logs["iridium"].clear()
 

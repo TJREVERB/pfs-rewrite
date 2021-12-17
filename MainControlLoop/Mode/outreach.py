@@ -9,7 +9,7 @@ class Outreach(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start(["Iridium", "APRS"])
+        super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

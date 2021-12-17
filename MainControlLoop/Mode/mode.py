@@ -30,7 +30,7 @@ class Mode:
         :param enabled_components: list of components which are enabled in this mode
         """
         self.sfr.turn_all_off()
-        for i in enabled_components:
+        for i in set(enabled_components):
             self.sfr.turn_on_component(i)
 
     @wrap_errors(LogicalError)
