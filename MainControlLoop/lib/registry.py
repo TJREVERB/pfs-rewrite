@@ -140,8 +140,10 @@ class StateFieldRegistry:
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
-            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages via iridium for this amount of time, switch primary to APRS
-            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this amount of time, it will switch primary radio to APRS
+            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
+            # via iridium for this amount of time, switch primary to APRS
+            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
+            # amount of time, it will switch primary radio to APRS
             self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
             self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
             # self.MODE = Startup  # Stores mode class, mode is instantiated in mcl
