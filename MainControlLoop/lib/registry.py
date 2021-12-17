@@ -354,7 +354,7 @@ class StateFieldRegistry:
             pcharge = self.battery.charging_power()
             # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e.,
             # the satellite is in a power hungry mode)
-            if pcharge > (-1 * self.eps.total_power(2)[0] + self.eps.SUN_DETECTION_THRESHOLD):
+            if pcharge > (-1 * self.eps.total_power(2)[0]):
                 return True
         return False
 
