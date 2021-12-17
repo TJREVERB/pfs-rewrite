@@ -95,6 +95,8 @@ class StateFieldRegistry:
                     self.path, mode="a", header=False, index=False)
             elif self.ext == "pkl":  # If log is pkl
                 with open(self.path, "wb") as f:
+                    for i in data.__dict__.keys():
+                        print(i + ": " + str(getattr(data, i)))
                     pickle.dump(data, f)  # Dump to file
             elif self.ext == "json":  # If log is json
                 with open(self.path, "w") as f:
