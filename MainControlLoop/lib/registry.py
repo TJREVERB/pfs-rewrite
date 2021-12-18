@@ -343,9 +343,8 @@ class StateFieldRegistry:
                 self.instruct["Pin On"](new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            encoded_radio = self.components.index(new_radio)
-            packet = TransmissionPacket("GPR", [], 0)
-            self.command_executor.transmit(packet, [encoded_radio])
+            unsolicited_packet = TransmissionPacket("GPR", [], 0)
+            self.command_executor.GPR(unsolicited_packet)
 
     class Log:
         @wrap_errors(LogicalError)
