@@ -99,7 +99,7 @@ class EPS:
             # Reads and returns timer limit for given PDM
             "PDM Timer Value": lambda component: self.request(0x62, self.COMPONENTS[component], 2),
             # Reads and returns passed time since PDM timer was enabled
-            "Set Timer Limit": lambda period, component: self.command(0x60, [period[0], self.COMPONENTS[component][0]]),
+            "Set Timer Limit": lambda period, component: self.command(0x60, [self.COMPONENTS[component][0], period]),
             # Sets timer limit for given PDM
 
             # PCM bus control
