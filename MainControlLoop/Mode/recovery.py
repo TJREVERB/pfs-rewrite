@@ -1,5 +1,5 @@
 from MainControlLoop.Mode.mode import Mode
-from lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 import time
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
