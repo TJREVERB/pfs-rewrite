@@ -13,24 +13,7 @@ class Mode:
         self.previous_time = 0
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.clocks = {
-            # Read from iridium, transmit buffer, and update clock every "wait" seconds (default 40)
-            "Poll Iridium": Clock(self.poll_iridium, delay=wait, conditions=[  # Only if
-                lambda: self.sfr.vars.PRIMARY_RADIO == "Iridium",  # Iridium is primary
-                lambda: self.sfr.devices["Iridium"] is not None,  # Iridium is on
-                # We have connection to the constellation
-                lambda: self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD,
-            ]),
-            # Check Iridium timeout every possible iteration
-            "Iridium Timeout": Clock(lambda: self.sfr.set_primary_radio("APRS"), conditions=[  # Only if
-                lambda: time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED >  # We haven't received a message
-                        self.sfr.vars.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF  # For a very long time
-            ]),
-            # Read from APRS every possible iteration
-            "Read APRS": Clock(self.sfr.devices["APRS"].next_msg, conditions=[  # Only if
-                lambda: self.sfr.devices["APRS"] is not None,  # APRS is on
-            ]),
-        }
+        self.iridium_clock = Clock(self.poll_iridium, wait)  # Poll iridium every "wait" seconds
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
@@ -63,17 +46,21 @@ class Mode:
         For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute radio commands, that is done by command_executor class.
         """
-        for i in self.clocks.keys():
-            self.clocks[i].execute()
+        self.iridium_clock.execute()
+        self.read_aprs()
 
     @wrap_errors(LogicalError)
-    def poll_iridium(self) -> None:
+    def poll_iridium(self) -> bool:
         """
         Read Iridium messages and append to buffer
         Transmit any messages in the transmit queue
         Update hardware clock
-        DOES NOT RUN UNLESS WE HAVE IRIDIUM CONNECTIVITY
+        :return: (bool) whether function ran
         """
+        if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
+            return False
+        if self.sfr.devices["Iridium"].check_siganl_passive() <= self.SIGNAL_THRESHOLD:
+            return False
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")
@@ -89,6 +76,18 @@ class Mode:
             os.system(
                 f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """)  # Update system time
             os.system("""sudo hwclock -w""")  # Write to RTC
+        return True
+
+    @wrap_errors(LogicalError)
+    def read_aprs(self) -> bool:
+        """
+        Read from the APRS if it exists
+        :return: (bool) whether the function ran
+        """
+        if self.sfr.devices["APRS"] is None:
+            return False
+        self.sfr.devices["APRS"].next_msg()
+        return True
 
     @wrap_errors(LogicalError)
     def systems_check(self):

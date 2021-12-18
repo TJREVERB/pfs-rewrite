@@ -8,10 +8,10 @@ class Logger:
     def __init__(self, sfr):
         self.sfr = sfr
         self.loggers = {
-            "sfr": Clock(self.sfr.dump),
-            "imu": Clock(self.log_imu, delay=10),
-            "power": Clock(self.integrate_charge, delay=30),
-            "orbits": Clock(self.update_orbits, delay=60),
+            "sfr": Clock(self.sfr.dump, 0),
+            "imu": Clock(self.log_imu, 10),
+            "power": Clock(self.integrate_charge, 30),
+            "orbits": Clock(self.update_orbits, 60),
         }
 
     @wrap_errors(LogicalError)

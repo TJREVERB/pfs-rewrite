@@ -14,12 +14,7 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.clocks |= {
-            # Ping Iridium connectivity every 60 seconds TODO: MAKE 60
-            "Ping": Clock(self.ping, delay=5, conditions=[  # Only if
-                lambda: self.pings_performed < self.NUMBER_OF_REQUIRED_PINGS,  # Don't run if we've finished collection
-            ]),
-        }
+        self.ping_clock = Clock(self.ping, 5)  # TODO: MAKE 60
         self.pings_performed = 0
 
     @wrap_errors(LogicalError)
@@ -44,10 +39,13 @@ class Science(Mode):
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
-    def ping(self) -> None:
+    def ping(self) -> bool:
         """
         Log current iridium connectivity
+        :return: (bool) whether function ran
         """
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
+            return False
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
             self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
@@ -58,12 +56,22 @@ class Science(Mode):
             print("Logged 0 connectivity")
         finally:  # Always update last_ping time to prevent spamming pings
             self.pings_performed += 1
+            return True
+
+    @wrap_errors(LogicalError)
+    def transmit_results(self) -> bool:
+        """
+        Transmit science mode results
+        :return: (bool) whether function ran
+        """
+        print("Transmitting results...")
+        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
+        # Transmit signal strength variability
+        self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
+        return True
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've performed enough pings
-            print("Transmitting results...")
-            self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
-            # Transmit signal strength variability
-            self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
+        if not self.ping_clock.execute():  # If we've performed enough pings
+            self.transmit_results()
