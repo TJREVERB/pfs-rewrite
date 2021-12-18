@@ -22,6 +22,7 @@ from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
+<<<<<<< Updated upstream
     modes_list = {
         "Startup": Startup,
         "Charging": Charging,
@@ -203,6 +204,8 @@ class StateFieldRegistry:
                     result[i] = encoded[0]  # encoded.pop(0)
             return result
 
+=======
+>>>>>>> Stashed changes
     @wrap_errors(LogicalError)
     def __init__(self):
         """
@@ -279,10 +282,10 @@ class StateFieldRegistry:
             "Antenna Deployer": AntennaDeployer
         }
         self.instruct = {
-            "Pin On": self.turn_on_component,
-            "Pin Off": self.turn_off_component,
-            "All On": self.turn_all_on,
-            "All Off": self.turn_all_off
+            "Pin On": self.__turn_on_component,
+            "Pin Off": self.__turn_off_component,
+            "All On": self.__turn_all_on,
+            "All Off": self.__turn_all_off
         }
         # self.MODE = Startup(self)  # Stores mode object, we don't want to log it
         self.MODE = Science(self)  # DEBUG!!!
@@ -290,7 +293,7 @@ class StateFieldRegistry:
         self.vars.LAST_STARTUP = time.time()
 
     @wrap_errors(LogicalError)
-    def load(self) -> Registry:
+    def load(self):
         """
         Load sfr fields from log
         :return: (Registry) loaded registry
@@ -416,7 +419,7 @@ class StateFieldRegistry:
         self.logs["sfr"].write(self.Registry())  # Write default log
 
     @wrap_errors(LogicalError)
-    def turn_on_component(self, component: str) -> None:
+    def __turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
@@ -443,7 +446,7 @@ class StateFieldRegistry:
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def turn_off_component(self, component: str) -> None:
+    def __turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
@@ -471,7 +474,7 @@ class StateFieldRegistry:
         # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def turn_all_on(self, exceptions=None) -> None:
+    def __turn_all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
@@ -483,10 +486,10 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.turn_on_component(key)  # turn on device and serial converter if applicable
+                self.__turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
@@ -506,7 +509,7 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.turn_off_component(key)  # turn off device and serial converter if applicable
+                self.__turn_off_component(key)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def set_primary_radio(self, new_radio: str, turn_off_old=False):
@@ -518,12 +521,166 @@ class StateFieldRegistry:
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if turn_off_old:
-                self.turn_off_component(previous_radio)
+                self.instruct["Pin Off"](previous_radio)
             self.vars.PRIMARY_RADIO = new_radio
             if self.devices[new_radio] is None:  # initialize it
-                self.turn_on_component(new_radio)
+                self.instruct["Pin On"](new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             encoded_radio = self.components.index(new_radio)
             packet = TransmissionPacket("GPR", [], 0)
             self.command_executor.transmit(packet, [encoded_radio])
+
+    class Log:
+        @wrap_errors(LogicalError)
+        def __init__(self, path, headers):
+            self.path = path
+            self.headers = headers
+            self.ext = path.split(".")[-1]
+            if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+                self.clear()
+            elif self.ext == "csv":  # For csv files
+                if pd.read_csv(self.path).columns.tolist() != self.headers:
+                    self.clear()  # Clear log if columns don't match up (out of date log)
+
+        @wrap_errors(LogicalError)
+        def clear(self):
+            """
+            Reset log
+            """
+            if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
+                with open(self.path, "w") as f:  # Open file
+                    f.write(",".join(self.headers) + "\n")  # Write headers + newline
+            elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
+                os.remove(self.path)  # Delete
+            elif self.ext == "json":  # For json files
+                if os.path.exists(self.path):  # IF file exists
+                    os.remove(self.path)  # Delete
+                open(self.path, "x").close()  # Create empty file
+
+        @wrap_errors(LogicalError)
+        def write(self, data):
+            """
+            Append one line of data to a csv log or dump to a pickle or json log
+            :param data: dictionary of the form {"column_name": value} if csv log
+                object if pkl log
+                dictionary of the form {"field": float_val} if json log
+            """
+            if self.ext == "csv":
+                if list(data.keys()) != self.headers:  # Raise error if keys are wrong
+                    raise LogicalError(details="Incorrect keys for logging")
+                # Append to log
+                pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
+                    self.path, mode="a", header=False, index=False)
+            elif self.ext == "pkl":  # If log is pkl
+                with open(self.path, "wb") as f:
+                    for i in data.__dict__.keys():
+                        print(i + ": " + str(getattr(data, i)))
+                        pickle.dumps(getattr(data, i))
+                    pickle.dump(data, f)  # Dump to file
+            elif self.ext == "json":  # If log is json
+                with open(self.path, "w") as f:
+                    json.dump(data, f)  # Dump to file
+
+        @wrap_errors(LogicalError)
+        def truncate(self, n):
+            """
+            Remove n rows from log file
+            """
+            if self.ext != "csv":
+                raise LogicalError(details="Attempted to truncate non-csv log!")
+            elif len(df := self.read()) <= n:
+                self.clear()
+            else:
+                df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
+
+        @wrap_errors(LogicalError)
+        def read(self):
+            """
+            Read and return entire log
+            :return: dataframe if csv, object if pickle, dictionary if json
+            """
+            if self.ext == "csv":  # Return dataframe if csv
+                return pd.read_csv(self.path, header=0)
+            if self.ext == "pkl":  # Return object if pickle
+                with open(self.path, "rb") as f:
+                    return pickle.load(f)
+            with open(self.path, "r") as f:
+                return json.load(f)  # Return dict if json
+
+    class Registry:
+        @wrap_errors(LogicalError)
+        def __init__(self, sfr):
+            self.ANTENNA_DEPLOYED = False
+            # Integral estimate of remaining battery capacity
+            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
+            self.FAILURES = []
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
+            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
+            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+            self.LOWER_THRESHOLD = 133732.8 * 0.3
+            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
+            # via iridium for this amount of time, switch primary to APRS
+            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
+            # amount of time, it will switch primary radio to APRS
+            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
+            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
+            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
+            self.MODE = Science(sfr)  # DEBUG!!!
+            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+            self.MODE_LOCK = False  # Whether to lock mode switches
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.CONTACT_ESTABLISHED = False
+            self.ENABLE_SAFE_MODE = False
+            self.transmit_buffer = []
+            self.command_buffer = []
+            self.outreach_buffer = []
+            self.START_TIME = time.time()
+            self.LAST_COMMAND_RUN = time.time()
+            self.LAST_MODE_SWITCH = time.time()
+            self.LAST_STARTUP = time.time()
+            self.LAST_IRIDIUM_RECEIVED = time.time()
+
+        @wrap_errors(LogicalError)
+        def encode(self):
+            return [
+                int(self.ANTENNA_DEPLOYED),
+                self.BATTERY_CAPACITY_INT,
+                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+                int(self.LAST_DAYLIGHT_ENTRY % 100000),
+                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+                int(self.LAST_ECLIPSE_ENTRY % 100000),
+                self.ORBITAL_PERIOD,
+                self.LOWER_THRESHOLD,
+                self.UPPER_THRESHOLD,
+                list(StateFieldRegistry.modes_list.keys()).index(type(self.MODE).__name__),
+                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
+                self.SIGNAL_STRENGTH_VARIABILITY,
+                int(self.MODE_LOCK),
+                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                     if self.LOCKED_DEVICES[i]]),
+                int(self.CONTACT_ESTABLISHED),
+                int(self.START_TIME / 100000) * 100000,
+                int(self.START_TIME % 100000),
+                int(self.LAST_COMMAND_RUN / 100000) * 100000,
+                int(self.LAST_COMMAND_RUN % 100000),
+                int(self.LAST_MODE_SWITCH / 100000) * 100000,
+                int(self.LAST_MODE_SWITCH % 100000)
+            ]
+
+        @wrap_errors(LogicalError)
+        def to_dict(self):
+            """
+            Converts vars to dictionary with encoded values
+            """
+            encoded = self.encode()
+            result = {}
+            for i in vars(self):
+                if not i.startswith("__") and i.isupper():
+                    result[i] = encoded[0]  # encoded.pop(0)
+            return result
+
