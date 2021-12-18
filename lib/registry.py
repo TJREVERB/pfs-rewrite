@@ -13,7 +13,7 @@ from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
-from lib.log import Logger
+from MainControlLoop.log import Logger
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
