@@ -45,14 +45,11 @@ class Recovery(Mode):
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
+        final_mode = self.sfr.modes_list["Outreach"](self.sfr) if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1 \
+            else self.sfr.modes_list["Science"](self.sfr)
         if self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED:  # we are done with recovery mode
             return self
         elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # if we need to enter charging mode
-            if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # if we have already finished science, charging will go to outreach
-                return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
-            else:  # we need to charge, then go to science
-                return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
-        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            return self.sfr.modes_list["Outreach"](self.sfr)
-        else:  # if we still need to finish science mode, and we are done with recovery mode
-            return self.sfr.modes_list["Science"](self.sfr)
+            return self.sfr.modes_list["Charging"](self.sfr, final_mode)
+        else:
+            return final_mode
