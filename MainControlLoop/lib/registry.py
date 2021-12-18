@@ -11,6 +11,7 @@ from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
+from MainControlLoop.Mode.recovery import Recovery
 from MainControlLoop.lib.analytics import Analytics
 from MainControlLoop.lib.command_executor import CommandExecutor
 from MainControlLoop.lib.log import Logger
@@ -74,6 +75,7 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
+            "Recovery": Recovery
         }
         self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
             "Iridium": "UART-RS232",
