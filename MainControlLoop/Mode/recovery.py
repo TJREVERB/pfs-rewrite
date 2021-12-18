@@ -45,7 +45,7 @@ class Recovery(Mode):
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
-        if self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED:  # we are done with recovery mode
+        if not (self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED):  # we are not done with recovery mode
             return self
         elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # if we need to enter charging mode
             if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # if we have already finished science, charging will go to outreach
