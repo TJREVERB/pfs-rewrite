@@ -2,7 +2,7 @@ import os
 import traceback
 import time
 from MainControlLoop.main_control_loop import MainControlLoop
-from MainControlLoop.lib.exceptions import *
+from lib.exceptions import *
 
 
 class MissionControl:

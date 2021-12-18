@@ -1,6 +1,7 @@
 import time
-from MainControlLoop.lib.registry import StateFieldRegistry
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from lib.registry import StateFieldRegistry
+from lib.exceptions import wrap_errors, LogicalError
+from Mode.science import Science  # DEBUG
 
 
 class MainControlLoop:
@@ -16,6 +17,9 @@ class MainControlLoop:
     @wrap_errors(LogicalError)
     def start(self):
         print("MCL Start")
+        self.sfr.vars.LAST_STARTUP = time.time()
+        # self.sfr.MODE = Recovery(self) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self)
+        self.sfr.MODE = Science(self)  # DEBUG!!!
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)

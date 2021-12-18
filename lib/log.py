@@ -1,36 +1,17 @@
 import time
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
+from lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
+from lib.clock import Clock
 
 
 class Logger:
-    class Clock:
-        @wrap_errors(LogicalError)
-        def __init__(self, func: callable, delay: float):
-            """
-            Run given function after given delay
-            :param func: function to run
-            :param delay: time to wait (seconds)
-            """
-            self.func, self.delay = func, delay
-            self.last_iteration = 0
-
-        def execute(self):
-            """
-            Execute a single cycle of the clock.
-            Run func if enough time has passed, do nothing otherwise
-            """
-            if time.time() > self.last_iteration + self.delay:
-                self.func()
-                self.last_iteration = time.time()
-
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         self.sfr = sfr
         self.loggers = {
-            "sfr": self.Clock(self.sfr.dump, 0),
-            "imu": self.Clock(self.log_imu, 10),
-            "power": self.Clock(self.integrate_charge, 30),
-            "orbits": self.Clock(self.update_orbits, 60),
+            "sfr": Clock(self.sfr.dump, 0),
+            "imu": Clock(self.log_imu, 10),
+            "power": Clock(self.integrate_charge, 30),
+            "orbits": Clock(self.update_orbits, 60),
         }
 
     @wrap_errors(LogicalError)

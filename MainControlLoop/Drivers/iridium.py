@@ -1,10 +1,9 @@
 import time, datetime
 import math
-import pandas as pd
 from serial import Serial
 import copy
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
+from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
     NoSignalException
 
 

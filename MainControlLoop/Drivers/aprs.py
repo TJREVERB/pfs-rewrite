@@ -1,8 +1,7 @@
 from serial import Serial
 import time
-import pandas as pd
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.lib.exceptions import wrap_errors, APRSError, LogicalError
+from lib.exceptions import wrap_errors, APRSError, LogicalError
 
 
 class APRS:

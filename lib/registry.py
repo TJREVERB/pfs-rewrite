@@ -11,10 +11,10 @@ from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-from MainControlLoop.lib.analytics import Analytics
-from MainControlLoop.lib.command_executor import CommandExecutor
-from MainControlLoop.lib.log import Logger
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from lib.analytics import Analytics
+from lib.command_executor import CommandExecutor
+from lib.log import Logger
+from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
@@ -210,24 +210,24 @@ class StateFieldRegistry:
         Vars in the "vars" object get logged
         """
         self.logs = {
-            "sfr": self.Log("./MainControlLoop/lib/data/state_field_log.pkl", None),
-            "sfr_readable": self.Log("./MainControlLoop/lib/data/state_field_log.json", None),
-            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv",
+            "sfr": self.Log("./lib/data/state_field_log.pkl", None),
+            "sfr_readable": self.Log("./lib/data/state_field_log.json", None),
+            "power": self.Log("./lib/data/pwr_draw_log.csv",
                               ["ts0", "ts1", "buspower", "0x01", "0x02", "0x03", "0x04", "0x05",
                                "0x06", "0x07", "0x08", "0x09", "0x0A"]),
-            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv",
+            "solar": self.Log("./lib/data/solar_generation_log.csv",
                               ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
-            "voltage_energy": self.Log("./MainControlLoop/lib/data/volt-energy-map.csv",
+            "voltage_energy": self.Log("./lib/data/volt-energy-map.csv",
                                        ["voltage", "energy"]),
-            "orbits": self.Log("./MainControlLoop/lib/data/orbit_log.csv",
+            "orbits": self.Log("./lib/data/orbit_log.csv",
                                ["ts0", "ts1", "phase"]),
-            "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
+            "iridium": self.Log("./lib/data/iridium_data.csv",
                                 ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
-            "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
+            "imu": self.Log("./lib/data/imu_data.csv",
                             ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
-            "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
+            "command": self.Log("./lib/data/command_log.csv",
                                 ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
-            "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
+            "transmission": self.Log("./lib/data/transmission_log.csv",
                                      ["ts0", "ts1", "radio", "size"]),
         }
 
@@ -284,10 +284,7 @@ class StateFieldRegistry:
             "All On": self.turn_all_on,
             "All Off": self.turn_all_off
         }
-        # self.MODE = Startup(self)  # Stores mode object, we don't want to log it
-        self.MODE = Science(self)  # DEBUG!!!
         self.vars = self.load()
-        self.vars.LAST_STARTUP = time.time()
 
     @wrap_errors(LogicalError)
     def load(self) -> Registry:

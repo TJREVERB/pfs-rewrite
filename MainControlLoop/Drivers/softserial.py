@@ -1,7 +1,7 @@
 import pigpio
 import time
 import os
-from MainControlLoop.lib.exceptions import wrap_errors, APRSError
+from lib.exceptions import wrap_errors, APRSError
 
 
 class SoftwareUART():

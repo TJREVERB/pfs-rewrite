@@ -1,6 +1,6 @@
 from smbus2 import SMBus
 import time
-from MainControlLoop.lib.exceptions import wrap_errors, BatteryError
+from lib.exceptions import wrap_errors, BatteryError
 
 
 # Datasheet https://drive.google.com/file/d/13GKtzXyufFxrbeQ7wEGgo796i91W1dQt/view

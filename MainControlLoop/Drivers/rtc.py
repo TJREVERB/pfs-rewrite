@@ -10,7 +10,7 @@ GNU GPL v3.0, https://www.gnu.org/licenses/gpl.html
 # https://datasheets.maximintegrated.com/en/ds/DS3232.pdf
 
 from smbus2 import SMBus
-from MainControlLoop.lib.exceptions import wrap_errors, RTCError
+from lib.exceptions import wrap_errors, RTCError
 
 
 class RTC:
