@@ -47,7 +47,7 @@ class Recovery(Mode):
         super().suggested_mode()
         final_mode = self.sfr.modes_list["Outreach"] if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1 \
             else self.sfr.modes_list["Science"]
-        if self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED:  # we are done with recovery mode
+        if not (self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED):  # we are done with recovery mode
             return self
         elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # if we need to enter charging mode
             return self.sfr.modes_list["Charging"](self.sfr, final_mode(self.sfr))
