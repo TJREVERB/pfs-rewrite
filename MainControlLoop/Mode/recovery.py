@@ -48,6 +48,7 @@ class Recovery(Mode):
         if not (self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED):  # we are not done with recovery mode
             return self
         elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # if we need to enter charging mode
+            # enter charging mode, but decide what to enter after
             if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # if we have already finished science, charging will go to outreach
                 return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
             else:  # we need to charge, then go to science
