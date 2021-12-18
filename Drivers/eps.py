@@ -1,9 +1,10 @@
 from smbus2 import SMBus
 import time
 from lib.exceptions import wrap_errors, EPSError
+from Drivers.device import Device
 
 
-class EPS:
+class EPS(Device):
     """
     Class for EPS
     """
@@ -181,6 +182,10 @@ class EPS:
             "3.3V": [0x04],
             "12V": [0x08],
         }
+
+    @wrap_errors(EPSError)
+    def functional(self):
+        return self.commands["Reset Watchdog"]()
 
     @wrap_errors(EPSError)
     def request(self, register, data, length) -> bytes:

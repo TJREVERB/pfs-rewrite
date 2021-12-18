@@ -5,6 +5,7 @@ import copy
 from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
     NoSignalException
+from Drivers.device import Device
 
 
 # https://www.beamcommunications.com/document/328-iridium-isu-at-command-reference-v5
@@ -20,7 +21,7 @@ from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidComma
 # FA <-UART/RS232 Interface-> ISU - MO buffer -> Iridium Constellation <-> GSS <-> IP Socket/Email
 #                                <- MT buffer -
 
-class Iridium:
+class Iridium(Device):
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 

@@ -2,9 +2,10 @@ from serial import Serial
 import time
 from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, APRSError, LogicalError
+from Drivers.device import Device
 
 
-class APRS:
+class APRS(Device):
     """
     Class for APRS
     """
