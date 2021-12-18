@@ -1,7 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
 import time
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket
 
 
 class Recovery(Mode):

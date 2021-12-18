@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import pickle
 import json
-from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C
+from Drivers.eps import EPS
+from Drivers.battery import Battery
+from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -16,10 +16,10 @@ from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import Logger
 from lib.exceptions import wrap_errors, LogicalError
-from MainControlLoop.Drivers.aprs import APRS
-from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from Drivers.aprs import APRS
+from Drivers.iridium import Iridium
+from Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
+from Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
