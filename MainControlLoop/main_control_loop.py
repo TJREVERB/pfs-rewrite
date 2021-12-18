@@ -1,6 +1,6 @@
 import time
-from MainControlLoop.lib.registry import StateFieldRegistry
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from lib.registry import StateFieldRegistry
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class MainControlLoop:

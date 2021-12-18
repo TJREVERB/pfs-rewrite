@@ -1,5 +1,5 @@
 import time
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
+from lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
 
 
 class Logger:

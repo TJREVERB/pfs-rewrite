@@ -2,7 +2,7 @@ from numpy import nan
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import time
-from MainControlLoop.lib.exceptions import NoSignalException, wrap_errors, LogicalError
+from lib.exceptions import NoSignalException, wrap_errors, LogicalError
 
 
 class Science(Mode):

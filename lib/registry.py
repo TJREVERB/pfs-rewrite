@@ -12,10 +12,10 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
-from MainControlLoop.lib.analytics import Analytics
-from MainControlLoop.lib.command_executor import CommandExecutor
-from MainControlLoop.lib.log import Logger
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from lib.analytics import Analytics
+from lib.command_executor import CommandExecutor
+from lib.log import Logger
+from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Drivers.aprs import APRS
 from MainControlLoop.Drivers.iridium import Iridium
 from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
