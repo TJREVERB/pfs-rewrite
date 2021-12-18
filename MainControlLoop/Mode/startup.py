@@ -16,25 +16,13 @@ class Startup(Mode):
         """
         super().__init__(sfr)
         self.last_contact_attempt = 0
-        self.start = self.recovery_start if self.sfr.vars.ANTENNA_DEPLOYED else self.true_start
-        self.execute_cycle = self.recovery_exec if self.sfr.vars.ANTENNA_DEPLOYED else self.startup_exec
 
     @wrap_errors(LogicalError)
     def __str__(self):
         return "Startup"
 
     @wrap_errors(LogicalError)
-    def true_start(self):
-        """
-        If we booted into startup mode right after deploying from ISS (antenna not deployed)
-        """
-        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
-
-    @wrap_errors(LogicalError)
-    def recovery_start(self):
-        """
-        If we booted into recovery mode
-        """
+    def start(self) -> None:
         super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
 
     @wrap_errors(LogicalError)
@@ -48,10 +36,8 @@ class Startup(Mode):
             print("Antenna Deployed")
 
     @wrap_errors(LogicalError)
-    def startup_exec(self):
-        """
-        If we just deployed from the ISS (antenna hasn't been deployed)
-        """
+    def execute_cycle(self) -> None:
+        super().execute_cycle()
         if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # Execute cycle low battery
             self.sfr.instruct["All Off"]()  # turn everything off
             time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
@@ -65,33 +51,6 @@ class Startup(Mode):
                 print("Transmitting proof of life...")
                 self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
                 self.last_contact_attempt = time.time()
-
-    @wrap_errors(LogicalError)
-    def recovery_exec(self):
-        """
-        If our satellite shut down and rebooted
-        """
-        pass
-
-    @wrap_errors(LogicalError)
-    def startup_suggested_mode(self) -> Mode:
-        """
-        If our satellite just deployed
-        """
-        super().suggested_mode()
-        if not self.sfr.vars.ANTENNA_DEPLOYED or not self.sfr.vars.CONTACT_ESTABLISHED:  # Necessary startup tasks
-            return self
-        elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
-        else:
-            return self.sfr.modes_list["Science"](self.sfr)
-
-    @wrap_errors(LogicalError)
-    def recovery_suggested_mode(self) -> Mode:
-        """
-        If our satellite is in recovery mode
-        """
-        pass
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
