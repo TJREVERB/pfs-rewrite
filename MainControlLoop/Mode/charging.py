@@ -1,5 +1,4 @@
 from MainControlLoop.Mode.mode import Mode
-import time
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
 
 

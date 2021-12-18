@@ -29,9 +29,9 @@ class Mode:
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         :param enabled_components: list of components which are enabled in this mode
         """
-        self.sfr.turn_all_off()
-        for i in set(enabled_components):
-            self.sfr.turn_on_component(i)
+        self.sfr.instruct["ALl Off"](exceptions=[component for component in enabled_components])
+        for component in set(enabled_components):
+            self.sfr.instruct["Pin On"](component)
 
     @wrap_errors(LogicalError)
     def suggested_mode(self):
