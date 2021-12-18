@@ -1,9 +1,6 @@
 import os
 import traceback
-import sys
-import datetime
 import time
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 from MainControlLoop.main_control_loop import MainControlLoop
 from MainControlLoop.lib.exceptions import *
 
@@ -111,7 +108,7 @@ class MissionControl:
         Then cleanly exit
         """
         print("ERROR!!!")
-        print(f"Currently in {self.sfr.vars.MODE.__name__}")
+        print(f"Currently in {type(self.sfr.MODE).__name__}")
         print("State field registry fields:")
         print(self.sfr.vars.to_dict())
         print("Exception: ")

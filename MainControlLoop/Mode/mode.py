@@ -1,6 +1,5 @@
 import time
 from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
 import datetime
 import os
 
@@ -20,38 +19,27 @@ class Mode:
         self.SIGNAL_THRESHOLD = thresh  # Lower threshold to read or transmit
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
 
-
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
         pass
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self, enabled_components: list) -> None:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
+        :param enabled_components: list of components which are enabled in this mode
         """
-        pass
+        self.sfr.instruct["ALl Off"](exceptions=[component for component in enabled_components])
+        for component in set(enabled_components):
+            self.sfr.instruct["Pin On"](component)
 
     @wrap_errors(LogicalError)
-    def check_conditions(self) -> bool:
+    def suggested_mode(self):
         """
-        Checks whether conditions for mode to continue running are still true.
-        NOTE: THIS METHOD DOES NOT SWITCH MODES OR MODIFY THE STATE FIELD REGISTRY. THAT IS DONE IN THE MCL
-        :return: (bool) true to stay in mode, false to exit
-        """
-        return True
-
-    @wrap_errors(LogicalError)
-    def update_conditions(self) -> None:
-        """
-        Updates conditions dict in each mode
-        """
-        pass
-
-    @wrap_errors(LogicalError)
-    def switch_mode(self):
-        """
-        Returns which mode to switch to
+        Checks all conditions and returns which mode the current mode believes we should be in
+        If we don't want to switch, return same mode
+        If we do, return the mode we want to switch to
+        :return: (Mode) instantiated mode object to switch to
         """
         pass
 
@@ -62,7 +50,9 @@ class Mode:
         For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute radio commands, that is done by command_executor class.
         """
-        pass
+        self.read_radio()
+        self.transmit_buffer()
+        self.check_time()
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
@@ -103,7 +93,7 @@ class Mode:
         # TODO: Update Iridium time
 
     @wrap_errors(LogicalError)
-    def transmit_radio(self) -> None:
+    def transmit_buffer(self) -> None:
         """
         Transmit any messages in the transmit queue
         :return: (bool) whether all transmit queue messages were sent
