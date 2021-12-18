@@ -1,11 +1,12 @@
 from smbus2 import SMBus
 import time
 from lib.exceptions import wrap_errors, BatteryError
+from Drivers.device import Device
 
 
 # Datasheet https://drive.google.com/file/d/13GKtzXyufFxrbeQ7wEGgo796i91W1dQt/view
 
-class Battery:
+class Battery(Device):
     """
     Class to interface with Clydespace battery TTC node
     """
@@ -113,3 +114,5 @@ class Battery:
         if self.telemetry["IDIRBAT"]() != 0:
             pwr *= -1
         return pwr
+
+    # TODO: IMPLEMENT FUNCTIONAL

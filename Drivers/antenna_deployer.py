@@ -2,6 +2,7 @@ import time
 from enum import Enum
 from smbus2 import SMBus, i2c_msg
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
+from Drivers.device import Device
 
 
 class AntennaDeployerCommand(Enum):
@@ -38,7 +39,7 @@ class AntennaDeployerCommand(Enum):
     GET_UPTIME_4 = 0xB7
 
 
-class AntennaDeployer():
+class AntennaDeployer(Device):
     BUS_NUMBER = 1
     PRIMARY_ADDRESS = 0x31
     SECONDARY_ADDRESS = 0x32

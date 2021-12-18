@@ -22,6 +22,7 @@ import numpy as np
 from math import atan2
 from math import degrees
 from lib.exceptions import wrap_errors, IMUError
+from Drivers.device import Device
 
 
 @wrap_errors(IMUError)
@@ -42,7 +43,7 @@ def _signed_to_twos_comp(val, bits):
     return val
 
 
-class IMU:
+class IMU(Device):
     """
     Base class for the BNO055 9DOF IMU sensor.
     """
@@ -940,3 +941,5 @@ class IMU_I2C(IMU):
         self.buffer[1] = self.bus.read_byte(self.address)
         time.sleep(.01)
         return self.buffer[1]
+
+    # TODO: IMPLEMENT FUNCTIONAL

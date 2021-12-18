@@ -11,9 +11,10 @@ GNU GPL v3.0, https://www.gnu.org/licenses/gpl.html
 
 from smbus2 import SMBus
 from lib.exceptions import wrap_errors, RTCError
+from Drivers.device import Device
 
 
-class RTC:
+class RTC(Device):
     # DS3232 Register Addresses
     RTC_SECONDS = 0x00
     RTC_MINUTES = 0x01
