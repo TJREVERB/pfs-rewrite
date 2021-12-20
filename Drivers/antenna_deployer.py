@@ -79,7 +79,7 @@ class AntennaDeployer(Device):
 
     @wrap_errors(AntennaError)
     def __init__(self, sfr):
-        self.sfr = sfr
+        super().__init__(sfr)
         self.bus = SMBus()
 
     @wrap_errors(AntennaError)

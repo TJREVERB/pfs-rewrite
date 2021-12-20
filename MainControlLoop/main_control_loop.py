@@ -1,6 +1,7 @@
 import time
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
+from MainControlLoop.Mode.science import Science
 
 
 class MainControlLoop:
@@ -11,14 +12,13 @@ class MainControlLoop:
         Each object should take in the state field registry
         """
         self.sfr = StateFieldRegistry()
-        self.current_time = time.time()
 
     @wrap_errors(LogicalError)
     def start(self):
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
-        # self.sfr.MODE = Recovery(self) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self)
-        self.sfr.MODE = Science(self)  # DEBUG!!!
+        # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self.sfr)
+        self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)

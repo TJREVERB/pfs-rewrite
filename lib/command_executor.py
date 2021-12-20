@@ -1,13 +1,15 @@
-import time, datetime
-import pandas as pd
+import datetime
 import os
+import time
+import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
+from lib.registry import StateFieldRegistry
 
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
-    def __init__(self, sfr):
+    def __init__(self, sfr: StateFieldRegistry):
         self.sfr = sfr
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"

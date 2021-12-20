@@ -24,9 +24,9 @@ class EPS(Device):
 
     @wrap_errors(EPSError)
     def __init__(self, state_field_registry):
+        super().__init__(state_field_registry)
         self.bus = SMBus(1)
         self.addr = 0x2b
-        self.sfr = state_field_registry
         self.bitsToTelem = [None, ("VSW1", "ISW1"), ("VSW2", "ISW2"), ("VSW3", "ISW3"), ("VSW4", "ISW4"),
                             ("VSW5", "ISW5"), ("VSW6", "ISW6"), ("VSW7", "ISW7"), ("VSW8", "ISW8"), ("VSW9", "ISW9"),
                             ("VSW10", "ISW10")]

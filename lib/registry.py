@@ -23,6 +23,83 @@ from Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
+    class Registry:
+        @wrap_errors(LogicalError)
+        def __init__(self, sfr):
+            self.sfr = sfr
+            self.ANTENNA_DEPLOYED = False
+            # Integral estimate of remaining battery capacity
+            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
+            self.FAILURES = []
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
+            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
+            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+            self.LOWER_THRESHOLD = 133732.8 * 0.3
+            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
+            # via iridium for this amount of time, switch primary to APRS
+            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
+            # amount of time, it will switch primary radio to APRS
+            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
+            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
+            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
+            self.MODE = Science(sfr)  # DEBUG!!!
+            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+            self.MODE_LOCK = False  # Whether to lock mode switches
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.CONTACT_ESTABLISHED = False
+            self.ENABLE_SAFE_MODE = False
+            self.transmit_buffer = []
+            self.command_buffer = []
+            self.outreach_buffer = []
+            self.START_TIME = time.time()
+            self.LAST_COMMAND_RUN = time.time()
+            self.LAST_MODE_SWITCH = time.time()
+            self.LAST_STARTUP = time.time()
+            self.LAST_IRIDIUM_RECEIVED = time.time()
+
+        @wrap_errors(LogicalError)
+        def encode(self):
+            return [
+                int(self.ANTENNA_DEPLOYED),
+                self.BATTERY_CAPACITY_INT,
+                sum([1 << self.sfr.components.index(i) for i in self.FAILURES]),
+                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+                int(self.LAST_DAYLIGHT_ENTRY % 100000),
+                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+                int(self.LAST_ECLIPSE_ENTRY % 100000),
+                self.ORBITAL_PERIOD,
+                self.LOWER_THRESHOLD,
+                self.UPPER_THRESHOLD,
+                list(self.sfr.modes_list.keys()).index(type(self.MODE).__name__),
+                self.sfr.components.index(self.PRIMARY_RADIO),
+                self.SIGNAL_STRENGTH_VARIABILITY,
+                int(self.MODE_LOCK),
+                sum([1 << self.sfr.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                     if self.LOCKED_DEVICES[i]]),
+                int(self.CONTACT_ESTABLISHED),
+                int(self.START_TIME / 100000) * 100000,
+                int(self.START_TIME % 100000),
+                int(self.LAST_COMMAND_RUN / 100000) * 100000,
+                int(self.LAST_COMMAND_RUN % 100000),
+                int(self.LAST_MODE_SWITCH / 100000) * 100000,
+                int(self.LAST_MODE_SWITCH % 100000)
+            ]
+
+        @wrap_errors(LogicalError)
+        def to_dict(self):
+            """
+            Converts vars to dictionary with encoded values
+            """
+            encoded = self.encode()
+            result = {}
+            for i in vars(self):
+                if not i.startswith("__") and i.isupper():
+                    result[i] = encoded[0]  # encoded.pop(0)
+            return result
+
     @wrap_errors(LogicalError)
     def __init__(self):
         """
@@ -52,7 +129,7 @@ class StateFieldRegistry:
         }
 
         self.eps = EPS(self)  # EPS never turns off
-        self.battery = Battery()
+        self.battery = Battery(self)
         self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
@@ -421,80 +498,3 @@ class StateFieldRegistry:
                     return pickle.load(f)
             with open(self.path, "r") as f:
                 return json.load(f)  # Return dict if json
-
-    class Registry:
-        @wrap_errors(LogicalError)
-        def __init__(self, sfr):
-            self.ANTENNA_DEPLOYED = False
-            # Integral estimate of remaining battery capacity
-            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
-            self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
-            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
-            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
-            self.LOWER_THRESHOLD = 133732.8 * 0.3
-            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
-            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
-            # via iridium for this amount of time, switch primary to APRS
-            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
-            # amount of time, it will switch primary radio to APRS
-            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
-            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
-            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Science(sfr)  # DEBUG!!!
-            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
-            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
-            self.MODE_LOCK = False  # Whether to lock mode switches
-            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
-            self.CONTACT_ESTABLISHED = False
-            self.ENABLE_SAFE_MODE = False
-            self.transmit_buffer = []
-            self.command_buffer = []
-            self.outreach_buffer = []
-            self.START_TIME = time.time()
-            self.LAST_COMMAND_RUN = time.time()
-            self.LAST_MODE_SWITCH = time.time()
-            self.LAST_STARTUP = time.time()
-            self.LAST_IRIDIUM_RECEIVED = time.time()
-
-        @wrap_errors(LogicalError)
-        def encode(self):
-            return [
-                int(self.ANTENNA_DEPLOYED),
-                self.BATTERY_CAPACITY_INT,
-                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
-                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
-                int(self.LAST_DAYLIGHT_ENTRY % 100000),
-                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
-                int(self.LAST_ECLIPSE_ENTRY % 100000),
-                self.ORBITAL_PERIOD,
-                self.LOWER_THRESHOLD,
-                self.UPPER_THRESHOLD,
-                list(StateFieldRegistry.modes_list.keys()).index(type(self.MODE).__name__),
-                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
-                self.SIGNAL_STRENGTH_VARIABILITY,
-                int(self.MODE_LOCK),
-                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
-                     if self.LOCKED_DEVICES[i]]),
-                int(self.CONTACT_ESTABLISHED),
-                int(self.START_TIME / 100000) * 100000,
-                int(self.START_TIME % 100000),
-                int(self.LAST_COMMAND_RUN / 100000) * 100000,
-                int(self.LAST_COMMAND_RUN % 100000),
-                int(self.LAST_MODE_SWITCH / 100000) * 100000,
-                int(self.LAST_MODE_SWITCH % 100000)
-            ]
-
-        @wrap_errors(LogicalError)
-        def to_dict(self):
-            """
-            Converts vars to dictionary with encoded values
-            """
-            encoded = self.encode()
-            result = {}
-            for i in vars(self):
-                if not i.startswith("__") and i.isupper():
-                    result[i] = encoded[0]  # encoded.pop(0)
-            return result
-

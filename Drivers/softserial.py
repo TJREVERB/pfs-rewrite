@@ -4,7 +4,7 @@ import os
 from lib.exceptions import wrap_errors, APRSError
 
 
-class SoftwareUART():
+class SoftwareUART:
     """Bitbang uart driver using pigpio and interrupts"""
 
     @wrap_errors(APRSError)

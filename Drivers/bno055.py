@@ -177,7 +177,7 @@ class IMU(Device):
 
     @wrap_errors(IMUError)
     def __init__(self, state_field_registry):
-        self.sfr = state_field_registry
+        super().__init__(state_field_registry)
 
     @wrap_errors(IMUError)
     def start(self):
@@ -910,7 +910,7 @@ class IMU(Device):
         y_tumble_values = df["ygyro"].values.tolist()
         x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
         y_tumble_avg = sum(y_tumble_values)/len(y_tumble_values)
-        return x_tumble_avg > self.sfr.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.DETUMBLE_THRESHOLD
+        return x_tumble_avg > self.sfr.vars.DETUMBLE_THRESHOLD or y_tumble_avg > self.sfr.vars.DETUMBLE_THRESHOLD
 
 
 class IMU_I2C(IMU):
@@ -919,7 +919,8 @@ class IMU_I2C(IMU):
     """
 
     @wrap_errors(IMUError)
-    def __init__(self, state_field_registry=None, addr=0x28):
+    def __init__(self, state_field_registry, addr=0x28):
+        super().__init__(state_field_registry)
         self.buffer = bytearray(2)
         self.address = addr
         self.bus = SMBus(1)

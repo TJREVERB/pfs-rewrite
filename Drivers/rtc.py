@@ -75,7 +75,8 @@ class RTC(Device):
     FREQ_8_192KHZ = (1, 1)
 
     @wrap_errors(RTCError)
-    def __init__(self):
+    def __init__(self, sfr):
+        super().__init__(sfr)
         # DS3232 I2C Address
         self.addr = 0x68
         self.bus = SMBus(1)

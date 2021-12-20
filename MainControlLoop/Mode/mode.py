@@ -1,6 +1,7 @@
 import time
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
+from lib.registry import StateFieldRegistry
 import datetime
 import os
 
@@ -8,7 +9,7 @@ import os
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=40, thresh=2):
+    def __init__(self, sfr: StateFieldRegistry, wait=40, thresh=2):
         self.SIGNAL_THRESHOLD = thresh
         self.previous_time = 0
         self.sfr = sfr

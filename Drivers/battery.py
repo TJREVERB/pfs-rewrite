@@ -12,7 +12,8 @@ class Battery(Device):
     """
 
     @wrap_errors(BatteryError)
-    def __init__(self):
+    def __init__(self, sfr):
+        super().__init__(sfr)
         self.addr = 0x2a
         self.bus = SMBus(1)
 

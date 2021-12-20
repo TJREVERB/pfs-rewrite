@@ -75,7 +75,7 @@ class Iridium(Device):
 
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
-        self.sfr = state_field_registry
+        super().__init__(state_field_registry)
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
