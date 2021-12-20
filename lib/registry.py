@@ -337,7 +337,7 @@ class StateFieldRegistry:
 
         self.devices[component].terminate()
         self.devices[component] = None  # removes from dict
-        self.eps.commands["Pin Off"](component)  # turns on component
+        self.eps.commands["Pin Off"](component)  # turns off component
         for current_converter in self.component_to_class[component].SERIAL_CONVERTER:
             self.eps.commands["Pin Off"](current_converter)
 
