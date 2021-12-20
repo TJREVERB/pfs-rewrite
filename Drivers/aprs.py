@@ -19,6 +19,7 @@ class APRS(Device):
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
+        self.disable_digi()
 
     @wrap_errors(APRSError)
     def __del__(self):

@@ -178,9 +178,6 @@ class IMU(Device):
     @wrap_errors(IMUError)
     def __init__(self, state_field_registry):
         super().__init__(state_field_registry)
-
-    @wrap_errors(IMUError)
-    def start(self):
         # Start the IMU; MUST BE RUN BEFORE TRYING TO READ ANYTHING
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:

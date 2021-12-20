@@ -313,26 +313,16 @@ class StateFieldRegistry:
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
         """
-        if self.devices[component] is not None:  # if component is already on, stop method from running further
-            return
-        if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
-            return
+        if self.devices[component] is not None:
+            return  # if component is already on, stop method from running further
+        if self.vars.LOCKED_DEVICES[component] is True:
+            return  # if component is locked, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
+        for current_converter in self.component_to_class[component].SERIAL_CONVERTER:
+            self.eps.commands["Pin On"](current_converter)
+        time.sleep(.5)
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
-        # component status in sfr to object instead of None
-        if component in self.component_to_serial:  # see if component has a serial converter to open
-            serial_converter = self.component_to_serial[component]  # gets serial converter name of component
-            self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
-            self.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
-
-        if component == "APRS":
-            self.devices[component].disable_digi()
-        if component == "IMU":
-            time.sleep(.5)
-            self.devices[component].start()
-
-        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
     def turn_off_component(self, component: str) -> None:
