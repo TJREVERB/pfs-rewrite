@@ -43,8 +43,6 @@ class StateFieldRegistry:
             # amount of time, it will switch primary radio to APRS
             self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
             self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
-            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Science(sfr)  # DEBUG!!!
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
@@ -73,7 +71,6 @@ class StateFieldRegistry:
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
-                list(self.sfr.modes_list.keys()).index(type(self.MODE).__name__),
                 self.sfr.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
