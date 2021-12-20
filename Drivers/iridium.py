@@ -174,7 +174,8 @@ class Iridium(Device):
         self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type))
 
     @wrap_errors(IridiumError)
-    def __del__(self):
+    def terminate(self):
+        self.devices[component].next_msg()
         self.write("AT*F")  # SHUTDOWN
         time.sleep(1)
         self.serial.close()

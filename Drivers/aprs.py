@@ -22,7 +22,7 @@ class APRS(Device):
         self.disable_digi()
 
     @wrap_errors(APRSError)
-    def __del__(self):
+    def terminate(self):
         self.serial.close()
 
     @wrap_errors(LogicalError)

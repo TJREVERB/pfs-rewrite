@@ -20,7 +20,7 @@ class Device:
         return True
 
     @wrap_errors(LogicalError)
-    def __del__(self):
+    def terminate(self):
         """
         safely kills the device before pdm is turned off
         """
