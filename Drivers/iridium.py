@@ -466,6 +466,7 @@ class Iridium(Device):
         result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
         return result
 
+    @wrap_errors(IridiumError)
     def check_buffer(self):
         """
         Checks buffer for existing messages
