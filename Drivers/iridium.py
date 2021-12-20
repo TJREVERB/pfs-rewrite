@@ -174,7 +174,8 @@ class Iridium(Device):
         self.SBD_CLR = lambda type: self.request("AT+SBDD" + str(type))
 
     @wrap_errors(IridiumError)
-    def __del__(self):
+    def terminate(self):
+        self.check_buffer()
         self.SHUTDOWN()
         self.serial.close()
 
@@ -466,9 +467,9 @@ class Iridium(Device):
         return result
 
     @wrap_errors(IridiumError)
-    def next_msg(self):
+    def check_buffer(self):
         """
-        Stores next received messages in sfr
+        Checks buffer for existing messages
         """
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
@@ -484,8 +485,17 @@ class Iridium(Device):
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(ls[3])))
             except Exception as e:
-                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(
-                    ls[3])))  # Append garbled message indicator and msn, args set to exception string to debug
+                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3])))  
+                # Append garbled message indicator and msn, args set to exception string to debug
+        if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
+            raise IridiumError(details="Error clearing buffers")
+
+    @wrap_errors(IridiumError)
+    def next_msg(self):
+        """
+        Stores next received messages in sfr
+        """
+        self.check_buffer()
         self.SBD_TIMEOUT(60)
         time.sleep(1)
         result = [0, 0, 0, 0, 0, 1]
