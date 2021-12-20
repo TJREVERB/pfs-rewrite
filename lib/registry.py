@@ -23,10 +23,21 @@ from Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
+    components = [
+        "APRS",
+        "Iridium",
+        "IMU",
+        "Antenna Deployer",
+        "EPS",
+        "RTC",
+        "UART-RS232",  # Iridium Serial Converter
+        "SPI-UART",  # APRS Serial Converter
+        "USB-UART"
+    ]
+
     class Registry:
         @wrap_errors(LogicalError)
         def __init__(self, sfr):
-            self.sfr = sfr
             self.ANTENNA_DEPLOYED = False
             # Integral estimate of remaining battery capacity
             self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
@@ -63,7 +74,7 @@ class StateFieldRegistry:
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
-                sum([1 << self.sfr.components.index(i) for i in self.FAILURES]),
+                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
                 int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
                 int(self.LAST_DAYLIGHT_ENTRY % 100000),
                 int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
@@ -71,10 +82,10 @@ class StateFieldRegistry:
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
-                self.sfr.components.index(self.PRIMARY_RADIO),
+                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
-                sum([1 << self.sfr.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
                      if self.LOCKED_DEVICES[i]]),
                 int(self.CONTACT_ESTABLISHED),
                 int(self.START_TIME / 100000) * 100000,
@@ -155,17 +166,6 @@ class StateFieldRegistry:
             "Iridium": "UART-RS232",
             "APRS": "SPI-UART"
         }
-        self.components = [
-            "APRS",
-            "Iridium",
-            "IMU",
-            "Antenna Deployer",
-            "EPS",
-            "RTC",
-            "UART-RS232",  # Iridium Serial Converter
-            "SPI-UART",  # APRS Serial Converter
-            "USB-UART"
-        ]
 
         self.component_to_class = {  # returns class from component name
             "Iridium": Iridium,
