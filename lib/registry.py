@@ -18,7 +18,7 @@ from lib.log import Logger
 from lib.exceptions import wrap_errors, LogicalError
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from Drivers.AntennaDeployer import AntennaDeployer
+from Drivers.antenna_deployer import AntennaDeployer
 from Drivers.transmission_packet import TransmissionPacket
 
 
