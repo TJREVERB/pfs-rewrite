@@ -1,12 +1,11 @@
 import time
 from lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
 from lib.clock import Clock
-from lib.registry import StateFieldRegistry
 
 
 class Logger:
     @wrap_errors(LogicalError)
-    def __init__(self, sfr: StateFieldRegistry):
+    def __init__(self, sfr):
         self.sfr = sfr
         self.loggers = {
             "sfr": Clock(self.sfr.dump, 0),
