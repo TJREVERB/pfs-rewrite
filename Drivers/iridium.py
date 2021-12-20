@@ -175,8 +175,7 @@ class Iridium(Device):
 
     @wrap_errors(IridiumError)
     def __del__(self):
-        self.write("AT*F")  # SHUTDOWN
-        time.sleep(1)
+        self.SHUTDOWN()
         self.serial.close()
 
     @wrap_errors(LogicalError)
