@@ -1,7 +1,7 @@
 import time, datetime
 import pandas as pd
 import os
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -47,7 +47,8 @@ class CommandExecutor:
             "ITM": self.ITM,
             "IPC": self.IPC,
             "ICE": self.ICE,
-            "IGO": self.IGO
+            "IGO": self.IGO,
+            "IAK": self.IAK
         }
 
         # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -580,5 +581,11 @@ class CommandExecutor:
     @wrap_errors(CommandExecutionException)
     def IGO(self, packet: TransmissionPacket):
         self.sfr.vars.ENABLE_SAFE_MODE = False
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def IAK(self, packet: TransmissionPacket):
+        self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result

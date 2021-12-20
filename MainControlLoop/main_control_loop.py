@@ -1,7 +1,6 @@
 import time
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
-from Mode.science import Science  # DEBUG
 
 
 class MainControlLoop:

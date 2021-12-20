@@ -1,6 +1,6 @@
 import time
 from MainControlLoop.Mode.mode import Mode
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
 
@@ -15,7 +15,6 @@ class Startup(Mode):
         """
         super().__init__(sfr)
         self.beacon = Clock(self.ping, 120)
-        self.last_contact_attempt = 0
 
     @wrap_errors(LogicalError)
     def __str__(self):
