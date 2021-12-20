@@ -59,7 +59,7 @@ class Mode:
         """
         if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
             return False
-        if self.sfr.devices["Iridium"].check_siganl_passive() <= self.SIGNAL_THRESHOLD:
+        if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
             return False
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
