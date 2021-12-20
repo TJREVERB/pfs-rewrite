@@ -4,12 +4,11 @@ import time
 import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
-from lib.registry import StateFieldRegistry
 
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
-    def __init__(self, sfr: StateFieldRegistry):
+    def __init__(self, sfr):
         self.sfr = sfr
         self.TJ_PREFIX = "TJ;"
         self.OUTREACH_PREFIX = "OUT;"
