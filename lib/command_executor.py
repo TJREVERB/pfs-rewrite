@@ -321,7 +321,7 @@ class CommandExecutor:
                                      if orbits_data["phase"][i] == "sunlight"]).mean()
         orbital_period = self.sfr.analytics.calc_orbital_period()  # Calculate orbital period
         sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
-        tumble = self.sfr.imu.getTumble()  # Current tumble
+        tumble = self.sfr.imu.get_tumble()  # Current tumble
         result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
                   self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
         self.transmit(packet, result)
@@ -373,7 +373,7 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        tum = self.sfr.imu.getTumble()
+        tum = self.sfr.imu.get_tumble()
         self.transmit(packet, result := [*tum[0], *tum[1]])
         return result
 
@@ -382,7 +382,7 @@ class CommandExecutor:
         """
         Transmit magnitude IMU tumble
         """
-        tum = self.sfr.imu.getTumble()
+        tum = self.sfr.imu.get_tumble()
         mag = (tum[0][0] ** 2 + tum[0][1] ** 2 + tum[0][2] ** 2) ** 0.5
         self.transmit(packet, result := [mag])
         return result
