@@ -3,7 +3,7 @@ import time
 from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, APRSError, LogicalError
 from Drivers.device import Device
-
+import copy
 
 class APRS(Device):
     """
@@ -12,6 +12,7 @@ class APRS(Device):
     PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
+    MAX_DATASIZE = 100
 
     @wrap_errors(APRSError)
     def __init__(self, state_field_registry):
@@ -156,6 +157,37 @@ class APRS(Device):
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)
+
+    @wrap_errors(APRSError)
+    def split_packet(self, packet: TransmissionPacket) -> list:
+        """
+        Splits the packet into a list of packets which abide by size limits
+        """
+        result = []
+        if packet.return_code == "ERR":
+            data = packet.return_data()[0]
+            descriptor = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}\
+                -{packet.timestamp[1]}-{packet.timestamp[2]}:{packet.return_data[0]}::" # Includes the final : after the data
+            ls = [data[0 + i:APRS.MAX_DATASIZE - len(descriptor) + i] for i in range(0, len(data), APRS.MAX_DATASIZE - len(descriptor))]
+            result = [copy.deepcopy(packet) for _ in range(len(ls))]
+            for _ in range(len(ls)):
+                result[_].return_data = [ls[_]]
+        else:
+            data = packet.return_data()
+            descriptor = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}\
+                -{packet.timestamp[1]}-{packet.timestamp[2]}:{packet.return_data[0]}:" # Does not include the final : after the data
+            ls = [[]]
+            count = len(descriptor)
+            for _ in range(len(data)):
+                if count > APRS.MAX_DATASIZE:
+                    count = len(descriptor)
+                    ls.append([])
+                count += len(f"{data[_]:.5}:")
+                ls[-1].append(data[_])
+            result = [copy.deepcopy(packet) for _ in range(len(ls))]
+            for _ in range(len(ls)):
+                result[_].return_data = ls[_]
+        return result
 
     @wrap_errors(APRSError)
     def transmit(self, packet: TransmissionPacket) -> bool:

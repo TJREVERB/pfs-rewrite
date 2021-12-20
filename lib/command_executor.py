@@ -134,17 +134,19 @@ class CommandExecutor:
         d = datetime.datetime.utcnow()
         packet.timestamp = (d.day, d.hour, d.minute)
         if packet.outreach:
-            self.sfr.devices["APRS"].transmit(packet)
+            for p in self.sfr.devices["APRS"].split_packet(packet):
+                self.sfr.devices["APRS"].transmit(p)
             return True
         else:
-            try:
-                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
-                return True
-            except NoSignalException as e:
-                if appendtoqueue:
-                    print("No Iridium connectivity, appending to buffer...")
-                    self.sfr.vars.transmit_buffer.append(packet)
-                return False
+            for p in self.sfr.vars.PRIMARY_RADIO.split_packet(packet):
+                try:
+                    self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
+                    return True
+                except NoSignalException as e:
+                    if appendtoqueue:
+                        print("No Iridium connectivity, appending to buffer...")
+                        self.sfr.vars.transmit_buffer.append(p)
+                    return False
 
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:

@@ -16,8 +16,11 @@ class TransmissionPacket:
 
     @wrap_errors(LogicalError)
     def __str__(self):
+        if self.return_code == "ERR":
+            return f"{self.command_string}:{self.return_code}:{self.msn}:{self.timestamp[0]}-\
+                {self.timestamp[1]}-{self.timestamp[2]}:{self.return_data[0]}:"
         return f"{self.command_string}:{self.return_code}:{self.msn}:{self.timestamp[0]}-\
-            {self.timestamp[1]}-{self.timestamp[2]}:{':'.join(self.return_data)}:"
+            {self.timestamp[1]}-{self.timestamp[2]}:{':'.join([f'{s:.5}' for s in self.return_data])}"
 
     def get_packet_age(self) -> float:
         current_datetime = datetime.datetime.utcnow()
