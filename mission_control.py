@@ -115,7 +115,7 @@ class MissionControl:
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
-        print(get_traceback(e))
+        print(self.get_traceback())
         self.sfr.turn_all_off()
         self.sfr.clear_logs()
         exit(1)
