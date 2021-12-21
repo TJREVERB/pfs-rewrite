@@ -22,6 +22,7 @@ from Drivers.device import Device
 #                                <- MT buffer -
 
 class Iridium(Device):
+    SERIAL_CONVERTERS = ["UART-RS232"]
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 

@@ -162,10 +162,6 @@ class StateFieldRegistry:
             "Repeater": Repeater,
             "Recovery": Recovery
         }
-        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
-            "Iridium": "UART-RS232",
-            "APRS": "SPI-UART"
-        }
 
         self.component_to_class = {  # returns class from component name
             "Iridium": Iridium,

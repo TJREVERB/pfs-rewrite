@@ -9,6 +9,7 @@ class APRS(Device):
     """
     Class for APRS
     """
+    SERIAL_CONVERTERS = ["SPI-UART"]
     PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
