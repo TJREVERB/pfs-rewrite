@@ -363,7 +363,8 @@ class Iridium(Device):
                 result[_].return_data = [ls[_]]
         else:
             data = packet.return_data
-            ls = [data[0 + i:Iridium.MAX_DATASIZE//FLOAT_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE/FLOAT_LEN)]
+            ls = [data[0 + i:Iridium.MAX_DATASIZE//FLOAT_LEN + i] for i in range(
+                0, len(data), Iridium.MAX_DATASIZE//FLOAT_LEN)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
             for _ in range(len(ls)):
                 result[_].return_data = ls[_]
