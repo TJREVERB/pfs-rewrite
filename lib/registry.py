@@ -315,7 +315,7 @@ class StateFieldRegistry:
             return  # if component is locked, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
-        for current_converter in self.component_to_class[component].SERIAL_CONVERTER:
+        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
             self.eps.commands["Pin On"](current_converter)
         time.sleep(.5)
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
@@ -334,7 +334,7 @@ class StateFieldRegistry:
         self.devices[component].terminate()
         self.devices[component] = None  # removes from dict
         self.eps.commands["Pin Off"](component)  # turns off component
-        for current_converter in self.component_to_class[component].SERIAL_CONVERTER:
+        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
             self.eps.commands["Pin Off"](current_converter)
 
     @wrap_errors(LogicalError)
