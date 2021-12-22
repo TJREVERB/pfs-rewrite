@@ -138,7 +138,7 @@ class CommandExecutor:
                 self.sfr.devices["APRS"].transmit(p)
             return True
         else:
-            for p in self.sfr.vars.PRIMARY_RADIO.split_packet(packet):
+            for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
                 try:
                     self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
                     return True
