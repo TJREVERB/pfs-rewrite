@@ -917,10 +917,10 @@ class IMU_I2C(IMU):
 
     @wrap_errors(IMUError)
     def __init__(self, state_field_registry, addr=0x28):
-        super().__init__(state_field_registry)
         self.buffer = bytearray(2)
         self.address = addr
         self.bus = SMBus(1)
+        super().__init__(state_field_registry)
 
     @wrap_errors(IMUError)
     def _write_register(self, register, value):
