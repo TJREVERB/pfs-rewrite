@@ -170,10 +170,10 @@ class StateFieldRegistry:
             "Antenna Deployer": AntennaDeployer
         }
         self.instruct = {
-            "Pin On": self.turn_on_component,
-            "Pin Off": self.turn_off_component,
-            "All On": self.turn_all_on,
-            "All Off": self.turn_all_off
+            "Pin On": self.__turn_on_component,
+            "Pin Off": self.__turn_off_component,
+            "All On": self.__turn_all_on,
+            "All Off": self.__turn_all_off
         }
         self.vars = self.load()
 
@@ -304,7 +304,7 @@ class StateFieldRegistry:
         self.logs["sfr"].write(self.Registry())  # Write default log
 
     @wrap_errors(LogicalError)
-    def turn_on_component(self, component: str) -> None:
+    def __turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
@@ -321,7 +321,7 @@ class StateFieldRegistry:
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
 
     @wrap_errors(LogicalError)
-    def turn_off_component(self, component: str) -> None:
+    def __turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
@@ -338,7 +338,7 @@ class StateFieldRegistry:
             self.eps.commands["Pin Off"](current_converter)
 
     @wrap_errors(LogicalError)
-    def turn_all_on(self, exceptions=None) -> None:
+    def __turn_all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
@@ -353,7 +353,7 @@ class StateFieldRegistry:
                 self.turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
