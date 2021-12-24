@@ -2,7 +2,8 @@ import os
 import traceback
 import time
 from MainControlLoop.main_control_loop import MainControlLoop
-from MainControlLoop.lib.exceptions import *
+from lib.exceptions import *
+from lib.registry import StateFieldRegistry
 
 
 class MissionControl:
@@ -12,6 +13,7 @@ class MissionControl:
         try:
             self.mcl = MainControlLoop()
             self.sfr = self.mcl.sfr
+            self.sfr: StateFieldRegistry
             self.error_dict = {
                 APRSError: self.aprs_troubleshoot,
                 IridiumError: self.iridium_troubleshoot,
@@ -24,8 +26,8 @@ class MissionControl:
             }
         except Exception as e:
             self.testing_mode(e)
-    
-    def get_traceback(self, e: Exception):
+
+    def get_traceback(self):
         tb = traceback.format_exc().split("\n")
         result = ""
         while len(tb) > 0:
@@ -76,7 +78,7 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def iridium_troubleshoot(self, e: CustomException):
-        print(self.get_traceback(e))
+        print(self.get_traceback())
         self.sfr.instruct["Pin Off"]("Iridium")
         time.sleep(1)
         self.sfr.instruct["Pin On"]("Iridium")
@@ -113,7 +115,7 @@ class MissionControl:
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
-        print(self.get_traceback(e))
+        print(self.get_traceback())
         self.sfr.turn_all_off()
         self.sfr.clear_logs()
         exit(1)

@@ -3,25 +3,111 @@ import os
 import pandas as pd
 import pickle
 import json
-from MainControlLoop.Drivers.eps import EPS
-from MainControlLoop.Drivers.battery import Battery
-from MainControlLoop.Drivers.bno055 import IMU_I2C
+from Drivers.eps import EPS
+from Drivers.battery import Battery
+from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
-from MainControlLoop.lib.analytics import Analytics
-from MainControlLoop.lib.command_executor import CommandExecutor
-from MainControlLoop.lib.log import Logger
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
-from MainControlLoop.Drivers.aprs import APRS
-from MainControlLoop.Drivers.iridium import Iridium
-from MainControlLoop.Drivers.antenna_deployer.AntennaDeployer import AntennaDeployer
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from MainControlLoop.Mode.recovery import Recovery
+from lib.analytics import Analytics
+from lib.command_executor import CommandExecutor
+from lib.log import Logger
+from lib.exceptions import wrap_errors, LogicalError
+from Drivers.aprs import APRS
+from Drivers.iridium import Iridium
+from Drivers.antenna_deployer import AntennaDeployer
+from Drivers.transmission_packet import TransmissionPacket
 
 
 class StateFieldRegistry:
+    components = [
+        "APRS",
+        "Iridium",
+        "IMU",
+        "Antenna Deployer",
+        "EPS",
+        "RTC",
+        "UART-RS232",  # Iridium Serial Converter
+        "SPI-UART",  # APRS Serial Converter
+        "USB-UART"
+    ]
+
+    class Registry:
+        @wrap_errors(LogicalError)
+        def __init__(self, sfr):
+            self.ANTENNA_DEPLOYED = False
+            # Integral estimate of remaining battery capacity
+            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
+            self.FAILURES = []
+            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
+            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
+            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+            self.LOWER_THRESHOLD = 133732.8 * 0.3
+            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
+            # via iridium for this amount of time, switch primary to APRS
+            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
+            # amount of time, it will switch primary radio to APRS
+            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
+            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
+            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+            self.MODE_LOCK = False  # Whether to lock mode switches
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.CONTACT_ESTABLISHED = False
+            self.ENABLE_SAFE_MODE = False
+            self.transmit_buffer = []
+            self.command_buffer = []
+            self.outreach_buffer = []
+            self.START_TIME = time.time()
+            self.LAST_COMMAND_RUN = time.time()
+            self.LAST_MODE_SWITCH = time.time()
+            self.LAST_STARTUP = time.time()
+            self.LAST_IRIDIUM_RECEIVED = time.time()
+
+        @wrap_errors(LogicalError)
+        def encode(self):
+            return [
+                int(self.ANTENNA_DEPLOYED),
+                self.BATTERY_CAPACITY_INT,
+                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+                int(self.LAST_DAYLIGHT_ENTRY % 100000),
+                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+                int(self.LAST_ECLIPSE_ENTRY % 100000),
+                self.ORBITAL_PERIOD,
+                self.LOWER_THRESHOLD,
+                self.UPPER_THRESHOLD,
+                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
+                self.SIGNAL_STRENGTH_VARIABILITY,
+                int(self.MODE_LOCK),
+                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                     if self.LOCKED_DEVICES[i]]),
+                int(self.CONTACT_ESTABLISHED),
+                int(self.START_TIME / 100000) * 100000,
+                int(self.START_TIME % 100000),
+                int(self.LAST_COMMAND_RUN / 100000) * 100000,
+                int(self.LAST_COMMAND_RUN % 100000),
+                int(self.LAST_MODE_SWITCH / 100000) * 100000,
+                int(self.LAST_MODE_SWITCH % 100000)
+            ]
+
+        @wrap_errors(LogicalError)
+        def to_dict(self):
+            """
+            Converts vars to dictionary with encoded values
+            """
+            encoded = self.encode()
+            result = {}
+            for i in vars(self):
+                if not i.startswith("__") and i.isupper():
+                    result[i] = encoded[0]  # encoded.pop(0)
+            return result
+
     @wrap_errors(LogicalError)
     def __init__(self):
         """
@@ -29,29 +115,29 @@ class StateFieldRegistry:
         Vars in the "vars" object get logged
         """
         self.logs = {
-            "sfr": self.Log("./MainControlLoop/lib/data/state_field_log.pkl", None),
-            "sfr_readable": self.Log("./MainControlLoop/lib/data/state_field_log.json", None),
-            "power": self.Log("./MainControlLoop/lib/data/pwr_draw_log.csv",
+            "sfr": self.Log("./lib/data/state_field_log.pkl", None),
+            "sfr_readable": self.Log("./lib/data/state_field_log.json", None),
+            "power": self.Log("./lib/data/pwr_draw_log.csv",
                               ["ts0", "ts1", "buspower", "0x01", "0x02", "0x03", "0x04", "0x05",
                                "0x06", "0x07", "0x08", "0x09", "0x0A"]),
-            "solar": self.Log("./MainControlLoop/lib/data/solar_generation_log.csv",
+            "solar": self.Log("./lib/data/solar_generation_log.csv",
                               ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
-            "voltage_energy": self.Log("./MainControlLoop/lib/data/volt-energy-map.csv",
+            "voltage_energy": self.Log("./lib/data/volt-energy-map.csv",
                                        ["voltage", "energy"]),
-            "orbits": self.Log("./MainControlLoop/lib/data/orbit_log.csv",
+            "orbits": self.Log("./lib/data/orbit_log.csv",
                                ["ts0", "ts1", "phase"]),
-            "iridium": self.Log("./MainControlLoop/lib/data/iridium_data.csv",
+            "iridium": self.Log("./lib/data/iridium_data.csv",
                                 ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
-            "imu": self.Log("./MainControlLoop/lib/data/imu_data.csv",
+            "imu": self.Log("./lib/data/imu_data.csv",
                             ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
-            "command": self.Log("./MainControlLoop/lib/data/command_log.csv",
+            "command": self.Log("./lib/data/command_log.csv",
                                 ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
-            "transmission": self.Log("./MainControlLoop/lib/data/transmission_log.csv",
+            "transmission": self.Log("./lib/data/transmission_log.csv",
                                      ["ts0", "ts1", "radio", "size"]),
         }
 
         self.eps = EPS(self)  # EPS never turns off
-        self.battery = Battery()
+        self.battery = Battery(self)
         self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
@@ -74,22 +160,8 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
+            "Recovery": Recovery
         }
-        self.component_to_serial = {  # in sfr so command_executor can switch serial_converter of APRS if needed.
-            "Iridium": "UART-RS232",
-            "APRS": "SPI-UART"
-        }
-        self.components = [
-            "APRS",
-            "Iridium",
-            "IMU",
-            "Antenna Deployer",
-            "EPS",
-            "RTC",
-            "UART-RS232",  # Iridium Serial Converter
-            "SPI-UART",  # APRS Serial Converter
-            "USB-UART"
-        ]
 
         self.component_to_class = {  # returns class from component name
             "Iridium": Iridium,
@@ -98,18 +170,15 @@ class StateFieldRegistry:
             "Antenna Deployer": AntennaDeployer
         }
         self.instruct = {
-            "Pin On": self.__turn_on_component,
-            "Pin Off": self.__turn_off_component,
-            "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off
+            "Pin On": self.turn_on_component,
+            "Pin Off": self.turn_off_component,
+            "All On": self.turn_all_on,
+            "All Off": self.turn_all_off
         }
-        # self.MODE = Startup(self)  # Stores mode object, we don't want to log it
-        self.MODE = Science(self)  # DEBUG!!!
         self.vars = self.load()
-        self.vars.LAST_STARTUP = time.time()
 
     @wrap_errors(LogicalError)
-    def load(self):
+    def load(self) -> Registry:
         """
         Load sfr fields from log
         :return: (Registry) loaded registry
@@ -235,34 +304,24 @@ class StateFieldRegistry:
         self.logs["sfr"].write(self.Registry())  # Write default log
 
     @wrap_errors(LogicalError)
-    def __turn_on_component(self, component: str) -> None:
+    def turn_on_component(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
         """
-        if self.devices[component] is not None:  # if component is already on, stop method from running further
-            return
-        if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
-            return
+        if self.devices[component] is not None:
+            return  # if component is already on, stop method from running further
+        if self.vars.LOCKED_DEVICES[component] is True:
+            return  # if component is locked, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
+        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
+            self.eps.commands["Pin On"](current_converter)
+        time.sleep(.5)
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
-        # component status in sfr to object instead of None
-        if component in self.component_to_serial:  # see if component has a serial converter to open
-            serial_converter = self.component_to_serial[component]  # gets serial converter name of component
-            self.eps.commands["Pin On"](serial_converter)  # turns on serial converter
-            self.serial_converters[serial_converter] = True  # sets serial converter status to True (on)
-
-        if component == "APRS":
-            self.devices[component].disable_digi()
-        if component == "IMU":
-            time.sleep(.5)
-            self.devices[component].start()
-
-        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
 
     @wrap_errors(LogicalError)
-    def __turn_off_component(self, component: str) -> None:
+    def turn_off_component(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
@@ -272,25 +331,14 @@ class StateFieldRegistry:
         if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
             return None
 
-        if component == "Iridium" and self.devices["Iridium"] is not None:  # Read in MT buffer to avoid wiping
-            # commands when mode switching
-            try:
-                self.devices[component].next_msg()
-            except Exception as e:
-                print(e)
-
-        self.devices[component] = None  # sets device object in sfr to None instead of object
-        self.eps.commands["Pin Off"](component)  # turns component off
-        if component in self.component_to_serial:  # see if component has a serial converter to close
-            # Same suggestion as for __turn_on_component
-            serial_converter = self.component_to_serial[component]  # get serial converter name for component
-            self.eps.commands["Pin Off"](serial_converter)  # turn off serial converter
-            self.serial_converters[serial_converter] = False  # sets serial converter status to False (off)
-
-        # if component does not have serial converter (IMU, Antenna Deployer), do nothing
+        self.devices[component].terminate()
+        self.devices[component] = None  # removes from dict
+        self.eps.commands["Pin Off"](component)  # turns off component
+        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
+            self.eps.commands["Pin Off"](current_converter)
 
     @wrap_errors(LogicalError)
-    def __turn_all_on(self, exceptions=None) -> None:
+    def turn_all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
@@ -302,10 +350,10 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.__turn_on_component(key)  # turn on device and serial converter if applicable
+                self.turn_on_component(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
@@ -325,7 +373,7 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.__turn_off_component(key)  # turn off device and serial converter if applicable
+                self.turn_off_component(key)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def set_primary_radio(self, new_radio: str, turn_off_old=False):
@@ -343,9 +391,8 @@ class StateFieldRegistry:
                 self.instruct["Pin On"](new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            encoded_radio = self.components.index(new_radio)
-            packet = TransmissionPacket("GPR", [], 0)
-            self.command_executor.transmit(packet, [encoded_radio])
+            unsolicited_packet = TransmissionPacket("GPR", [], 0)
+            self.command_executor.GPR(unsolicited_packet)
 
     class Log:
         @wrap_errors(LogicalError)
@@ -390,9 +437,6 @@ class StateFieldRegistry:
                     self.path, mode="a", header=False, index=False)
             elif self.ext == "pkl":  # If log is pkl
                 with open(self.path, "wb") as f:
-                    for i in data.__dict__.keys():
-                        print(i + ": " + str(getattr(data, i)))
-                        pickle.dumps(getattr(data, i))
                     pickle.dump(data, f)  # Dump to file
             elif self.ext == "json":  # If log is json
                 with open(self.path, "w") as f:
@@ -423,80 +467,3 @@ class StateFieldRegistry:
                     return pickle.load(f)
             with open(self.path, "r") as f:
                 return json.load(f)  # Return dict if json
-
-    class Registry:
-        @wrap_errors(LogicalError)
-        def __init__(self, sfr):
-            self.ANTENNA_DEPLOYED = False
-            # Integral estimate of remaining battery capacity
-            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
-            self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
-            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
-            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
-            self.LOWER_THRESHOLD = 133732.8 * 0.3
-            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
-            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
-            # via iridium for this amount of time, switch primary to APRS
-            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
-            # amount of time, it will switch primary radio to APRS
-            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
-            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
-            # self.MODE = Startup(sfr)  # Stores mode class, mode is instantiated in mcl
-            self.MODE = Science(sfr)  # DEBUG!!!
-            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
-            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
-            self.MODE_LOCK = False  # Whether to lock mode switches
-            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
-            self.CONTACT_ESTABLISHED = False
-            self.ENABLE_SAFE_MODE = False
-            self.transmit_buffer = []
-            self.command_buffer = []
-            self.outreach_buffer = []
-            self.START_TIME = time.time()
-            self.LAST_COMMAND_RUN = time.time()
-            self.LAST_MODE_SWITCH = time.time()
-            self.LAST_STARTUP = time.time()
-            self.LAST_IRIDIUM_RECEIVED = time.time()
-
-        @wrap_errors(LogicalError)
-        def encode(self):
-            return [
-                int(self.ANTENNA_DEPLOYED),
-                self.BATTERY_CAPACITY_INT,
-                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
-                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
-                int(self.LAST_DAYLIGHT_ENTRY % 100000),
-                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
-                int(self.LAST_ECLIPSE_ENTRY % 100000),
-                self.ORBITAL_PERIOD,
-                self.LOWER_THRESHOLD,
-                self.UPPER_THRESHOLD,
-                list(StateFieldRegistry.modes_list.keys()).index(type(self.MODE).__name__),
-                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
-                self.SIGNAL_STRENGTH_VARIABILITY,
-                int(self.MODE_LOCK),
-                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
-                     if self.LOCKED_DEVICES[i]]),
-                int(self.CONTACT_ESTABLISHED),
-                int(self.START_TIME / 100000) * 100000,
-                int(self.START_TIME % 100000),
-                int(self.LAST_COMMAND_RUN / 100000) * 100000,
-                int(self.LAST_COMMAND_RUN % 100000),
-                int(self.LAST_MODE_SWITCH / 100000) * 100000,
-                int(self.LAST_MODE_SWITCH % 100000)
-            ]
-
-        @wrap_errors(LogicalError)
-        def to_dict(self):
-            """
-            Converts vars to dictionary with encoded values
-            """
-            encoded = self.encode()
-            result = {}
-            for i in vars(self):
-                if not i.startswith("__") and i.isupper():
-                    result[i] = encoded[0]  # encoded.pop(0)
-            return result
-

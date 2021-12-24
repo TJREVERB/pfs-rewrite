@@ -1,21 +1,20 @@
 from numpy import nan
 from MainControlLoop.Mode.mode import Mode
-from MainControlLoop.Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket
 import time
-from MainControlLoop.lib.exceptions import NoSignalException, wrap_errors, LogicalError
+from lib.exceptions import NoSignalException, wrap_errors, LogicalError
+from lib.clock import Clock
 
 
 class Science(Mode):
-    DATAPOINT_SPACING = 5  # in seconds, TODO: MAKE 60
-    # NUMBER_OF_REQUIRED_PINGS = (90 * 60) / self.DATAPOINT_SPACING  # number of pings to do to complete orbit
-    NUMBER_OF_REQUIRED_PINGS = 5
-    PRIMARY_IRIDIUM_WAIT_TIME = 5 * 60
-    SECONDARY_IRIDIUM_WAIT_TIME = 20 * 60
+    # number of pings to do to complete orbit
+    # NUMBER_OF_REQUIRED_PINGS = self.sfr.vars.analytics.calc_orbital_period / self.DATAPOINT_SPACING
+    NUMBER_OF_REQUIRED_PINGS = 5  # TODO: UPDATE
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.last_ping = time.time()
+        self.ping_clock = Clock(self.ping, 5)  # TODO: MAKE 60
         self.pings_performed = 0
 
     @wrap_errors(LogicalError)
@@ -40,24 +39,39 @@ class Science(Mode):
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
+    def ping(self) -> bool:
+        """
+        Log current iridium connectivity
+        :return: (bool) whether function ran
+        """
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
+            return False
+        print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
+        try:  # Log Iridium data
+            self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
+                                 self.sfr.devices["Iridium"].check_signal_active())
+            print("Logged with connectivity")
+        except NoSignalException:  # Log NaN geolocation, 0 signal strength
+            self.sfr.log_iridium((nan, nan, nan), 0)
+            print("Logged 0 connectivity")
+        finally:  # Always update last_ping time to prevent spamming pings
+            self.pings_performed += 1
+            return True
+
+    @wrap_errors(LogicalError)
+    def transmit_results(self) -> bool:
+        """
+        Transmit science mode results
+        :return: (bool) whether function ran
+        """
+        print("Transmitting results...")
+        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
+        # Transmit signal strength variability
+        self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
+        return True
+
+    @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
-        if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've already calculated SSV
-            pass  # Do nothing
-        elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've performed enough pings
-            print("Transmitting results...")
-            # Transmit signal strength variability
-            self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
-            self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
-        elif time.time() - self.last_ping >= self.DATAPOINT_SPACING:  # If it's time to perform a ping
-            print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
-            try:  # Log Iridium data
-                self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                     self.sfr.devices["Iridium"].check_signal_active())
-                print("Logged with connectivity")
-            except NoSignalException:  # Log NaN geolocation, 0 signal strength
-                self.sfr.log_iridium((nan, nan, nan), 0)
-                print("Logged 0 connectivity")
-            finally:  # Always update last_ping time to prevent spamming pings
-                self.pings_performed += 1
-                self.last_ping = time.time()
+        if not self.ping_clock.execute():  # If we've performed enough pings
+            self.transmit_results()
