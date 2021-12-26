@@ -592,3 +592,27 @@ class CommandExecutor:
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result
+
+    def ZGM(self, packet: TransmissionPacket):
+        if str(self.sfr.MODE) == "Gomoku":
+            if self.sfr.MODE.next_human_move is not None:
+                CommandExecutionException("Previous move not processed")
+            else:
+                self.sfr.MODE.next_human_move = [packet.args[0], packet.args[1]]
+                self.transmit(packet, result := [])
+        else:
+            raise CommandExecutionException("Cannot process move if not in gomoku mode")
+        return result
+
+    def ZTB(self, packet: TransmissionPacket):
+        if str(self.sfr.MODE) == "Gomoku":
+            self.transmit(packet, result := [str(self.sfr.MODE.board_obj)])
+        else:
+            raise CommandExecutionException("Cannot send board if not in gomoku mode")
+        return result
+
+    def MGA(self, packet: TransmissionPacket):
+        self.sfr.MODE.terminate_mode()
+
+        self.sfr.MODE
+

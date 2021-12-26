@@ -12,6 +12,8 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
+from MainControlLoop.Mode.gamer_mode.gamer import Gamer
+from MainControlLoop.Mode.gamer_mode.gomoku.gomoku_mode import Gomoku
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import Logger
@@ -160,7 +162,9 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
-            "Recovery": Recovery
+            "Recovery": Recovery,
+            "Gamer": Gamer,
+            "Gomoku": Gomoku
         }
 
         self.component_to_class = {  # returns class from component name

@@ -110,13 +110,13 @@ class MissionControl:
         Then cleanly exit
         """
         print("ERROR!!!")
-        print(f"Currently in {type(self.sfr.MODE).__name__}")
+        print(f"Currently in {type(self.sfr.vars.MODE).__name__}")
         print("State field registry fields:")
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback())
-        self.sfr.turn_all_off()
+        self.sfr.instruct["All Off"](override_default_exceptions=True)
         self.sfr.clear_logs()
         exit(1)
 

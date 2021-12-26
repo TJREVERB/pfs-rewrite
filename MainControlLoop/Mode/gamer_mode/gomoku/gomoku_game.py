@@ -1,11 +1,11 @@
 import numpy as np
-
+import random
 class InvalidMoveError(Exception):
     pass
 
 
 class GomokuGame:
-    def __init__(self, size: int=3, is_ai_turn_first: bool=False, winning_in_a_row: int=3):
+    def __init__(self, size: int, winning_in_a_row: int, is_ai_turn_first: bool):
         self.size = size
         self.winning_in_a_row = winning_in_a_row
         self.human_board = np.zeros((size, size))  # X
@@ -34,7 +34,7 @@ class GomokuGame:
             else:
                 return False
 
-        # X
+        # X (human)
         if _check(self.get_bitboard(self.human_board), self.size):  # horizontal
             return 1, 0
         if _check(self.get_bitboard(self.human_board), 1):  # vertical
@@ -44,7 +44,7 @@ class GomokuGame:
         if _check(self.get_bitboard(self.human_board), self.size-1):  # right_diagonal
             return 1, 0
 
-        # O
+        # O (ai)
         if _check(self.get_bitboard(self.ai_board), self.size):  # horizontal
             return 0, 1
         if _check(self.get_bitboard(self.ai_board), 1):  # vertical
@@ -63,14 +63,13 @@ class GomokuGame:
         self.is_ai_turn = not self.is_ai_turn
 
     def is_valid_move(self, location: list) -> bool:
-        print(location)
         x, y = location[0], location[1]
         if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
             return True
         else:
             return False
 
-    def push_move(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
+    def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
         location = list(map(int, location))
         x, y = location[0], location[1]
         if not self.is_valid_move(location):
@@ -82,6 +81,9 @@ class GomokuGame:
         self.switch_turn()
 
     def get_valid_moves(self) -> list:
+        """
+        returns all valid moves as list of lists
+        """
         def _is_valid_move(move: list):
             if self.is_valid_move(move):
                 return move
@@ -92,6 +94,20 @@ class GomokuGame:
         possible_moves = list(map(_is_valid_move, possible_moves))
         valid_moves = [move for move in possible_moves if move is not None]
         return valid_moves
+
+    def get_best_move(self):  # TODO: implement
+        pass
+
+    def get_bitboard(self, array: np.array) -> int:
+        new_list = [0 for _ in range(self.size)]
+        new_list.extend(np.reshape(array, (self.size**2,)).tolist())
+        new_list = map(int, new_list)
+        new_list = list(map(str, new_list))
+        bitboard = int("".join(new_list), 2)
+        return bitboard
+
+    def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
+        return np.add(self.human_board, self.ai_board*-1)
 
     def __str__(self):
         board = np.empty((self.size, self.size)).tolist()
@@ -108,20 +124,6 @@ class GomokuGame:
             final_string += str(row) + "\n"
         return final_string
 
-    def get_bitboard(self, array: np.array) -> int:
-        new_list = [0 for _ in range(self.size)]
-        new_list.extend(np.reshape(array, (self.size**2,)).tolist())
-        new_list = map(int, new_list)
-        new_list = list(map(str, new_list))
-        bitboard = int("".join(new_list), 2)
-        print(bin(bitboard))
-        return bitboard
-
-    def get_bit_array(self, board_list: list) -> list:
-        x_bit_list = [board.human_board for board in board_list]
-        o_bit_list = [board.ai_board for board in board_list]
-        x_bit_list.extend(o_bit_list)
-        return x_bit_list
 
 
 game = GomokuGame(size=6, winning_in_a_row=4)
