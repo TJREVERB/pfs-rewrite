@@ -4,12 +4,12 @@ class InvalidMoveError(Exception):
     pass
 
 
-class GomokuGame:
-    def __init__(self, size: int, winning_in_a_row: int, is_ai_turn_first: bool):
-        self.size = size
-        self.winning_in_a_row = winning_in_a_row
-        self.human_board = np.zeros((size, size))  # X
-        self.ai_board = np.zeros((size, size))  # O
+class TicTacToeGame:
+    def __init__(self, is_ai_turn_first=False):
+        3 = size
+        3 = winning_in_a_row
+        self.human_board = np.zeros((3, 3))  # X
+        self.ai_board = np.zeros((3, 3))  # O
         self.is_ai_turn = is_ai_turn_first
 
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, 1, 1 if draw
@@ -17,12 +17,12 @@ class GomokuGame:
             x_bitboard = self.get_bitboard(self.human_board)
             o_bitboard = self.get_bitboard(self.ai_board)
             combined_bitboard = x_bitboard + o_bitboard
-            if _check(combined_bitboard, 1, iterations=self.size**2-1):
+            if _check(combined_bitboard, 1, iterations=3**2-1):
                 return True
             else:
                 return False
 
-        def _check(bitboard: int, constant, iterations = self.winning_in_a_row-1) -> bool:
+        def _check(bitboard: int, constant, iterations = 3-1) -> bool:
             print(bin(bitboard))
             current = bitboard
             for _ in range(iterations):
@@ -35,23 +35,23 @@ class GomokuGame:
                 return False
 
         # X (human)
-        if _check(self.get_bitboard(self.human_board), self.size):  # horizontal
+        if _check(self.get_bitboard(self.human_board), 3):  # horizontal
             return 1, 0
         if _check(self.get_bitboard(self.human_board), 1):  # vertical
             return 1, 0
-        if _check(self.get_bitboard(self.human_board), self.size+1):  # left_diagonal
+        if _check(self.get_bitboard(self.human_board), 3+1):  # left_diagonal
             return 1, 0
-        if _check(self.get_bitboard(self.human_board), self.size-1):  # right_diagonal
+        if _check(self.get_bitboard(self.human_board), 3-1):  # right_diagonal
             return 1, 0
 
         # O (ai)
-        if _check(self.get_bitboard(self.ai_board), self.size):  # horizontal
+        if _check(self.get_bitboard(self.ai_board), 3):  # horizontal
             return 0, 1
         if _check(self.get_bitboard(self.ai_board), 1):  # vertical
             return 0, 1
-        if _check(self.get_bitboard(self.ai_board), self.size+1):  # left_diagonal
+        if _check(self.get_bitboard(self.ai_board), 3+1):  # left_diagonal
             return 0, 1
-        if _check(self.get_bitboard(self.ai_board), self.size-1):  # right_diagonal
+        if _check(self.get_bitboard(self.ai_board), 3-1):  # right_diagonal
             return 0, 1
 
         if _check_draw():  # check draw
@@ -90,7 +90,7 @@ class GomokuGame:
             else:
                 return None
 
-        possible_moves = [[x, y] for y in range(self.size) for x in range(self.size)]
+        possible_moves = [[x, y] for y in range(3) for x in range(3)]
         possible_moves = list(map(_is_valid_move, possible_moves))
         valid_moves = [move for move in possible_moves if move is not None]
         return valid_moves
@@ -99,8 +99,8 @@ class GomokuGame:
         pass
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = [0 for _ in range(self.size)]
-        new_list.extend(np.reshape(array, (self.size**2,)).tolist())
+        new_list = [0 for _ in range(3)]
+        new_list.extend(np.reshape(array, (3**2,)).tolist())
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
@@ -110,9 +110,9 @@ class GomokuGame:
         return np.add(self.human_board, self.ai_board*-1)
 
     def __str__(self):
-        board = np.empty((self.size, self.size)).tolist()
-        for x in range(self.size):
-            for y in range(self.size):
+        board = np.empty((3, 3)).tolist()
+        for x in range(3):
+            for y in range(3):
                 if self.human_board[x][y] == 1:
                     board[x][y] = "X"
                 elif self.ai_board[x][y] == 1:
@@ -126,7 +126,7 @@ class GomokuGame:
 
 
 
-game = GomokuGame(size=6, winning_in_a_row=4)
+game = TicTacToeGame()
 while True:
     if game.check_winner() == (1, 0):
         print("Human Wins")

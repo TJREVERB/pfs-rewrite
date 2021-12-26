@@ -13,7 +13,7 @@ from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from MainControlLoop.Mode.gamer_mode.gamer import Gamer
-from MainControlLoop.Mode.gamer_mode.gomoku.gomoku_mode import Gomoku
+from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_mode import TicTacToe
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import Logger
@@ -164,7 +164,7 @@ class StateFieldRegistry:
             "Repeater": Repeater,
             "Recovery": Recovery,
             "Gamer": Gamer,
-            "Gomoku": Gomoku
+            "Gomoku": TicTacToe
         }
 
         self.component_to_class = {  # returns class from component name

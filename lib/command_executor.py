@@ -601,14 +601,14 @@ class CommandExecutor:
                 self.sfr.MODE.next_human_move = [packet.args[0], packet.args[1]]
                 self.transmit(packet, result := [])
         else:
-            raise CommandExecutionException("Cannot process move if not in gomoku mode")
+            raise CommandExecutionException("Cannot process move if not in tictactoe mode")
         return result
 
     def ZTB(self, packet: TransmissionPacket):
         if str(self.sfr.MODE) == "Gomoku":
             self.transmit(packet, result := [str(self.sfr.MODE.board_obj)])
         else:
-            raise CommandExecutionException("Cannot send board if not in gomoku mode")
+            raise CommandExecutionException("Cannot send board if not in tictactoe mode")
         return result
 
     def MGA(self, packet: TransmissionPacket):

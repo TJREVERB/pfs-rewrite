@@ -1,18 +1,15 @@
 import pickle
 from MainControlLoop.Mode.mode import Mode
-from MainControlLoop.Mode.gamer_mode.gomoku.gomoku_game import GomokuGame
+from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_game import TicTacToeGame
 
 
-class Gomoku(Mode):
-    def __init__(self, sfr, new_game: bool, size: int, in_a_row_to_win: int, ai_move_first: bool):
+class TicTacToe(Mode):
+    def __init__(self, sfr):
         super().__init__(sfr)
-        self.size = size
-        self.in_a_row_to_win = in_a_row_to_win
-        self.ai_move_first = ai_move_first
+        self.ai_move_first = False
         self.next_human_move = None
         self.sfr = sfr
         self.board_obj = None
-        self.new_game = new_game
         self.conditions = {
             "Low Battery": False
         }
@@ -22,29 +19,25 @@ class Gomoku(Mode):
 
     def start(self):
         super().start([self.sfr.vars.PRIMARY_RADIO])
-        if self.new_game:
-            self.erase_save()
-            self.board_obj = GomokuGame(self.size, self.in_a_row_to_win, self.ai_move_first) # TODO: FIX arg amount
-        else:
-            self.load_save()
+        self.load_save()
 
     def execute_cycle(self) -> None:
         if self.board_obj.check_winner() == (1, 0):
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("Human is Winner, Switched to Gamer Mode")
-            self.board_obj = GomokuGame(self.size, self.in_a_row_to_win, self.ai_move_first)  # TODO: FIX arg amount
+            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
             self.terminate_mode()
             self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
             self.sfr.MODE.start()
 
         elif self.board_obj.check_winner() == (0, 1):
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("AI is Winner (Big L), Switched to Gamer Mode")
-            self.board_obj = GomokuGame(self.size, self.in_a_row_to_win, self.ai_move_first)  # TODO: FIX arg amount
+            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
             self.terminate_mode()
             self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
             self.sfr.MODE.start()
         elif self.board_obj.check_winner() == (1, 1):
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("Game is Draw, Switched to Gamer Mode")
-            self.board_obj = GomokuGame(self.size, self.in_a_row_to_win, self.ai_move_first)  # TODO: FIX arg amount
+            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
             self.terminate_mode()
             self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
             self.sfr.MODE.start()
@@ -63,8 +56,8 @@ class Gomoku(Mode):
                 # TODO: figure out how to transmit reminder to move to ground on a clock
                 pass
 
-    def transmit_board(self):
-        
+    def transmit_board(self):  # str representation of board
+
 
     def suggested_mode(self):
         super().suggested_mode()
@@ -74,14 +67,16 @@ class Gomoku(Mode):
             return self
 
     def erase_save(self):
-        with open("gomoku_file.pkl", "wb") as f:
+        with open("tictactoe_file.pkl", "wb") as f:
             pass
 
     def load_save(self) -> None:
-        with open("gomoku_file.pkl", "rb") as f:
+        with open("tictactoe_file.pkl", "rb") as f:
             self.board_obj = pickle.load(f)
 
     def terminate_mode(self):
-        with open("gomoku_file.pkl", "wb") as f:
+        with open("tictactoe_file.pkl", "wb") as f:
             pickle.dump(self.board_obj, f)
+        if self.board_obj.check_winner() != (0, 0):
+            self.erase_save()
 
