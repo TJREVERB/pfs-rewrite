@@ -15,6 +15,8 @@ class APRS(Device):
     BAUDRATE = 19200
     MAX_DATASIZE = 100
 
+    STR_DATA = {"ERR", "GME"}
+
     @wrap_errors(APRSError)
     def __init__(self, state_field_registry):
         super().__init__(state_field_registry)
@@ -165,7 +167,7 @@ class APRS(Device):
         Splits the packet into a list of packets which abide by size limits
         """
         result = []
-        if packet.return_code == "ERR":
+        if packet.return_code in APRS.STR_DATA:
             data = packet.return_data()[0]
             descriptor = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}\
                 -{packet.timestamp[1]}-{packet.timestamp[2]}:{packet.return_data[0]}::" # Includes the final : after the data

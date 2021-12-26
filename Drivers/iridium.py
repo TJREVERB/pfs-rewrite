@@ -26,6 +26,8 @@ class Iridium(Device):
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 
+    STR_DATA = {"ERR", "GME"}
+
     MAX_DATASIZE = 294 # Maximum permissible data size not including descriptor size, in bytes. Hardware limitation should be 340 bytes total, or 334 for just data
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
@@ -71,7 +73,8 @@ class Iridium(Device):
 
     RETURN_CODES = [
         "0OK",  # 0, MSG received and executed
-        "ERR"  # 1, MSG received and read, but error executing or reading
+        "ERR",  # 1, MSG received and read, but error executing or reading
+        "GME",  # 2, MSG is a string notification from gamer mode
     ]
 
     @wrap_errors(IridiumError)
@@ -271,7 +274,7 @@ class Iridium(Device):
         date = (time[0] << 11) | (time[1] << 6) | time[2]  # fifth and sixth bytes date, msb first
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
-        if return_code == "ERR":
+        if return_code in Iridium.STR_DATA:
             data = data[0].encode("ascii")
             for d in data:
                 encoded.append(d)
@@ -355,7 +358,7 @@ class Iridium(Device):
         Splits the packet into a list of packets which abide by size limits
         """
         FLOAT_LEN = 3
-        if packet.return_code == "ERR":
+        if packet.return_code in Iridium.STR_DATA:
             data = packet.return_data[0]
             ls = [data[0 + i:Iridium.MAX_DATASIZE + i] for i in range(0, len(data), Iridium.MAX_DATASIZE)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
