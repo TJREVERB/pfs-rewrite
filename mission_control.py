@@ -103,14 +103,14 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def imu_troubleshoot(self, e: CustomException):
-        self.sfr.instruct["Pin Off"]("IMU")
+        self.sfr.power_on("IMU")
         # TODO: transmit down a notification
 
     def battery_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
     
     def antenna_troubleshoot(self, e: CustomException):
-        self.sfr.instruct["Reboot"]("Antenna Deployer")
+        self.sfr.reboot("Antenna Deployer")
         self.sfr.devices["Antenna Deployer"].functional()
         # TODO: transmit down a notification
     
