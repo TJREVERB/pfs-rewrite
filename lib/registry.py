@@ -173,7 +173,8 @@ class StateFieldRegistry:
             "Pin On": self.__turn_on_component,
             "Pin Off": self.__turn_off_component,
             "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off
+            "All Off": self.__turn_all_off,
+            "Reboot": self.__reboot
         }
         self.vars = self.load()
 
@@ -336,6 +337,12 @@ class StateFieldRegistry:
         self.eps.commands["Pin Off"](component)  # turns off component
         for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
             self.eps.commands["Pin Off"](current_converter)
+
+    @wrap_errors(LogicalError)
+    def __reboot(self, component: str) -> None:
+        self.__turn_off_component(component)
+        time.sleep(0.5)
+        self.__turn_on_component(component)
 
     @wrap_errors(LogicalError)
     def __turn_all_on(self, exceptions=None) -> None:
