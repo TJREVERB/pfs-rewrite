@@ -169,13 +169,6 @@ class StateFieldRegistry:
             "IMU": IMU_I2C,
             "Antenna Deployer": AntennaDeployer
         }
-        self.instruct = {
-            "Pin On": self.__turn_on_component,
-            "Pin Off": self.__turn_off_component,
-            "All On": self.__turn_all_on,
-            "All Off": self.__turn_all_off,
-            "Reboot": self.__reboot
-        }
         self.vars = self.load()
 
     @wrap_errors(LogicalError)
@@ -305,7 +298,7 @@ class StateFieldRegistry:
         self.logs["sfr"].write(self.Registry())  # Write default log
 
     @wrap_errors(LogicalError)
-    def __turn_on_component(self, component: str) -> None:
+    def power_on(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn on
@@ -322,7 +315,7 @@ class StateFieldRegistry:
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
 
     @wrap_errors(LogicalError)
-    def __turn_off_component(self, component: str) -> None:
+    def power_off(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: (str) component to turn off
@@ -339,16 +332,16 @@ class StateFieldRegistry:
             self.eps.commands["Pin Off"](current_converter)
 
     @wrap_errors(LogicalError)
-    def __reboot(self, component: str) -> None:
-        self.__turn_off_component(component)
+    def reboot(self, component: str) -> None:
+        self.power_off(component)
         time.sleep(0.5)
-        self.__turn_on_component(component)
+        self.power_on(component)
 
     @wrap_errors(LogicalError)
-    def __turn_all_on(self, exceptions=None) -> None:
+    def all_on(self, exceptions=None) -> None:
         """
         Turns all components on automatically, except for Antenna Deployer.
-        Calls __turn_on_component for every key in self.devices except for those in exceptions parameter
+        Calls power_on for every key in self.devices except for those in exceptions parameter
         :param exceptions: (list) components to not turn on, default is ["Antenna Deployer, IMU"]
         :return: None
         """
@@ -357,13 +350,13 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
-                self.turn_on_component(key)  # turn on device and serial converter if applicable
+                self.power_on(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def __turn_all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def all_off(self, exceptions=None, override_default_exceptions=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
-        Calls __turn_off_component for every key in self.devices. Except for those in exceptions parameter
+        Calls power_off for every key in self.devices. Except for those in exceptions parameter
         :param exceptions: (list) components to not turn off, default is ["Antenna Deployer, IMU"]
         :param override_default_exceptions: (bool) whether or not to use default exceptions
         :return: None
@@ -380,7 +373,7 @@ class StateFieldRegistry:
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.turn_off_component(key)  # turn off device and serial converter if applicable
+                self.power_off(key)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def set_primary_radio(self, new_radio: str, turn_off_old=False):
@@ -392,10 +385,10 @@ class StateFieldRegistry:
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if turn_off_old:
-                self.instruct["Pin Off"](previous_radio)
+                self.power_off(previous_radio)
             self.vars.PRIMARY_RADIO = new_radio
             if self.devices[new_radio] is None:  # initialize it
-                self.instruct["Pin On"](new_radio)
+                self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             unsolicited_packet = TransmissionPacket("GPR", [], 0)

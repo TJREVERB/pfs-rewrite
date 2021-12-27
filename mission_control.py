@@ -63,9 +63,9 @@ class MissionControl:
             else:  # dont want to force run this after potential remote code exec session
                 for message_packet in self.sfr.vars.transmit_buffer:
                     if message_packet.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT:  # switch radios
-                        self.sfr.instruct["Pin Off"](self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
                         self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
-                        self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
                         # transmit radio switched to ground
 
     def get_other_radio(self, radio):
@@ -79,9 +79,9 @@ class MissionControl:
 
     def iridium_troubleshoot(self, e: CustomException):
         print(self.get_traceback())
-        self.sfr.instruct["Pin Off"]("Iridium")
+        self.sfr.power_off("Iridium")
         time.sleep(1)
-        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.power_on("Iridium")
         time.sleep(10)
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
@@ -116,7 +116,7 @@ class MissionControl:
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback())
-        self.sfr.turn_all_off()
+        self.sfr.all_off()
         self.sfr.clear_logs()
         exit(1)
 
@@ -126,7 +126,7 @@ class MissionControl:
 
     def get_correct_safe_mode(self):
         try:
-            self.sfr.instruct["Pin On"]("Iridium")
+            self.sfr.power_on("Iridium")
             self.sfr.devices["Iridium"].transmit("Iridium safe mode enabled")
         except Exception:
             pass
@@ -134,7 +134,7 @@ class MissionControl:
             return self.safe_mode_iridium
 
         try:
-            self.sfr.instruct["Pin On"]("APRS")
+            self.sfr.power_on("APRS")
             self.sfr.devices["APRS"].transmit("APRS safe mode enabled")
         except Exception:
             os.system("sudo reboot")  # PFS team took an L
@@ -167,9 +167,9 @@ class MissionControl:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
             if self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD:
-                self.sfr.instruct["Pin Off"]("APRS")
+                self.sfr.power_off("APRS")
                 time.sleep(90*60)  # charge for one orbit
-                self.sfr.instruct["Pin On"]("APRS")
+                self.sfr.power_on("APRS")
 
 
 if __name__ == "__main__":
