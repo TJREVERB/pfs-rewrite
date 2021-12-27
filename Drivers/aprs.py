@@ -1,6 +1,6 @@
 from serial import Serial
 import time
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import ResponsePacket
 from lib.exceptions import wrap_errors, APRSError, LogicalError
 from Drivers.device import Device
 import copy
@@ -160,7 +160,7 @@ class APRS(Device):
         time.sleep(5)
 
     @wrap_errors(APRSError)
-    def split_packet(self, packet: TransmissionPacket) -> list:
+    def split_packet(self, packet: ResponsePacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """
@@ -191,10 +191,10 @@ class APRS(Device):
         return result
 
     @wrap_errors(APRSError)
-    def transmit(self, packet: TransmissionPacket) -> bool:
+    def transmit(self, packet: ResponsePacket) -> bool:
         """
         Takes a descriptor and data, and transmits
-        :param packet: (TransmissionPacket) packet to transmit
+        :param packet: (ResponsePacket) packet to transmit
         :return: (bool) success
         """
         if packet.simulate:
@@ -215,10 +215,10 @@ class APRS(Device):
         msg = self.read()
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+            self.sfr.vars.command_buffer.append(ResponsePacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1], outreach=True)))
+            self.sfr.vars.outreach_buffer.append(ResponsePacket(processed[0], [float(s) for s in processed[2:]], int(processed[1], outreach=True)))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:

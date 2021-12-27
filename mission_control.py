@@ -4,7 +4,7 @@ import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import ResponsePacket
 
 
 class MissionControl:
@@ -165,7 +165,7 @@ class MissionControl:
         self.sfr.vars.enter_safe_mode = True
         self.sfr.devices["Iridium"].transmit_raw(repr(e))
         self.sfr.set_primary_radio("Iridium")
-        self.sfr.command_executor.GCS(TransmissionPacket("GCS", [], 0))  # transmits down the encoded SFR
+        self.sfr.command_executor.GCS(ResponsePacket("GCS", [], 0))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()
@@ -176,7 +176,7 @@ class MissionControl:
         self.sfr.vars.enter_safe_mode = True
         self.sfr.devices["APRS"].transmit_raw(repr(e))
         self.sfr.set_primary_radio("APRS")
-        self.sfr.command_executor.GCS(TransmissionPacket("GCS", [], 0))  # transmits down the encoded SFR
+        self.sfr.command_executor.GCS(ResponsePacket("GCS", [], 0))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["APRS"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["APRS"].next_msg()

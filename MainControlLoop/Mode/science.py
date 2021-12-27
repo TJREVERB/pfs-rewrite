@@ -1,7 +1,6 @@
 from numpy import nan
 from MainControlLoop.Mode.mode import Mode
-from Drivers.transmission_packet import TransmissionPacket
-import time
+from Drivers.transmission_packet import ResponsePacket
 from lib.exceptions import NoSignalException, wrap_errors, LogicalError
 from lib.clock import Clock
 
@@ -67,7 +66,7 @@ class Science(Mode):
         print("Transmitting results...")
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
         # Transmit signal strength variability
-        self.sfr.command_executor.GSV(TransmissionPacket("GSV", [], 0))
+        self.sfr.command_executor.GSV(ResponsePacket("GSV", [], 0))
         return True
 
     @wrap_errors(LogicalError)
