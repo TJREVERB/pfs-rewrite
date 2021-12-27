@@ -28,7 +28,7 @@ class Recovery(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:  # TODO: IMPLEMENT
         if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # Execute cycle low battery
-            self.sfr.instruct["All Off"]()  # turn everything off
+            self.sfr.all_off()  # turn everything off
             time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()
         else:
