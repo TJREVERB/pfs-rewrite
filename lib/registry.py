@@ -320,6 +320,7 @@ class StateFieldRegistry:
             self.eps.commands["Pin On"](current_converter)
         time.sleep(.5)
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
+        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
 
     @wrap_errors(LogicalError)
     def __turn_off_component(self, component: str) -> None:
@@ -391,6 +392,8 @@ class StateFieldRegistry:
         # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
+            if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
+                return
             if turn_off_old:
                 self.instruct["Pin Off"](previous_radio)
             self.vars.PRIMARY_RADIO = new_radio

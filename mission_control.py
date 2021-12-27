@@ -4,6 +4,7 @@ import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
+from Drivers.transmission_packet import TransmissionPacket
 
 
 class MissionControl:
@@ -54,6 +55,15 @@ class MissionControl:
                     try:
                         self.error_dict[type(e)](e)  # tries to troubleshoot
                         continue  # Move on with MCL if troubleshooting solved problem (no additional exception)
+                    except IridiumError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_aprs(e)  <-- add this in before deployment
+                    except APRSError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_iridium(e)  <-- add this in before deployment
+                    except AntennaError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_iridium(e)  <-- add this in before deployment
                     except Exception as e:
                         self.testing_mode(e)  # troubleshooting fails
                 elif type(e) == KeyboardInterrupt:
@@ -75,7 +85,8 @@ class MissionControl:
             return "Iridium"
 
     def aprs_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.reboot("APRS")
+        self.sfr.devices["APRS"].functional()
 
     def iridium_troubleshoot(self, e: CustomException):
         print(self.get_traceback())
@@ -92,13 +103,16 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def imu_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.instruct["Pin Off"]("IMU")
+        # TODO: transmit down a notification
 
     def battery_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
     
     def antenna_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.instruct["Reboot"]("Antenna Deployer")
+        self.sfr.devices["Antenna Deployer"].functional()
+        # TODO: transmit down a notification
     
     def high_power_draw_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
@@ -149,7 +163,9 @@ class MissionControl:
         Precondition: iridium is functional
         """
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["Iridium"].transmit(repr(e))
+        self.sfr.devices["Iridium"].transmit_raw(repr(e))
+        self.sfr.set_primary_radio("Iridium")
+        self.sfr.command_executor.GCS(TransmissionPacket("GCS", [], 0))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()
@@ -158,7 +174,9 @@ class MissionControl:
 
     def safe_mode_aprs(self, e: Exception):
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["APRS"].transmit(repr(e))
+        self.sfr.devices["APRS"].transmit_raw(repr(e))
+        self.sfr.set_primary_radio("APRS")
+        self.sfr.command_executor.GCS(TransmissionPacket("GCS", [], 0))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["APRS"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["APRS"].next_msg()
