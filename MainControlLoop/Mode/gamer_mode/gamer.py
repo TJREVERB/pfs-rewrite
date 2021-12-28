@@ -1,7 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 import time
 import pickle
-from MainControlLoop.lib.exceptions import wrap_errors, LogicalError
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class Gamer(Mode):  # gamer mode before player picks game

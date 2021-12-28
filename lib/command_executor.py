@@ -626,9 +626,10 @@ class CommandExecutor:
         return result
 
     def ZCM(self, packet: TransmissionPacket):
-        """Resets board and switches who moves first"""
+        """Resets board"""
         if str(self.sfr.MODE) == "TicTacToe":
-            self.sfr.MODE.board_obj = TicTacToeGame(is_ai_turn_first=not self.sfr.MODE.board_obj.is_ai_turn_first)
+            is_ai_turn_first = packet.args[0]
+            self.sfr.MODE.board_obj = TicTacToeGame(is_ai_turn_first=is_ai_turn_first)
             self.transmit(packet, result := [])
         else:
             raise CommandExecutionException("Cannot modify board if not in TicTacToe mode")

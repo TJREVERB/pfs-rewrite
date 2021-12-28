@@ -10,7 +10,6 @@ class InvalidMoveError(Exception):
 
 class TicTacToeGame:
     def __init__(self, is_ai_turn_first=False):
-        self.is_ai_turn_first=is_ai_turn_first
         self.human_board = np.zeros((3, 3))  # X
         self.ai_board = np.zeros((3, 3))  # O
         self.is_ai_turn = is_ai_turn_first
@@ -26,12 +25,9 @@ class TicTacToeGame:
                 return False
 
         def _check(bitboard: int, constant, iterations = 3-1) -> bool:
-            print(bin(bitboard))
             current = bitboard
             for _ in range(iterations):
                 current = current & (current >> constant)
-                print(_)
-                print(bin(current))
             if current:
                 return True
             else:
@@ -96,6 +92,7 @@ class TicTacToeGame:
             new_board.ai_board[x][y] = 1.0
         new_board.switch_turn()
         return new_board
+
     def get_valid_moves(self) -> list:
         """
         returns all valid moves as list of lists
@@ -111,21 +108,47 @@ class TicTacToeGame:
         valid_moves = [move for move in possible_moves if move is not None]
         return valid_moves
 
-    def minimax(self, board, is_maximizing_player, time_started):
-        if board.check_winner() == (1, 0):
-            return -10
-        elif board.check_winner() == (0, 1):
-            return 10
-        elif time.time() - 10 > time_started:
-            # timeout
-        if is_maximizing_player:
-            score = -9999
-            for move in board.get_valid_moves():
-                self.minimax(self.push_move_to_copy(move), not is_maximizing_player, time_started)
-
+    def minimax(self, board, alpha, beta, time_started):
+        state = board.check_winner()
+        if state == (1, 0):
+            return 1
+        elif state == (0, 1):
+            return -1
+        elif state == (1, 1):
+            return 0
+        if board.is_ai_turn:
+            best_max = -10000
+            possible_moves = board.get_valid_moves()
+            for move in possible_moves:
+                score = self.minimax(self.push_move_to_copy(move), alpha, beta, time_started)
+                best_max = max(best_max, score)
+                alpha = max(alpha, score)
+                if beta <= alpha:
+                    break
+            return best_max
+        else:
+            best_min = 10000
+            possible_moves = board.get_valid_moves()
+            for move in possible_moves:
+                new_board = board.deepcopy()
+                new_board.push_move(move)
+                score = self.minimax(self.push_move_to_copy(move), alpha, beta, time_started)
+                best_min = min(best_min, score)
+                beta = min(beta, score)
+                if beta <= alpha:
+                    break
+            return best_min
 
     def get_best_move(self):  # TODO: implement
-
+        possible_moves = self.get_valid_moves()
+        best = -10000
+        best_move = []
+        for move in possible_moves:
+            score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
+            if score > best:
+                best_move = move
+                best = score
+        return best_move
 
     def get_bitboard(self, array: np.array) -> int:
         new_list = [0 for _ in range(3)]
