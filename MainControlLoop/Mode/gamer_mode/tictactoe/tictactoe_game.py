@@ -4,12 +4,7 @@ import time
 import copy
 
 
-class InvalidMoveError(Exception):
-    pass
-
-
 class TicTacToeGame:
-
     def __init__(self, sfr, is_ai_turn_first=False):
         self.sfr = sfr
         self.human_board = np.zeros((3, 3))  # X
@@ -50,8 +45,6 @@ class TicTacToeGame:
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
         location = list(map(int, location))
         x, y = location[0], location[1]
-        if not self.is_valid_move(location):
-            raise InvalidMoveError()
         if self.is_ai_turn:
             self.ai_board[x][y] = 1.0
         else:
