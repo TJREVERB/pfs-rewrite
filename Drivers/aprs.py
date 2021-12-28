@@ -165,29 +165,28 @@ class APRS(Device):
         Splits the packet into a list of packets which abide by size limits
         """
         result = []
-        if packet.return_code == "ERR":
-            data = packet.return_data()[0]
-            descriptor = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}\
-                -{packet.timestamp[1]}-{packet.timestamp[2]}:{packet.return_data[0]}::" # Includes the final : after the data
-            ls = [data[0 + i:APRS.MAX_DATASIZE - len(descriptor) + i] for i in range(0, len(data), APRS.MAX_DATASIZE - len(descriptor))]
-            result = [copy.deepcopy(packet) for _ in range(len(ls))]
-            for _ in range(len(ls)):
-                result[_].return_data = [ls[_]]
+        if packet.numerical:
+            data = packet.return_data
         else:
-            data = packet.return_data()
-            descriptor = f"{packet.command_string}:{packet.return_code}:{packet.msn}:{packet.timestamp[0]}\
-                -{packet.timestamp[1]}-{packet.timestamp[2]}:{packet.return_data[0]}:" # Does not include the final : after the data
-            ls = [[]]
-            count = len(descriptor)
-            for _ in range(len(data)):
-                if count > APRS.MAX_DATASIZE:
-                    count = len(descriptor)
-                    ls.append([])
-                count += len(f"{data[_]:.5}:")
-                ls[-1].append(data[_])
-            result = [copy.deepcopy(packet) for _ in range(len(ls))]
-            for _ in range(len(ls)):
-                result[_].return_data = ls[_]
+            data = packet.return_data[0]
+
+        result.append(packet)
+        lastindex = 0
+        for i in range(len(data)):
+            pckt = copy.deepcopy(result[-1])
+            if packet.numerical:
+                pckt.return_data = data[lastindex:i]
+            else:
+                pckt.return_data = [data[lastindex:i]]
+            pckt.index = len(result) - 1
+            if len(str(pckt)) <= APRS.MAX_DATASIZE:
+                result[-1] = pckt
+            else:
+                lastindex = i
+                pckt = copy.deepcopy(packet)
+                pckt.return_data = [data[i]]
+                pckt.index = len(result)
+                result.append(pckt)
         return result
 
     @wrap_errors(APRSError)
