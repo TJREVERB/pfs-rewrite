@@ -394,8 +394,8 @@ class StateFieldRegistry:
                 self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = UnsolicitedData("GPR") # Dunno if you want to change this to string but command executor would need to be updated as well
-            self.command_executor.GPR(unsolicited_packet)
+            unsolicited_packet = UnsolicitedString(return_data = [f"Switched to {self.sfr.vars.PRIMARY_RADIO}"])
+            self.command_executor.transmit(unsolicited_packet)
 
     class Log:
         @wrap_errors(LogicalError)
