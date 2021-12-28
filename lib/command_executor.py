@@ -637,7 +637,7 @@ class CommandExecutor:
         """Resets board"""
         if str(self.sfr.MODE) == "TicTacToe":
             is_ai_turn_first = packet.args[0]
-            self.sfr.MODE.board_obj = TicTacToeGame(is_ai_turn_first=is_ai_turn_first)
+            self.sfr.MODE.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=is_ai_turn_first)
             self.transmit(packet, result := [])
         else:
             raise CommandExecutionException("Cannot modify board if not in TicTacToe mode")

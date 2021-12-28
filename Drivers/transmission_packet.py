@@ -16,7 +16,7 @@ class TransmissionPacket:
         self.timestamp = None
         
     def __str__(self):
-        return "" # Overridden by subclasses
+        return ""  # Overridden by subclasses
 
     @wrap_errors(LogicalError)
     def set_time(self):
@@ -27,7 +27,7 @@ class TransmissionPacket:
         return (datetime.datetime.utcnow() - self.timestamp).total_seconds()
 
 
-class FullPacket(TransmissionPacket): # Use this for anything that responds to a command sent from ground. If an error message is to be returned, set numerical to False
+class FullPacket(TransmissionPacket):  # Use this for anything that responds to a command sent from ground. If an error message is to be returned, set numerical to False
     @wrap_errors(LogicalError)
     def __init__(self, descriptor: str, args: list, msn: int, simulate=False, outreach=False):
         super().__init__(True, True)
@@ -48,8 +48,10 @@ class FullPacket(TransmissionPacket): # Use this for anything that responds to a
 
 class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data returns, such as with Science mode and POL beaconing
     @wrap_errors(LogicalError)
-    def __init__(self, descriptor: str, return_data = [], simulate = False, outreach = False): # Return data is optional
+    def __init__(self, descriptor: str, return_data=None, simulate=False, outreach=False): # Return data is optional
         super().__init__(False, True)
+        if return_data is None:
+            return_data = []
         self.descriptor = descriptor
         self.return_data = return_data
         self.simulate = simulate
@@ -61,14 +63,17 @@ class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data retur
         return f"{(self.response << 1) | self.numerical}:{self.timestamp.day}-{self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}\
             :{':'.join([f'{s:.5}' for s in self.return_data])}:"  # Basically the same as FullPacket but without MSN
 
+
 class UnsolicitedString(TransmissionPacket): # Use this for unsolicited string messages like error and mode switch notifications, or GAMER MODE UPDATES
     @wrap_errors(LogicalError)
-    def __init__(self, return_data = [], simulate = False, outreach = False):
+    def __init__(self, return_data=None, simulate=False, outreach=False):
         super().__init__(False, False)
+        if return_data is None:
+            return_data = []
         self.return_data = return_data
         self.simulate = simulate
         self.outreach = outreach
-        self.set_time() # Unsolicited will always be instantiated upon command execution, unlike with FullPackets
+        self.set_time()  # Unsolicited will always be instantiated upon command execution, unlike with FullPackets
 
     @wrap_errors(LogicalError)
     def __str__(self):

@@ -1,6 +1,6 @@
 import pickle
 
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket, UnsolicitedString
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_game import TicTacToeGame
 
@@ -23,34 +23,36 @@ class TicTacToe(Mode):
         self.load_save()
 
     def execute_cycle(self) -> None:
-        if self.board_obj.check_winner() == (1, 0):
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("Human is Winner, Switched to Gamer Mode")
-            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
+        winner_state = self.board_obj.check_winner()
+        if winner_state == (1, 0):
+            self.transmit_string("Human is Winner, Switched to Gamer Mode")
+            self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
 
-        elif self.board_obj.check_winner() == (0, 1):
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("AI is Winner (Big L), Switched to Gamer Mode")
-            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
+        elif winner_state == (0, 1):
+            self.transmit_string("AI is Winner (Big L), Switched to Gamer Mode")
+            self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
 
-        elif self.board_obj.check_winner() == (1, 1):
-            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit("Game is Draw, Switched to Gamer Mode")
-            self.board_obj = TicTacToeGame(is_ai_turn_first=False)
+        elif winner_state == (1, 1):
+            self.transmit_string("Game is Draw, Switched to Gamer Mode")
+            self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
-
         else:
             if self.board_obj.is_ai_turn:
                 ai_move = self.board_obj.get_best_move()
                 self.board_obj.push(ai_move)
                 self.transmit_board()
-            elif not self.board_obj.is_ai_turn and self.next_human_move is not None:  # if there is human move in buffer
-                self.board_obj.push(self.next_human_move)  # push move
-                ai_move = self.board_obj.get_best_move()  # query ai to get move
-                self.board_obj.push(ai_move)
-                self.next_human_move = None
-                self.transmit_board()
+            elif self.next_human_move is not None:  # if there is human move in buffer
+                if not self.board_obj.is_valid_move(list(self.next_human_move)):
+                    self.transmit_string(f"Move {self.next_human_move} not valid")
+                else:
+                    self.board_obj.push(self.next_human_move)  # push move
+                    ai_move = self.board_obj.get_best_move()  # query ai to get move
+                    self.board_obj.push(ai_move)  # push ai move
+                    self.next_human_move = None
+                    self.transmit_board()
             else:  # human turn but human hasnt moved
-                # TODO: figure out how to transmit reminder to move to ground on a clock
                 pass
 
     def switch_to_gamer_mode(self):
@@ -71,10 +73,11 @@ class TicTacToe(Mode):
         Note: all encodings are with lowercase chars
         """
         encoded_board = str(self.board_obj)
-        packet = TransmissionPacket("ZTB", args=[], msn=0)
-        packet.return_code = "GME"
-        packet.return_data = [encoded_board]
-        self.sfr.command_executor.ZTB(packet)
+        self.transmit_string(encoded_board)
+
+    def transmit_string(self, message: str):
+        packet = UnsolicitedString(return_data=[message])
+        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
 
     def suggested_mode(self):
         super().suggested_mode()
