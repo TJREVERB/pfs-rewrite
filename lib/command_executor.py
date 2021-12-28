@@ -115,15 +115,15 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, error = False):
+    def transmit(self, packet: TransmissionPacket, data: list, string = False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
-        :param error: (bool) whether transmission is an error message
+        :param string: (bool) whether transmission is a string message
         :return: (bool) transmission successful
         """
-        if error:
+        if string:
             packet.numerical = False
         packet.return_data = data
         if packet.outreach:
