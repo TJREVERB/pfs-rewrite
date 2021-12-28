@@ -1,6 +1,6 @@
 import time
 from MainControlLoop.Mode.mode import Mode
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import UnsolicitedData
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
 
@@ -47,7 +47,7 @@ class Startup(Mode):
         :return: (bool) whether function ran
         """
         print("Transmitting proof of life...")
-        self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         return True
 
     @wrap_errors(LogicalError)

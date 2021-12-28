@@ -1,7 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
 import time
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import UnsolicitedData
 
 
 class Recovery(Mode):
@@ -39,7 +39,7 @@ class Recovery(Mode):
                 self.antenna()  # Antenna deployment, does nothing if antenna is already deployed
                 # Attempt to establish contact with ground
                 print("Transmitting proof of life...")
-                self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
+                self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
                 self.last_contact_attempt = time.time()
 
     @wrap_errors(LogicalError)

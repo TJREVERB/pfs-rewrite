@@ -19,7 +19,7 @@ from lib.exceptions import wrap_errors, LogicalError
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
 from Drivers.antenna_deployer import AntennaDeployer
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
 class StateFieldRegistry:
@@ -394,7 +394,7 @@ class StateFieldRegistry:
                 self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = TransmissionPacket("GPR", [], 0)
+            unsolicited_packet = UnsolicitedData("GPR") # Dunno if you want to change this to string but command executor would need to be updated as well
             self.command_executor.GPR(unsolicited_packet)
 
     class Log:
