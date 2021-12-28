@@ -3,6 +3,7 @@ import os
 import time
 import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket
+from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_game import TicTacToeGame
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -594,7 +595,10 @@ class CommandExecutor:
         return result
 
     def ZGM(self, packet: TransmissionPacket):
-        if str(self.sfr.MODE) == "Gomoku":
+        """
+        Plays move [x, y] to board. x = args[0], y = args[1]
+        """
+        if str(self.sfr.MODE) == "TicTacToe":
             if self.sfr.MODE.next_human_move is not None:
                 CommandExecutionException("Previous move not processed")
             else:
@@ -602,17 +606,30 @@ class CommandExecutor:
                 self.transmit(packet, result := [])
         else:
             raise CommandExecutionException("Cannot process move if not in tictactoe mode")
-        return result
 
     def ZTB(self, packet: TransmissionPacket):
-        if str(self.sfr.MODE) == "Gomoku":
+        """Sends encoded board state to ground"""
+        if str(self.sfr.MODE) == "TicTacToe":
             self.transmit(packet, result := [str(self.sfr.MODE.board_obj)])
         else:
             raise CommandExecutionException("Cannot send board if not in tictactoe mode")
         return result
 
     def MGA(self, packet: TransmissionPacket):
+        """Switches mode to gamer mode"""
+        if str(self.sfr.MODE) == "Gamer":
+            raise CommandExecutionException("Already in Gamer")
         self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
+        self.sfr.MODE.start()
+        self.transmit(packet, result := [])
+        return result
 
-        self.sfr.MODE
-
+    def ZCM(self, packet: TransmissionPacket):
+        """Resets board and switches who moves first"""
+        if str(self.sfr.MODE) == "TicTacToe":
+            self.sfr.MODE.board_obj = TicTacToeGame(is_ai_turn_first=not self.sfr.MODE.board_obj.is_ai_turn_first)
+            self.transmit(packet, result := [])
+        else:
+            raise CommandExecutionException("Cannot modify board if not in TicTacToe mode")
+        return result

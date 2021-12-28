@@ -1,13 +1,16 @@
 import numpy as np
 import random
+import time
+import copy
+
+
 class InvalidMoveError(Exception):
     pass
 
 
 class TicTacToeGame:
     def __init__(self, is_ai_turn_first=False):
-        3 = size
-        3 = winning_in_a_row
+        self.is_ai_turn_first=is_ai_turn_first
         self.human_board = np.zeros((3, 3))  # X
         self.ai_board = np.zeros((3, 3))  # O
         self.is_ai_turn = is_ai_turn_first
@@ -80,6 +83,19 @@ class TicTacToeGame:
             self.ai_board[x][y] = 1.0
         self.switch_turn()
 
+    def push_move_to_copy(self, location: list):
+        """returns new game object with pushed move"""
+        new_board = copy.deepcopy(self)
+        location = list(map(int, location))
+        x, y = location[0], location[1]
+        if not new_board.is_valid_move(location):
+            raise InvalidMoveError()
+        if not new_board.is_ai_turn:
+            new_board.human_board[x][y] = 1.0
+        else:
+            new_board.ai_board[x][y] = 1.0
+        new_board.switch_turn()
+        return new_board
     def get_valid_moves(self) -> list:
         """
         returns all valid moves as list of lists
@@ -95,8 +111,21 @@ class TicTacToeGame:
         valid_moves = [move for move in possible_moves if move is not None]
         return valid_moves
 
+    def minimax(self, board, is_maximizing_player, time_started):
+        if board.check_winner() == (1, 0):
+            return -10
+        elif board.check_winner() == (0, 1):
+            return 10
+        elif time.time() - 10 > time_started:
+            # timeout
+        if is_maximizing_player:
+            score = -9999
+            for move in board.get_valid_moves():
+                self.minimax(self.push_move_to_copy(move), not is_maximizing_player, time_started)
+
+
     def get_best_move(self):  # TODO: implement
-        pass
+
 
     def get_bitboard(self, array: np.array) -> int:
         new_list = [0 for _ in range(3)]
@@ -109,7 +138,8 @@ class TicTacToeGame:
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board*-1)
 
-    def __str__(self):
+    def __str__(self):  # returns encoded board
+        """ board representation for testing.
         board = np.empty((3, 3)).tolist()
         for x in range(3):
             for y in range(3):
@@ -123,6 +153,28 @@ class TicTacToeGame:
         for row in board:
             final_string += str(row) + "\n"
         return final_string
+        """
+        encoded_string = ""
+        human_board = self.human_board.reshape((9,))
+        ai_board = self.ai_board.reshape((9,))
+        for c in human_board:
+            if c == 0:
+                encoded_string += "-"
+            else:
+                encoded_string += c.lower()
+        for c in ai_board:
+            if c == 0:
+                encoded_string += "-"
+            else:
+                encoded_string += c.lower()
+        if self.is_ai_turn:
+            encoded_string += "a"
+        else:
+            encoded_string += "h"
+        return encoded_string
+
+
+
 
 
 
