@@ -318,7 +318,6 @@ class StateFieldRegistry:
             self.eps.commands["Pin On"](current_converter)
         time.sleep(.5)
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
-        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
 
     @wrap_errors(LogicalError)
     def power_off(self, component: str) -> None:
