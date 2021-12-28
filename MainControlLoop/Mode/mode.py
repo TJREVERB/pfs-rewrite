@@ -65,11 +65,11 @@ class Mode:
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer[0], appendtoqueue=False):
+            if not self.sfr.command_executor.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
                 print("Signal strength lost!")
                 break
             self.sfr.vars.transmit_buffer.pop(0)
-            print("Transmitted " + p.command_string)
+            print(f"Transmitted {p}")
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:

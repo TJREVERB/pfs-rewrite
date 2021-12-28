@@ -69,11 +69,6 @@ class Iridium(Device):
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
 
-    RETURN_CODES = [
-        "0OK",  # 0, MSG received and executed
-        "ERR"  # 1, MSG received and read, but error executing or reading
-    ]
-
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
         super().__init__(state_field_registry)
