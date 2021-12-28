@@ -1,6 +1,6 @@
 import time
 from MainControlLoop.Mode.mode import Mode
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import UnsolicitedData
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
 
@@ -34,7 +34,7 @@ class Startup(Mode):
                 time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
             return False
         # Enable power to antenna deployer
-        self.sfr.instruct["Pin On"]("Antenna Deployer")
+        self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
         print("Antenna Deployed")
@@ -47,18 +47,18 @@ class Startup(Mode):
         :return: (bool) whether function ran
         """
         print("Transmitting proof of life...")
-        self.sfr.command_executor.GPL(TransmissionPacket("GPL", [], 0))
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         return True
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
         if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # Execute cycle low battery
-            self.sfr.instruct["All Off"]()  # turn everything off
+            self.sfr.all_off()  # turn everything off
             time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
         else:  # Execute cycle normal
-            self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)  # TODO: DON'T PIN ON EVERY SINGLE CYCLE
+            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # TODO: DON'T PIN ON EVERY SINGLE CYCLE
             self.deploy_antenna()
             self.beacon.execute()
 

@@ -25,9 +25,9 @@ class Mode:
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         :param enabled_components: list of components which are enabled in this mode
         """
-        self.sfr.instruct["All Off"](exceptions=enabled_components)
+        self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
-            self.sfr.instruct["Pin On"](component)
+            self.sfr.power_on(component)
 
     @wrap_errors(LogicalError)
     def suggested_mode(self):
@@ -65,11 +65,11 @@ class Mode:
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.sfr.command_executor.transmit(p := self.sfr.vars.transmit_buffer[0], appendtoqueue=False):
+            if not self.sfr.command_executor.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
                 print("Signal strength lost!")
                 break
             self.sfr.vars.transmit_buffer.pop(0)
-            print("Transmitted " + p.command_string)
+            print(f"Transmitted {p}")
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:

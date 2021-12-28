@@ -4,6 +4,7 @@ import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
+from Drivers.transmission_packet import UnsolicitedData
 
 
 class MissionControl:
@@ -54,6 +55,15 @@ class MissionControl:
                     try:
                         self.error_dict[type(e)](e)  # tries to troubleshoot
                         continue  # Move on with MCL if troubleshooting solved problem (no additional exception)
+                    except IridiumError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_aprs(e)  <-- add this in before deployment
+                    except APRSError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_iridium(e)  <-- add this in before deployment
+                    except AntennaError as e:
+                        self.testing_mode(e)  # temporary for testing
+                        # self.safe_mode_iridium(e)  <-- add this in before deployment
                     except Exception as e:
                         self.testing_mode(e)  # troubleshooting fails
                 elif type(e) == KeyboardInterrupt:
@@ -63,9 +73,9 @@ class MissionControl:
             else:  # dont want to force run this after potential remote code exec session
                 for message_packet in self.sfr.vars.transmit_buffer:
                     if message_packet.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT:  # switch radios
-                        self.sfr.instruct["Pin Off"](self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
                         self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
-                        self.sfr.instruct["Pin On"](self.sfr.vars.PRIMARY_RADIO)
+                        self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
                         # transmit radio switched to ground
 
     def get_other_radio(self, radio):
@@ -75,13 +85,14 @@ class MissionControl:
             return "Iridium"
 
     def aprs_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.reboot("APRS")
+        self.sfr.devices["APRS"].functional()
 
     def iridium_troubleshoot(self, e: CustomException):
         print(self.get_traceback())
-        self.sfr.instruct["Pin Off"]("Iridium")
+        self.sfr.power_off("Iridium")
         time.sleep(1)
-        self.sfr.instruct["Pin On"]("Iridium")
+        self.sfr.power_on("Iridium")
         time.sleep(10)
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
@@ -92,13 +103,16 @@ class MissionControl:
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
 
     def imu_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.power_on("IMU")
+        # TODO: transmit down a notification
 
     def battery_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
     
     def antenna_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        self.sfr.reboot("Antenna Deployer")
+        self.sfr.devices["Antenna Deployer"].functional()
+        # TODO: transmit down a notification
     
     def high_power_draw_troubleshoot(self, e: CustomException):
         raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
@@ -110,13 +124,13 @@ class MissionControl:
         Then cleanly exit
         """
         print("ERROR!!!")
-        print(f"Currently in {type(self.sfr.vars.MODE).__name__}")
+        print(f"Currently in {type(self.sfr.MODE).__name__}")
         print("State field registry fields:")
         print(self.sfr.vars.to_dict())
         print("Exception: ")
         print(repr(e))
         print(self.get_traceback())
-        self.sfr.instruct["All Off"](override_default_exceptions=True)
+        self.sfr.all_off()
         self.sfr.clear_logs()
         exit(1)
 
@@ -126,7 +140,7 @@ class MissionControl:
 
     def get_correct_safe_mode(self):
         try:
-            self.sfr.instruct["Pin On"]("Iridium")
+            self.sfr.power_on("Iridium")
             self.sfr.devices["Iridium"].transmit("Iridium safe mode enabled")
         except Exception:
             pass
@@ -134,7 +148,7 @@ class MissionControl:
             return self.safe_mode_iridium
 
         try:
-            self.sfr.instruct["Pin On"]("APRS")
+            self.sfr.power_on("APRS")
             self.sfr.devices["APRS"].transmit("APRS safe mode enabled")
         except Exception:
             os.system("sudo reboot")  # PFS team took an L
@@ -149,7 +163,9 @@ class MissionControl:
         Precondition: iridium is functional
         """
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["Iridium"].transmit(repr(e))
+        self.sfr.devices["Iridium"].transmit_raw(repr(e))
+        self.sfr.set_primary_radio("Iridium")
+        self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()
@@ -158,7 +174,9 @@ class MissionControl:
 
     def safe_mode_aprs(self, e: Exception):
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["APRS"].transmit(repr(e))
+        self.sfr.devices["APRS"].transmit_raw(repr(e))
+        self.sfr.set_primary_radio("APRS")
+        self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["APRS"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["APRS"].next_msg()
@@ -167,9 +185,9 @@ class MissionControl:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
             if self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD:
-                self.sfr.instruct["Pin Off"]("APRS")
+                self.sfr.power_off("APRS")
                 time.sleep(90*60)  # charge for one orbit
-                self.sfr.instruct["Pin On"]("APRS")
+                self.sfr.power_on("APRS")
 
 
 if __name__ == "__main__":

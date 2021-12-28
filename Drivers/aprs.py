@@ -1,6 +1,6 @@
 from serial import Serial
 import time
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, APRSError, LogicalError
 from Drivers.device import Device
 import copy
@@ -217,10 +217,10 @@ class APRS(Device):
         msg = self.read()
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.command_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+            self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.outreach_buffer.append(TransmissionPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1], outreach=True)))
+            self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:

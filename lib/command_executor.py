@@ -72,19 +72,19 @@ class CommandExecutor:
     def execute(self):
         command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
-            print("Command received: " + command_packet.command_string)
+            print("Command received: " + command_packet.descriptor)
             to_log = {
                 "ts0": (t := datetime.datetime.utcnow()).timestamp(),
                 "ts1": (t := datetime.datetime.utcnow()).timestamp(), # TODO: I don't know what these are supposed to be
                 "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
-                "command": command_packet.command_string,
+                "command": command_packet.descriptor,
                 "arg": ":".join(command_packet.args),
                 "registry": "Primary",
                 "msn": command_packet.msn
             }
-            command_packet.timestamp = (t.day, t.hour, t.minute)
+            command_packet.set_time()
             try:
-                to_log["result"] = ":".join(self.primary_registry[command_packet.command_string](command_packet))
+                to_log["result"] = ":".join(self.primary_registry[command_packet.descriptor](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
@@ -94,19 +94,19 @@ class CommandExecutor:
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
-            print("Command received: " + command_packet.command_string)
+            print("Command received: " + command_packet.descriptor)
             to_log = {
                 "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
                 "ts1": int(t.timestamp() % 100000),
                 "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
-                "command": command_packet.command_string,
+                "command": command_packet.descriptor,
                 "arg": ":".join(command_packet.args),
                 "registry": "Secondary",
                 "msn": command_packet.msn
             }
-            command_packet.timestamp = (t.day, t.hour, t.minute)
+            command_packet.set_time()
             try:
-                to_log["result"] = ":".join(self.secondary_registry[command_packet.command_string](command_packet))
+                to_log["result"] = ":".join(self.secondary_registry[command_packet.descriptor](command_packet))
             except CommandExecutionException as e:
                 self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
                 to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
@@ -116,24 +116,17 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list = None, error = False, appendtoqueue = True):
+    def transmit(self, packet: TransmissionPacket, data: list, string = False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
-        :param error: (bool) whether transmission is an error message
-        :param appendtoqueue: (bool) whether to append to queue in case of failure. 
-        Defaults to true, but should be set false when transmitting a packet already in queue
+        :param string: (bool) whether transmission is a string message
         :return: (bool) transmission successful
         """
-        if error:
-            packet.return_code = "ERR"
-        else:
-            packet.return_code = "0OK"
-        if packet.return_data is None:
-            packet.return_data = data
-        d = datetime.datetime.utcnow()
-        packet.timestamp = (d.day, d.hour, d.minute)
+        if string:
+            packet.numerical = False
+        packet.return_data = data
         if packet.outreach:
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
@@ -144,10 +137,25 @@ class CommandExecutor:
                     self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
                     return True
                 except NoSignalException as e:
-                    if appendtoqueue:
-                        print("No Iridium connectivity, appending to buffer...")
-                        self.sfr.vars.transmit_buffer.append(p)
+                    print("No Iridium connectivity, appending to buffer...")
+                    self.sfr.vars.transmit_buffer.append(p)
                     return False
+    
+    @wrap_errors(LogicalError)
+    def transmit_from_buffer(self, packet: TransmissionPacket):
+        """
+        Transmit a message that has been read from buffer, do not append back to buffer
+        Do not append data to packet
+        Do not split packet
+        :param packet: (TransmissionPacket) packet
+        :return: (bool) transmission successful
+        """
+        try:
+            self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+            return True
+        except NoSignalException as e:
+            print("No Iridium connectivity, aborting transmit")
+            return False
 
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
@@ -452,14 +460,14 @@ class CommandExecutor:
         packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
-            command_result = self.primary_registry[packet.args[0].command_string](packet.args[0])
+            command_result = self.primary_registry[packet.args[0].descriptor](packet.args[0])
         except Exception as e:  # Store error as a string
             command_result = [repr(e)]
         # Transmit number of bytes taken up by command result
         if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
             # Remove first 7 mandatory bytes from calculation
             self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
-                packet.args[0].command_string, packet.args[0].return_code, packet.args[0].msn,
+                packet.args[0].descriptor, packet.args[0].return_code, packet.args[0].msn,
                 packet.args[0].timestamp, packet.args[0].return_data)[6:])])
         else:  # APRS doesn't encode
             # Only factor in size of return data

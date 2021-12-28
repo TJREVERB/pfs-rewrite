@@ -2,7 +2,7 @@ import time, datetime
 import math
 from serial import Serial
 import copy
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
     NoSignalException
 from Drivers.device import Device
@@ -25,8 +25,6 @@ class Iridium(Device):
     SERIAL_CONVERTERS = ["UART-RS232"]
     PORT = '/dev/serial0'
     BAUDRATE = 19200
-
-    STR_DATA = {"ERR", "GME"}
 
     MAX_DATASIZE = 294 # Maximum permissible data size not including descriptor size, in bytes. Hardware limitation should be 340 bytes total, or 334 for just data
 
@@ -70,12 +68,6 @@ class Iridium(Device):
     ]
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
-
-    RETURN_CODES = [
-        "0OK",  # 0, MSG received and executed
-        "ERR",  # 1, MSG received and read, but error executing or reading
-        "GME",  # 2, MSG is a string notification from gamer mode
-    ]
 
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
@@ -250,36 +242,32 @@ class Iridium(Device):
         return data.split(cmd + ":")[1].split("\r\nOK")[0].strip()
 
     @wrap_errors(IridiumError)
-    def encode(self, descriptor, return_code, msn, time, data):
+    def encode(self, packet:TransmissionPacket):
         """
         Encodes string for transmit using numbered codes
-        :param descriptor: (str) 3 character string code
-        :param msn: (int) message sequence number of command response
-        :param time: (tuple) time of command execution, in (days, hours, minutes)
-        :param data: (list) of data values to encode, in order.
-        :param err: (bool) if True, encode data as string error message (single length list containing error string). 
-        if False (default), encode data as float values
+        :param packet: (TransmissionPacket) packet to encode
         :return: (list) of bytes
         """
-        if descriptor in Iridium.ENCODED_REGISTRY:  # First byte descriptor
-            encoded = [Iridium.ENCODED_REGISTRY.index(descriptor)]
-        else:
-            raise LogicalError(details="Invalid descriptor string")
-        if return_code in Iridium.RETURN_CODES:  # Second byte return code
-            encoded.append(Iridium.RETURN_CODES.index(return_code))
-        else:
-            raise LogicalError(details="Invalid return code")
-        encoded.append((msn >> 8) & 0xff)  # third and fourth bytes msn, msb first
-        encoded.append(msn & 0xff)
-        date = (time[0] << 11) | (time[1] << 6) | time[2]  # fifth and sixth bytes date, msb first
+        encoded = [(packet.response << 1) | packet.numerical] # First byte "return code"
+        date = (packet.timestamp.day << 11) | (packet.timestamp.hour << 6) | packet.timestamp.minute  # second and third bytes date
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
-        if return_code in Iridium.STR_DATA:
-            data = data[0].encode("ascii")
-            for d in data:
-                encoded.append(d)
+        if packet.response:
+            if packet.descriptor in Iridium.ENCODED_REGISTRY:
+                encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fourth byte descriptor
+            else:
+                raise LogicalError(details="Invalid descriptor string")
+            encoded.append((packet.msn >> 8) & 0xff) # Fifth and sixth byte msn
+            encoded.append(packet.msn & 0xff)
         else:
-            for n in data:
+            if packet.numerical:
+                if packet.descriptor in Iridium.ENCODED_REGISTRY:
+                    encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fourth byte descriptor
+                else:
+                    raise LogicalError(details="Invalid descriptor string")
+        
+        if packet.numerical:
+            for n in packet.return_data:
                 # convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
@@ -309,6 +297,10 @@ class Iridium(Device):
                 encoded.append(byte1)  # MSB FIRST
                 encoded.append(byte2)
                 encoded.append(byte3)  # LSB LAST
+        else:
+            data = packet.return_data[0].encode("ascii")
+            for d in data:
+                encoded.append(d)
         return encoded
 
     @wrap_errors(IridiumError)
@@ -358,7 +350,7 @@ class Iridium(Device):
         Splits the packet into a list of packets which abide by size limits
         """
         FLOAT_LEN = 3
-        if packet.return_code in Iridium.STR_DATA:
+        if packet.return_code == "ERR":
             data = packet.return_data[0]
             ls = [data[0 + i:Iridium.MAX_DATASIZE + i] for i in range(0, len(data), Iridium.MAX_DATASIZE)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
@@ -399,15 +391,13 @@ class Iridium(Device):
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                    self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), msn=int(ls[3])))
+                    self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
                 except Exception as e:
-                    self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(
-                        ls[3])))  # Append garbled message indicator and msn, args set to exception string to debug
+                    self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))  
+                    # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
-        result = self.transmit_raw(
-            raw := self.encode(packet.command_string, packet.return_code, packet.msn, packet.timestamp,
-                               packet.return_data))
+        result = self.transmit_raw(raw := self.encode(packet))
         self.sfr.logs["transmission"].write({  # Log transmission
             "ts0": (t := time.time()) // 100000,
             "ts1": int(t % 100000),
@@ -426,10 +416,10 @@ class Iridium(Device):
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), msn=int(result[3])))
+                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
             except Exception as e:
-                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(
-                    result[3])))  # Append garbled message indicator and msn, args set to exception string to debug
+                self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
+                # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         return True
@@ -488,9 +478,9 @@ class Iridium(Device):
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(ls[3])))
+                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
             except Exception as e:
-                self.sfr.vars.command_buffer.append(TransmissionPacket("GRB", [repr(e)], int(ls[3])))  
+                self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))
                 # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
@@ -520,10 +510,10 @@ class Iridium(Device):
                             raise IridiumError(details="Serial Timeout")
                         raw += self.serial.read(50)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                    self.sfr.vars.command_buffer.append(TransmissionPacket(*self.decode(list(raw)), int(result[3])))
+                    self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
                 except Exception as e:
-                    self.sfr.vars.command_buffer.append(
-                        TransmissionPacket("GRB", [repr(e)], int(ls[3])))  # Append garbled message indicator and msn
+                    self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
+                    # Append garbled message indicator and msn
             elif result[2] == 0:
                 break
             elif result[2] == 2:
