@@ -26,7 +26,7 @@ class Iridium(Device):
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 
-    MAX_DATASIZE = 294 # Maximum permissible data size not including descriptor size, in bytes. Hardware limitation should be 340 bytes total, or 334 for just data
+    MAX_DATASIZE = 300 # Maximum permissible data size including descriptor size, in bytes. Hardware limitation should be 340 bytes total
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
@@ -249,20 +249,21 @@ class Iridium(Device):
         :return: (list) of bytes
         """
         encoded = [(packet.response << 1) | packet.numerical] # First byte "return code"
-        date = (packet.timestamp.day << 11) | (packet.timestamp.hour << 6) | packet.timestamp.minute  # second and third bytes date
+        encoded.append(packet.index) # Second byte index
+        date = (packet.timestamp.day << 11) | (packet.timestamp.hour << 6) | packet.timestamp.minute  # third and fourth bytes date
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
         if packet.response:
             if packet.descriptor in Iridium.ENCODED_REGISTRY:
-                encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fourth byte descriptor
+                encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
             else:
                 raise LogicalError(details="Invalid descriptor string")
-            encoded.append((packet.msn >> 8) & 0xff) # Fifth and sixth byte msn
+            encoded.append((packet.msn >> 8) & 0xff) # Sixth and Seventh byte msn
             encoded.append(packet.msn & 0xff)
         else:
             if packet.numerical:
                 if packet.descriptor in Iridium.ENCODED_REGISTRY:
-                    encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fourth byte descriptor
+                    encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
                 else:
                     raise LogicalError(details="Invalid descriptor string")
         
@@ -350,19 +351,28 @@ class Iridium(Device):
         Splits the packet into a list of packets which abide by size limits
         """
         FLOAT_LEN = 3
-        if packet.return_code == "ERR":
-            data = packet.return_data[0]
-            ls = [data[0 + i:Iridium.MAX_DATASIZE + i] for i in range(0, len(data), Iridium.MAX_DATASIZE)]
-            result = [copy.deepcopy(packet) for _ in range(len(ls))]
-            for _ in range(len(ls)):
-                result[_].return_data = [ls[_]]
-        else:
+
+        DESCRIPTOR_LEN = 4
+        if packet.response:
+            DESCRIPTOR_LEN = 7
+        elif packet.numerical:
+            DESCRIPTOR_LEN = 5
+        
+        if packet.numerical:
             data = packet.return_data
-            ls = [data[0 + i:Iridium.MAX_DATASIZE//FLOAT_LEN + i] for i in range(
-                0, len(data), Iridium.MAX_DATASIZE//FLOAT_LEN)]
+            ls = [data[0 + i:(Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)//FLOAT_LEN + i] for i in range(
+                0, len(data), (Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)//FLOAT_LEN)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
             for _ in range(len(ls)):
                 result[_].return_data = ls[_]
+                result[_].index = _
+        else:
+            data = packet.return_data[0]
+            ls = [data[0 + i:Iridium.MAX_DATASIZE-DESCRIPTOR_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)]
+            result = [copy.deepcopy(packet) for _ in range(len(ls))]
+            for _ in range(len(ls)):
+                result[_].return_data = [ls[_]]
+                result[_].index = _
         return result
 
     @wrap_errors(IridiumError)
