@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 import pandas as pd
-from Drivers.transmission_packet import ResponsePacket
+from Drivers.transmission_packet import TransmissionPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -69,7 +69,7 @@ class CommandExecutor:
 
     @wrap_errors(LogicalError)
     def execute(self):
-        command_packet: ResponsePacket
+        command_packet: TransmissionPacket
         for command_packet in self.sfr.vars.command_buffer:
             print("Command received: " + command_packet.command_string)
             to_log = {
@@ -115,10 +115,10 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: ResponsePacket, data: list = None, error = False, appendtoqueue = True):
+    def transmit(self, packet: TransmissionPacket, data: list = None, error = False, appendtoqueue = True):
         """
         Transmit a message over primary radio
-        :param packet: (ResponsePacket) packet of received transmission
+        :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param error: (bool) whether transmission is an error message
         :param appendtoqueue: (bool) whether to append to queue in case of failure. 
@@ -149,7 +149,7 @@ class CommandExecutor:
                     return False
 
     @wrap_errors(CommandExecutionException)
-    def MCH(self, packet: ResponsePacket) -> list:
+    def MCH(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to charging mode
         """
@@ -163,7 +163,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MSC(self, packet: ResponsePacket) -> list:
+    def MSC(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to science mode
         """
@@ -176,7 +176,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MOU(self, packet: ResponsePacket) -> list:
+    def MOU(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to outreach mode
         """
@@ -189,7 +189,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MRP(self, packet: ResponsePacket) -> list:
+    def MRP(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to Repeater mode
         """
@@ -202,7 +202,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MLK(self, packet: ResponsePacket) -> list:
+    def MLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Mode Lock
         """
@@ -211,7 +211,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MDF(self, packet: ResponsePacket) -> list:
+    def MDF(self, packet: TransmissionPacket) -> list:
         """
         Disable mode lock
         """
@@ -220,7 +220,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def DLK(self, packet: ResponsePacket) -> list:
+    def DLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Device Lock
         """
@@ -241,7 +241,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def DDF(self, packet: ResponsePacket) -> list:
+    def DDF(self, packet: TransmissionPacket) -> list:
         """
         Disable Device Lock
         """
@@ -262,7 +262,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GCR(self, packet: ResponsePacket) -> list:
+    def GCR(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last command run
         """
@@ -271,7 +271,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GVT(self, packet: ResponsePacket) -> list:
+    def GVT(self, packet: TransmissionPacket) -> list:
         """
         Reads and Transmits Battery Voltage
         """
@@ -279,7 +279,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GPL(self, packet: ResponsePacket) -> list:
+    def GPL(self, packet: TransmissionPacket) -> list:
         """
         Transmit proof of life
         """
@@ -289,12 +289,12 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GPR(self, packet: ResponsePacket):
+    def GPR(self, packet: TransmissionPacket):
         self.transmit(packet, result := [self.sfr.components.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GCD(self, packet: ResponsePacket) -> list:
+    def GCD(self, packet: TransmissionPacket) -> list:
         """
         Transmits detailed critical data
         Transmits:
@@ -330,7 +330,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GPW(self, packet: ResponsePacket) -> list:
+    def GPW(self, packet: TransmissionPacket) -> list:
         """
         Transmit total power draw of satellite
         """
@@ -338,7 +338,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GOP(self, packet: ResponsePacket) -> list:
+    def GOP(self, packet: TransmissionPacket) -> list:
         """
         Transmits current orbital period
         """
@@ -346,7 +346,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GCS(self, packet: ResponsePacket) -> list:
+    def GCS(self, packet: TransmissionPacket) -> list:
         """
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
@@ -355,7 +355,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GSV(self, packet: ResponsePacket) -> list:
+    def GSV(self, packet: TransmissionPacket) -> list:
         """
         Transmit signal strength variability
         """
@@ -363,7 +363,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GSG(self, packet: ResponsePacket) -> list:
+    def GSG(self, packet: TransmissionPacket) -> list:
         """
         Transmit solar generation
         """
@@ -371,7 +371,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GTB(self, packet: ResponsePacket) -> list:
+    def GTB(self, packet: TransmissionPacket) -> list:
         """
         Transmit full IMU tumble
         """
@@ -380,7 +380,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GMT(self, packet: ResponsePacket) -> list:
+    def GMT(self, packet: TransmissionPacket) -> list:
         """
         Transmit magnitude IMU tumble
         """
@@ -390,7 +390,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GTS(self, packet: ResponsePacket) -> list:
+    def GTS(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last mode switch
         """
@@ -399,7 +399,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def AAP(self, packet: ResponsePacket) -> list:
+    def AAP(self, packet: TransmissionPacket) -> list:
         """
         Transmits average power draw over n data points
         """
@@ -408,7 +408,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def APW(self, packet: ResponsePacket) -> list:  # TODO: Test
+    def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n power draw datapoints
         """
@@ -417,7 +417,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ASV(self, packet: ResponsePacket) -> list:
+    def ASV(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n signal strength datapoints
         """
@@ -426,7 +426,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ASG(self, packet: ResponsePacket) -> list:  # TODO: Test
+    def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
         """
         Transmits last n solar generation datapoints
         """
@@ -435,7 +435,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ATB(self, packet: ResponsePacket) -> list:
+    def ATB(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n IMU tumble datapoints
         """
@@ -444,7 +444,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ARS(self, packet: ResponsePacket) -> list:  # TODO: FIX
+    def ARS(self, packet: TransmissionPacket) -> list:  # TODO: FIX
         """
         Transmits expected size of a given command
         """
@@ -466,7 +466,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def AMS(self, packet: ResponsePacket) -> list:
+    def AMS(self, packet: TransmissionPacket) -> list:
         """
         Repeat result of command with given MSN
         """
@@ -481,7 +481,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def SUV(self, packet: ResponsePacket) -> list:
+    def SUV(self, packet: TransmissionPacket) -> list:
         """
         Set upper threshold for mode switch
         """
@@ -491,7 +491,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def SLV(self, packet: ResponsePacket) -> list:
+    def SLV(self, packet: TransmissionPacket) -> list:
         """
         Set lower threshold for mode switch
         """
@@ -501,7 +501,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def USM(self, packet: ResponsePacket) -> list:
+    def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
         Transmits:
@@ -535,7 +535,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ULG(self, packet: ResponsePacket) -> list:
+    def ULG(self, packet: TransmissionPacket) -> list:
         """
         Transmit full rssi data logs
         """
@@ -544,7 +544,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ITM(self, packet: ResponsePacket) -> list:
+    def ITM(self, packet: TransmissionPacket) -> list:
         """
         Transmits an OK code
         """
@@ -554,7 +554,7 @@ class CommandExecutor:
     # TODO: Implement, how to power cycle satelitte without touching CPU power
     @wrap_errors(CommandExecutionException)
     def IPC(self,
-            packet: ResponsePacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
+            packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
         """
         Power cycle satellite
         """
@@ -565,7 +565,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IRB(self, packet: ResponsePacket) -> None:
+    def IRB(self, packet: TransmissionPacket) -> None:
         """
         Reboot pi
         """
@@ -574,7 +574,7 @@ class CommandExecutor:
         os.system("sudo reboot")
 
     @wrap_errors(CommandExecutionException)
-    def ICE(self, packet: ResponsePacket):
+    def ICE(self, packet: TransmissionPacket):
         """Runs exec on string"""
         command = packet.args[0]
         exec(f"{command}")
@@ -582,13 +582,13 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IGO(self, packet: ResponsePacket):
+    def IGO(self, packet: TransmissionPacket):
         self.sfr.vars.ENABLE_SAFE_MODE = False
         self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IAK(self, packet: ResponsePacket):
+    def IAK(self, packet: TransmissionPacket):
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result
