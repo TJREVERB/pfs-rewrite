@@ -26,16 +26,19 @@ class TicTacToe(Mode):
         winner_state = self.board_obj.check_winner()
         if winner_state == (1, 0):
             self.transmit_string("Human is Winner, Switched to Gamer Mode")
+            self.transmit_board()
             self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
 
         elif winner_state == (0, 1):
             self.transmit_string("AI is Winner (Big L), Switched to Gamer Mode")
+            self.transmit_board()
             self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
 
         elif winner_state == (1, 1):
             self.transmit_string("Game is Draw, Switched to Gamer Mode")
+            self.transmit_board()
             self.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=False)
             self.switch_to_gamer_mode()
         else:
