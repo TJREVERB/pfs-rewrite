@@ -366,15 +366,9 @@ class StateFieldRegistry:
         :param override_default_exceptions: (bool) whether or not to use default exceptions
         :return: None
         """
-        if override_default_exceptions:
-            default_exceptions = []
-        else:
-            default_exceptions = ["Antenna Deployer", "IMU"]
-        if exceptions is not None:
-            for exception in exceptions:
-                default_exceptions.append(exception)
-
-        exceptions = default_exceptions
+        exceptions = exceptions or []
+        if not override_default_exceptions:
+            exceptions += ["Antenna Deployer", "IMU"]
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions

@@ -22,7 +22,7 @@ class Startup(Mode):
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
-        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
+        super().start(["Iridium"])
 
     @wrap_errors(LogicalError)
     def deploy_antenna(self) -> bool:
