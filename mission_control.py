@@ -97,25 +97,27 @@ class MissionControl:
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
     def eps_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
 
-    def rtc_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+    def rtc_troubleshoot(self, e: CustomException):  # TODO: implement
+        pass
 
     def imu_troubleshoot(self, e: CustomException):
-        self.sfr.power_on("IMU")
-        # TODO: transmit down a notification
+        self.sfr.power_off("IMU")
+        unsolicited_packet = UnsolicitedString("IMU failure, turned off IMU")
+        self.sfr.command_executor.transmit(unsolicited_packet)
 
     def battery_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
     
     def antenna_troubleshoot(self, e: CustomException):
         self.sfr.reboot("Antenna Deployer")
         self.sfr.devices["Antenna Deployer"].functional()
-        # TODO: transmit down a notification
     
     def high_power_draw_troubleshoot(self, e: CustomException):
-        raise e  # TODO: IMPLEMENT BASIC TROUBLESHOOTING
+        exit()
+        # EPS will reset automatically after a while which will reset busses
+        # this ensures the python files don't get corrupted when that happens
 
     def testing_mode(self, e: Exception):
         """
@@ -142,17 +144,24 @@ class MissionControl:
         try:
             self.sfr.power_on("Iridium")
             self.sfr.devices["Iridium"].functional()
-            self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))  # TODO: fix this Khoi
-        except Exception:
+        except IridiumError:
             pass
         else:
+            sent_successfully = False
+            while not sent_successfully:  # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
+                try:
+                    self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))
+                except NoSignalException:
+                    pass
+                else:
+                    sent_successfully = True
             return self.safe_mode_iridium
 
         try:
             self.sfr.power_on("APRS")
             self.sfr.devices["APRS"].functional()
             self.sfr.devices["APRS"].transmit(UnsolicitedString("APRS safe mode enabled"))
-        except Exception:
+        except APRSError:
             os.system("sudo reboot")  # PFS team took an L
         else:
             return self.safe_mode_aprs

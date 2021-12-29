@@ -115,5 +115,3 @@ class Battery(Device):
         if self.telemetry["IDIRBAT"]() != 0:
             pwr *= -1
         return pwr
-
-    # TODO: IMPLEMENT FUNCTIONAL
