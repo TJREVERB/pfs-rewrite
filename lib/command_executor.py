@@ -68,50 +68,43 @@ class CommandExecutor:
         }
 
     @wrap_errors(LogicalError)
-    def execute(self):
-        command_packet: TransmissionPacket
+    def execute(self, packet: TransmissionPacket, registry: dict):
+        """
+        Execute a single command packet using the given command registry
+        :param packet: packet for received command
+        :param registry: command registry to use
+        """
+        print("Command received: " + packet.descriptor)
+        to_log = {
+            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
+            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "radio": self.sfr.vars.PRIMARY_RADIO,
+            "command": packet.descriptor,
+            "arg": ":".join(packet.args),
+            "registry": "Primary",
+            "msn": packet.msn
+        }
+        packet.set_time()
+        try:
+            to_log["result"] = ":".join(registry[packet.descriptor](packet))
+        except CommandExecutionException as e:
+            self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+        finally:
+            self.sfr.logs["command"].write(to_log)
+            self.sfr.vars.LAST_COMMAND_RUN = time.time()
+
+    @wrap_errors(LogicalError)
+    def execute_buffers(self):
+        """
+        Iterate through command and outreach buffers and execute all commands
+        """
         for command_packet in self.sfr.vars.command_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-                "ts1": int(t.timestamp()) % 100000, # last 5 digits
-                "radio": self.sfr.vars.PRIMARY_RADIO,
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Primary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.primary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
+            self.execute(command_packet, self.primary_registry)
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
-                "ts1": int(t.timestamp() % 100000),
-                "radio": self.sfr.PRIMARY_RADIO,
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Secondary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.secondary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
+            self.execute(command_packet, self.secondary_registry)
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
@@ -299,7 +292,7 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
-        self.transmit(packet, result := [self.sfr.components.index(self.sfr.vars.PRIMARY_RADIO)])
+        self.transmit(packet, result := [self.sfr.COMPONENTS.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -417,7 +410,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def APW(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n power draw datapoints
         """
@@ -435,7 +428,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def ASG(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n solar generation datapoints
         """
@@ -533,8 +526,8 @@ class CommandExecutor:
             int(startdif % 100000),
             int(laststartdif / 100000) * 100000,
             int(laststartdif % 100000),
-            self.sfr.analytics.total_power_consumed(),
-            self.sfr.analytics.total_power_generated(),
+            self.sfr.analytics.total_energy_consumed(),
+            self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),

@@ -23,7 +23,9 @@ from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
 class StateFieldRegistry:
-    components = [
+    PDMS = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
+    PANELS = ["bcr1", "bcr2", "bcr3"]
+    COMPONENTS = [
         "APRS",
         "Iridium",
         "IMU",
@@ -77,7 +79,7 @@ class StateFieldRegistry:
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
-                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
                 int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
                 int(self.LAST_DAYLIGHT_ENTRY % 100000),
                 int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
@@ -88,9 +90,10 @@ class StateFieldRegistry:
                 self.VOLT_UPPER_THRESHOLD,
                 self.VOLT_LOWER_THRESHOLD,
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
+                StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
-                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
                      if self.LOCKED_DEVICES[i]]),
                 int(self.CONTACT_ESTABLISHED),
                 int(self.START_TIME / 100000) * 100000,
@@ -123,10 +126,9 @@ class StateFieldRegistry:
             "sfr": self.Log("./lib/data/state_field_log.pkl", None),
             "sfr_readable": self.Log("./lib/data/state_field_log.json", None),
             "power": self.Log("./lib/data/pwr_draw_log.csv",
-                              ["ts0", "ts1", "buspower", "0x01", "0x02", "0x03", "0x04", "0x05",
-                               "0x06", "0x07", "0x08", "0x09", "0x0A"]),
+                              ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": self.Log("./lib/data/solar_generation_log.csv",
-                              ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
+                              ["ts0", "ts1"] + self.PANELS),
             "voltage_energy": self.Log("./lib/data/volt-energy-map.csv",
                                        ["voltage", "energy"]),
             "orbits": self.Log("./lib/data/orbit_log.csv",
@@ -392,7 +394,6 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
-        # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
@@ -404,7 +405,7 @@ class StateFieldRegistry:
                 self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = UnsolicitedString(return_data = [f"Switched to {self.sfr.vars.PRIMARY_RADIO}"])
+            unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
 
     class Log:

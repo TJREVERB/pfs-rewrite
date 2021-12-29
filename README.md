@@ -46,7 +46,7 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
       1. Switches on all PDMs.
       2. Calls **iridium.wave** to send hardcoded message down to groundstation over Iridium, completing mission objective of testing Iridium.
       3. Enters either CHARGING or SCIENCE mode depending on remaining battery voltage.
-   8. The **execute** method first reads in data from our components, then decides what to do with that information.
+   8. The **execute_buffers** method first reads in data from our components, then decides what to do with that information.
       1. **aprs.read**
       2. Requests battery voltage from EPS
       3. **command_interpreter**
@@ -56,7 +56,7 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
       1. Sets START_TIME in **sfr**.
       2. Calls **on_startup** if in STARTUP mode.
       3. Calls **ioc** if in IOC mode.
-      4. Calls **execute** in an infinite loop.
+      4. Calls **execute_buffers** in an infinite loop.
 4. **aprs.py** contains all code pertaining to the APRS.
    1. The **read** method reads and returns a message received over the APRS, and adds it to the **StateFieldRegistry**.
    2. The **write** method transmits a message through the APRS.

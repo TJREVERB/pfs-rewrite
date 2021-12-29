@@ -44,7 +44,7 @@ class Mode:
         """
         Executes one iteration of mode
         For example: measure signal strength as the orbit location changes.
-        NOTE: This method should not execute radio commands, that is done by command_executor class.
+        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
         """
         self.iridium_clock.execute()
         self.read_aprs()
