@@ -29,7 +29,7 @@ class Logger:
             "buspower": str(buspower),
         }
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}"] = pwr[i]
+            data[self.sfr.PDMS] = pwr[i]
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
