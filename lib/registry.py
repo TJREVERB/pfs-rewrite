@@ -394,7 +394,6 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
-        # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
@@ -406,7 +405,7 @@ class StateFieldRegistry:
                 self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = UnsolicitedString(return_data = [f"Switched to {self.sfr.vars.PRIMARY_RADIO}"])
+            unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
 
     class Log:

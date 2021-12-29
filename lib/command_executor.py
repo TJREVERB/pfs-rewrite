@@ -409,7 +409,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def APW(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n power draw datapoints
         """
@@ -427,7 +427,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def ASG(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n solar generation datapoints
         """
