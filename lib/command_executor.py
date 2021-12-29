@@ -3,7 +3,7 @@ import os
 import time
 import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_game import TicTacToeGame
+from MainControlLoop.Mode.gamer_mode.tictactoe_game import TicTacToeGame
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -167,6 +167,17 @@ class CommandExecutor:
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
             self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
+        self.sfr.MODE.start()
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def MGA(self, packet: TransmissionPacket):
+        """Switches mode to gamer mode"""
+        if str(self.sfr.MODE) == "Gamer":
+            raise CommandExecutionException("Already in Gamer")
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
         self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
@@ -602,43 +613,17 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    def ZGM(self, packet: TransmissionPacket):
-        """
-        Plays move [x, y] to board. x = args[0], y = args[1]
-        """
-        if str(self.sfr.MODE) == "TicTacToe":
-            if self.sfr.MODE.next_human_move is not None:
-                CommandExecutionException("Previous move not processed")
-            else:
-                self.sfr.MODE.next_human_move = [packet.args[0], packet.args[1]]
-                self.transmit(packet, result := [])
-        else:
-            raise CommandExecutionException("Cannot process move if not in tictactoe mode")
-
-    def ZTB(self, packet: TransmissionPacket):
-        """Sends encoded board state to ground"""
-        if str(self.sfr.MODE) == "TicTacToe":
-            self.transmit(packet, result := [str(self.sfr.MODE.board_obj)])
-        else:
-            raise CommandExecutionException("Cannot send board if not in tictactoe mode")
-        return result
-
-    def MGA(self, packet: TransmissionPacket):
-        """Switches mode to gamer mode"""
+    @wrap_errors(CommandExecutionException)
+    def ZMV(self, packet: TransmissionPacket):
         if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in Gamer")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
-        self.sfr.MODE.start()
+            raise CommandExecutionException("Cannot push to gamer mode move queue if not in gamer mode")
+        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        # game_type format = "Chess", "TicTacToe", game_id = 10 digit number (string), game_string = game.__str__
+        self.sfr.MODE.game_queue.append(game_type+game_string+game_id)
         self.transmit(packet, result := [])
         return result
 
-    def ZCM(self, packet: TransmissionPacket):
-        """Resets board"""
-        if str(self.sfr.MODE) == "TicTacToe":
-            is_ai_turn_first = packet.args[0]
-            self.sfr.MODE.board_obj = TicTacToeGame(self.sfr, is_ai_turn_first=is_ai_turn_first)
-            self.transmit(packet, result := [])
-        else:
-            raise CommandExecutionException("Cannot modify board if not in TicTacToe mode")
-        return result
+
+
+
+
