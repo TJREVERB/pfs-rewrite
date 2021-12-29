@@ -94,7 +94,7 @@ class Mode:
         """
         Performs a systems check of components that are on and returns a list of component failures
         Throws error if .functional() fails
-        TODO: implement system check of antenna deployer
+        TODO: do not check devices that are locked off
         """
         for device in self.sfr.devices.keys():
             if self.sfr.devices[device].functional() is False:
