@@ -28,8 +28,8 @@ class Logger:
             "ts1": int(t % 100000),
             "buspower": str(buspower),
         }
-        for i in range(len(pwr)):
-            data[self.sfr.PDMS] = pwr[i]
+        for i in pwr:
+            data[self.sfr.PDMS] = i
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
