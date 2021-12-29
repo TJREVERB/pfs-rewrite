@@ -110,7 +110,7 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list = None, string = False):
+    def transmit(self, packet: TransmissionPacket, data: list, string=False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -135,7 +135,7 @@ class CommandExecutor:
                     print("No Iridium connectivity, appending to buffer...")
                     self.sfr.vars.transmit_buffer.append(p)
                     return False
-    
+
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
         """
@@ -565,7 +565,7 @@ class CommandExecutor:
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         if not packet.simulate:
-            exit(0) # Exit script, eps will reset after 4 minutes without ping
+            exit(0)  # Exit script, eps will reset after 4 minutes without ping
         return []
 
     @wrap_errors(CommandExecutionException)
