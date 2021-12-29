@@ -559,17 +559,16 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    # TODO: Implement, how to power cycle satelitte without touching CPU power
     @wrap_errors(CommandExecutionException)
     def IPC(self,
-            packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
+            packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         if not packet.simulate:
-            exit(0)
+            exit(0) # Exit script, eps will reset after 4 minutes without ping
         return []
 
     @wrap_errors(CommandExecutionException)
