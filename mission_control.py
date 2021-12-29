@@ -99,6 +99,9 @@ class MissionControl:
     def eps_troubleshoot(self, e: CustomException):
         exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
 
+    def rtc_troubleshoot(self, e: CustomException):  # TODO: implement
+        pass
+
     def imu_troubleshoot(self, e: CustomException):
         self.sfr.power_off("IMU")
         unsolicited_packet = UnsolicitedString("IMU failure, turned off IMU")
