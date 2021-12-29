@@ -194,6 +194,13 @@ class IMU(Device):
         time.sleep(0.01)
 
     @wrap_errors(IMUError)
+    def functional(self):
+        chip_id = self._read_register(IMU._ID_REGISTER)
+        if chip_id != IMU._CHIP_ID:
+            return False
+        return True
+
+    @wrap_errors(IMUError)
     def _reset(self):
         """Resets the sensor to default settings."""
         self.mode = IMU.CONFIG_MODE
@@ -938,5 +945,3 @@ class IMU_I2C(IMU):
         self.buffer[1] = self.bus.read_byte(self.address)
         time.sleep(.01)
         return self.buffer[1]
-
-    # TODO: IMPLEMENT FUNCTIONAL
