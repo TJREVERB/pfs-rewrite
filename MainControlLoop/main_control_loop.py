@@ -2,6 +2,7 @@ import time
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Mode.science import Science
+from MainControlLoop.Mode.gamer_mode.gamer import Gamer
 
 
 class MainControlLoop:
@@ -19,7 +20,7 @@ class MainControlLoop:
         self.sfr.vars.LAST_STARTUP = time.time()
         self.sfr.power_on("IMU")
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self.sfr)
-        self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
+        self.sfr.MODE = Gamer(self.sfr)  # DEBUG!!!
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
