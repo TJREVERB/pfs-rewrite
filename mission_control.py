@@ -141,7 +141,7 @@ class MissionControl:
     def get_correct_safe_mode(self):
         try:
             self.sfr.power_on("Iridium")
-            self.sfr.devices["Iridium"].transmit("Iridium safe mode enabled")
+            self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))
         except Exception:
             pass
         else:
@@ -149,7 +149,7 @@ class MissionControl:
 
         try:
             self.sfr.power_on("APRS")
-            self.sfr.devices["APRS"].transmit("APRS safe mode enabled")
+            self.sfr.devices["APRS"].transmit(UnsolicitedString("APRS safe mode enabled"))
         except Exception:
             os.system("sudo reboot")  # PFS team took an L
         else:
