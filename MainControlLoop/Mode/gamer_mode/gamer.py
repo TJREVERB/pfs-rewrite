@@ -2,6 +2,8 @@ from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.gamer_mode.chess_game import ChessGame
 from MainControlLoop.Mode.gamer_mode.tictactoe_game import TicTacToeGame
 from MainControlLoop.Mode.mode import Mode
+import random
+import chess
 from lib.exceptions import wrap_errors, LogicalError
 
 
@@ -44,12 +46,21 @@ class Gamer(Mode):
 
         return game_objects
 
+    def simulate_games(self):  # debug
+        for _ in range(10):
+            obj = ChessGame(self.sfr, 1)
+            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            self.game_queue.append(game)
+    
     def execute_cycle(self) -> None:
+        self.simulate_games()
         game_queue = self.decode_game_queue()
         for game in game_queue:
             ai_move = game.get_best_move()
+            print(ai_move)
             game.push(ai_move)
-            self.transmit_string(str(game))
+            #self.transmit_string(str(game))
+        self.game_queue.clear()
 
     def transmit_string(self, message: str):
         packet = UnsolicitedString(return_data=[message])

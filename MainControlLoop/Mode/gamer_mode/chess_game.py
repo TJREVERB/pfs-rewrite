@@ -1,6 +1,6 @@
 import chess
 import chess.engine
-
+import random
 
 class ChessGame:
     def __init__(self, sfr, game_id):
@@ -23,6 +23,19 @@ class ChessGame:
 
     def push(self, move: chess.Move):  # uci string as move (i.e. d2d4)
         self.board.push(move)
+
+    def random_fen(self):  # simulate purposes
+        while True:
+            board = chess.Board()
+            for _ in range(random.randint(10, 20)):
+                move = list(board.legal_moves)[random.randint(0, len(list(board.legal_moves)))]
+                board.push(move)
+                if chess.Board.outcome(board) is not None:
+                    break
+            if chess.Board.outcome(board) is not None:
+                continue
+            else:
+                return board.fen()
 
 
 
