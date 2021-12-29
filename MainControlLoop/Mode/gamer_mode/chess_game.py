@@ -10,7 +10,7 @@ class ChessGame:
 
     def __str__(self):
         return self.board.fen()
-    
+
     def set_game(self, fen: str):
         self.board.set_fen(fen)
 
