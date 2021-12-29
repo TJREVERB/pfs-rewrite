@@ -175,7 +175,7 @@ class MissionControl:
             if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
                     self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
                 self.sfr.power_off("Iridium")
-                self.sfr.sleep(90*60)  # charge for one orbit
+                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("Iridium")
 
     def safe_mode_aprs(self, e: Exception):
@@ -192,7 +192,7 @@ class MissionControl:
             if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
                     self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
                 self.sfr.power_off("APRS")
-                self.sfr.sleep(90*60)  # charge for one orbit
+                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("APRS")
 
 

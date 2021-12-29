@@ -44,7 +44,7 @@ class StateFieldRegistry:
             self.FAILURES = []
             self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
@@ -60,7 +60,7 @@ class StateFieldRegistry:
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
-            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}  # TODO: have a locked on and locked off dictionary
             self.CONTACT_ESTABLISHED = False
             self.ENABLE_SAFE_MODE = False
             self.transmit_buffer = []
