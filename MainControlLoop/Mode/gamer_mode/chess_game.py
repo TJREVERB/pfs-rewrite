@@ -28,7 +28,7 @@ class ChessGame:
         while True:
             board = chess.Board()
             for _ in range(random.randint(10, 20)):
-                move = list(board.legal_moves)[random.randint(0, len(list(board.legal_moves)))]
+                move = list(board.legal_moves)[random.randint(0, len(list(board.legal_moves))-1)]
                 board.push(move)
                 if chess.Board.outcome(board) is not None:
                     break
