@@ -68,7 +68,7 @@ class UnsolicitedString(TransmissionPacket): # Use this for unsolicited string m
     def __init__(self, return_data = None, simulate = False, outreach = False):
         super().__init__(False, False)
         if return_data is not None:
-            self.return_data = return_data
+            self.return_data = [return_data]
         self.simulate = simulate
         self.outreach = outreach
         self.set_time() # Unsolicited will always be instantiated upon command execution, unlike with FullPackets

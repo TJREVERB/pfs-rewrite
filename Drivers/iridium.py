@@ -351,6 +351,10 @@ class Iridium(Device):
                 if coef != 0:
                     coef /= 10 ** int(math.log10(abs(coef)))
                 args.append(coef * 10 ** exp)
+        if decoded == "ARS":
+            if args[0] < 0 or args[0] >= len(Iridium.ENCODED_REGISTRY):
+                raise InvalidCommandException(details="Invalid command received")
+            args[0] = Iridium.ENCODED_REGISTRY[args[0]]
         return (decoded, args)
 
     @wrap_errors(IridiumError)
