@@ -298,7 +298,7 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
-        self.transmit(packet, result := [self.sfr.components.index(self.sfr.vars.PRIMARY_RADIO)])
+        self.transmit(packet, result := [self.sfr.COMPONENTS.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -531,8 +531,8 @@ class CommandExecutor:
             int(startdif % 100000),
             int(laststartdif / 100000) * 100000,
             int(laststartdif % 100000),
-            self.sfr.analytics.total_power_consumed(),
-            self.sfr.analytics.total_power_generated(),
+            self.sfr.analytics.total_energy_consumed(),
+            self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
