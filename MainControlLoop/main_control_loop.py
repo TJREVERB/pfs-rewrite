@@ -18,7 +18,7 @@ class MainControlLoop:
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
         self.sfr.power_on("IMU")
-        # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self.sfr)
+        # self.sfr.MODE = Recovery(self.sfr) if not self.sfr.vars.ANTENNA_DEPLOYED else Startup(self.sfr)
         self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
         self.sfr.MODE.start()
 

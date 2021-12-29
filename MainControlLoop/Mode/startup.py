@@ -37,7 +37,13 @@ class Startup(Mode):
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
-        print("Antenna Deployed")
+        print("Antenna deployment attempted")
+        time.sleep(30)
+        self.sfr.devices["Antenna Deployer"].check_deployment()
+        if self.sfr.vars.ANTENNA_DEPLOYED:
+            print("Antenna deployment successful")
+        else:
+            print("Antenna deployment unsuccessful")
         return True
 
     @wrap_errors(LogicalError)

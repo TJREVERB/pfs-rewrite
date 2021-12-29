@@ -81,7 +81,7 @@ class AntennaDeployer(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.bus = SMBus(self.BUS_NUMBER)
-        # TODO: if antennae have been deployed, update sfr
+        self.check_deployment()
 
     @wrap_errors(AntennaError)
     def write(self, command: AntennaDeployerCommand, parameter: int) -> bool or None:
@@ -107,7 +107,7 @@ class AntennaDeployer(Device):
             raise LogicalError(details="Not an AntennaDeployerCommand!")
         self.write(command, 0x00)
         time.sleep(0.5)
-        return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command])
+        return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
 
     @wrap_errors(AntennaError)
     def functional(self):
@@ -162,4 +162,10 @@ class AntennaDeployer(Device):
 
     @wrap_errors(AntennaError)
     def check_deployment(self):
-        pass
+        raw = self.read(AntennaDeployerCommand.GET_STATUS)
+        twobyte = (raw[0] << 8) | raw[1] 
+        # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
+        self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
+        # Minimum 3 antennas deployed
+
+
