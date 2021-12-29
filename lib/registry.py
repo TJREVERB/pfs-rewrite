@@ -170,7 +170,6 @@ class StateFieldRegistry:
             "Repeater": Repeater,
             "Recovery": Recovery,
             "Gamer": Gamer,
-            "Gomoku": TicTacToe
         }
 
         self.component_to_class = {  # returns class from component name
