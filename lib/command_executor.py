@@ -115,7 +115,7 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string = False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, string = False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -125,7 +125,8 @@ class CommandExecutor:
         """
         if string:
             packet.numerical = False
-        packet.return_data = data
+        if data is not None:
+            packet.return_data = data
         if packet.outreach:
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
@@ -456,21 +457,22 @@ class CommandExecutor:
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
-        packet.args[0].simulate = True  # Don't transmit results
+        sim_packet = FullPacket(packet.args[0], packet.args[1:], 0)
+        sim_packet.set_time()
+        sim_packet.simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
-            self.primary_registry[packet.args[0].descriptor](packet)
+            self.primary_registry[sim_packet.descriptor](sim_packet)
         except Exception as e:  # Store error as a string
             command_result = [repr(e)]
-        # Transmit number of bytes taken up by command result
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
-            # Remove first 7 mandatory bytes from calculation
-            self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
-                packet.args[0].descriptor, packet.args[0].return_code, packet.args[0].msn,
-                packet.args[0].timestamp, packet.args[0].return_data)[6:])])
-        else:  # APRS doesn't encode
-            # Only factor in size of return data
-            self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
+            self.transmit(packet, command_result, string=True)
+        else:
+            # Transmit number of bytes taken up by command result
+            if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
+                # Remove first 7 mandatory bytes from calculation
+                self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(sim_packet))])
+            else:  # APRS doesn't encode
+                # Only factor in size of return data
+                self.transmit(packet, result := [len(str(sim_packet.return_data))])
         return result
 
     @wrap_errors(CommandExecutionException)
