@@ -27,9 +27,10 @@ class Recovery(Mode):
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:  # TODO: IMPLEMENT
-        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # Execute cycle low battery
+        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD or \
+                self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD:  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
+            self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()
         else:
             if not self.systems_check_complete:
@@ -49,7 +50,8 @@ class Recovery(Mode):
             else self.sfr.modes_list["Science"]
         if not (self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED):  # we are done with recovery mode
             return self
-        elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # if we need to enter charging mode
+        elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD or \
+                self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD:  # if we need to enter charging mode
             return self.sfr.modes_list["Charging"](self.sfr, final_mode(self.sfr))
         else:
             return final_mode(self.sfr)

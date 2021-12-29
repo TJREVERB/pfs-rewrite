@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 import pandas as pd
-from Drivers.transmission_packet import TransmissionPacket
+from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -73,9 +73,9 @@ class CommandExecutor:
         for command_packet in self.sfr.vars.command_buffer:
             print("Command received: " + command_packet.descriptor)
             to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp(),
-                "ts1": (t := datetime.datetime.utcnow()).timestamp(), # TODO: I don't know what these are supposed to be
-                "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
+                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
+                "ts1": int(t.timestamp()) % 100000, # last 5 digits
+                "radio": self.sfr.vars.PRIMARY_RADIO,
                 "command": command_packet.descriptor,
                 "arg": ":".join(command_packet.args),
                 "registry": "Primary",
@@ -97,7 +97,7 @@ class CommandExecutor:
             to_log = {
                 "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
                 "ts1": int(t.timestamp() % 100000),
-                "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
+                "radio": self.sfr.PRIMARY_RADIO,
                 "command": command_packet.descriptor,
                 "arg": ":".join(command_packet.args),
                 "registry": "Secondary",
@@ -459,7 +459,7 @@ class CommandExecutor:
         packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
         packet.args[0].simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
-            command_result = self.primary_registry[packet.args[0].descriptor](packet.args[0])
+            self.primary_registry[packet.args[0].descriptor](packet)
         except Exception as e:  # Store error as a string
             command_result = [repr(e)]
         # Transmit number of bytes taken up by command result
@@ -559,18 +559,17 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    # TODO: Implement, how to power cycle satelitte without touching CPU power
     @wrap_errors(CommandExecutionException)
     def IPC(self,
-            packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
+            packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
-        self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-        self.transmit(packet, result := [])
-        return result
+        if not packet.simulate:
+            exit(0) # Exit script, eps will reset after 4 minutes without ping
+        return []
 
     @wrap_errors(CommandExecutionException)
     def IRB(self, packet: TransmissionPacket) -> None:

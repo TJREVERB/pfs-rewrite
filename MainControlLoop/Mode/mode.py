@@ -73,9 +73,9 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-            os.system(
-                f"""sudo date -s "{iridium_datetime.strftime("%Y-%m-%d %H:%M:%S UTC")}" """)  # Update system time
-            os.system("""sudo hwclock -w""")  # Write to RTC
+            os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
+            # Update system time
+            os.system("sudo hwclock -w")  # Write to RTC
         return True
 
     @wrap_errors(LogicalError)
@@ -94,10 +94,12 @@ class Mode:
         """
         Performs a systems check of components that are on and returns a list of component failures
         Throws error if .functional() fails
-        TODO: implement system check of antenna deployer
+        TODO: do not check devices that are locked off
         """
         for device in self.sfr.devices.keys():
-            self.sfr.devices[device].functional()
+            if self.sfr.devices[device].functional() is False:
+                return False
+        return True
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
