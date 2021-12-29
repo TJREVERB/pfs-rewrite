@@ -141,7 +141,8 @@ class MissionControl:
     def get_correct_safe_mode(self):
         try:
             self.sfr.power_on("Iridium")
-            self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))
+            self.sfr.devices["Iridium"].functional()
+            self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))  # TODO: fix this Khoi
         except Exception:
             pass
         else:
@@ -149,6 +150,7 @@ class MissionControl:
 
         try:
             self.sfr.power_on("APRS")
+            self.sfr.devices["APRS"].functional()
             self.sfr.devices["APRS"].transmit(UnsolicitedString("APRS safe mode enabled"))
         except Exception:
             os.system("sudo reboot")  # PFS team took an L
