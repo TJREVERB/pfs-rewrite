@@ -81,6 +81,7 @@ class AntennaDeployer(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.bus = SMBus()
+        # TODO: if antennae have been deployed, update sfr
 
     @wrap_errors(AntennaError)
     def write(self, command: AntennaDeployerCommand, parameter: int) -> bool or None:
@@ -119,7 +120,9 @@ class AntennaDeployer(Device):
         """
         :return: (bool) i2c file opened by SMBus
         """
-        return self.bus.fd is not None
+        # TODO: make antenna deployer .functional stronger
+        if self.bus.fd is None:
+            raise AntennaError()
 
     @wrap_errors(AntennaError)
     def reset(self):
