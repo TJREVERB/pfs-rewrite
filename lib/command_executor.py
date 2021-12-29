@@ -86,7 +86,8 @@ class CommandExecutor:
         }
         packet.set_time()
         try:
-            to_log["result"] = ":".join(registry[packet.descriptor](packet))
+            result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
+            to_log["result"] = ":".join(result)
         except CommandExecutionException as e:
             self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
             to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
@@ -99,6 +100,7 @@ class CommandExecutor:
         """
         Iterate through command and outreach buffers and execute all commands
         """
+        # iterates through all commands in the buffer, then after executing all, empties buffer
         for command_packet in self.sfr.vars.command_buffer:
             self.execute(command_packet, self.primary_registry)
         self.sfr.vars.command_buffer = []
