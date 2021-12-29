@@ -28,6 +28,7 @@ class Logger:
             "ts1": int(t % 100000),
             "buspower": str(buspower),
         }
+        print(pwr)
         for i in pwr:
             data[self.sfr.PDMS] = i
         self.sfr.logs["power"].write(data)
