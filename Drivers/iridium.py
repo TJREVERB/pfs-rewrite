@@ -21,6 +21,14 @@ from Drivers.device import Device
 # FA <-UART/RS232 Interface-> ISU - MO buffer -> Iridium Constellation <-> GSS <-> IP Socket/Email
 #                                <- MT buffer -
 
+def is_hex(string):
+    try:
+        int(string, 16)
+        return True
+    except ValueError:
+        return False
+    
+
 class Iridium(Device):
     SERIAL_CONVERTERS = ["UART-RS232"]
     PORT = '/dev/serial0'
@@ -343,6 +351,10 @@ class Iridium(Device):
                 if coef != 0:
                     coef /= 10 ** int(math.log10(abs(coef)))
                 args.append(coef * 10 ** exp)
+        if decoded == "ARS":
+            if args[0] < 0 or args[0] >= len(Iridium.ENCODED_REGISTRY):
+                raise InvalidCommandException(details="Invalid command received")
+            args[0] = Iridium.ENCODED_REGISTRY[args[0]]
         return (decoded, args)
 
     @wrap_errors(IridiumError)
@@ -543,8 +555,11 @@ class Iridium(Device):
             raise IridiumError()
         if raw.find("no network service") != -1:
             raise NoSignalException()
-        processed = int(raw.split("MSSTM:")[1].split("\n")[0].strip(), 16) * 90 / 1000
-        return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
+        raw = raw.split("MSSTM:")[1].split("\n")[0].strip()
+        if is_hex(raw):
+            processed = int(raw, 16) * 90 / 1000
+            return datetime.datetime.fromtimestamp(processed + Iridium.EPOCH)
+        return None
 
     @wrap_errors(IridiumError)
     def processed_geolocation(self):
@@ -553,16 +568,17 @@ class Iridium(Device):
         :return: (tuple) lat, long, altitude (0,0,0 if unable to retrieve)
         """
         raw = self.process(self.GEO_C(), "MSGEO").split(",")  # raw x, y, z, timestamp
-        try:
-            if self.processed_time() - (int(raw[3],
-                                            16) * 90 / 1000 + Iridium.EPOCH) > 60:  # Checks if time passed since last geolocation update has been more than 60 seconds
-                result = [int(s) for s in
-                          self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]  # Use SBDIX to update geolocation
-                if result[0] not in [0, 1, 3, 4]:
-                    return (0, 0, 0)  # Return 0, 0, 0 if SBDIX fails
-                raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
-        except TypeError:  # TODO: UNJANK THIS SO WE DON'T USE EXCEPTIONS TO CHECK CONDITIONS
-            return (0, 0, 0)  # Return 0, 0, 0 if network time cannot be retrieved
+        timestamp_time = int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH
+        current_time = self.processed_time()
+        if current_time is None:
+            return (0, 0, 0) # Return 0, 0, 0 if network time cannot be retrieved
+        if current_time - timestamp_time > 60:
+            # Checks if time passed since last geolocation update has been more than 60 seconds
+            result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]  
+            # Use SBDIX to update geolocation
+            if result[0] not in [0, 1, 3, 4]:
+                return (0, 0, 0)  # Return 0, 0, 0 if SBDIX fails
+            raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
         lon = math.atan2(float(raw[1]), float(raw[0]))
         lat = math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5))
         alt = (float(raw[0]) ** 2 + float(raw[1]) ** 2 + float(raw[2]) ** 2) ** 0.5

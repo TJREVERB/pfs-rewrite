@@ -29,7 +29,7 @@ class Logger:
             "buspower": str(buspower),
         }
         for i in range(len(pwr)):
-            data[f"0x0{str(hex(i + 1))[2:].upper()}"] = pwr[i]
+            data[self.sfr.PDMS] = pwr[i]
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)
@@ -52,7 +52,7 @@ class Logger:
         """
         Logs IMU data
         """
-        print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.imu.get_tumble()[0]])
+        print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]])
         self.sfr.logs["imu"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
@@ -103,4 +103,4 @@ class Logger:
     @wrap_errors(LogicalError)
     def log(self):
         for i in self.loggers.keys():
-            self.loggers[i].execute()
+            self.loggers[i].execute_buffers()

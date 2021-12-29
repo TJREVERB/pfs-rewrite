@@ -2,8 +2,7 @@ import datetime
 import os
 import time
 import pandas as pd
-from Drivers.transmission_packet import TransmissionPacket
-from MainControlLoop.Mode.gamer_mode.tictactoe_game import TicTacToeGame
+from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -69,54 +68,49 @@ class CommandExecutor:
         }
 
     @wrap_errors(LogicalError)
-    def execute(self):
-        command_packet: TransmissionPacket
-        for command_packet in self.sfr.vars.command_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp(),
-                "ts1": (t := datetime.datetime.utcnow()).timestamp(), # TODO: I don't know what these are supposed to be
-                "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Primary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.primary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
-        self.sfr.vars.command_buffer.clear()
-
-        for command_packet in self.sfr.vars.outreach_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
-                "ts1": int(t.timestamp() % 100000),
-                "radio": self.sfr.PRIMARY_RADIO,  # TODO: FIX
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Secondary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.secondary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
-        self.sfr.vars.outreach_buffer.clear()
+    def execute(self, packet: TransmissionPacket, registry: dict):
+        """
+        Execute a single command packet using the given command registry
+        :param packet: packet for received command
+        :param registry: command registry to use
+        """
+        print("Command received: " + packet.descriptor)
+        to_log = {
+            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
+            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "radio": self.sfr.vars.PRIMARY_RADIO,
+            "command": packet.descriptor,
+            "arg": ":".join(packet.args),
+            "registry": "Primary",
+            "msn": packet.msn
+        }
+        packet.set_time()
+        try:
+            result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
+            to_log["result"] = ":".join(result)
+        except CommandExecutionException as e:
+            self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+        finally:
+            self.sfr.logs["command"].write(to_log)
+            self.sfr.vars.LAST_COMMAND_RUN = time.time()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string = False):
+    def execute_buffers(self):
+        """
+        Iterate through command and outreach buffers and execute all commands
+        """
+        # iterates through all commands in the buffer, then after executing all, empties buffer
+        for command_packet in self.sfr.vars.command_buffer:
+            self.execute(command_packet, self.primary_registry)
+        self.sfr.vars.command_buffer = []
+
+        for command_packet in self.sfr.vars.outreach_buffer:
+            self.execute(command_packet, self.secondary_registry)
+        self.sfr.vars.outreach_buffer = []
+
+    @wrap_errors(LogicalError)
+    def transmit(self, packet: TransmissionPacket, data: list, string=False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -126,7 +120,8 @@ class CommandExecutor:
         """
         if string:
             packet.numerical = False
-        packet.return_data = data
+        if data is not None:
+            packet.return_data = data
         if packet.outreach:
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
@@ -140,7 +135,7 @@ class CommandExecutor:
                     print("No Iridium connectivity, appending to buffer...")
                     self.sfr.vars.transmit_buffer.append(p)
                     return False
-    
+
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
         """
@@ -167,17 +162,6 @@ class CommandExecutor:
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
             self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def MGA(self, packet: TransmissionPacket):
-        """Switches mode to gamer mode"""
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in Gamer")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
         self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
@@ -310,7 +294,7 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
-        self.transmit(packet, result := [self.sfr.components.index(self.sfr.vars.PRIMARY_RADIO)])
+        self.transmit(packet, result := [self.sfr.COMPONENTS.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -428,7 +412,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def APW(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def APW(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n power draw datapoints
         """
@@ -446,7 +430,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ASG(self, packet: TransmissionPacket) -> list:  # TODO: Test
+    def ASG(self, packet: TransmissionPacket) -> list:
         """
         Transmits last n solar generation datapoints
         """
@@ -468,21 +452,22 @@ class CommandExecutor:
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
-        packet.args[0].simulate = True  # Don't transmit results
+        sim_packet = FullPacket(packet.args[0], packet.args[1:], 0)
+        sim_packet.set_time()
+        sim_packet.simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
-            command_result = self.primary_registry[packet.args[0].descriptor](packet.args[0])
+            self.primary_registry[sim_packet.descriptor](sim_packet)
         except Exception as e:  # Store error as a string
             command_result = [repr(e)]
-        # Transmit number of bytes taken up by command result
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
-            # Remove first 7 mandatory bytes from calculation
-            self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
-                packet.args[0].descriptor, packet.args[0].return_code, packet.args[0].msn,
-                packet.args[0].timestamp, packet.args[0].return_data)[6:])])
-        else:  # APRS doesn't encode
-            # Only factor in size of return data
-            self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
+            self.transmit(packet, command_result, string=True)
+        else:
+            # Transmit number of bytes taken up by command result
+            if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
+                # Remove first 7 mandatory bytes from calculation
+                self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(sim_packet))])
+            else:  # APRS doesn't encode
+                # Only factor in size of return data
+                self.transmit(packet, result := [len(str(sim_packet.return_data))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -543,8 +528,8 @@ class CommandExecutor:
             int(startdif % 100000),
             int(laststartdif / 100000) * 100000,
             int(laststartdif % 100000),
-            self.sfr.analytics.total_power_consumed(),
-            self.sfr.analytics.total_power_generated(),
+            self.sfr.analytics.total_energy_consumed(),
+            self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
             len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
@@ -571,18 +556,17 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    # TODO: Implement, how to power cycle satelitte without touching CPU power
     @wrap_errors(CommandExecutionException)
     def IPC(self,
-            packet: TransmissionPacket) -> list:  # TODO: Implement, how to power cycle satelitte without touching CPU power
+            packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
-        self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-        self.transmit(packet, result := [])
-        return result
+        if not packet.simulate:
+            exit(0)  # Exit script, eps will reset after 4 minutes without ping
+        return []
 
     @wrap_errors(CommandExecutionException)
     def IRB(self, packet: TransmissionPacket) -> None:
@@ -612,18 +596,3 @@ class CommandExecutor:
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result
-
-    @wrap_errors(CommandExecutionException)
-    def ZMV(self, packet: TransmissionPacket):
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Cannot push to gamer mode move queue if not in gamer mode")
-        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
-        # game_type format = "Chess", "TicTacToe", game_id = 10 digit number (string), game_string = game.__str__
-        self.sfr.MODE.game_queue.append(game_type+game_string+game_id)
-        self.transmit(packet, result := [])
-        return result
-
-
-
-
-

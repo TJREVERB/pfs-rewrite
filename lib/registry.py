@@ -25,7 +25,9 @@ from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
 class StateFieldRegistry:
-    components = [
+    PDMS = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
+    PANELS = ["bcr1", "bcr2", "bcr3"]
+    COMPONENTS = [
         "APRS",
         "Iridium",
         "IMU",
@@ -46,10 +48,13 @@ class StateFieldRegistry:
             self.FAILURES = []
             self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
             self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
+            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            # Volt backup thresholds, further on than the capacity thresholds
+            self.VOLT_UPPER_THRESHOLD = 8.1
+            self.VOLT_LOWER_THRESHOLD = 7.3
             self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
             # via iridium for this amount of time, switch primary to APRS
             self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
@@ -60,7 +65,7 @@ class StateFieldRegistry:
             self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
             self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
             self.MODE_LOCK = False  # Whether to lock mode switches
-            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}
+            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}  # TODO: have a locked on and locked off dictionary
             self.CONTACT_ESTABLISHED = False
             self.ENABLE_SAFE_MODE = False
             self.transmit_buffer = []
@@ -77,7 +82,7 @@ class StateFieldRegistry:
             return [
                 int(self.ANTENNA_DEPLOYED),
                 self.BATTERY_CAPACITY_INT,
-                sum([1 << StateFieldRegistry.components.index(i) for i in self.FAILURES]),
+                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
                 int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
                 int(self.LAST_DAYLIGHT_ENTRY % 100000),
                 int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
@@ -85,10 +90,13 @@ class StateFieldRegistry:
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
+                self.VOLT_UPPER_THRESHOLD,
+                self.VOLT_LOWER_THRESHOLD,
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
+                StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
-                sum([1 << StateFieldRegistry.components.index(i) for i in list(self.LOCKED_DEVICES.keys())
+                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
                      if self.LOCKED_DEVICES[i]]),
                 int(self.CONTACT_ESTABLISHED),
                 int(self.START_TIME / 100000) * 100000,
@@ -121,10 +129,9 @@ class StateFieldRegistry:
             "sfr": self.Log("./lib/data/state_field_log.pkl", None),
             "sfr_readable": self.Log("./lib/data/state_field_log.json", None),
             "power": self.Log("./lib/data/pwr_draw_log.csv",
-                              ["ts0", "ts1", "buspower", "0x01", "0x02", "0x03", "0x04", "0x05",
-                               "0x06", "0x07", "0x08", "0x09", "0x0A"]),
+                              ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": self.Log("./lib/data/solar_generation_log.csv",
-                              ["ts0", "ts1", "bcr1", "bcr2", "bcr3"]),
+                              ["ts0", "ts1"] + self.PANELS),
             "voltage_energy": self.Log("./lib/data/volt-energy-map.csv",
                                        ["voltage", "energy"]),
             "orbits": self.Log("./lib/data/orbit_log.csv",
@@ -141,7 +148,6 @@ class StateFieldRegistry:
 
         self.eps = EPS(self)  # EPS never turns off
         self.battery = Battery(self)
-        self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
@@ -175,6 +181,18 @@ class StateFieldRegistry:
             "Antenna Deployer": AntennaDeployer
         }
         self.vars = self.load()
+
+    @wrap_errors(LogicalError)
+    def sleep(self, t):
+        """
+        Use this when you need to time.sleep for longer than 4 minutes, to prevent EPS reset
+        Runs in increments of 60 seconds
+        :param t: (int) number of seconds to sleep
+        """
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < t:
+            self.eps.commands["Reset Watchdog"]()
+            time.sleep(60)
 
     @wrap_errors(LogicalError)
     def load(self) -> Registry:
@@ -380,7 +398,6 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
-        # TODO: send notification to groundstation over new radio
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
@@ -392,7 +409,7 @@ class StateFieldRegistry:
                 self.power_on(new_radio)
             # transmit update to groundstation
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = UnsolicitedString(return_data = [f"Switched to {self.sfr.vars.PRIMARY_RADIO}"])
+            unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
 
     class Log:

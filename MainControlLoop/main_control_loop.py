@@ -36,5 +36,5 @@ class MainControlLoop:
                 self.sfr.MODE.start()
 
         print("Cycle")
-        self.sfr.command_executor.execute()  # Execute commands
+        self.sfr.command_executor.execute_buffers()  # Execute commands
         self.sfr.logger.log()  # Logs data
