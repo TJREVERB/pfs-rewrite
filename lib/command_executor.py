@@ -101,14 +101,14 @@ class CommandExecutor:
         """
         for command_packet in self.sfr.vars.command_buffer:
             self.execute(command_packet, self.primary_registry)
-        self.sfr.vars.command_buffer.clear()
+        self.sfr.vars.command_buffer = []
 
         for command_packet in self.sfr.vars.outreach_buffer:
             self.execute(command_packet, self.secondary_registry)
-        self.sfr.vars.outreach_buffer.clear()
+        self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string = False):
+    def transmit(self, packet: TransmissionPacket, data: list, string=False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -132,7 +132,7 @@ class CommandExecutor:
                     print("No Iridium connectivity, appending to buffer...")
                     self.sfr.vars.transmit_buffer.append(p)
                     return False
-    
+
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
         """
@@ -158,7 +158,8 @@ class CommandExecutor:
             raise CommandExecutionException("Already in Charging")
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
-            self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
+                                                        self.sfr.modes_list[
+                                                            list(self.sfr.modes_list.keys())[packet.args[0]]])
         self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result
@@ -561,7 +562,7 @@ class CommandExecutor:
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
         if not packet.simulate:
-            exit(0) # Exit script, eps will reset after 4 minutes without ping
+            exit(0)  # Exit script, eps will reset after 4 minutes without ping
         return []
 
     @wrap_errors(CommandExecutionException)
