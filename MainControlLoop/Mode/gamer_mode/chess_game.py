@@ -15,7 +15,7 @@ class ChessGame:
         self.board.set_fen(fen)
 
     def get_best_move(self) -> chess.Move:
-        engine = chess.engine.SimpleEngine.popen_uci("./Mode/gamer_mode/stockfish_14.1_android_armv7/stockfish.android.armv7")
+        engine = chess.engine.SimpleEngine.popen_uci("MainControlLoop/Mode/gamer_mode/stockfish_14.1_android_armv7/stockfish.android.armv7")
         # TODO: test file path on pi
         result = engine.play(self.board, chess.engine.Limit(time=0.1))
         engine.quit()
