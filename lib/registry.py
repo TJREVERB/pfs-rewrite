@@ -13,7 +13,6 @@ from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from MainControlLoop.Mode.gamer_mode.gamer import Gamer
-from MainControlLoop.Mode.gamer_mode.tictactoe.tictactoe_mode import TicTacToe
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import Logger
