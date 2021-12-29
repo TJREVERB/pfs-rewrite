@@ -27,9 +27,7 @@ class Logger:
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
             "buspower": str(buspower),
-        }
-        for i in range(len(pwr)):
-            data[self.sfr.PDMS] = pwr[i]
+        } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))}
         self.sfr.logs["power"].write(data)
 
     @wrap_errors(LogicalError)

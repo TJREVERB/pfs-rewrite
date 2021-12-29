@@ -80,7 +80,7 @@ class AntennaDeployer(Device):
     @wrap_errors(AntennaError)
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.bus = SMBus()
+        self.bus = SMBus(self.BUS_NUMBER)
         # TODO: if antennae have been deployed, update sfr
 
     @wrap_errors(AntennaError)
@@ -93,9 +93,7 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.bus.open(self.BUS_NUMBER)
         self.bus.write_word_data(self.PRIMARY_ADDRESS, command.value, parameter)
-        self.bus.close()
         return True
 
     @wrap_errors(AntennaError)
@@ -109,20 +107,24 @@ class AntennaDeployer(Device):
             raise LogicalError(details="Not an AntennaDeployerCommand!")
         self.write(command, 0x00)
         time.sleep(0.5)
-        i2c_obj = i2c_msg.read(self.PRIMARY_ADDRESS, self.EXPECTED_BYTES[command])
-        self.bus.open(self.BUS_NUMBER)
-        self.bus.i2c_rdwr(i2c_obj)
-        self.bus.close()
-        return i2c_obj.buf, True
+        return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command])
 
     @wrap_errors(AntennaError)
     def functional(self):
         """
         :return: (bool) i2c file opened by SMBus
         """
-        # TODO: make antenna deployer .functional stronger
-        if self.bus.fd is None:
-            raise AntennaError()
+        try:
+            raw_bytes = self.read(AntennaDeployerCommand.GET_TEMP)
+        except Exception as e:
+            print(e)
+            raise AntennaError("Bad Connection")
+        raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
+        v = raw_count * 3300 / 1023 # mV
+        if v > 2616 or v < 769:
+            raise AntennaError("Bad data readout")
+        return True
+        
 
     @wrap_errors(AntennaError)
     def reset(self):
@@ -130,9 +132,7 @@ class AntennaDeployer(Device):
         Resets the Microcontroller on the ISIS Antenna Deployer
         :return: (bool) no error
         """
-        self.bus.open(self.BUS_NUMBER)
         self.write(AntennaDeployerCommand.SYSTEM_RESET, 0x00)
-        self.bus.close()
         return True
 
     @wrap_errors(AntennaError)
@@ -140,9 +140,7 @@ class AntennaDeployer(Device):
         """
         Disarms the ISIS Antenna Deployer
         """
-        self.bus.open(self.BUS_NUMBER)
         self.write(AntennaDeployerCommand.DISARM_ANTS, 0x00)
-        self.bus.close()
         return True
 
     @wrap_errors(AntennaError)
@@ -150,9 +148,7 @@ class AntennaDeployer(Device):
         """
         Arms the ISIS Antenna Deployer
         """
-        self.bus.open(self.BUS_NUMBER)
         self.write(AntennaDeployerCommand.ARM_ANTS, 0x00)
-        self.bus.close()
         return True
     
     @wrap_errors(AntennaError)
@@ -162,5 +158,8 @@ class AntennaDeployer(Device):
         self.write(AntennaDeployerCommand.DEPLOY_2, 0x0A)
         self.write(AntennaDeployerCommand.DEPLOY_3, 0x0A)
         self.write(AntennaDeployerCommand.DEPLOY_4, 0x0A)
-        self.sfr.vars.ANTENNA_DEPLOYED = True
         return True
+
+    @wrap_errors(AntennaError)
+    def check_deployment(self):
+        pass
