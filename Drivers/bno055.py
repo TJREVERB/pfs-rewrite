@@ -197,7 +197,7 @@ class IMU(Device):
     def functional(self):
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:
-            return False
+            raise IMUError(details="bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
         return True
 
     @wrap_errors(IMUError)
