@@ -9,7 +9,7 @@ class ChessGame:
         self.board = chess.Board()
 
     def __str__(self):
-        return self.board.fen()
+        return f"Chess;{self.board.fen()};{self.game_id}"
 
     def set_game(self, fen: str):
         self.board.set_fen(fen)
