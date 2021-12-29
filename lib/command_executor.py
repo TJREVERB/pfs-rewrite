@@ -73,8 +73,8 @@ class CommandExecutor:
         for command_packet in self.sfr.vars.command_buffer:
             print("Command received: " + command_packet.descriptor)
             to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp(),
-                "ts1": (t := datetime.datetime.utcnow()).timestamp(), # TODO: I don't know what these are supposed to be
+                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
+                "ts1": int(t.timestamp()) % 100000, # last 5 digits
                 "radio": self.sfr.vars.PRIMARY_RADIO,  # TODO: FIX
                 "command": command_packet.descriptor,
                 "arg": ":".join(command_packet.args),
