@@ -99,13 +99,14 @@ class CommandExecutor:
         """
         Iterate through command and outreach buffers and execute all commands
         """
+        # iterates through all commands in the buffer, then after executing all, empties buffer
         for command_packet in self.sfr.vars.command_buffer:
             self.execute(command_packet, self.primary_registry)
-        self.sfr.vars.command_buffer.clear()
+        self.sfr.vars.command_buffer = []
 
         for command_packet in self.sfr.vars.outreach_buffer:
             self.execute(command_packet, self.secondary_registry)
-        self.sfr.vars.outreach_buffer.clear()
+        self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
     def transmit(self, packet: TransmissionPacket, data: list = None, string = False):
