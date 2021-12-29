@@ -48,6 +48,9 @@ class StateFieldRegistry:
             # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
             self.LOWER_THRESHOLD = 133732.8 * 0.3
             self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+            # Volt backup thresholds, further on than the capacity thresholds
+            self.VOLT_UPPER_THRESHOLD = 8.1
+            self.VOLT_LOWER_THRESHOLD = 7.3
             self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
             # via iridium for this amount of time, switch primary to APRS
             self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
@@ -82,6 +85,8 @@ class StateFieldRegistry:
                 self.ORBITAL_PERIOD,
                 self.LOWER_THRESHOLD,
                 self.UPPER_THRESHOLD,
+                self.VOLT_UPPER_THRESHOLD,
+                self.VOLT_LOWER_THRESHOLD,
                 StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
@@ -170,6 +175,18 @@ class StateFieldRegistry:
             "Antenna Deployer": AntennaDeployer
         }
         self.vars = self.load()
+
+    @wrap_errors(LogicalError)
+    def sleep(self, t):
+        """
+        Use this when you need to time.sleep for longer than 4 minutes, to prevent EPS reset
+        Runs in increments of 60 seconds
+        :param t: (int) number of seconds to sleep
+        """
+        begin = time.perf_counter()
+        while time.perf_counter() - begin < t:
+            self.eps.commands["Reset Watchdog"]()
+            time.sleep(60)
 
     @wrap_errors(LogicalError)
     def load(self) -> Registry:

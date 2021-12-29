@@ -4,7 +4,7 @@ import time
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
-from Drivers.transmission_packet import UnsolicitedData
+from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
 class MissionControl:
@@ -163,7 +163,7 @@ class MissionControl:
         Precondition: iridium is functional
         """
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["Iridium"].transmit_raw(repr(e))
+        self.sfr.devices["Iridium"].transmit(UnsolicitedString(repr(e)))
         self.sfr.set_primary_radio("Iridium")
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
@@ -171,22 +171,28 @@ class MissionControl:
                 self.sfr.devices["Iridium"].next_msg()
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
+            
+            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
+                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+                self.sfr.power_off("Iridium")
+                self.sfr.sleep(90*60)  # charge for one orbit
+                self.sfr.power_on("Iridium")
 
     def safe_mode_aprs(self, e: Exception):
         self.sfr.vars.enter_safe_mode = True
-        self.sfr.devices["APRS"].transmit_raw(repr(e))
+        self.sfr.devices["APRS"].transmit(UnsolicitedString(repr(e)))
         self.sfr.set_primary_radio("APRS")
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
         while self.sfr.vars.enter_safe_mode:
-            if self.sfr.devices["APRS"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
-                self.sfr.devices["APRS"].next_msg()
+            self.sfr.devices["APRS"].next_msg()
 
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
-            if self.sfr.eps.telemetry["VBCROUT"]() < self.sfr.vars.LOWER_THRESHOLD:
+            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
+                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
                 self.sfr.power_off("APRS")
-                time.sleep(90*60)  # charge for one orbit
+                self.sfr.sleep(90*60)  # charge for one orbit
                 self.sfr.power_on("APRS")
 
 

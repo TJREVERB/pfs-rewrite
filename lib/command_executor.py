@@ -568,9 +568,9 @@ class CommandExecutor:
         """
         self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
         time.sleep(.5)
-        self.sfr.eps.commands["Bus Reset"](["Battery", "5V", "3.3V", "12V"])
-        self.transmit(packet, result := [])
-        return result
+        if not packet.simulate:
+            exit(0)
+        return []
 
     @wrap_errors(CommandExecutionException)
     def IRB(self, packet: TransmissionPacket) -> None:
