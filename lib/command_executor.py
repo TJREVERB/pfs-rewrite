@@ -68,54 +68,47 @@ class CommandExecutor:
         }
 
     @wrap_errors(LogicalError)
-    def execute(self):
-        command_packet: TransmissionPacket
+    def execute(self, packet: TransmissionPacket, registry: dict):
+        """
+        Execute a single command packet using the given command registry
+        :param packet: packet for received command
+        :param registry: command registry to use
+        """
+        print("Command received: " + packet.descriptor)
+        to_log = {
+            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
+            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "radio": self.sfr.vars.PRIMARY_RADIO,
+            "command": packet.descriptor,
+            "arg": ":".join(packet.args),
+            "registry": "Primary",
+            "msn": packet.msn
+        }
+        packet.set_time()
+        try:
+            to_log["result"] = ":".join(registry[packet.descriptor](packet))
+        except CommandExecutionException as e:
+            self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+        finally:
+            self.sfr.logs["command"].write(to_log)
+            self.sfr.vars.LAST_COMMAND_RUN = time.time()
+
+    @wrap_errors(LogicalError)
+    def execute_buffers(self):
+        """
+        Iterate through command and outreach buffers and execute all commands
+        """
         for command_packet in self.sfr.vars.command_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-                "ts1": int(t.timestamp()) % 100000, # last 5 digits
-                "radio": self.sfr.vars.PRIMARY_RADIO,
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Primary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.primary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
+            self.execute(command_packet, self.primary_registry)
         self.sfr.vars.command_buffer.clear()
 
         for command_packet in self.sfr.vars.outreach_buffer:
-            print("Command received: " + command_packet.descriptor)
-            to_log = {
-                "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,
-                "ts1": int(t.timestamp() % 100000),
-                "radio": self.sfr.PRIMARY_RADIO,
-                "command": command_packet.descriptor,
-                "arg": ":".join(command_packet.args),
-                "registry": "Secondary",
-                "msn": command_packet.msn
-            }
-            command_packet.set_time()
-            try:
-                to_log["result"] = ":".join(self.secondary_registry[command_packet.descriptor](command_packet))
-            except CommandExecutionException as e:
-                self.transmit(command_packet, [repr(e.exception) if e.exception is not None else e.details], True)
-                to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
-            finally:
-                self.sfr.logs["command"].write(to_log)
-                self.sfr.LAST_COMMAND_RUN = time.time()
+            self.execute(command_packet, self.secondary_registry)
         self.sfr.vars.outreach_buffer.clear()
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string = False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, string = False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -125,7 +118,8 @@ class CommandExecutor:
         """
         if string:
             packet.numerical = False
-        packet.return_data = data
+        if data is not None:
+            packet.return_data = data
         if packet.outreach:
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
@@ -456,21 +450,22 @@ class CommandExecutor:
         """
         Transmits expected size of a given command
         """
-        packet.args[0].timestamp = ((t := datetime.datetime.now()).day, t.hour, t.minute)
-        packet.args[0].simulate = True  # Don't transmit results
+        sim_packet = FullPacket(packet.args[0], packet.args[1:], 0)
+        sim_packet.set_time()
+        sim_packet.simulate = True  # Don't transmit results
         try:  # Attempt to run command, store result
-            self.primary_registry[packet.args[0].descriptor](packet)
+            self.primary_registry[sim_packet.descriptor](sim_packet)
         except Exception as e:  # Store error as a string
             command_result = [repr(e)]
-        # Transmit number of bytes taken up by command result
-        if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
-            # Remove first 7 mandatory bytes from calculation
-            self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(
-                packet.args[0].descriptor, packet.args[0].return_code, packet.args[0].msn,
-                packet.args[0].timestamp, packet.args[0].return_data)[6:])])
-        else:  # APRS doesn't encode
-            # Only factor in size of return data
-            self.transmit(packet, result := [len(':'.join(packet.args[0].return_data))])
+            self.transmit(packet, command_result, string=True)
+        else:
+            # Transmit number of bytes taken up by command result
+            if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures
+                # Remove first 7 mandatory bytes from calculation
+                self.transmit(packet, result := [len(self.sfr.devices["Iridium"].encode(sim_packet))])
+            else:  # APRS doesn't encode
+                # Only factor in size of return data
+                self.transmit(packet, result := [len(str(sim_packet.return_data))])
         return result
 
     @wrap_errors(CommandExecutionException)
