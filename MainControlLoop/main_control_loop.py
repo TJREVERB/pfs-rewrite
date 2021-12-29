@@ -25,7 +25,7 @@ class MainControlLoop:
     @wrap_errors(LogicalError)
     def iterate(self):  # Repeat main control loop forever
         # If we haven't received a message for a very long time
-        if time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED > self.sfr.vars.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
+        if time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
             self.sfr.set_primary_radio("APRS")
 
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
