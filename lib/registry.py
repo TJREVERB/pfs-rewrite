@@ -143,7 +143,6 @@ class StateFieldRegistry:
 
         self.eps = EPS(self)  # EPS never turns off
         self.battery = Battery(self)
-        self.imu = IMU_I2C(self)
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
