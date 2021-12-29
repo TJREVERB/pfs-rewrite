@@ -67,7 +67,7 @@ class Analytics:
         if len(orbits) < 4:  # If we haven't logged any orbits
             if len(solar) > 0:  # If we have solar data
                 # Estimate based on what we have
-                return solar[["bcr1", "bcr2", "bcr3"]].sum(axis=1).mean() * duration
+                return solar[self.sfr.PANELS].sum(axis=1).mean() * duration
             else:  # If we haven't logged any solar data
                 return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
         # Generate timestamp columns
@@ -80,9 +80,11 @@ class Analytics:
         in_sun = solar[[orbits[orbits["timestamp"] <
                                row["timestamp"]]["phase"].iloc[-1] == "daylight" for (_, row) in solar.iterrows()]]
         solar_gen = in_sun[self.sfr.PANELS].sum(axis=1).mean()  # Calculate average solar power generation
+
         # Function to calculate energy generation over a given time since entering sunlight
-        energy_over_time = lambda t: int(t / orbital_period) * sunlight_period * solar_gen + \
-                                     min([t % orbital_period, sunlight_period]) * solar_gen
+        def energy_over_time(t):
+            return int(t / orbital_period) * sunlight_period * solar_gen + \
+                   min([t % orbital_period, sunlight_period]) * solar_gen
         # Set start time for simulation
         start = current_time - orbits[orbits["phase"] == "daylight"]["timestamp"].iloc[-1]
         # Calculate and return total energy production over duration
@@ -136,7 +138,8 @@ class Analytics:
         df["timestamp"] = df["ts0"] + df["ts1"]
         if len(df) < 3:
             raise RuntimeError("Not enough data!")
-        return (df["timestamp"][-1] - df["timestamp"][-3]) - (df["timestamp"][2] - df["timestamp"][0])
+        return (df["timestamp"].iloc[-1] - df["timestamp"].iloc[-3]) - \
+               (df["timestamp"].iloc[2] - df["timestamp"].iloc[0])
 
     @wrap_errors(LogicalError)
     def total_data_transmitted(self) -> int:
