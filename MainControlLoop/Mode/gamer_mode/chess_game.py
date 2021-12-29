@@ -15,7 +15,7 @@ class ChessGame:
         self.board.set_fen(fen)
 
     def get_best_move(self) -> chess.Move:
-        engine = chess.engine.SimpleEngine.popen_uci(r"C:\Users\hi2kh\OneDrive\Documents\GitHub\pfs-rewrite\MainControlLoop\Mode\gamer_mode\stockfish_14_win_x64_popcnt\stockfish_14_x64_popcnt.exe")
+        engine = chess.engine.SimpleEngine.popen_uci(r"MainControlLoop/Mode/gamer_mode/stockfish_14_win_x64_popcnt/stockfish_14_x64_popcnt.exe")
         # TODO: test file path on pi
         result = engine.play(self.board, chess.engine.Limit(time=0.1))
         engine.quit()
