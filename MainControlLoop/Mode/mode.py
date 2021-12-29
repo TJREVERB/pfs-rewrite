@@ -97,7 +97,9 @@ class Mode:
         TODO: implement system check of antenna deployer
         """
         for device in self.sfr.devices.keys():
-            self.sfr.devices[device].functional()
+            if self.sfr.devices[device].functional() is False:
+                return False
+        return True
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
