@@ -91,7 +91,6 @@ class StateFieldRegistry:
                 self.UPPER_THRESHOLD,
                 self.VOLT_UPPER_THRESHOLD,
                 self.VOLT_LOWER_THRESHOLD,
-                StateFieldRegistry.components.index(self.PRIMARY_RADIO),
                 StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
                 self.SIGNAL_STRENGTH_VARIABILITY,
                 int(self.MODE_LOCK),
