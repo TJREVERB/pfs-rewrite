@@ -49,9 +49,9 @@ class Gamer(Mode):
     def simulate_games(self):  # debug
         for _ in range(10):
             obj = ChessGame(self.sfr, 1)
-            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            game = f"Chess;{obj.random_fen()};{str(99999)}"
             self.game_queue.append(game)
-    
+
     def execute_cycle(self) -> None:
         self.simulate_games()
         game_queue = self.decode_game_queue()
