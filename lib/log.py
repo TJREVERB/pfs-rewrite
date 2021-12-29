@@ -103,4 +103,4 @@ class Logger:
     @wrap_errors(LogicalError)
     def log(self):
         for i in self.loggers.keys():
-            self.loggers[i].execute()
+            self.loggers[i].execute_buffers()
