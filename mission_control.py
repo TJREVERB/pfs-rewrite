@@ -19,7 +19,6 @@ class MissionControl:
                 APRSError: self.aprs_troubleshoot,
                 IridiumError: self.iridium_troubleshoot,
                 EPSError: self.eps_troubleshoot,
-                RTCError: self.rtc_troubleshoot,
                 IMUError: self.imu_troubleshoot,
                 BatteryError: self.battery_troubleshoot,
                 AntennaError: self.antenna_troubleshoot,
