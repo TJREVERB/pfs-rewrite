@@ -214,10 +214,12 @@ class APRS(Device):
         msg = self.read()
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+            if processed[0] in self.sfr.command_executor.primary_registry.keys():
+                self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+            if processed[0] in self.sfr.command_executor.secondary_registry.keys():
+                self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:
