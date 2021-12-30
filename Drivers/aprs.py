@@ -9,7 +9,8 @@ class APRS(Device):
     """
     Class for APRS
     """
-    SERIAL_CONVERTERS = ["SPI-UART"]
+    TRANSMISSION_ENERGY = 4.8 # Energy used per transmission, in J
+    SERIAL_CONVERTERS = ["USB-UART"]
     PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
@@ -196,14 +197,13 @@ class APRS(Device):
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
-        if packet.simulate:
-            return True
         self.sfr.logs["transmission"].write({
             "ts0": (t := time.time()) // 100000,
             "ts1": int(t % 100000),
             "radio": "APRS",
             "size": len(str(packet)),
         })
+        self.sfr.vars.BATTERY_CAPACITY_INT -= APRS.TRANSMISSION_ENERGY
         return self.write(str(packet))
 
     @wrap_errors(APRSError)

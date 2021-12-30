@@ -30,6 +30,7 @@ def is_hex(string):
     
 
 class Iridium(Device):
+    AVG_TRANSMISSION_POWER = 1 # VERY VERY TENTATIVE NUMBER
     SERIAL_CONVERTERS = ["UART-RS232"]
     PORT = '/dev/serial0'
     BAUDRATE = 19200
@@ -402,8 +403,6 @@ class Iridium(Device):
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """
-        if packet.simulate:
-            return True
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
@@ -484,7 +483,9 @@ class Iridium(Device):
         if i == 3:
             raise IridiumError(details="Message too long")
         self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
+        sttime = time.perf_counter()
         result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
+        self.sfr.vars.BATTERY_CAPACITY_INT -= (time.perf_counter() - sttime) * Iridium.AVG_TRANSMISSION_POWER
         return result
 
     @wrap_errors(IridiumError)
