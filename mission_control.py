@@ -103,8 +103,11 @@ class MissionControl:
         pass
 
     def imu_troubleshoot(self, e: CustomException):
-        self.sfr.power_off("IMU")
-        unsolicited_packet = UnsolicitedString("IMU failure, turned off IMU")
+        result = self.sfr.lock_device_off("IMU")
+        if result:
+            unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
+        else:
+            unsolicited_packet = UnsolicitedString("IMU failure: locked on so no action taken")
         self.sfr.command_executor.transmit(unsolicited_packet)
 
     def battery_troubleshoot(self, e: CustomException):
