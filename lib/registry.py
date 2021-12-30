@@ -223,7 +223,6 @@ class StateFieldRegistry:
         }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
-            "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
         self.modes_list = {

@@ -39,6 +39,7 @@ class Iridium(Device):
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
     ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
+        "GRB", # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
         "MCH",
         "MSC",
         "MOU",
@@ -52,6 +53,7 @@ class Iridium(Device):
         "GPL",
         "GCD",
         "GPW",
+        "GPR",
         "GOP",
         "GCS",
         "GSV",
@@ -73,6 +75,7 @@ class Iridium(Device):
         "IPC",
         "ICE",
         "IGO",
+        "IAK",
     ]
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
