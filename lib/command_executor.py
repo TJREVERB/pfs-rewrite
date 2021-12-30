@@ -227,27 +227,6 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def DLK(self, packet: TransmissionPacket) -> list:
-        """
-        Enable Device Lock
-        """
-        dcode = packet.args[0]
-        device_codes = [
-            "Iridium",
-            "APRS",
-            "IMU",
-            "Antenna Deployer"
-        ]
-        if dcode < 0 or dcode >= len(device_codes):
-            raise CommandExecutionException("Invalid Device Code")
-        if self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]]:
-            raise CommandExecutionException("Device already locked")
-        else:
-            self.sfr.vars.LOCKED_DEVICES[device_codes[dcode]] = True
-            self.transmit(packet, result := [dcode])
-        return result
-
-    @wrap_errors(CommandExecutionException)
     def DLN(self, packet: TransmissionPacket):
         """
         Lock a device on
