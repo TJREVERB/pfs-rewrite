@@ -100,6 +100,7 @@ class MissionControl:
         exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
 
     def imu_troubleshoot(self, e: CustomException):
+        #TODO: power cycle first
         result = self.sfr.lock_device_off("IMU")
         if result:
             unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
