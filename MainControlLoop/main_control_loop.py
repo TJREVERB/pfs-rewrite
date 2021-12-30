@@ -17,7 +17,9 @@ class MainControlLoop:
     def start(self):
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
-        self.sfr.power_on("IMU")
+        self.sfr.power_on("IMU")  # TODO: is this necessary?
+        for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
+            self.sfr.power_on(device)
         # self.sfr.MODE = Recovery(self.sfr) if not self.sfr.vars.ANTENNA_DEPLOYED else Startup(self.sfr)
         self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
         self.sfr.MODE.start()
