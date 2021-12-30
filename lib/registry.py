@@ -259,6 +259,36 @@ class StateFieldRegistry:
         while time.perf_counter() - begin < t:
             self.eps.commands["Reset Watchdog"]()
             time.sleep(60)
+    
+    @wrap_errors(LogicalError)
+    def check_upper_threshold(self):
+        """
+        Checks upper battery threshold for switching modes
+        Syncs voltage to integrated charge if necessary
+        :return: (bool) whether switch is required
+        """
+        if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            # Sync up the battery charge integration to voltage
+            return True
+        if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
+            return True
+        return False
+
+    @wrap_errors(LogicalError)
+    def check_lower_threshold(self):
+        """
+        Checks upper battery threshold for switching modes
+        Syncs voltage to integrated charge if necessary
+        :return: (bool) whether switch is required
+        """
+        if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            # Sync up the battery charge integration to voltage
+            return True
+        if self.vars.BATTERY_CAPACITY_INT < self.vars.LOWER_THRESHOLD:
+            return True
+        return False
 
     @wrap_errors(LogicalError)
     def load(self) -> Vars:

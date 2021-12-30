@@ -19,6 +19,6 @@ class Charging(Mode):
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
-        if self.sfr.vars.BATTERY_CAPACITY_INT > self.sfr.vars.UPPER_THRESHOLD:
+        if self.sfr.check_upper_threshold():
             return self.mode(self.sfr)
         return self

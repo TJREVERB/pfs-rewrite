@@ -183,8 +183,7 @@ class MissionControl:
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
             
-            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
-                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+            if self.sfr.check_lower_threshold():
                 self.sfr.power_off("Iridium")
                 self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("Iridium")
@@ -200,8 +199,7 @@ class MissionControl:
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
-            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
-                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+            if self.sfr.check_lower_threshold():
                 self.sfr.power_off("APRS")
                 self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("APRS")
