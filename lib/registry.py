@@ -38,8 +38,8 @@ class Vars:
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.MODE_LOCK = False  # Whether to lock mode switches
-        self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False,
-                               "Antenna Deployer": None}  # TODO: have a locked on and locked off dictionary
+        self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
+        self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
         self.CONTACT_ESTABLISHED = False
         self.ENABLE_SAFE_MODE = False
         self.transmit_buffer = []
@@ -67,8 +67,14 @@ class Vars:
             StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
             self.SIGNAL_STRENGTH_VARIABILITY,
             int(self.MODE_LOCK),
-            sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
-                 if self.LOCKED_DEVICES[i]]),
+            # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
+            #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
+            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_ON_DEVICES]),
+            # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
+            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_OFF_DEVICES]),
+            # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
             int(self.CONTACT_ESTABLISHED),
             int(self.START_TIME / 100000) * 100000,
             int(self.START_TIME % 100000),
@@ -389,8 +395,8 @@ class StateFieldRegistry:
         """
         if self.devices[component] is not None:
             return  # if component is already on, stop method from running further
-        if self.vars.LOCKED_DEVICES[component] is True:
-            return  # if component is locked, stop method from running further
+        if component in self.vars.LOCKED_OFF_DEVICES:
+            return  # if component is locked off, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
         for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
@@ -407,7 +413,7 @@ class StateFieldRegistry:
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return None
-        if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
+        if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
             return None
 
         self.devices[component].terminate()
@@ -473,3 +479,61 @@ class StateFieldRegistry:
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
+
+    @wrap_errors(LogicalError)
+    def lock_device_on(self, component: str, force=False):
+        """
+        Takes care of logic for locking on devices
+        :param component: (str) name of device to lock on
+        :param force: (bool) if true, this will overwrite any previous locks on this device
+        :return: whether the device was able to be locked on (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
+        """
+        if component in self.vars.LOCKED_ON_DEVICES:
+            return True  # if it's already locked on
+        if component in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off before
+            if not force:
+                return False  # the device was locked off before, and this is not allowed to overwrite
+            # else:
+            self.vars.LOCKED_OFF_DEVICES.remove(component)
+        # at this point, we know this is a legal action:
+        self.vars.LOCKED_ON_DEVICES.add(component)
+        if self.devices[component] is None:
+            self.power_on(component)  # needs to be powered on
+        return True
+
+    @wrap_errors(LogicalError)
+    def lock_device_off(self, component: str, force=False):
+        """
+        Takes care of logic for locking off devices
+        :param component: (str) name of device to lock off
+        :param force: (bool) if true, this will overwrite any previous locks on this device
+        :return: whether the device was able to be locked off (only false if force == False and it was previously in LOCKED_ON_DEVICES)
+        """
+        if component in self.vars.LOCKED_OFF_DEVICES:
+            return True  # if it's already locked off
+        if component in self.vars.LOCKED_ON_DEVICES:  # if it was locked on before
+            if not force:
+                return False  # the device was locked on before, and this is not allowed to overwrite
+            # else:
+            self.vars.LOCKED_ON_DEVICES.remove(component)
+        # at this point, we know this is a legal action
+        self.vars.LOCKED_OFF_DEVICES.add(component)
+        if not (self.devices[component] is None):  # needs to be powered off
+            self.power_off(component)
+        self.devices[component] = None  # this is already handled in power_off, but this is making it explicit
+        return True
+
+    def unlock_device(self, device: str):
+        """
+        Unlocks device
+        :param device: (str) name of device to unlock
+        :return: (bool) True if something had to be changed, False if it was not previously locked
+        """
+        if device in self.vars.LOCKED_ON_DEVICES:  # if it was locked on
+            self.vars.LOCKED_ON_DEVICES.remove(device)
+            return True
+        elif device in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off
+            self.vars.LOCKED_OFF_DEVICES.remove(device)
+            return True
+        else:
+            return False
