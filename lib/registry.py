@@ -495,6 +495,7 @@ class StateFieldRegistry:
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
         """
+        # TODO: don't switch if new radio is locked off, return boolean indicating success/failure
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
