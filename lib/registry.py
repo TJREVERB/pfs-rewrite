@@ -494,12 +494,17 @@ class StateFieldRegistry:
         """
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
+        :param new_radio: (str) string name of new radio (i.e. "APRS" or "Iridium")
+        :param turn_off_old: (bool) whether or not to turn off the old radio if it is being switched
+        :return: True if the primary radio could be set as specified (or it already was that one).
+            False only if it is locked off, or it's APRS and antenna not deployed
         """
-        # TODO: don't switch if new radio is locked off, return boolean indicating success/failure
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
+            if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
+                return False
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
-                return
+                return False
             if turn_off_old:
                 self.power_off(previous_radio)
             self.vars.PRIMARY_RADIO = new_radio
@@ -509,6 +514,7 @@ class StateFieldRegistry:
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
+        return True
 
     @wrap_errors(LogicalError)
     def lock_device_on(self, component: str, force=False):
