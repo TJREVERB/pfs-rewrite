@@ -18,14 +18,16 @@ class ChessGame:
 
     def get_best_move(self) -> chess.Move:
         #engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/gamer_mode/stockfish_14.1_android_armv7/stockfish.android.armv7')
-        stockfish = Stockfish("MainControlLoop/Mode/gamer_mode/stockfish_14.1_android_armv7/stockfish.android.armv7")
-        stockfish.set_fen_position(self.board.fen())
+        # result = engine.play(self.board, chess.engine.Limit(time=0.1))
+        # engine.quit()
+        # return result.move
+        stockfish = Stockfish(r"C:\Users\hi2kh\OneDrive\Documents\GitHub\pfs-rewrite\MainControlLoop\Mode\gamer_mode\stockfish_14.1_win_x64_avx2\stockfish_14.1_win_x64_avx2.exe")
+        print(self.board.fen())
+        stockfish.set_fen_position(str(self.board.fen()))
         move = stockfish.get_best_move()
         return chess.Move.from_uci(move)
         # TODO: test file path on pi
-        #result = engine.play(self.board, chess.engine.Limit(time=0.1))
-        #engine.quit()
-        #return result.move
+
 
     def push(self, move: chess.Move):  # uci string as move (i.e. d2d4)
         self.board.push(move)
@@ -44,7 +46,9 @@ class ChessGame:
                 return board.fen()
 
 
-
+game = ChessGame(5, 5)
+game.board = chess.Board(game.random_fen())
+print(game.get_best_move())
 
 
 
