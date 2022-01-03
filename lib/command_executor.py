@@ -177,6 +177,7 @@ class CommandExecutor:
         if str(self.sfr.mode_obj) == "Science":
             raise CommandExecutionException("Already in Science")
         self.sfr.MODE.terminate_mode()
+        self.sfr.logs["iridium"].clear()
         self.sfr.MODE = self.sfr.modes_list["Science"](self.sfr)
         self.sfr.MODE.start()
         self.transmit(packet, result := [])

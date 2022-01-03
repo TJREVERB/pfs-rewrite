@@ -24,7 +24,6 @@ class Science(Mode):
     def start(self) -> None:
         super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
-        self.sfr.logs["iridium"].clear()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
