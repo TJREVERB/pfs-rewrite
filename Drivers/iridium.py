@@ -30,6 +30,7 @@ def is_hex(string):
     
 
 class Iridium(Device):
+    AVG_TRANSMISSION_POWER = 1 # VERY VERY TENTATIVE NUMBER
     SERIAL_CONVERTERS = ["UART-RS232"]
     PORT = '/dev/serial0'
     BAUDRATE = 19200
@@ -39,19 +40,22 @@ class Iridium(Device):
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
     ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
+        "GRB", # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
         "MCH",
         "MSC",
         "MOU",
         "MRP",
         "MLK",
         "MDF",
-        "DLK",
+        "DLN",
+        "DLF",
         "DDF",
         "GCR",
         "GVT",
         "GPL",
         "GCD",
         "GPW",
+        "GPR",
         "GOP",
         "GCS",
         "GSV",
@@ -73,6 +77,7 @@ class Iridium(Device):
         "IPC",
         "ICE",
         "IGO",
+        "IAK",
     ]
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
@@ -398,8 +403,6 @@ class Iridium(Device):
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """
-        if packet.simulate:
-            return True
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
@@ -480,7 +483,9 @@ class Iridium(Device):
         if i == 3:
             raise IridiumError(details="Message too long")
         self.SBD_TIMEOUT(60)  # 60 second timeout for transmit
+        sttime = time.perf_counter()
         result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
+        self.sfr.vars.BATTERY_CAPACITY_INT -= (time.perf_counter() - sttime) * Iridium.AVG_TRANSMISSION_POWER
         return result
 
     @wrap_errors(IridiumError)

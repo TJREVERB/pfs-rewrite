@@ -2,7 +2,6 @@ import time
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Mode.science import Science
-from MainControlLoop.Mode.gamer_mode.gamer import Gamer
 
 
 class MainControlLoop:
@@ -18,15 +17,17 @@ class MainControlLoop:
     def start(self):
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
-        self.sfr.power_on("IMU")
-        # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED else Science(self.sfr)
-        self.sfr.MODE = Gamer(self.sfr)  # DEBUG!!!
+        self.sfr.power_on("IMU")  # TODO: is this necessary?
+        for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
+            self.sfr.power_on(device)
+        # self.sfr.MODE = Recovery(self.sfr) if not self.sfr.vars.ANTENNA_DEPLOYED else Startup(self.sfr)
+        self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
     def iterate(self):  # Repeat main control loop forever
         # If we haven't received a message for a very long time
-        if time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED > self.sfr.vars.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
+        if time.time() - self.sfr.vars.LAST_IRIDIUM_RECEIVED > self.sfr.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF:
             self.sfr.set_primary_radio("APRS")
 
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode

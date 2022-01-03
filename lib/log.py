@@ -19,16 +19,14 @@ class Logger:
         """
         Logs the power draw of every pdm
         :param buspower: power draw of bus
-        :param pdm_states: array of 1 and 0 representing state of all pdms. [0, 0, 1...]
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         """
         print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
-        data = {
+        self.sfr.logs["power"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
             "buspower": str(buspower),
-        } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))}
-        self.sfr.logs["power"].write(data)
+        } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))})
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -40,10 +38,7 @@ class Logger:
         self.sfr.logs["solar"].write({
             "ts0": t // 100000 * 100000,
             "ts1": int(t % 100000),
-            "bcr1": gen[0],
-            "bcr2": gen[1],
-            "bcr3": gen[2],
-        })
+        } | {self.sfr.PANELS[i]: gen[i] for i in range(len(gen))})
 
     @wrap_errors(LogicalError)
     def log_imu(self) -> None:  # Probably scuffed

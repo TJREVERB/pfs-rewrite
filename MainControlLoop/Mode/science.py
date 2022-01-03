@@ -24,12 +24,11 @@ class Science(Mode):
     def start(self) -> None:
         super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
-        self.sfr.logs["iridium"].clear()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
-        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # If we're on low battery
+        if self.sfr.check_lower_threshold():  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach

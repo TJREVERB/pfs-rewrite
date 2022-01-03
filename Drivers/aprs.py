@@ -9,7 +9,8 @@ class APRS(Device):
     """
     Class for APRS
     """
-    SERIAL_CONVERTERS = ["SPI-UART"]
+    TRANSMISSION_ENERGY = 4.8 # Energy used per transmission, in J
+    SERIAL_CONVERTERS = ["USB-UART"]
     PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
@@ -196,14 +197,13 @@ class APRS(Device):
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
-        if packet.simulate:
-            return True
         self.sfr.logs["transmission"].write({
             "ts0": (t := time.time()) // 100000,
             "ts1": int(t % 100000),
             "radio": "APRS",
             "size": len(str(packet)),
         })
+        self.sfr.vars.BATTERY_CAPACITY_INT -= APRS.TRANSMISSION_ENERGY
         return self.write(str(packet))
 
     @wrap_errors(APRSError)
@@ -214,10 +214,12 @@ class APRS(Device):
         msg = self.read()
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+            if processed[0] in self.sfr.command_executor.primary_registry.keys():
+                self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+            if processed[0] in self.sfr.command_executor.secondary_registry.keys():
+                self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:

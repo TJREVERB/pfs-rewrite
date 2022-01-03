@@ -37,7 +37,13 @@ class Startup(Mode):
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
-        print("Antenna Deployed")
+        print("Antenna deployment attempted")
+        time.sleep(30)
+        self.sfr.devices["Antenna Deployer"].check_deployment()
+        if self.sfr.vars.ANTENNA_DEPLOYED:
+            print("Antenna deployment successful")
+        else:
+            print("Antenna deployment unsuccessful")
         return True
 
     @wrap_errors(LogicalError)
@@ -53,7 +59,7 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
-        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:  # Execute cycle low battery
+        if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
             time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
@@ -67,7 +73,7 @@ class Startup(Mode):
         super().suggested_mode()
         if not self.sfr.vars.ANTENNA_DEPLOYED or not self.sfr.vars.CONTACT_ESTABLISHED:  # Necessary startup tasks
             return self
-        elif self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+        elif self.sfr.check_lower_threshold():
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
         else:
             return self.sfr.modes_list["Science"](self.sfr)

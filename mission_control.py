@@ -19,7 +19,6 @@ class MissionControl:
                 APRSError: self.aprs_troubleshoot,
                 IridiumError: self.iridium_troubleshoot,
                 EPSError: self.eps_troubleshoot,
-                RTCError: self.rtc_troubleshoot,
                 IMUError: self.imu_troubleshoot,
                 BatteryError: self.battery_troubleshoot,
                 AntennaError: self.antenna_troubleshoot,
@@ -99,12 +98,13 @@ class MissionControl:
     def eps_troubleshoot(self, e: CustomException):
         exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
 
-    def rtc_troubleshoot(self, e: CustomException):  # TODO: implement
-        pass
-
     def imu_troubleshoot(self, e: CustomException):
-        self.sfr.power_off("IMU")
-        unsolicited_packet = UnsolicitedString("IMU failure, turned off IMU")
+        #TODO: power cycle first
+        result = self.sfr.lock_device_off("IMU")
+        if result:
+            unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
+        else:
+            unsolicited_packet = UnsolicitedString("IMU failure: locked on so no action taken")
         self.sfr.command_executor.transmit(unsolicited_packet)
 
     def battery_troubleshoot(self, e: CustomException):
@@ -183,8 +183,7 @@ class MissionControl:
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
             
-            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
-                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+            if self.sfr.check_lower_threshold():
                 self.sfr.power_off("Iridium")
                 self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("Iridium")
@@ -200,8 +199,7 @@ class MissionControl:
             for message in self.sfr.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
-            if self.sfr.battery.telemetry["VBAT"]() < self.sfr.vars.VOLT_LOWER_THRESHOLD or \
-                    self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+            if self.sfr.check_lower_threshold():
                 self.sfr.power_off("APRS")
                 self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
                 self.sfr.power_on("APRS")

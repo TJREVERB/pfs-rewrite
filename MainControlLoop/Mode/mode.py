@@ -94,11 +94,19 @@ class Mode:
         """
         Performs a systems check of components that are on and returns a list of component failures
         Throws error if .functional() fails
-        TODO: do not check devices that are locked off
         """
         for device in self.sfr.devices.keys():
-            if self.sfr.devices[device].functional() is False:
-                return False
+            if not (device in self.sfr.vars.LOCKED_OFF_DEVICES):  # if it is not locked off, run functional check
+                device_object = self.sfr.devices[device]
+                was_off = False
+                if device_object is None:  # if the device is off, turn it on for the system check
+                    was_off = True
+                    self.sfr.power_on(device)
+                    device_object = self.sfr.devices[device]
+                if device_object.functional() is False:
+                    return False
+                if was_off:  # if it was previously off, turn it back off now that the systems check is complete
+                    self.sfr.power_off(device)
         return True
 
     @wrap_errors(LogicalError)

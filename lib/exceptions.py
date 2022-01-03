@@ -38,11 +38,6 @@ class EPSError(CustomException):
         return "EPSError: " + super().__repr__()
 
 
-class RTCError(CustomException): 
-    def __repr__(self):
-        return "RTCError: " + super().__repr__()
-
-
 class IMUError(CustomException): 
     def __repr__(self):
         return "IMUError: " + super().__repr__()

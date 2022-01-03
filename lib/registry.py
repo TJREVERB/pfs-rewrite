@@ -12,7 +12,6 @@ from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
-from MainControlLoop.Mode.gamer_mode.gamer import Gamer
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import Logger
@@ -20,7 +19,157 @@ from lib.exceptions import wrap_errors, LogicalError
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
 from Drivers.antenna_deployer import AntennaDeployer
-from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
+from Drivers.transmission_packet import UnsolicitedString
+
+
+class Vars:
+    @wrap_errors(LogicalError)
+    def __init__(self, sfr):
+        self.ANTENNA_DEPLOYED = False
+        # Integral estimate of remaining battery capacity
+        self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
+        self.FAILURES = []
+        self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
+        self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
+        self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
+        # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
+        self.LOWER_THRESHOLD = 133732.8 * 0.3
+        self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+        self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+        self.MODE_LOCK = False  # Whether to lock mode switches
+        self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
+        self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
+        self.CONTACT_ESTABLISHED = False
+        self.ENABLE_SAFE_MODE = False
+        self.transmit_buffer = []
+        self.command_buffer = []
+        self.outreach_buffer = []
+        self.START_TIME = time.time()
+        self.LAST_COMMAND_RUN = time.time()
+        self.LAST_MODE_SWITCH = time.time()
+        self.LAST_STARTUP = time.time()
+        self.LAST_IRIDIUM_RECEIVED = time.time()
+
+    @wrap_errors(LogicalError)
+    def encode(self):
+        return [
+            int(self.ANTENNA_DEPLOYED),
+            self.BATTERY_CAPACITY_INT,
+            sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
+            int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+            int(self.LAST_DAYLIGHT_ENTRY % 100000),
+            int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+            int(self.LAST_ECLIPSE_ENTRY % 100000),
+            self.ORBITAL_PERIOD,
+            self.LOWER_THRESHOLD,
+            self.UPPER_THRESHOLD,
+            StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
+            self.SIGNAL_STRENGTH_VARIABILITY,
+            int(self.MODE_LOCK),
+            # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
+            #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
+            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_ON_DEVICES]),
+            # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
+            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_OFF_DEVICES]),
+            # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
+            int(self.CONTACT_ESTABLISHED),
+            int(self.START_TIME / 100000) * 100000,
+            int(self.START_TIME % 100000),
+            int(self.LAST_COMMAND_RUN / 100000) * 100000,
+            int(self.LAST_COMMAND_RUN % 100000),
+            int(self.LAST_MODE_SWITCH / 100000) * 100000,
+            int(self.LAST_MODE_SWITCH % 100000)
+        ]
+
+    @wrap_errors(LogicalError)
+    def to_dict(self):
+        """
+        Converts vars to dictionary with encoded values
+        """
+        encoded = self.encode()
+        result = {}
+        for i in vars(self):
+            if not i.startswith("__") and i.isupper():
+                result[i] = encoded[0]  # encoded.pop(0)
+        return result
+
+
+class Log:
+    @wrap_errors(LogicalError)
+    def __init__(self, path, headers):
+        self.path = path
+        self.headers = headers
+        self.ext = path.split(".")[-1]
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
+        elif self.ext == "csv":  # For csv files
+            if pd.read_csv(self.path).columns.tolist() != self.headers:
+                self.clear()  # Clear log if columns don't match up (out of date log)
+
+    @wrap_errors(LogicalError)
+    def clear(self):
+        """
+        Reset log
+        """
+        if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
+            with open(self.path, "w") as f:  # Open file
+                f.write(",".join(self.headers) + "\n")  # Write headers + newline
+        elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
+            os.remove(self.path)  # Delete
+        elif self.ext == "json":  # For json files
+            if os.path.exists(self.path):  # IF file exists
+                os.remove(self.path)  # Delete
+            open(self.path, "x").close()  # Create empty file
+
+    @wrap_errors(LogicalError)
+    def write(self, data):
+        """
+        Append one line of data to a csv log or dump to a pickle or json log
+        :param data: dictionary of the form {"column_name": value} if csv log
+            object if pkl log
+            dictionary of the form {"field": float_val} if json log
+        """
+        if self.ext == "csv":
+            if list(data.keys()) != self.headers:  # Raise error if keys are wrong
+                raise LogicalError(details="Incorrect keys for logging")
+            # Append to log
+            pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
+                self.path, mode="a", header=False, index=False)
+        elif self.ext == "pkl":  # If log is pkl
+            with open(self.path, "wb") as f:
+                pickle.dump(data, f)  # Dump to file
+        elif self.ext == "json":  # If log is json
+            with open(self.path, "w") as f:
+                json.dump(data, f)  # Dump to file
+
+    @wrap_errors(LogicalError)
+    def truncate(self, n):
+        """
+        Remove n rows from log file
+        """
+        if self.ext != "csv":
+            raise LogicalError(details="Attempted to truncate non-csv log!")
+        elif len(df := self.read()) <= n:
+            self.clear()
+        else:
+            df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
+
+    @wrap_errors(LogicalError)
+    def read(self):
+        """
+        Read and return entire log
+        :return: dataframe if csv, object if pickle, dictionary if json
+        """
+        if self.ext == "csv":  # Return dataframe if csv
+            return pd.read_csv(self.path, header=0)
+        if self.ext == "pkl":  # Return object if pickle
+            with open(self.path, "rb") as f:
+                return pickle.load(f)
+        with open(self.path, "r") as f:
+            return json.load(f)  # Return dict if json
 
 
 class StateFieldRegistry:
@@ -37,85 +186,13 @@ class StateFieldRegistry:
         "SPI-UART",  # APRS Serial Converter
         "USB-UART"
     ]
-
-    class Registry:
-        @wrap_errors(LogicalError)
-        def __init__(self, sfr):
-            self.ANTENNA_DEPLOYED = False
-            # Integral estimate of remaining battery capacity
-            self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
-            self.FAILURES = []
-            self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
-            self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-            self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
-            # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
-            self.LOWER_THRESHOLD = 133732.8 * 0.3
-            self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
-            # Volt backup thresholds, further on than the capacity thresholds
-            self.VOLT_UPPER_THRESHOLD = 8.1
-            self.VOLT_LOWER_THRESHOLD = 7.3
-            self.UNSUCCESSFUL_SEND_TIME_CUTOFF = 60*60*24  # if it has been unsuccessfully trying to send messages
-            # via iridium for this amount of time, switch primary to APRS
-            self.UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60*60*24*7  # if no message is received on iridium for this
-            # amount of time, it will switch primary radio to APRS
-            self.DETUMBLE_THRESHOLD = 5  # angle for acceptable x and y rotation for detumble
-            self.PACKET_AGE_LIMIT = 60*6  # age limit before switching primary radio (seconds)
-            self.MINIMAX_TIMEOUT = 10  # max calculation time for minimax game algorithm (seconds)
-            self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
-            self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
-            self.MODE_LOCK = False  # Whether to lock mode switches
-            self.LOCKED_DEVICES = {"Iridium": False, "APRS": False, "IMU": False, "Antenna Deployer": None}  # TODO: have a locked on and locked off dictionary
-            self.CONTACT_ESTABLISHED = False
-            self.ENABLE_SAFE_MODE = False
-            self.transmit_buffer = []
-            self.command_buffer = []
-            self.outreach_buffer = []
-            self.START_TIME = time.time()
-            self.LAST_COMMAND_RUN = time.time()
-            self.LAST_MODE_SWITCH = time.time()
-            self.LAST_STARTUP = time.time()
-            self.LAST_IRIDIUM_RECEIVED = time.time()
-
-        @wrap_errors(LogicalError)
-        def encode(self):
-            return [
-                int(self.ANTENNA_DEPLOYED),
-                self.BATTERY_CAPACITY_INT,
-                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
-                int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
-                int(self.LAST_DAYLIGHT_ENTRY % 100000),
-                int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
-                int(self.LAST_ECLIPSE_ENTRY % 100000),
-                self.ORBITAL_PERIOD,
-                self.LOWER_THRESHOLD,
-                self.UPPER_THRESHOLD,
-                self.VOLT_UPPER_THRESHOLD,
-                self.VOLT_LOWER_THRESHOLD,
-                StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
-                self.SIGNAL_STRENGTH_VARIABILITY,
-                int(self.MODE_LOCK),
-                sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
-                     if self.LOCKED_DEVICES[i]]),
-                int(self.CONTACT_ESTABLISHED),
-                int(self.START_TIME / 100000) * 100000,
-                int(self.START_TIME % 100000),
-                int(self.LAST_COMMAND_RUN / 100000) * 100000,
-                int(self.LAST_COMMAND_RUN % 100000),
-                int(self.LAST_MODE_SWITCH / 100000) * 100000,
-                int(self.LAST_MODE_SWITCH % 100000)
-            ]
-
-        @wrap_errors(LogicalError)
-        def to_dict(self):
-            """
-            Converts vars to dictionary with encoded values
-            """
-            encoded = self.encode()
-            result = {}
-            for i in vars(self):
-                if not i.startswith("__") and i.isupper():
-                    result[i] = encoded[0]  # encoded.pop(0)
-            return result
+    UNSUCCESSFUL_SEND_TIME_CUTOFF = 60 * 60 * 24  # if it has been unsuccessfully trying to send messages
+    # via iridium for this amount of time, switch primary to APRS
+    UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
+    # amount of time, it will switch primary radio to APRS
+    # Volt backup thresholds, further on than the capacity thresholds
+    VOLT_UPPER_THRESHOLD = 8.1
+    VOLT_LOWER_THRESHOLD = 7.3
 
     @wrap_errors(LogicalError)
     def __init__(self):
@@ -124,24 +201,18 @@ class StateFieldRegistry:
         Vars in the "vars" object get logged
         """
         self.logs = {
-            "sfr": self.Log("./lib/data/state_field_log.pkl", None),
-            "sfr_readable": self.Log("./lib/data/state_field_log.json", None),
-            "power": self.Log("./lib/data/pwr_draw_log.csv",
-                              ["ts0", "ts1", "buspower"] + self.PDMS),
-            "solar": self.Log("./lib/data/solar_generation_log.csv",
-                              ["ts0", "ts1"] + self.PANELS),
-            "voltage_energy": self.Log("./lib/data/volt-energy-map.csv",
-                                       ["voltage", "energy"]),
-            "orbits": self.Log("./lib/data/orbit_log.csv",
-                               ["ts0", "ts1", "phase"]),
-            "iridium": self.Log("./lib/data/iridium_data.csv",
-                                ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
-            "imu": self.Log("./lib/data/imu_data.csv",
-                            ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
-            "command": self.Log("./lib/data/command_log.csv",
-                                ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
-            "transmission": self.Log("./lib/data/transmission_log.csv",
-                                     ["ts0", "ts1", "radio", "size"]),
+            "sfr": Log("./lib/data/state_field_log.pkl", None),
+            "sfr_readable": Log("./lib/data/state_field_log.json", None),
+            "power": Log("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
+            "solar": Log("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
+            "voltage_energy": Log("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
+            "orbits": Log("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
+            "iridium": Log("./lib/data/iridium_data.csv",
+                           ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
+            "imu": Log("./lib/data/imu_data.csv", ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
+            "command": Log("./lib/data/command_log.csv",
+                           ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
+            "transmission": Log("./lib/data/transmission_log.csv", ["ts0", "ts1", "radio", "size"]),
         }
 
         self.eps = EPS(self)  # EPS never turns off
@@ -158,7 +229,6 @@ class StateFieldRegistry:
         }
         self.serial_converters = {  # False if off, True if on
             "UART-RS232": False,  # Iridium Serial Converter
-            "SPI-UART": False,  # APRS Serial Converter
             "USB-UART": False  # Alternate APRS Serial Converter
         }
         self.modes_list = {
@@ -167,8 +237,7 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
-            "Recovery": Recovery,
-            "Gamer": Gamer,
+            "Recovery": Recovery
         }
 
         self.component_to_class = {  # returns class from component name
@@ -190,14 +259,44 @@ class StateFieldRegistry:
         while time.perf_counter() - begin < t:
             self.eps.commands["Reset Watchdog"]()
             time.sleep(60)
+    
+    @wrap_errors(LogicalError)
+    def check_upper_threshold(self):
+        """
+        Checks upper battery threshold for switching modes
+        Syncs voltage to integrated charge if necessary
+        :return: (bool) whether switch is required
+        """
+        if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            # Sync up the battery charge integration to voltage
+            return True
+        if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
+            return True
+        return False
 
     @wrap_errors(LogicalError)
-    def load(self) -> Registry:
+    def check_lower_threshold(self):
+        """
+        Checks upper battery threshold for switching modes
+        Syncs voltage to integrated charge if necessary
+        :return: (bool) whether switch is required
+        """
+        if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            # Sync up the battery charge integration to voltage
+            return True
+        if self.vars.BATTERY_CAPACITY_INT < self.vars.LOWER_THRESHOLD:
+            return True
+        return False
+
+    @wrap_errors(LogicalError)
+    def load(self) -> Vars:
         """
         Load sfr fields from log
         :return: (Registry) loaded registry
         """
-        defaults = self.Registry(self)
+        defaults = Vars(self)
         return defaults  # DEBUG
         try:
             fields = self.logs["sfr"].read()
@@ -245,7 +344,7 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal):
+    def log_iridium(self, location: tuple, signal) -> None:
         """
         Logs iridium data
         :param location: current geolocation
@@ -315,7 +414,7 @@ class StateFieldRegistry:
         """
         Resets state field registry log
         """
-        self.logs["sfr"].write(self.Registry())  # Write default log
+        self.logs["sfr"].write(Vars())  # Write default log
 
     @wrap_errors(LogicalError)
     def power_on(self, component: str) -> None:
@@ -325,13 +424,14 @@ class StateFieldRegistry:
         """
         if self.devices[component] is not None:
             return  # if component is already on, stop method from running further
-        if self.vars.LOCKED_DEVICES[component] is True:
-            return  # if component is locked, stop method from running further
+        if component in self.vars.LOCKED_OFF_DEVICES:
+            return  # if component is locked off, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
         for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
             self.eps.commands["Pin On"](current_converter)
         time.sleep(.5)
+        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
         self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
 
     @wrap_errors(LogicalError)
@@ -342,7 +442,7 @@ class StateFieldRegistry:
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return None
-        if self.vars.LOCKED_DEVICES[component] is True:  # if component is locked, stop method from running further
+        if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
             return None
 
         self.devices[component].terminate()
@@ -394,11 +494,17 @@ class StateFieldRegistry:
         """
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
+        :param new_radio: (str) string name of new radio (i.e. "APRS" or "Iridium")
+        :param turn_off_old: (bool) whether or not to turn off the old radio if it is being switched
+        :return: True if the primary radio could be set as specified (or it already was that one).
+            False only if it is locked off, or it's APRS and antenna not deployed
         """
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
+            if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
+                return False
             if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
-                return
+                return False
             if turn_off_old:
                 self.power_off(previous_radio)
             self.vars.PRIMARY_RADIO = new_radio
@@ -408,77 +514,62 @@ class StateFieldRegistry:
             self.vars.LAST_IRIDIUM_RECEIVED = time.time()
             unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
             self.command_executor.transmit(unsolicited_packet)
+        return True
 
-    class Log:
-        @wrap_errors(LogicalError)
-        def __init__(self, path, headers):
-            self.path = path
-            self.headers = headers
-            self.ext = path.split(".")[-1]
-            if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-                self.clear()
-            elif self.ext == "csv":  # For csv files
-                if pd.read_csv(self.path).columns.tolist() != self.headers:
-                    self.clear()  # Clear log if columns don't match up (out of date log)
+    @wrap_errors(LogicalError)
+    def lock_device_on(self, component: str, force=False):
+        """
+        Takes care of logic for locking on devices
+        :param component: (str) name of device to lock on
+        :param force: (bool) if true, this will overwrite any previous locks on this device
+        :return: whether the device was able to be locked on (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
+        """
+        if component in self.vars.LOCKED_ON_DEVICES:
+            return True  # if it's already locked on
+        if component in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off before
+            if not force:
+                return False  # the device was locked off before, and this is not allowed to overwrite
+            # else:
+            self.vars.LOCKED_OFF_DEVICES.remove(component)
+        # at this point, we know this is a legal action:
+        self.vars.LOCKED_ON_DEVICES.add(component)
+        if self.devices[component] is None:
+            self.power_on(component)  # needs to be powered on
+        return True
 
-        @wrap_errors(LogicalError)
-        def clear(self):
-            """
-            Reset log
-            """
-            if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
-                with open(self.path, "w") as f:  # Open file
-                    f.write(",".join(self.headers) + "\n")  # Write headers + newline
-            elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
-                os.remove(self.path)  # Delete
-            elif self.ext == "json":  # For json files
-                if os.path.exists(self.path):  # IF file exists
-                    os.remove(self.path)  # Delete
-                open(self.path, "x").close()  # Create empty file
+    @wrap_errors(LogicalError)
+    def lock_device_off(self, component: str, force=False):
+        """
+        Takes care of logic for locking off devices
+        :param component: (str) name of device to lock off
+        :param force: (bool) if true, this will overwrite any previous locks on this device
+        :return: whether the device was able to be locked off (only false if force == False and it was previously in LOCKED_ON_DEVICES)
+        """
+        if component in self.vars.LOCKED_OFF_DEVICES:
+            return True  # if it's already locked off
+        if component in self.vars.LOCKED_ON_DEVICES:  # if it was locked on before
+            if not force:
+                return False  # the device was locked on before, and this is not allowed to overwrite
+            # else:
+            self.vars.LOCKED_ON_DEVICES.remove(component)
+        # at this point, we know this is a legal action
+        self.vars.LOCKED_OFF_DEVICES.add(component)
+        if not (self.devices[component] is None):  # needs to be powered off
+            self.power_off(component)
+        self.devices[component] = None  # this is already handled in power_off, but this is making it explicit
+        return True
 
-        @wrap_errors(LogicalError)
-        def write(self, data):
-            """
-            Append one line of data to a csv log or dump to a pickle or json log
-            :param data: dictionary of the form {"column_name": value} if csv log
-                object if pkl log
-                dictionary of the form {"field": float_val} if json log
-            """
-            if self.ext == "csv":
-                if list(data.keys()) != self.headers:  # Raise error if keys are wrong
-                    raise LogicalError(details="Incorrect keys for logging")
-                # Append to log
-                pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
-                    self.path, mode="a", header=False, index=False)
-            elif self.ext == "pkl":  # If log is pkl
-                with open(self.path, "wb") as f:
-                    pickle.dump(data, f)  # Dump to file
-            elif self.ext == "json":  # If log is json
-                with open(self.path, "w") as f:
-                    json.dump(data, f)  # Dump to file
-
-        @wrap_errors(LogicalError)
-        def truncate(self, n):
-            """
-            Remove n rows from log file
-            """
-            if self.ext != "csv":
-                raise LogicalError(details="Attempted to truncate non-csv log!")
-            elif len(df := self.read()) <= n:
-                self.clear()
-            else:
-                df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
-
-        @wrap_errors(LogicalError)
-        def read(self):
-            """
-            Read and return entire log
-            :return: dataframe if csv, object if pickle, dictionary if json
-            """
-            if self.ext == "csv":  # Return dataframe if csv
-                return pd.read_csv(self.path, header=0)
-            if self.ext == "pkl":  # Return object if pickle
-                with open(self.path, "rb") as f:
-                    return pickle.load(f)
-            with open(self.path, "r") as f:
-                return json.load(f)  # Return dict if json
+    def unlock_device(self, device: str):
+        """
+        Unlocks device
+        :param device: (str) name of device to unlock
+        :return: (bool) True if something had to be changed, False if it was not previously locked
+        """
+        if device in self.vars.LOCKED_ON_DEVICES:  # if it was locked on
+            self.vars.LOCKED_ON_DEVICES.remove(device)
+            return True
+        elif device in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off
+            self.vars.LOCKED_OFF_DEVICES.remove(device)
+            return True
+        else:
+            return False
