@@ -1,13 +1,13 @@
 from Drivers.transmission_packet import UnsolicitedString
-from MainControlLoop.Mode.gamer_mode.chess_game import ChessGame
-from MainControlLoop.Mode.gamer_mode.tictactoe_game import TicTacToeGame
+from MainControlLoop.Mode.outreach.chess_game import ChessGame
+from MainControlLoop.Mode.outreach.tictactoe_game import TicTacToeGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import chess
 from lib.exceptions import wrap_errors, LogicalError
 
 
-class Gamer(Mode):
+class Outreach(Mode):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.sfr = sfr
