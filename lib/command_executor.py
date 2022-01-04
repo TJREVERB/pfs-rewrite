@@ -612,3 +612,20 @@ class CommandExecutor:
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result
+
+    def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
+        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        if str(self.sfr.MODE) != "Gamer":
+            raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
+        self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
+        self.transmit(packet, result := [])
+        return result
+
+    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
+        if str(self.sfr.MODE) == "Gamer":
+            raise CommandExecutionException("Already in gamer mode")
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
+        self.sfr.MODE.start()
+        self.transmit(packet, result := [])
+        return result
