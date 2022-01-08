@@ -22,9 +22,9 @@ class MainControlLoop:
         self.sfr.power_on("IMU")  # TODO: is this necessary?
         for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
             self.sfr.power_on(device)
-        # Set mode to Recovery if antenna deployed or aprs + ad are locked off, Startup otherwise
+        # Set mode to Recovery if (antenna deployed) or (aprs or ad are locked off), Startup otherwise
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
-        #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES and "Antenna Deployer" in
+        #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
         #     self.sfr.vars.LOCKED_OFF_DEVICES) else Startup(self.sfr)
         self.sfr.MODE = Science(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
         self.sfr.MODE.start()
