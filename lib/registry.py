@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import pickle
 import json
+from numpy import nan
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
@@ -355,9 +356,9 @@ class StateFieldRegistry:
             self.logs["iridium"].write({
                 "ts0": (t := time.time()) // 100000 * 100000,
                 "ts1": int(t % 100000),
-                "latitude": "NaN",
-                "longitude": "NaN",
-                "altitude": "NaN",
+                "latitude": nan,
+                "longitude": nan,
+                "altitude": nan,
                 "signal": signal,
             })
         else:
