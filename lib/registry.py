@@ -344,20 +344,31 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal) -> None:
+    def log_iridium(self, location: tuple, signal, isnan = False) -> None:
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         """
-        self.logs["iridium"].write({
-            "ts0": (t := time.time()) // 100000 * 100000,
-            "ts1": int(t % 100000),
-            "latitude": location[0],
-            "longitude": location[1],
-            "altitude": location[2],
-            "signal": signal,
-        })
+
+        if(isnan):
+            self.logs["iridium"].write({
+                "ts0": (t := time.time()) // 100000 * 100000,
+                "ts1": int(t % 100000),
+                "latitude": "NaN",
+                "longitude": "NaN",
+                "altitude": "NaN",
+                "signal": signal,
+            })
+        else:
+            self.logs["iridium"].write({
+                "ts0": (t := time.time()) // 100000 * 100000,
+                "ts1": int(t % 100000),
+                "latitude": location[0],
+                "longitude": location[1],
+                "altitude": location[2],
+                "signal": signal,
+            })
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:

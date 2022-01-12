@@ -1,7 +1,7 @@
 from numpy import nan
 from MainControlLoop.Mode.mode import Mode
 from Drivers.transmission_packet import UnsolicitedData
-from lib.exceptions import NoSignalException, wrap_errors, LogicalError
+from lib.exceptions import NoSignalException, wrap_errors, LogicalError, ProcessGeolocationException
 from lib.clock import Clock
 
 
@@ -46,11 +46,16 @@ class Science(Mode):
             return False
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                 self.sfr.devices["Iridium"].check_signal_active())
-            print("Logged with connectivity")
+            try:
+                self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
+                                    self.sfr.devices["Iridium"].check_signal_active())
+                print("Logged with connectivity")
+            except ProcessGeolocationException: # Iridium Geolocation Fail Redundancy
+                self.sfr.log_iridium((nan, nan, nan),
+                    self.sfr.devices["Iridium"].check_signal_active(), True)
+                print("Logged with connectivity")
         except NoSignalException:  # Log NaN geolocation, 0 signal strength
-            self.sfr.log_iridium((nan, nan, nan), 0)
+            self.sfr.log_iridium((nan, nan, nan), 0, True)
             print("Logged 0 connectivity")
         finally:  # Always update last_ping time to prevent spamming pings
             self.pings_performed += 1

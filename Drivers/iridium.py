@@ -4,7 +4,7 @@ from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
-    NoSignalException
+    NoSignalException, ProcessGeolocationException
 from Drivers.device import Device
 
 
@@ -576,13 +576,13 @@ class Iridium(Device):
         timestamp_time = int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH
         current_time = self.processed_time()
         if current_time is None:
-            return (0, 0, 0) # Return 0, 0, 0 if network time cannot be retrieved
+            raise ProcessGeolocationException(details="Time") 
         if current_time - timestamp_time > 60:
             # Checks if time passed since last geolocation update has been more than 60 seconds
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]  
             # Use SBDIX to update geolocation
             if result[0] not in [0, 1, 3, 4]:
-                return (0, 0, 0)  # Return 0, 0, 0 if SBDIX fails
+                raise ProcessGeolocationException(details="Geolocation") 
             raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
         lon = math.atan2(float(raw[1]), float(raw[0]))
         lat = math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5))
