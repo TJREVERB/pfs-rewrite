@@ -93,7 +93,7 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.bus.write_word_data(self.PRIMARY_ADDRESS, command.value, parameter)
+        self.bus.write_byte_data(self.PRIMARY_ADDRESS, command.value, parameter)
         return True
 
     @wrap_errors(AntennaError)
@@ -105,7 +105,7 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.write(command, 0x00)
+        self.bus.write_byte(command)
         time.sleep(0.5)
         return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
 
@@ -154,10 +154,8 @@ class AntennaDeployer(Device):
     @wrap_errors(AntennaError)
     def deploy(self) -> bool:
         self.enable()
-        self.write(AntennaDeployerCommand.DEPLOY_1, 0x0A)
-        self.write(AntennaDeployerCommand.DEPLOY_2, 0x0A)
-        self.write(AntennaDeployerCommand.DEPLOY_3, 0x0A)
-        self.write(AntennaDeployerCommand.DEPLOY_4, 0x0A)
+        self.write(AntennaDeployerCommand.AUTO_DEPLOY, 0x0A)
+        time.sleep(40) # Wait for deployment to finish
         return True
 
     @wrap_errors(AntennaError)
