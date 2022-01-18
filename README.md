@@ -53,24 +53,21 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    1. The **start** method powers on the APRS radio.
    2. **suggested_mode** returns Charging if there is low power, and self if there is not low power.
    3. Does nothing. It acts as a buffer while waiting for APRS commands using the **command_executor**. (soon to be gaming mode)
-10. **science.py** extends the Mode class and is the mode responsible for operations while conducting science
+9. **science.py** extends the Mode class and is the mode responsible for operations while conducting science
    1. The **start** method powers on the Iridium radio.
-   2. **suggested_mode**
+   2. **suggested_mode** returns the following
       3. Returns Charging if low battery
       4. Returns Outreach if done with data collection or Iridium is offline.
       5. Else returns Science.     
    3. The **ping** method pings ground with Iridium, logging geolocation data and signal strength.
    4. The **transmit_results** method transmits logged results using the **command_executor**.
    5. **execute_cycle** iterates through the required amount of pings and then transmits results.
-11. **repeater.py**
-   1. # TODO: Document
-12. **recovery.py**
-   1. # TODO: Document
-13. **aprs.py** contains all code pertaining to the APRS.
+
+10. **aprs.py** contains all code pertaining to the APRS.
    1. The **read** method reads and returns a message received over the APRS, and adds it to the **StateFieldRegistry**.
    2. The **write** method transmits a message through the APRS.
    3. The **functional** method tests if the component is connected properly and responsive to commands NEEDS TESTING, NOT FULLY IMPLEMENTED
-14. **eps.py** contains all code pertaining to the EPS.
+11. **eps.py** contains all code pertaining to the EPS.
    1. The **components** dictionary contains a list of all components connected to the EPS and their respective PDMs.
 
       1. “APRS”: APRS
@@ -120,10 +117,10 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    5. The **request** method requests and returns an uninterpreted bytes object from the EPS.
    6. The **command** method sends a command to the EPS.
    7. The **telemetry_request** method requests and returns interpreted telemetry data given tle and a multiplier.
-9. **antenna_deployer.py** contains all code pertaining to the antenna.
+12. **antenna_deployer.py** contains all code pertaining to the antenna.
    1. The **deploy** method deploys the antenna.
    2. The **control** method deploys the antenna if 30 minutes have elapsed and the antenna is not already deployed.
-10. **iridium.py** contians all code pertaining to the Iridium.
+13. **iridium.py** contians all code pertaining to the Iridium.
    1. The **commands** dictionary contains a list of all commands which can be sent to the Iridium.
       1. “Test”: Tests iridium by sending “AT”. Correct reply is “OK”.
       2. “Geolocation”: NOT UNDERSTOOD
@@ -147,6 +144,6 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    4. The **wave** method transmits a simple hardcoded message to the ground station. This is to accomplish our mission objective of testing Iridium.
    5. The **write** method writes a command to the Iridium.
    6. The **read** method reads in as many bytes as are available from the Iridium, serial timeout permitting.
-11. **reset.py** is a simple script to reset the **StateFieldRegistry** log.
+14. **reset.py** is a simple script to reset the **StateFieldRegistry** log.
 
 For more details on each specific part of the PFS, refer to the comments within the code. This README will be kept as up-to-date as possible.
