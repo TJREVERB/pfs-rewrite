@@ -13,55 +13,64 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
       3. **dump** writes the current values of the **StateFieldRegistry** to the log file. NEEDS TESTING
       4. **reset** clears the log file so that on the next boot, **StateFieldRegistry** sets object attributes to default values. NEEDS TESTING
    2. **data/state_field_log.txt** contains a backup of the **StateFieldRegistry** in case the pi crashes in space.
-2. **main.py** calls **run** in **main_control_loop.py**.
+2. **mission_control.py** calls **run** in **main_control_loop.py**.
+   1. Iterates through main_control_loop and catches any errors that show up and troubleshoots them, continuing the MCL if troubleshooting is succesful.
+   2. If troubleshooting fails, the program errors out.
 3. **main_control_loop.py** iterates forever, reading input from its components and deciding what to do in each cycle. The following are the attributes of the **MainControlLoop** class.
-   1. **command_registry** stores all the 3-digit codes we can send up from the ground station and the associated lambda functions. Format: `self.command_registry[COMMAND]()`
-      1. “TST”: Test method, calls **log** and logs "Hello" NEEDS TESTING
-      3. “BVT”: Retrieves battery voltage from EPS and transmits the value to the ground station using **aprs.write**
-      4. “MCH”: Switches to charging mode by changing corresponding value in state field registry NEEDS TESTING
-      5. “MSC”: Enters science mode by changing corresponding value in state field registry NEEDS TESTING
-      6. "MOU": Switches to outreach mode by changing corresponding value in state field registry NEEDS Testing
-      7. "MRP": Switches to repeater mode by changing corresponding value in state field registry NEEDS Testing
-      8. "MLK": Enables Mode Lock
-      9. "MDF": Disables Mode Lock
-      10. "DLK": Enables device lock
-      11. "DDK": Disables device lock
-      12. “U00”: Sets minimum battery voltage for when satellite will enter SCIENCE mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
-      13. “L00”: Sets maximum battery voltage for when satellite will enter CHARGING mode. Second character determines ones digit, third character determines tenths digit. NEEDS TESTING
-      14. “RST”: Calls **reset_power** and power resets the entire cubesat NEEDS TESTING
-      15. “IRI”: Calls **iridium.wave** and transmits a simple hardcoded message back to the ground station over Iridium
-      16. “PWR”: Retrieves total power draw from EPS and transmits the result using **aprs.write** NEEDS TESTING
-   2. The **log** method calls **sfr.dump**, saving the current state of the **StateFieldRegistry**. This is a separate method in order to easily comment out logging across the entire satellite when testing and debugging.
-   3. The **charging_mode** method disables Iridium
-   4. The **science_mode** method enables Iridium
-   5. The **command_interpreter** method takes the APRS message in the **StateFieldRegistry** (if any) and executes the command sent by the ground station if it’s in the **command_registry**. Logs the result in **log.txt**.
-   6. The **on_start** method runs exactly once, when the satellite is in STARTUP mode, directly after the deployment switch is depressed.
-      1. Switches off all PDMs to conserve power.
-      2. Waits 30 minutes, then deploys the antenna and updates **sfr.ANTENNA_DEPLOYED**.
-      3. Calls **log** to dump **StateFieldRegistry**.
-      4. Switches off antenna deployer and switches on APRS to receive messages. Satellite is now in the equivalent of CHARGING mode.
-      5. Waits for battery to charge up to the upper threshold before proceeding to IOC mode.
-      6. Switches mode to IOC and calls **log** to dump **StateFieldRegistry**.
-   7. The **ioc** method runs exactly once, directly after the satellite has left STARTUP mode.
-      1. Switches on all PDMs.
-      2. Calls **iridium.wave** to send hardcoded message down to groundstation over Iridium, completing mission objective of testing Iridium.
-      3. Enters either CHARGING or SCIENCE mode depending on remaining battery voltage.
-   8. The **execute_buffers** method first reads in data from our components, then decides what to do with that information.
-      1. **aprs.read**
-      2. Requests battery voltage from EPS
-      3. **command_interpreter**
-      4. Switches to CHARGING mode or SCIENCE mode depending on value
-      5. **log**
-   9. The **run** method is called by **main** on satellite boot.
-      1. Sets START_TIME in **sfr**.
-      2. Calls **on_startup** if in STARTUP mode.
-      3. Calls **ioc** if in IOC mode.
-      4. Calls **execute_buffers** in an infinite loop.
-4. **aprs.py** contains all code pertaining to the APRS.
+   1. On **__init__** it creates the **StateFieldRegistry** object.
+   2. The **start** method initializes everything for the MCL.
+      1. Saves current time in the **StateFieldRegistry** vars as LAST_STARTUP.
+      2. Instantiates a Recovery mode object if (antenna deployed) or (aprs or ad are locked off). Otherwise, instantiates a Startup mode object.
+      3. Calls the Mode's **start** method.
+   3. The **iterate** method is what iterates forever
+      1. If there hasn't been contact from Iridium in a long time, it switches the primary radio to APRS.
+      2. It iterates the Mode object.
+      3. If there isn't a mode lock, it checks for if the Mode object wants to changes to another mode.
+      4. It then calls the **command_executor** to execute any commands.
+      5. It then logs the **StateFieldRegistry**.
+5. **command_executor.py** contains all code pertaining to executing commands from TransmissionPackets
+   1. The **primary_registry** dictionary contains method declarations for all of the commands that APRS and Iridium can execute.
+   2. The **secondary_registry** dictionary contains method declarations for all of the commands that are accessible to outreach partners.
+   3. The **execute** method is called through **execute_buffers**, reading any TransmissionPackets that have been recieved.
+      1. It reads the packet for whatever command is given, handling any garbled messages.
+      2. It then tries to execute the command, handling any exceptions in the process.
+      3. It then logs the command through the **StateFieldRegistry**. 
+6. **startup.py** extends the Mode class and is the mode responsible for operations at startup
+   1. The **start** method powers on the Iridium radio.
+   2. The **deploy_antenna** method attempts to deploy the APRS antenna if we've detumbled and enough time has passed.
+   3. The **ping** method attempts to establish connection with ground using the **command_executor**.
+   4. **execute_cycle**
+      1. If the battery is low, it turns off all PDMs and sleeps for an orbit.
+      2. Else, it turns on the primary radio, tries **deploy_antenna**, and attempts to beacon.
+   5. **suggested_mode**
+      1.  If the antennae haven't been deployed, or contact hasn't been established, returns Startup.
+      2.  Else if low battery, returns Charging.
+      3.  Else returns Science.
+7. **charging.py** extends the Mode class and is the mode responsible for operations while charging
+   1. The **start** method powers on the primary radio.
+   2. Does nothing in order to preserve power.
+8. **outreach.py** extends the Mode class and is the mode responsible for operations while outreaching
+   1. The **start** method powers on the APRS radio.
+   2. **suggested_mode** returns Charging if there is low power, and self if there is not low power.
+   3. Does nothing. It acts as a buffer while waiting for APRS commands using the **command_executor**. (soon to be gaming mode)
+10. **science.py** extends the Mode class and is the mode responsible for operations while conducting science
+   1. The **start** method powers on the Iridium radio.
+   2. **suggested_mode**
+      3. Returns Charging if low battery
+      4. Returns Outreach if done with data collection or Iridium is offline.
+      5. Else returns Science.     
+   3. The **ping** method pings ground with Iridium, logging geolocation data and signal strength.
+   4. The **transmit_results** method transmits logged results using the **command_executor**.
+   5. **execute_cycle** iterates through the required amount of pings and then transmits results.
+11. **repeater.py**
+   1. # TODO: Document
+12. **recovery.py**
+   1. # TODO: Document
+13. **aprs.py** contains all code pertaining to the APRS.
    1. The **read** method reads and returns a message received over the APRS, and adds it to the **StateFieldRegistry**.
    2. The **write** method transmits a message through the APRS.
    3. The **functional** method tests if the component is connected properly and responsive to commands NEEDS TESTING, NOT FULLY IMPLEMENTED
-5. **eps.py** contains all code pertaining to the EPS.
+14. **eps.py** contains all code pertaining to the EPS.
    1. The **components** dictionary contains a list of all components connected to the EPS and their respective PDMs.
 
       1. “APRS”: APRS
@@ -111,10 +120,10 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    5. The **request** method requests and returns an uninterpreted bytes object from the EPS.
    6. The **command** method sends a command to the EPS.
    7. The **telemetry_request** method requests and returns interpreted telemetry data given tle and a multiplier.
-6. **antenna_deployer.py** contains all code pertaining to the antenna.
+9. **antenna_deployer.py** contains all code pertaining to the antenna.
    1. The **deploy** method deploys the antenna.
    2. The **control** method deploys the antenna if 30 minutes have elapsed and the antenna is not already deployed.
-7. **iridium.py** contians all code pertaining to the Iridium.
+10. **iridium.py** contians all code pertaining to the Iridium.
    1. The **commands** dictionary contains a list of all commands which can be sent to the Iridium.
       1. “Test”: Tests iridium by sending “AT”. Correct reply is “OK”.
       2. “Geolocation”: NOT UNDERSTOOD
@@ -138,6 +147,6 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    4. The **wave** method transmits a simple hardcoded message to the ground station. This is to accomplish our mission objective of testing Iridium.
    5. The **write** method writes a command to the Iridium.
    6. The **read** method reads in as many bytes as are available from the Iridium, serial timeout permitting.
-8. **reset.py** is a simple script to reset the **StateFieldRegistry** log.
+11. **reset.py** is a simple script to reset the **StateFieldRegistry** log.
 
 For more details on each specific part of the PFS, refer to the comments within the code. This README will be kept as up-to-date as possible.
