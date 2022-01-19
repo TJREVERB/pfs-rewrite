@@ -71,10 +71,10 @@ class Vars:
             # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
             #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
             sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_ON_DEVICES]),
+                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_ON_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
             sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_OFF_DEVICES]),
+                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_OFF_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
             int(self.CONTACT_ESTABLISHED),
             int(self.START_TIME / 100000) * 100000,
