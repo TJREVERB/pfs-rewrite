@@ -1,10 +1,11 @@
 import time, datetime
 import math
+from numpy import nan
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, IridiumError, LogicalError, InvalidCommandException, \
-    NoSignalException, ProcessGeolocationException
+    NoSignalException
 from Drivers.device import Device
 
 
@@ -279,10 +280,11 @@ class Iridium(Device):
                     encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
                 else:
                     raise LogicalError(details="Invalid descriptor string")
-        
+
         if packet.numerical:
             for n in packet.return_data:
-                # convert from float or int to twos comp half precision, bytes are MSB FIRST
+                n = 0 if n is nan else n
+                #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
                     exp = int(math.log10(abs(n)))

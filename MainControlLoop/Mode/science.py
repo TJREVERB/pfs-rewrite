@@ -49,7 +49,7 @@ class Science(Mode):
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
             if(geolocation == (0, 0, 0)):
                 self.sfr.log_iridium(geolocation,
-                    self.sfr.devices["Iridium"].check_signal_active(), True)            
+                    self.sfr.devices["Iridium"].check_signal_active(), True)
             else:
                 self.sfr.log_iridium(geolocation,
                     self.sfr.devices["Iridium"].check_signal_active())

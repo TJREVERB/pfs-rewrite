@@ -1,11 +1,11 @@
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 from smbus2 import SMBus, i2c_msg
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
 
 
-class AntennaDeployerCommand(Enum):
+class AntennaDeployerCommand(IntEnum):
     SYSTEM_RESET = 0xAA
     WATCHDOG_RESET = 0xCC
 
@@ -105,7 +105,7 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.bus.write_byte(command)
+        self.bus.write_byte(self.PRIMARY_ADDRESS, command)
         time.sleep(0.5)
         return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
 
