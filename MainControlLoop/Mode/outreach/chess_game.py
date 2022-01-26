@@ -1,7 +1,6 @@
 import chess
 import chess.engine
 import random
-from stockfish import Stockfish
 
 
 class ChessGame:
@@ -40,9 +39,7 @@ class ChessGame:
                 return board.fen()
 
 
-game = ChessGame(5, 5)
-game.board = chess.Board(game.random_fen())
-print(game.get_best_move())
+
 
 
 
