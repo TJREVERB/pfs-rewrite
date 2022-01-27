@@ -1,4 +1,3 @@
-from numpy import nan
 from MainControlLoop.Mode.mode import Mode
 from Drivers.transmission_packet import UnsolicitedData
 from lib.exceptions import NoSignalException, wrap_errors, LogicalError
@@ -58,7 +57,7 @@ class Science(Mode):
                     self.sfr.devices["Iridium"].check_signal_active())
             print("Logged with connectivity")
         except NoSignalException:  # Log NaN geolocation, 0 signal strength
-            self.sfr.log_iridium((nan, nan, nan), 0, True)
+            self.sfr.log_iridium((0, 0, 0), 0, True)
             print("Logged 0 connectivity")
         finally:  # Always update last_ping time to prevent spamming pings
             self.pings_performed += 1
