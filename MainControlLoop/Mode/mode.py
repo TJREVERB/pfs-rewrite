@@ -46,6 +46,7 @@ class Mode:
         For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
         """
+        self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
         self.iridium_clock.execute()
         self.read_aprs()
 
