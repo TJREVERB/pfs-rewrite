@@ -63,9 +63,9 @@ class Logger:
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
-        delta = self.sfr.battery.charging_power() * (time.time() - self.loggers["power"].last_iteration)
+        delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.loggers["power"].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(delta) > 999:  # TODO: ARBITRARY THRESHOLD
+        if abs(power) > 999:  # TODO: ARBITRARY THRESHOLD
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):
