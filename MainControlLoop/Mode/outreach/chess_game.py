@@ -1,7 +1,7 @@
 import chess
 import chess.engine
 import random
-
+from MainControlLoop.Mode.outreach.chess_ai import play
 
 class ChessGame:
     def __init__(self, sfr, game_id):
@@ -16,10 +16,11 @@ class ChessGame:
         self.board.set_fen(fen)
 
     def get_best_move(self) -> chess.Move:
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/stockfish_general-32.exe')
-        result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
-        engine.quit()
-        return result.move
+        #engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/stockfish_general-32.exe')
+        #result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        #engine.quit()
+
+        return play(self.board, 5)
         # TODO: test file path on pi
 
     def push(self, move: chess.Move):  # uci string as move (i.e. d2d4)
