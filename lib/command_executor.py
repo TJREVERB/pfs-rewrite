@@ -379,6 +379,7 @@ class CommandExecutor:
         """
         Transmit signal strength variability
         """
+        print("Attempting to transmit science results")
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
 
