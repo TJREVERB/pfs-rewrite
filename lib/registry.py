@@ -35,7 +35,7 @@ class Vars:
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.MODE_LOCK = False  # Whether to lock mode switches
@@ -192,8 +192,8 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 8.1
-    VOLT_LOWER_THRESHOLD = 7.3
+    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to something
+    VOLT_LOWER_THRESHOLD = 7.3  # TODO: update this value to something
 
     @wrap_errors(LogicalError)
     def __init__(self):

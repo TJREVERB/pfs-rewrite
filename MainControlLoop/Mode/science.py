@@ -30,10 +30,10 @@ class Science(Mode):
         if self.sfr.check_lower_threshold():  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
-            exit()  # TODO: remove this after testing is done
+            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            exit()  # TODO: remove this after testing is done
+            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
         return self  # Otherwise, stay in science
 
