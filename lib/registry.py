@@ -318,7 +318,7 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log and readable log
         """
         self.logs["sfr"].write(self.vars)
-        self.logs["sfr_readable"].write(self.vars.to_dict())
+        # self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
