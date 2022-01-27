@@ -262,6 +262,7 @@ class Iridium(Device):
         :param packet: (TransmissionPacket) packet to encode
         :return: (list) of bytes
         """
+        print(packet)
         encoded = [(packet.response << 1) | packet.numerical] # First byte "return code"
         encoded.append(packet.index) # Second byte index
         date = (packet.timestamp.day << 11) | (packet.timestamp.hour << 6) | packet.timestamp.minute  # third and fourth bytes date
