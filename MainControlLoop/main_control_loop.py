@@ -21,7 +21,8 @@ class MainControlLoop:
         for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
             self.sfr.power_on(device)
         # self.sfr.MODE = Recovery(self.sfr) if not self.sfr.vars.ANTENNA_DEPLOYED else Startup(self.sfr)
-        self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
+        #self.sfr.MODE = Science(self.sfr)  # DEBUG!!!
+        self.sfr.MODE = Outreach(self.sfr)
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
