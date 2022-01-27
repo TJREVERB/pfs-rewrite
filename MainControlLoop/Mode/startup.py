@@ -71,7 +71,11 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
-        if not self.sfr.vars.ANTENNA_DEPLOYED or not self.sfr.vars.CONTACT_ESTABLISHED:  # Necessary startup tasks
+        if (not self.sfr.vars.ANTENNA_DEPLOYED or not self.sfr.vars.CONTACT_ESTABLISHED) and \
+                ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
+                 "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES):
+            # if the antennae haven't been deployed, or contact hasn't been established, stay in startup mode as long
+            # as the APRS and Antenna Deployer are not locked off
             return self
         elif self.sfr.check_lower_threshold():
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])

@@ -1,5 +1,6 @@
 import time, datetime
 import math
+from numpy import nan
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -279,10 +280,11 @@ class Iridium(Device):
                     encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
                 else:
                     raise LogicalError(details="Invalid descriptor string")
-        
+
         if packet.numerical:
             for n in packet.return_data:
-                # convert from float or int to twos comp half precision, bytes are MSB FIRST
+                n = 0 if n is nan else n
+                #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
                     exp = int(math.log10(abs(n)))
@@ -576,13 +578,13 @@ class Iridium(Device):
         timestamp_time = int(raw[3], 16) * 90 / 1000 + Iridium.EPOCH
         current_time = self.processed_time()
         if current_time is None:
-            return (0, 0, 0) # Return 0, 0, 0 if network time cannot be retrieved
+            return (0, 0, 0)
         if current_time - timestamp_time > 60:
             # Checks if time passed since last geolocation update has been more than 60 seconds
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]  
             # Use SBDIX to update geolocation
             if result[0] not in [0, 1, 3, 4]:
-                return (0, 0, 0)  # Return 0, 0, 0 if SBDIX fails
+                return (0, 0, 0)
             raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
         lon = math.atan2(float(raw[1]), float(raw[0]))
         lat = math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5))

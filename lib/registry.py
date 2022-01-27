@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import pickle
 import json
+from numpy import nan
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
@@ -71,10 +72,10 @@ class Vars:
             # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
             #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
             sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_ON_DEVICES]),
+                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_ON_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
             sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.vars.LOCKED_OFF_DEVICES]),
+                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_OFF_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
             int(self.CONTACT_ESTABLISHED),
             int(self.START_TIME / 100000) * 100000,
@@ -345,20 +346,31 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal) -> None:
+    def log_iridium(self, location: tuple, signal, isnan = False) -> None:
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         """
-        self.logs["iridium"].write({
-            "ts0": (t := time.time()) // 100000 * 100000,
-            "ts1": int(t % 100000),
-            "latitude": location[0],
-            "longitude": location[1],
-            "altitude": location[2],
-            "signal": signal,
-        })
+
+        if(isnan):
+            self.logs["iridium"].write({
+                "ts0": (t := time.time()) // 100000 * 100000,
+                "ts1": int(t % 100000),
+                "latitude": nan,
+                "longitude": nan,
+                "altitude": nan,
+                "signal": signal,
+            })
+        else:
+            self.logs["iridium"].write({
+                "ts0": (t := time.time()) // 100000 * 100000,
+                "ts1": int(t % 100000),
+                "latitude": location[0],
+                "longitude": location[1],
+                "altitude": location[2],
+                "signal": signal,
+            })
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:

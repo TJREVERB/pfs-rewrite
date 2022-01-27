@@ -46,11 +46,16 @@ class Science(Mode):
             return False
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
-            self.sfr.log_iridium(self.sfr.devices["Iridium"].processed_geolocation(),
-                                 self.sfr.devices["Iridium"].check_signal_active())
+            geolocation = self.sfr.devices["Iridium"].processed_geolocation()
+            if(geolocation == (0, 0, 0)):
+                self.sfr.log_iridium(geolocation,
+                    self.sfr.devices["Iridium"].check_signal_active(), True)
+            else:
+                self.sfr.log_iridium(geolocation,
+                    self.sfr.devices["Iridium"].check_signal_active())
             print("Logged with connectivity")
         except NoSignalException:  # Log NaN geolocation, 0 signal strength
-            self.sfr.log_iridium((nan, nan, nan), 0)
+            self.sfr.log_iridium((nan, nan, nan), 0, True)
             print("Logged 0 connectivity")
         finally:  # Always update last_ping time to prevent spamming pings
             self.pings_performed += 1

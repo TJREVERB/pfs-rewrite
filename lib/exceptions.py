@@ -32,7 +32,6 @@ class SignalStrengthException(CustomException):
     def __repr__(self):
         return "SignalStrengthException: " + super().__repr__()
 
-
 class EPSError(CustomException): 
     def __repr__(self):
         return "EPSError: " + super().__repr__()

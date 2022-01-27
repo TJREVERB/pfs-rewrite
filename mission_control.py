@@ -12,9 +12,10 @@ class MissionControl:
 
     def __init__(self):
         try:
+            self.sfr: StateFieldRegistry
             self.mcl = MainControlLoop()
             self.sfr = self.mcl.sfr
-            self.sfr: StateFieldRegistry
+            #self.sfr: StateFieldRegistry
             self.error_dict = {
                 APRSError: self.aprs_troubleshoot,
                 IridiumError: self.iridium_troubleshoot,
