@@ -77,5 +77,6 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
+        print("Running science cycle")
         if self.ping_clock.execute():  # If we've performed enough pings
             self.transmit_results()
