@@ -71,6 +71,7 @@ class Science(Mode):
         """
         print("Transmitting results...")
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
+        print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY)
         # Transmit signal strength variability
         self.sfr.command_executor.GSV(UnsolicitedData("GSV"))
         return True
