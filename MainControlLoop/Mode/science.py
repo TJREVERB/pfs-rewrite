@@ -43,7 +43,7 @@ class Science(Mode):
         :return: (bool) whether function ran
         """
         if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
-            return False
+            return True
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
@@ -59,7 +59,7 @@ class Science(Mode):
             print("Logged 0 connectivity")
         finally:  # Always update last_ping time to prevent spamming pings
             self.pings_performed += 1
-            return True
+            return False
 
     @wrap_errors(LogicalError)
     def transmit_results(self) -> bool:
@@ -76,5 +76,5 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
-        if not self.ping_clock.execute():  # If we've performed enough pings
+        if self.ping_clock.execute():  # If we've performed enough pings
             self.transmit_results()
