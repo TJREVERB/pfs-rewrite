@@ -273,6 +273,7 @@ class StateFieldRegistry:
             # Sync up the battery charge integration to voltage
             return True
         if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
+            print("Exiting charging, BATTERY_CAPACITY_INT", self.vars.BATTERY_CAPACITY_INT)
             return True
         return False
 
