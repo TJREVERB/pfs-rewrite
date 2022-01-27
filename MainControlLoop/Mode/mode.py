@@ -60,8 +60,13 @@ class Mode:
         """
         if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
             return False
-        if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
+        signal = self.sfr.devices["Iridium"].check_signal_passive()
+        print("Iridium signal strength: ", signal)
+        if signal <= self.SIGNAL_THRESHOLD:
             return False
+        # TODO: add this back after testing
+        # if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
+        #     return False
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")
