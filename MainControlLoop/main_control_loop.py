@@ -2,6 +2,7 @@ import time
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Mode.science import Science
+from MainControlLoop.Mode.outreach.outreach import Outreach
 
 
 class MainControlLoop:
