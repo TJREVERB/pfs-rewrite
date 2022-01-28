@@ -88,7 +88,7 @@ def minimax(board, alpha, beta, is_maximizing_player: bool, depth: int):
         return 1000
     elif state == (1, 1):
         return 0
-    if depth >= 10:  # TODO: figure out dynamic way to set depth
+    if depth >= 2:  # TODO: figure out dynamic way to set depth
         return static_evaluation(board, is_maximizing_player)
 
     if is_maximizing_player:
