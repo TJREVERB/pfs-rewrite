@@ -40,6 +40,13 @@ class ChessGame:
                 return board.fen()
 
 
+game = ChessGame(5, 5)
+#random_game = game.random_fen()
+game.board = chess.Board()
+print(game.board)
+print(game.get_best_move())
+
+
 
 
 
