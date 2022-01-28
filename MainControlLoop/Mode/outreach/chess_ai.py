@@ -20,18 +20,19 @@ def check_winner(board) -> tuple:
     outcome.winner = True: white win
     outcome.winner = False: black win
     """
-    if chess.Board.outcome(board) is None: # no winner and no draw
+    if chess.Board.outcome(board) is None:  # no winner and no draw
         return 0, 0
-    elif chess.Board.outcome(board):  # if this is true, white won
+    elif chess.Board.outcome(board).winner:  # if this is true, white won
         return 1, 0
-    elif not chess.Board.outcome(board):  # if false, black won
+    elif not chess.Board.outcome(board).winner:  # if false, black won
         return 0, 1
     else:  # draw
         return 1, 1
 
 def push_move_to_copy(board, move: chess.Move) -> chess.Board:
     new_board = copy.deepcopy(board)
-    return new_board.push(move)
+    new_board.push(move)
+    return new_board
 
 def static_evaluation(board, is_maximizing_player: bool) -> int:
     fen = board.fen()
@@ -110,6 +111,8 @@ def minimax(board, alpha, beta, is_maximizing_player: bool, depth: int):
             if beta <= alpha:
                 break
         return best_score
+
+
 
 
 
