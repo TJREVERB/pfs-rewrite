@@ -17,6 +17,7 @@ class ChessGame:
         self.board.set_fen(fen)
 
     def get_best_move(self) -> chess.Move:
+        print(self.board)
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/a-stockf')
         result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
         engine.quit()

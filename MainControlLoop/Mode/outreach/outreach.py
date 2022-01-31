@@ -57,7 +57,7 @@ class Outreach(Mode):
         game_queue = self.decode_game_queue()
         for game in game_queue:
             ai_move = game.get_best_move()
-            print(ai_move)
+            print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             #self.transmit_string(str(game))
         self.game_queue.clear()

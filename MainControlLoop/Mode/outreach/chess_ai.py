@@ -63,7 +63,6 @@ def static_evaluation(board, is_maximizing_player: bool) -> int:
         return black_total-white_total
 
 def get_best_move(board, ponder_time):
-    print(board)
     legal_moves = get_valid_moves(board)
     best_score = -9999
     best_move = None  #best_move is Move object, not uci string
