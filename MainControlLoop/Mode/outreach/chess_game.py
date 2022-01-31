@@ -3,6 +3,7 @@ import chess.engine
 import random
 from MainControlLoop.Mode.outreach.chess_ai import play
 
+
 class ChessGame:
     def __init__(self, sfr, game_id):
         self.sfr = sfr
