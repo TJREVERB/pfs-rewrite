@@ -375,11 +375,28 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def GID(self, packet: TransmissionPacket) -> list:
+        """
+        Transmit signal strength mean and variability
+        """
+        print("Attempting to transmit science results")
+        self.transmit(packet, result := [self.sfr.analytics.signal_strength_mean(),
+                                         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def GSM(self, packet: TransmissionPacket) -> list:
+        """
+        Transmit signal strength mean
+        """
+        self.transmit(packet, result := [self.sfr.analytics.signal_strength_mean()])
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def GSV(self, packet: TransmissionPacket) -> list:
         """
         Transmit signal strength variability
         """
-        print("Attempting to transmit science results")
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
 
