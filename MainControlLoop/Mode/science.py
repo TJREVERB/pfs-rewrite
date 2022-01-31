@@ -70,10 +70,12 @@ class Science(Mode):
         :return: (bool) whether function ran
         """
         print("Transmitting results...")
+        self.sfr.vars.SIGNAL_STRENGTH_MEAN = self.sfr.analytics.signal_strength_mean()
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
+        print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN)
         print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY)
         # Transmit signal strength variability
-        self.sfr.command_executor.GSV(UnsolicitedData("GSV"))
+        self.sfr.command_executor.GID(UnsolicitedData("GID"))
         return True
 
     @wrap_errors(LogicalError)

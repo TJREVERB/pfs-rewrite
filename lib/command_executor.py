@@ -380,7 +380,7 @@ class CommandExecutor:
         Transmit signal strength mean and variability
         """
         print("Attempting to transmit science results")
-        self.transmit(packet, result := [self.sfr.analytics.signal_strength_mean(),
+        self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_MEAN,
                                          self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
 
@@ -389,7 +389,7 @@ class CommandExecutor:
         """
         Transmit signal strength mean
         """
-        self.transmit(packet, result := [self.sfr.analytics.signal_strength_mean()])
+        self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_MEAN])
         return result
 
     @wrap_errors(CommandExecutionException)

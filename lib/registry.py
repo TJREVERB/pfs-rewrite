@@ -37,6 +37,7 @@ class Vars:
         self.LOWER_THRESHOLD = 133732.8 * 0.3
         self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+        self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
