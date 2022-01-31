@@ -16,12 +16,12 @@ class ChessGame:
     def set_game(self, fen: str):
         self.board.set_fen(fen)
 
-    def get_best_move(self) -> chess.Move:
+    def get_best_move(self): #-> chess.Move:
         print(self.board)
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/a-stockf')
-        result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/stockfish_general-32.exe')
+        result = engine.play(self.board, chess.engine.Limit(5))#self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
         engine.quit()
-        return result
+        return result.move
         #return play(self.board, 5)
         # TODO: test file path on pi
 
@@ -42,11 +42,11 @@ class ChessGame:
                 return board.fen()
 
 
-game = ChessGame(5, 5)
+#game = ChessGame(5, 5)
 #random_game = game.random_fen()
-game.board = chess.Board()
-print(game.board)
-print(game.get_best_move())
+#game.board = chess.Board()
+#print(game.board)
+#print(type(game.get_best_move()))
 
 
 
