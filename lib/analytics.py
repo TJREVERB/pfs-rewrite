@@ -103,6 +103,15 @@ class Analytics:
         return 90 * 60  # Return assumed orbital period
 
     @wrap_errors(LogicalError)
+    def signal_strength_mean(self) -> float:
+        """
+        Calculates and returns signal strength mean based on Iridium data
+        :return: (float) mean of signal strength
+        """
+        df = self.sfr.logs["iridium"].read()
+        return df["signal"].mean()
+
+    @wrap_errors(LogicalError)
     def signal_strength_variability(self) -> float:
         """
         Calculates and returns signal strength variability based on Iridium data
