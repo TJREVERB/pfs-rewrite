@@ -47,8 +47,9 @@ class Mode:
         NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
-        self.iridium_clock.execute()
-        self.read_aprs()
+        if self.iridium_clock.time_elapsed():  # If enough time has passed
+            self.iridium_clock.execute()  # Poll iridium
+        self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:

@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import pickle
 import json
-from numpy import nan
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
@@ -300,7 +299,7 @@ class StateFieldRegistry:
         :return: (Registry) loaded registry
         """
         defaults = Vars(self)
-        return defaults  # DEBUG
+        return defaults  # TODO: DEBUG
         try:
             fields = self.logs["sfr"].read()
             if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
@@ -347,31 +346,20 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal, isnan = False) -> None:
+    def log_iridium(self, location: tuple, signal) -> None:
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         """
-
-        if(isnan):
-            self.logs["iridium"].write({
-                "ts0": (t := time.time()) // 100000 * 100000,
-                "ts1": int(t % 100000),
-                "latitude": nan,
-                "longitude": nan,
-                "altitude": nan,
-                "signal": signal,
-            })
-        else:
-            self.logs["iridium"].write({
-                "ts0": (t := time.time()) // 100000 * 100000,
-                "ts1": int(t % 100000),
-                "latitude": location[0],
-                "longitude": location[1],
-                "altitude": location[2],
-                "signal": signal,
-            })
+        self.logs["iridium"].write({
+            "ts0": (t := time.time()) // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "latitude": location[0],
+            "longitude": location[1],
+            "altitude": location[2],
+            "signal": signal,
+        })
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:

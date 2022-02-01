@@ -102,4 +102,5 @@ class Logger:
     @wrap_errors(LogicalError)
     def log(self):
         for i in self.loggers.keys():
-            self.loggers[i].execute()
+            if self.loggers[i].time_elapsed():
+                self.loggers[i].execute()

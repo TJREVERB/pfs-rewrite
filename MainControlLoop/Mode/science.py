@@ -44,24 +44,13 @@ class Science(Mode):
         Log current iridium connectivity
         :return: (bool) whether function ran
         """
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:
-            return True
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
-            if(geolocation == (0, 0, 0)):
-                self.sfr.log_iridium(geolocation,
-                    self.sfr.devices["Iridium"].check_signal_active(), True)
-            else:
-                self.sfr.log_iridium(geolocation,
-                    self.sfr.devices["Iridium"].check_signal_active())
-            print("Logged with connectivity")
         except NoSignalException:  # Log NaN geolocation, 0 signal strength
-            self.sfr.log_iridium((0, 0, 0), 0, True)
-            print("Logged 0 connectivity")
-        finally:  # Always update last_ping time to prevent spamming pings
-            self.pings_performed += 1
-            return False
+            geolocation = (0, 0, 0)
+        self.sfr.log_iridium(geolocation, self.sfr.devices["Iridium"].check_signal_active())
+        self.pings_performed += 1
 
     @wrap_errors(LogicalError)
     def transmit_results(self) -> bool:
@@ -81,6 +70,8 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         super().execute_cycle()
-        print("Running science cycle")
-        if self.ping_clock.execute():  # If we've performed enough pings
-            self.transmit_results()
+        # If enough time has passed and we haven't performed enough pings
+        if self.ping_clock.time_elapsed() and self.pings_performed < self.NUMBER_OF_REQUIRED_PINGS:
+            self.ping_clock.execute()  # Execute ping function
+            if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:  # If this was the final ping
+                self.transmit_results()  # Transmit results

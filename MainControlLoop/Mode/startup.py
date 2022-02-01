@@ -64,9 +64,10 @@ class Startup(Mode):
             self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
         else:  # Execute cycle normal
-            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # TODO: DON'T PIN ON EVERY SINGLE CYCLE
+            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
             self.deploy_antenna()
-            self.beacon.execute()
+            if self.beacon.time_elapsed():
+                self.beacon.execute()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
