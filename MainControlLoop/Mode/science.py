@@ -38,7 +38,7 @@ class Science(Mode):
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
-    def ping(self) -> bool:
+    def ping(self) -> None:
         print("Executing science mode ping")  # TODO: remove this after testing
         """
         Log current iridium connectivity
