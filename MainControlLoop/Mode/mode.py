@@ -13,7 +13,7 @@ class Mode:
         self.previous_time = 0
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.iridium_clock = Clock(self.poll_iridium, wait)  # Poll iridium every "wait" seconds
+        self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
@@ -48,7 +48,8 @@ class Mode:
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
         if self.iridium_clock.time_elapsed():  # If enough time has passed
-            self.iridium_clock.execute()  # Poll iridium
+            self.poll_iridium()
+            self.iridium_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)

@@ -12,7 +12,7 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.ping_clock = Clock(self.ping, 5)  # TODO: MAKE 60
+        self.ping_clock = Clock(5)  # TODO: MAKE 60
         self.pings_performed = 0
 
     @wrap_errors(LogicalError)
@@ -72,6 +72,7 @@ class Science(Mode):
         super().execute_cycle()
         # If enough time has passed and we haven't performed enough pings
         if self.ping_clock.time_elapsed() and self.pings_performed < self.NUMBER_OF_REQUIRED_PINGS:
-            self.ping_clock.execute()  # Execute ping function
+            self.ping()  # Execute ping function
+            self.ping_clock.update_time()
             if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:  # If this was the final ping
                 self.transmit_results()  # Transmit results
