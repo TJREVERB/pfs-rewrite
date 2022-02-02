@@ -51,6 +51,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
+        self.PACKET_AGE_LIMIT = 999999 # TODO: USE REAL VALUE
 
     @wrap_errors(LogicalError)
     def encode(self):
