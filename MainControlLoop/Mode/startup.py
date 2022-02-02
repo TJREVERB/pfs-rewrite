@@ -14,7 +14,7 @@ class Startup(Mode):
         Sets up constants
         """
         super().__init__(sfr)
-        self.beacon = Clock(self.ping, 120)
+        self.beacon = Clock(120)
 
     @wrap_errors(LogicalError)
     def __str__(self):
@@ -67,7 +67,8 @@ class Startup(Mode):
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
             self.deploy_antenna()
             if self.beacon.time_elapsed():
-                self.beacon.execute()
+                self.ping()
+                self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
