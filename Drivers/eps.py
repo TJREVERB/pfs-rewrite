@@ -198,11 +198,11 @@ class EPS(Device):
         """
         #try:
         self.bus.write_i2c_block_data(self.addr, register, data)
-        time.sleep(.05)
+        time.sleep(.1)
         result = self.bus.read_i2c_block_data(self.addr, 0, length)
         #except:
         #    return False
-        time.sleep(.1)
+        time.sleep(.25)
         return result
 
     @wrap_errors(EPSError)
@@ -217,7 +217,7 @@ class EPS(Device):
             result = self.bus.write_i2c_block_data(self.addr, register, data)
         except:
             return False
-        time.sleep(.1)
+        time.sleep(.25)
         return result
 
     @wrap_errors(EPSError)
@@ -228,8 +228,11 @@ class EPS(Device):
         :parm multiplier: = multiplier
         :return: (float) telemetry value
         """
-        raw = self.request(0x10, tle, 2)
-        return (raw[0] << 8 | raw[1]) * multiplier
+        result = []
+        for i in range(5): #avg filter
+            raw = self.request(0x10, tle, 2)
+            result.append((raw[0] << 8 | raw[1]) * multiplier)
+        return sum(result)/len(result)
 
     @wrap_errors(EPSError)
     def bus_power(self) -> float:
