@@ -1,7 +1,7 @@
 import chess
 import chess.engine
 import random
-from MainControlLoop.Mode.outreach.chess_ai import play
+
 
 
 class ChessGame:
@@ -22,8 +22,6 @@ class ChessGame:
         result = engine.play(self.board, chess.engine.Limit(0.2))#self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
         engine.quit()
         return result.move
-        #return play(self.board, 5)
-        # TODO: test file path on pi
 
     def push(self, move: chess.Move):  # uci string as move (i.e. d2d4)
         self.board.push(move)
