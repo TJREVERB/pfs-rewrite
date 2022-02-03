@@ -1,7 +1,7 @@
 import os
 import traceback
 import time
-from MainControlLoop.main_control_loop import MainControlLoop
+from MainControlLoop.Mode.outreach.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
 from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString

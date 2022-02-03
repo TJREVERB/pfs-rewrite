@@ -18,8 +18,8 @@ class ChessGame:
 
     def get_best_move(self): #-> chess.Move:
         print(self.board)
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/stockfish2')
-        result = engine.play(self.board, chess.engine.Limit(5))#self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/stockfish2')
+        result = engine.play(self.board, chess.engine.Limit(0.2))#self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
         engine.quit()
         return result.move
         #return play(self.board, 5)
