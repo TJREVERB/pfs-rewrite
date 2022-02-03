@@ -7,12 +7,12 @@ class Logger:
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         self.sfr = sfr
-        self.loggers = {
-            "sfr": Clock(self.sfr.dump, 0),
-            "imu": Clock(self.log_imu, 10),
-            "power": Clock(self.log_power_full, 30),
-            "integrate": Clock(self.integrate_charge, 0),
-            "orbits": Clock(self.update_orbits, 60),
+        self.clocks = {
+            "sfr": (Clock(0), self.sfr.dump),
+            "imu": (Clock(10), self.log_imu),
+            "power": (Clock(30), self.log_power_full),
+            "integrate": (Clock(0), self.integrate_charge),
+            "orbits": (Clock(60), self.update_orbits),
         }
 
     @wrap_errors(LogicalError)
@@ -69,7 +69,7 @@ class Logger:
         """
         Integrate charge in Joules
         """
-        delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.loggers["integrate"].last_iteration)
+        delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
         if abs(power) > 999:  # TODO: ARBITRARY THRESHOLD
             # Verify we're actually drawing an absurd amount of power
@@ -79,11 +79,9 @@ class Logger:
                 time.sleep(1)
             if (avg_draw := sum(total_draw) / 5) >= 999:  # TODO: ARBITRARY THRESHOLD
                 raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
-            else:  # If value was bogus, truncate logs and integrate charge based on historical data
+            else:  # If value was bogus, truncate logs
                 self.sfr.logs["power"].truncate(1)
                 self.sfr.logs["solar"].truncate(1)
-                self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.analytics.predicted_generation(
-                    t := time.time() - self.loggers["integrate"].last_iteration) - (self.sfr.analytics.predicted_consumption(t))
         else:
             # Add delta * time to BATTERY_CAPACITY_INT
             self.sfr.vars.BATTERY_CAPACITY_INT += delta
@@ -101,6 +99,7 @@ class Logger:
 
     @wrap_errors(LogicalError)
     def log(self):
-        for i in self.loggers.keys():
-            if self.loggers[i].time_elapsed():
-                self.loggers[i].execute()
+        for i in self.clocks.keys():
+            if self.clocks[i][0].time_elapsed():
+                self.clocks[i][1]()
+                self.clocks[i][0].update_time()
