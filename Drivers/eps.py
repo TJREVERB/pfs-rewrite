@@ -182,6 +182,7 @@ class EPS(Device):
             "3.3V": [0x04],
             "12V": [0x08],
         }
+        self.commands["Set Watchdog Period"]([16])
 
     @wrap_errors(EPSError)
     def functional(self):
