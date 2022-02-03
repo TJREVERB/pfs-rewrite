@@ -10,7 +10,8 @@ class Logger:
         self.loggers = {
             "sfr": Clock(self.sfr.dump, 0),
             "imu": Clock(self.log_imu, 10),
-            "power": Clock(self.integrate_charge, 30),
+            "power": Clock(self.log_power_full, 30),
+            "integrate": Clock(self.integrate_charge, 0),
             "orbits": Clock(self.update_orbits, 60),
         }
 
@@ -54,18 +55,23 @@ class Logger:
             "zgyro": tbl[2],
         })
 
-    @wrap_errors(LogicalError)
-    def integrate_charge(self) -> None:
+    def log_power_full(self) -> None:
         """
-        Integrate charge in Joules
+        Call log_power, log_solar
         """
         # Log total power, store values into variables
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
         # Log solar generation, store list into variable gen
         self.log_solar(self.sfr.eps.raw_solar_gen())
-        delta = self.sfr.battery.charging_power() * (time.time() - self.loggers["power"].last_iteration)
+
+    @wrap_errors(LogicalError)
+    def integrate_charge(self) -> None:
+        """
+        Integrate charge in Joules
+        """
+        delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.loggers["integrate"].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(delta) > 999:  # TODO: ARBITRARY THRESHOLD
+        if abs(power) > 999:  # TODO: ARBITRARY THRESHOLD
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):
@@ -77,7 +83,7 @@ class Logger:
                 self.sfr.logs["power"].truncate(1)
                 self.sfr.logs["solar"].truncate(1)
                 self.sfr.vars.BATTERY_CAPACITY_INT += self.sfr.analytics.predicted_generation(
-                    t := time.time() - self.loggers["power"].last_iteration) - (self.sfr.analytics.predicted_consumption(t))
+                    t := time.time() - self.loggers["integrate"].last_iteration) - (self.sfr.analytics.predicted_consumption(t))
         else:
             # Add delta * time to BATTERY_CAPACITY_INT
             self.sfr.vars.BATTERY_CAPACITY_INT += delta
@@ -96,4 +102,5 @@ class Logger:
     @wrap_errors(LogicalError)
     def log(self):
         for i in self.loggers.keys():
-            self.loggers[i].execute()
+            if self.loggers[i].time_elapsed():
+                self.loggers[i].execute()

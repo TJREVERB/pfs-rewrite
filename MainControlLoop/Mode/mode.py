@@ -13,7 +13,7 @@ class Mode:
         self.previous_time = 0
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.iridium_clock = Clock(self.poll_iridium, wait)  # Poll iridium every "wait" seconds
+        self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
@@ -46,8 +46,11 @@ class Mode:
         For example: measure signal strength as the orbit location changes.
         NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
         """
-        self.iridium_clock.execute()
-        self.read_aprs()
+        self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
+        if self.iridium_clock.time_elapsed():  # If enough time has passed
+            self.poll_iridium()
+            self.iridium_clock.update_time()
+        self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
@@ -59,8 +62,13 @@ class Mode:
         """
         if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
             return False
-        if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
+        signal = self.sfr.devices["Iridium"].check_signal_passive()
+        print("Iridium signal strength: ", signal)
+        if signal <= self.SIGNAL_THRESHOLD:
             return False
+        # TODO: add this back after testing
+        # if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
+        #     return False
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")

@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import pickle
 import json
-from numpy import nan
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
@@ -35,8 +34,9 @@ class Vars:
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 999999  # TODO: USE REAL VALUE
+        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+        self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 0.1  # max calculation time for minimax calculations in outreach (seconds)
         self.MODE_LOCK = False  # Whether to lock mode switches
@@ -52,6 +52,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
+        self.PACKET_AGE_LIMIT = 999999 # TODO: USE REAL VALUE
 
     @wrap_errors(LogicalError)
     def encode(self):
@@ -193,8 +194,8 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 8.1
-    VOLT_LOWER_THRESHOLD = 7.3
+    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to something
+    VOLT_LOWER_THRESHOLD = 7.3  # TODO: update this value to something
 
     @wrap_errors(LogicalError)
     def __init__(self):
@@ -274,6 +275,7 @@ class StateFieldRegistry:
             # Sync up the battery charge integration to voltage
             return True
         if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
+            print("Exiting charging, BATTERY_CAPACITY_INT", self.vars.BATTERY_CAPACITY_INT)
             return True
         return False
 
@@ -299,7 +301,7 @@ class StateFieldRegistry:
         :return: (Registry) loaded registry
         """
         defaults = Vars(self)
-        return defaults  # DEBUG
+        return defaults  # TODO: DEBUG
         try:
             fields = self.logs["sfr"].read()
             if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
@@ -346,31 +348,20 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal, isnan = False) -> None:
+    def log_iridium(self, location: tuple, signal) -> None:
         """
         Logs iridium data
         :param location: current geolocation
         :param signal: iridium signal strength
         """
-
-        if(isnan):
-            self.logs["iridium"].write({
-                "ts0": (t := time.time()) // 100000 * 100000,
-                "ts1": int(t % 100000),
-                "latitude": nan,
-                "longitude": nan,
-                "altitude": nan,
-                "signal": signal,
-            })
-        else:
-            self.logs["iridium"].write({
-                "ts0": (t := time.time()) // 100000 * 100000,
-                "ts1": int(t % 100000),
-                "latitude": location[0],
-                "longitude": location[1],
-                "altitude": location[2],
-                "signal": signal,
-            })
+        self.logs["iridium"].write({
+            "ts0": (t := time.time()) // 100000 * 100000,
+            "ts1": int(t % 100000),
+            "latitude": location[0],
+            "longitude": location[1],
+            "altitude": location[2],
+            "signal": signal,
+        })
 
     @wrap_errors(LogicalError)
     def recent_power(self) -> list:

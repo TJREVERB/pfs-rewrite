@@ -14,7 +14,7 @@ class Startup(Mode):
         Sets up constants
         """
         super().__init__(sfr)
-        self.beacon = Clock(self.ping, 120)
+        self.beacon = Clock(120)
 
     @wrap_errors(LogicalError)
     def __str__(self):
@@ -61,12 +61,14 @@ class Startup(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            time.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
+            self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
         else:  # Execute cycle normal
-            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # TODO: DON'T PIN ON EVERY SINGLE CYCLE
+            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
             self.deploy_antenna()
-            self.beacon.execute()
+            if self.beacon.time_elapsed():
+                self.ping()
+                self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

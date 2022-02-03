@@ -49,6 +49,7 @@ class MissionControl:
             self.testing_mode(e)
         while True:  # Run forever
             try:
+                print("----------------------------------- NEW MCL ITERATION --------------------------------------")
                 self.mcl.iterate()  # Run a single iteration of MCL
             except Exception as e:  # If a problem happens (entire pfs is wrapped to raise CustomExceptions)
                 if type(e) in self.error_dict:

@@ -4,24 +4,25 @@ from lib.exceptions import wrap_errors, LogicalError
 
 class Clock:
     @wrap_errors(LogicalError)
-    def __init__(self, func: callable, delay: float):
+    def __init__(self, delay: float):
         """
-        Run given function after given delay
-        :param func: function to run
+        Runs a function on a time interval
         :param delay: time to wait (seconds)
         """
-        self.func = func
         self.delay = delay
         self.last_iteration = 0
 
     @wrap_errors(LogicalError)
-    def execute(self) -> bool:
+    def time_elapsed(self) -> bool:
         """
-        Execute function if enough time has passed, otherwise update last iteration
-        Conditions are checked IN ORDER!!! If condition 1 fails, condition 2 is not run
+        Notifies if enough time has passed for the function to be run
+        :return: whether function can be run
         """
-        if time.time() > self.last_iteration + self.delay:  # If enough time has passed
-            result = self.func()  # Run function, return whether it ran
-            self.last_iteration = time.time()  # Update last iteration
-            return result
-        return False
+        return time.time() > self.last_iteration + self.delay
+
+    @wrap_errors(LogicalError)
+    def update_time(self):
+        """
+        Updates the last_iteration of this clock object
+        """
+        self.last_iteration = time.time()
