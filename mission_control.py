@@ -12,10 +12,8 @@ class MissionControl:
 
     def __init__(self):
         try:
-            self.sfr: StateFieldRegistry
-            self.mcl = MainControlLoop()
-            self.sfr = self.mcl.sfr
-            #self.sfr: StateFieldRegistry
+            self.sfr = StateFieldRegistry()
+            self.mcl = MainControlLoop(self.sfr)
             self.error_dict = {
                 APRSError: self.aprs_troubleshoot,
                 IridiumError: self.iridium_troubleshoot,
@@ -26,7 +24,7 @@ class MissionControl:
                 HighPowerDrawError: self.high_power_draw_troubleshoot,
             }
         except Exception as e:
-            self.testing_mode(e)
+            self.testing_mode(e)  # TODO: change this for real pfs
 
     def get_traceback(self):
         tb = traceback.format_exc().split("\n")
@@ -44,7 +42,7 @@ class MissionControl:
 
     def main(self):
         try:
-            self.mcl.start()
+            self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
             self.testing_mode(e)
         while True:  # Run forever
@@ -59,12 +57,6 @@ class MissionControl:
                     except IridiumError as e:
                         self.testing_mode(e)  # temporary for testing
                         # self.safe_mode_aprs(e)  <-- add this in before deployment
-                    except APRSError as e:
-                        self.testing_mode(e)  # temporary for testing
-                        # self.safe_mode_iridium(e)  <-- add this in before deployment
-                    except AntennaError as e:
-                        self.testing_mode(e)  # temporary for testing
-                        # self.safe_mode_iridium(e)  <-- add this in before deployment
                     except Exception as e:
                         self.testing_mode(e)  # troubleshooting fails
                 elif type(e) == KeyboardInterrupt:
@@ -72,45 +64,47 @@ class MissionControl:
                 else:  # built in exception leaked
                     self.testing_mode(e)
             else:  # dont want to force run this after potential remote code exec session
-                for message_packet in self.sfr.vars.transmit_buffer:
+                for message_packet in self.sfr.vars.transmit_buffer:  # TODO: FIX IF ONE RADIO IS LOCKED OFF
                     if message_packet.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT:  # switch radios
-                        self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
-                        self.sfr.vars.PRIMARY_RADIO = self.get_other_radio(self.sfr.vars.PRIMARY_RADIO)
-                        self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
-                        # transmit radio switched to ground
-
-    def get_other_radio(self, radio):
-        if radio == "Iridium":
-            return "APRS"
-        else:
-            return "Iridium"
+                        try:
+                            self.error_dict[IridiumError](None)
+                        except Exception:
+                            if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES:
+                                self.sfr.vars.LOCKED_OFF_DEVICES.remove("APRS")
+                            self.sfr.set_primary_radio("APRS", True)
+                            self.sfr.devices["APRS"].transmit(UnsolicitedString("PRIMARY RADIO SWITCHED"))
 
     def aprs_troubleshoot(self, e: CustomException):
         self.sfr.reboot("APRS")
         self.sfr.devices["APRS"].functional()
 
     def iridium_troubleshoot(self, e: CustomException):
-        print(self.get_traceback())
-        self.sfr.power_off("Iridium")
-        time.sleep(1)
-        self.sfr.power_on("Iridium")
-        time.sleep(10)
+        print(self.get_traceback())  # TODO: DEBUG
+        self.sfr.reboot("Iridium")
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
 
     def eps_troubleshoot(self, e: CustomException):
-        exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
+        # EPS will reset automatically after a while,
+        # this ensures the python files don't get corrupted when that happens
+        exit()
 
     def imu_troubleshoot(self, e: CustomException):
-        #TODO: power cycle first
-        result = self.sfr.lock_device_off("IMU")
-        if result:
-            unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
-        else:
-            unsolicited_packet = UnsolicitedString("IMU failure: locked on so no action taken")
-        self.sfr.command_executor.transmit(unsolicited_packet)
+        # TODO: power cycle first
+        self.sfr.reboot("IMU")
+        try:
+            self.sfr.devices["IMU"].functional()
+        except IMUError:
+            result = self.sfr.lock_device_off("IMU")
+            if result:
+                unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
+            else:
+                unsolicited_packet = UnsolicitedString("IMU failure: locked on so no action taken")
+            self.sfr.command_executor.transmit(unsolicited_packet)
 
     def battery_troubleshoot(self, e: CustomException):
-        exit()  # EPS will reset automatically after a while, this ensures the python files don't get corrupted when that happens
+        # EPS will reset automatically after a while,
+        # this ensures the python files don't get corrupted when that happens
+        exit()
     
     def antenna_troubleshoot(self, e: CustomException):
         self.sfr.reboot("Antenna Deployer")
@@ -150,7 +144,8 @@ class MissionControl:
             pass
         else:
             sent_successfully = False
-            while not sent_successfully:  # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
+            # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
+            while not sent_successfully:
                 try:
                     self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))
                 except NoSignalException:
@@ -164,7 +159,8 @@ class MissionControl:
             self.sfr.devices["APRS"].functional()
             self.sfr.devices["APRS"].transmit(UnsolicitedString("APRS safe mode enabled"))
         except APRSError:
-            os.system("sudo reboot")  # PFS team took an L
+            print("L :(")
+            exit()  # PFS team took an L
         else:
             return self.safe_mode_aprs
 
@@ -182,12 +178,14 @@ class MissionControl:
         while self.sfr.vars.enter_safe_mode:
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()
-            for message in self.sfr.command_buffer:
+            for message in self.sfr.vars.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
             
-            if self.sfr.check_lower_threshold():
+            if self.sfr.check_lower_threshold():  # if battery is low
+                print("cry")
+                self.sfr.devices["Iridium"].transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
                 self.sfr.power_off("Iridium")
-                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
+                self.sfr.sleep(5400)  # charge for one orbit
                 self.sfr.power_on("Iridium")
 
     def safe_mode_aprs(self, e: Exception):
@@ -198,12 +196,13 @@ class MissionControl:
         while self.sfr.vars.enter_safe_mode:
             self.sfr.devices["APRS"].next_msg()
 
-            for message in self.sfr.command_buffer:
+            for message in self.sfr.vars.command_buffer:
                 self.sfr.command_executor.primary_registry[message.command_string](message)
 
             if self.sfr.check_lower_threshold():
+                print("cry")
                 self.sfr.power_off("APRS")
-                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
+                self.sfr.sleep(5400)  # charge for one orbit
                 self.sfr.power_on("APRS")
 
 

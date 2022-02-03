@@ -322,31 +322,22 @@ class CommandExecutor:
         2. Average solar panel generation over last 50 datapoints while in sunlight
         3. Orbital period
         4. Amount of one orbit which we spend in sunlight
-        5. Iridium signal strength variability (default -1 if science mode incomplete)
-        6. Current battery charge
-        7. Current tumble
+        5. Iridium signal strength mean (default -1 if science mode incomplete)
+        6. Iridium signal strength variability (default -1 if science mode incomplete)
+        7. Current battery charge
+        8. Current tumble
         """
-        pdms = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
-        pwr_data = pd.read_csv(self.sfr.pwr_log_path, header=0).tail(50)
-        avg_pwr = pwr_data[[i + "_pwr" for i in pdms]].sum(axis=1).mean()  # Average power draw
-        panels = ["panel1", "panel2", "panel3", "panel4"]
-        solar_data = pd.read_csv(self.sfr.solar_log_path, header=0).tail(51)
-        orbits_data = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(51)
-        # Filter out all data points which weren't taken in sunlight
-        in_sun = pd.DataFrame([solar_data[i] for i in range(solar_data.shape[0])
-                               if orbits_data[solar_data["timestamp"][i] -
-                                              orbits_data["timestamp"] > 0]["phase"][-1] == "sunlight"])
-        avg_solar = in_sun[panels].sum(axis=1).mean()  # Average solar panel generation
-        # Calculate sunlight period
-        sunlight_period = pd.Series([orbits_data["timestamp"][i + 1] - orbits_data["timestamp"][i]
-                                     for i in range(orbits_data.shape[0] - 1)
-                                     if orbits_data["phase"][i] == "sunlight"]).mean()
-        orbital_period = self.sfr.analytics.calc_orbital_period()  # Calculate orbital period
-        sunlight_ratio = sunlight_period / orbital_period  # How much of our orbit we spend in sunlight
-        tumble = self.sfr.imu.get_tumble()  # Current tumble
-        result = [avg_pwr, avg_solar, orbital_period, sunlight_ratio,
-                  self.sfr.vars.SIGNAL_STRENTH_VARIABILITY, self.sfr.vars.BATTERY_CAPACITY_INT, *tumble[0], *tumble[1]]
-        self.transmit(packet, result)
+        self.transmit(packet, result := [
+            self.sfr.analytics.historical_consumption(50).mean(),  # Average power consumption
+            self.sfr.analytics.historical_generation(50).mean(),  # Average solar panel generation
+            self.sfr.vars.ORBITAL_PERIOD,
+            self.sfr.analytics.sunlight_ratio(50),  # Sunlight ratio over last 50 orbits
+            self.sfr.vars.SIGNAL_STRENGTH_MEAN,
+            self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY,
+            self.sfr.vars.BATTERY_CAPACITY_INT,
+            *(tumble := self.sfr.imu.get_tumble())[0],
+            *tumble[1]
+        ])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -441,8 +432,7 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        self.transmit(packet, result := [
-            self.sfr.analytics.historical_consumption([1 for _ in range(10)], packet.args[0])])
+        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(packet.args[0])])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -451,7 +441,7 @@ class CommandExecutor:
         Transmits last n power draw datapoints
         """
         df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -460,7 +450,7 @@ class CommandExecutor:
         Transmits last n signal strength datapoints
         """
         df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -469,7 +459,7 @@ class CommandExecutor:
         Transmits last n solar generation datapoints
         """
         df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -478,11 +468,11 @@ class CommandExecutor:
         Transmits last n IMU tumble datapoints
         """
         df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, result := [j for j in [i for i in df.values.tolist()]])
+        self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ARS(self, packet: TransmissionPacket) -> list:  # TODO: FIX
+    def ARS(self, packet: TransmissionPacket) -> list:
         """
         Transmits expected size of a given command
         """
@@ -492,8 +482,8 @@ class CommandExecutor:
         try:  # Attempt to run command, store result
             self.primary_registry[sim_packet.descriptor](sim_packet)
         except Exception as e:  # Store error as a string
-            command_result = [repr(e)]
-            self.transmit(packet, command_result, string=True)
+            result = [repr(e)]
+            self.transmit(packet, result, string=True)
         else:
             # Transmit number of bytes taken up by command result
             if self.sfr.vars.PRIMARY_RADIO == "Iridium":  # Factor in Iridium encoding procedures

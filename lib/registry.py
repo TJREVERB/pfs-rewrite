@@ -223,6 +223,7 @@ class StateFieldRegistry:
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
+        self.MODE = None
 
         self.devices = {
             "Iridium": None,
@@ -458,8 +459,9 @@ class StateFieldRegistry:
     @wrap_errors(LogicalError)
     def reboot(self, component: str) -> None:
         self.power_off(component)
-        time.sleep(0.5)
+        time.sleep(5)
         self.power_on(component)
+        time.sleep(10)
 
     @wrap_errors(LogicalError)
     def all_on(self, exceptions=None) -> None:
