@@ -580,7 +580,7 @@ class Iridium(Device):
         current_time = self.processed_time()
         if current_time is None:
             return (0, 0, 0)
-        if current_time - timestamp_time > 60:
+        if current_time.timestamp() - timestamp_time > 60:
             # Checks if time passed since last geolocation update has been more than 60 seconds
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]  
             # Use SBDIX to update geolocation
