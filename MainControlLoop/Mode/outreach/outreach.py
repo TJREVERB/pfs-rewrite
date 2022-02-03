@@ -57,7 +57,7 @@ class Outreach(Mode):
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
-            #self.transmit_string(str(game))
+            # self.transmit_string(str(game))
         self.game_queue.clear()
 
     def transmit_string(self, message: str):
