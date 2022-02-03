@@ -9,15 +9,14 @@ class Mode:
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
     def __init__(self, sfr, wait=40, thresh=2):
-        self.SIGNAL_THRESHOLD = thresh
-        self.previous_time = 0
+        self.SIGNAL_THRESHOLD = thresh  # TODO: FIX
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
 
     @wrap_errors(LogicalError)
     def __str__(self):  # returns mode name as string
-        pass
+        return "Mode"
 
     @wrap_errors(LogicalError)
     def start(self, enabled_components: list) -> None:
