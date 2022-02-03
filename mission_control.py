@@ -150,7 +150,8 @@ class MissionControl:
             pass
         else:
             sent_successfully = False
-            while not sent_successfully:  # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
+            # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
+            while not sent_successfully:
                 try:
                     self.sfr.devices["Iridium"].transmit(UnsolicitedString("Iridium safe mode enabled"))
                 except NoSignalException:
@@ -187,7 +188,7 @@ class MissionControl:
             
             if self.sfr.check_lower_threshold():
                 self.sfr.power_off("Iridium")
-                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
+                self.sfr.sleep(5400)  # charge for one orbit
                 self.sfr.power_on("Iridium")
 
     def safe_mode_aprs(self, e: Exception):
@@ -203,7 +204,7 @@ class MissionControl:
 
             if self.sfr.check_lower_threshold():
                 self.sfr.power_off("APRS")
-                self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # charge for one orbit
+                self.sfr.sleep(5400)  # charge for one orbit
                 self.sfr.power_on("APRS")
 
 

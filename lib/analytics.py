@@ -43,6 +43,14 @@ class Analytics:
         return df[["buspower"] + self.sfr.PDMS].sum(axis=1)
 
     @wrap_errors(LogicalError)
+    def historical_generation(self, n: int) -> pd.Series:
+        """
+        Get power generation over last n datapoints while in sunlight
+        """
+        df = self.sfr.logs["solar"].read().tail(n)
+        return df[df[self.sfr.PANELS].sum(axis=1) > self.sfr.eps.SUN_DETECTION_THRESHOLD].sum(axis=1)
+
+    @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> float:
         """
         Uses empirical data to estimate how much energy we'd consume
@@ -62,24 +70,21 @@ class Analytics:
         :return: (tuple) (estimated power generation, standard deviation of data, oldest data point)
         """
         current_time = time.time()  # Set current time
-        solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
         orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
         if len(orbits) < 4:  # If we haven't logged any orbits
+            solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
             if len(solar) > 0:  # If we have solar data
                 # Estimate based on what we have
                 return solar[self.sfr.PANELS].sum(axis=1).mean() * duration
             else:  # If we haven't logged any solar data
                 return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
-        # Generate timestamp columns
-        solar["timestamp"] = solar["ts0"] + solar["ts1"]
+        # Generate timestamp column
         orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
         # Calculate sunlight period
         sunlight_period = orbits[orbits["phase"] == "daylight"]["timestamp"].diff().mean(skipna=True)
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
-        # Filter out all data points which weren't taken in sunlight
-        in_sun = solar[[orbits[orbits["timestamp"] <
-                               row["timestamp"]]["phase"].iloc[-1] == "daylight" for (_, row) in solar.iterrows()]]
-        solar_gen = in_sun[self.sfr.PANELS].sum(axis=1).mean()  # Calculate average solar power generation
+        in_sun = self.historical_generation(50)  # Filter out all data points which weren't taken in sunlight
+        solar_gen = in_sun.mean()  # Calculate average solar power generation
 
         # Function to calculate energy generation over a given time since entering sunlight
         def energy_over_time(t):
@@ -156,3 +161,18 @@ class Analytics:
         Calculates and returns total amount of data transmitted by satellite
         """
         return self.sfr.logs["transmission"].read()["size"].sum()
+
+    @wrap_errors(LogicalError)
+    def sunlight_ratio(self, n) -> float:
+        """
+        Calculates and returns over the last 50 orbits what fraction of each orbit we spend in sunlight
+        :param n: number of orbits to analyze
+        :return: what fraction of each orbit we spend in sunlight (0 if not enough data)
+        """
+        orbits_data = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(n * 2 + 1)
+        # Calculate sunlight period
+        if len(orbits_data > 2):
+            sunlight_period = orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"].diff(periods=2).mean()
+        else:
+            sunlight_period = 0
+        return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # How much of our orbit we spend in sunlight

@@ -29,7 +29,7 @@ class Recovery(Mode):
     def execute_cycle(self) -> None:
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            self.sfr.sleep(self.sfr.vars.ORBITAL_PERIOD)  # sleep for one full orbit
+            self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
         else:
             if not self.systems_check_complete:
