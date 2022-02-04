@@ -15,17 +15,17 @@ class ChessGame:
     def set_game(self, fen: str):
         self.board.set_fen(fen)
 
-    def get_best_move(self): #-> chess.Move:
+    def get_best_move(self) -> chess.Move:
         print(self.board)
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish2')
-        result = engine.play(self.board, chess.engine.Limit(0.2))#self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        result = engine.play(self.board, self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)
         engine.quit()
         return result.move
 
     def push(self, move: chess.Move):  # uci string as move (i.e. d2d4)
         self.board.push(move)
 
-    def random_fen(self):  # simulate purposes
+    def random_fen(self):  # simulation only
         while True:
             board = chess.Board()
             for _ in range(random.randint(10, 20)):
