@@ -75,7 +75,7 @@ class CommandExecutor:
         :param packet: packet for received command
         :param registry: command registry to use
         """
-        print("Command received: " + packet.descriptor)
+        print("Executing Command: " + packet.descriptor)
         to_log = {
             "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
             "ts1": int(t.timestamp()) % 100000,  # last 5 digits
