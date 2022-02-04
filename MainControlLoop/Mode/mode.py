@@ -1,6 +1,7 @@
 import time
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
+from Drivers.transmission_packet import UnsolicitedData
 import datetime
 import os
 
@@ -27,6 +28,7 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
+        self.heartbeat_clock = Clock(300)  # Five minutes between each heartbeat ping
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -68,8 +70,10 @@ class Mode:
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
         if self.iridium_clock.time_elapsed():  # If enough time has passed
-            self.poll_iridium()
-            self.iridium_clock.update_time()
+            self.poll_iridium()  # Poll Iridium
+            self.iridium_clock.update_time()  # Update last iteration
+        if self.heartbeat_clock.time_elapsed():  # If enough time has passed
+            self.heartbeat()  # Transmit heartbeat ping
         self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
@@ -106,6 +110,22 @@ class Mode:
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
         return True
+
+    @wrap_errors(LogicalError)
+    def heartbeat(self) -> None:
+        """
+        Transmits proof of life
+        :return: whether the function ran
+        :rtype: bool
+        """
+        print("Transmitting heartbeat...")
+        self.sfr.command_executor.transmit(UnsolicitedData("GPL", [
+            self.sfr.battery_telemetry["VBAT"](),
+            self.sfr.recent_gen(),
+            self.sfr.recent_power(),
+            self.sfr.vars.PRIMARY_RADIO,
+            self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
+        ]))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

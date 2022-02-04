@@ -56,6 +56,9 @@ class Vars:
 
     @wrap_errors(LogicalError)
     def encode(self):
+        """
+        :return: Dictionary containing the values of the SFR and vars
+        """
         return [
             int(self.ANTENNA_DEPLOYED),
             self.BATTERY_CAPACITY_INT,
@@ -459,6 +462,11 @@ class StateFieldRegistry:
 
     @wrap_errors(LogicalError)
     def reboot(self, component: str) -> None:
+        """
+        Powers a given component on and off again
+        :param component: (str) component to rebood
+        :return: None
+        """
         self.power_off(component)
         time.sleep(5)
         self.power_on(component)
