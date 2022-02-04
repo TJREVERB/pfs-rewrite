@@ -90,7 +90,7 @@ class CommandExecutor:
             self.transmit(packet, packet.args, string = True)
         try:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
-            to_log["result"] = ":".join(result)
+            to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
             self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
             to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
