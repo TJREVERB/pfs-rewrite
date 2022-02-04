@@ -50,7 +50,6 @@ class Outreach(Mode):
             game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
             self.game_queue.append(game)
 
-
     def execute_cycle(self) -> None:
         self.simulate_games()
         game_queue = self.decode_game_queue()
