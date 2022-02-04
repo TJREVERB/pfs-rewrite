@@ -1,3 +1,4 @@
+import functools
 class CustomException(Exception):
     def __init__(self, exception: Exception = None, details: str = None):
         self.exception = exception
@@ -85,14 +86,13 @@ def wrap_errors(exception: callable) -> callable:
     :param exception: exception to wrap errors with
     :return: (callable) decorator
     """
-
     def decorator(func: callable) -> callable:
         """
         Dynamically generate a decorator depending on argument
         :param func: function to wrap
         :return: (callable) decorated function
         """
-
+        @functools.wraps(func)
         def wrapper(*args, **kwargs) -> callable:
             """
             Attempt to run function
