@@ -76,8 +76,6 @@ class PKLLog(Log):
         Create a new pkl Log
         """
         super().__init__(path)
-        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-            self.clear()
 
     @wrap_errors(LogicalError)
     def clear(self):
