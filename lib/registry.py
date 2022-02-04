@@ -506,8 +506,6 @@ class StateFieldRegistry:
         :return: True if the primary radio could be set as specified (or it already was that one).
             False only if it is locked off, or it's APRS and antenna not deployed
         """
-        if new_radio in self.vars.LOCKED_OFF_DEVICES:
-            return False
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
