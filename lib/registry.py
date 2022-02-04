@@ -286,6 +286,7 @@ class StateFieldRegistry:
         Syncs voltage to integrated charge if necessary
         :return: (bool) whether switch is required
         """
+        print(f"Checking lower threshold, vbat {self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
             # Sync up the battery charge integration to voltage
