@@ -511,8 +511,10 @@ class Iridium(Device):
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
+                print("Recieved message " + str(self.sfr.vars.command_buffer[-1]))
             except Exception as e:
                 self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))
+                print("Garbled message recieved " + repr(e))
                 # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")

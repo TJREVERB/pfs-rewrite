@@ -6,6 +6,7 @@ from lib.clock import Clock
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.recovery import Recovery
 from MainControlLoop.Mode.startup import Startup
+from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.outreach.outreach import Outreach
 
 
@@ -30,7 +31,7 @@ class MainControlLoop:
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
         #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
         #     self.sfr.vars.LOCKED_OFF_DEVICES) else Startup(self.sfr)
-        self.sfr.MODE = Science(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
+        self.sfr.MODE = Charging(self.sfr, Science(self.sfr))  # TODO: REMOVE THIS DEBUG LINE
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
