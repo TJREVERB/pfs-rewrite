@@ -8,7 +8,7 @@ import os
 class Mode:
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=2): #TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr, wait=10, thresh=1): #TODO: replace wait with appropriate time when done testing
         self.SIGNAL_THRESHOLD = thresh  # TODO: FIX
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
