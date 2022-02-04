@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 TJ REVERB PFS Documentation
-====================================
+===========================
 
 .. toctree::
    :maxdepth: 2

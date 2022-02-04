@@ -11,24 +11,35 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
-        Sets up constants
+        Initializes constants specific to instance of Mode
+        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
         """
         super().__init__(sfr)
         self.beacon = Clock(120)
 
     @wrap_errors(LogicalError)
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Returns mode name as string
+        :return: mode name
+        :rtype: str
+        """
         return "Startup"
 
     @wrap_errors(LogicalError)
     def start(self) -> None:
+        """
+        Runs initial setup for a mode. Turns on and off devices for a specific mode.
+        """
         super().start(["Iridium"])
 
     @wrap_errors(LogicalError)
     def deploy_antenna(self) -> bool:
         """
         Attempt to deploy antenna if antenna isn't deployed, we've detumbled, and enough time has passed
-        :return: (bool) whether function ran
+        :return: whether antenna was deployed successfully
+        :rtype: bool
         """
         if self.sfr.vars.ANTENNA_DEPLOYED or self.sfr.imu.is_tumbling or \
                 time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
@@ -50,7 +61,8 @@ class Startup(Mode):
     def ping(self) -> bool:
         """
         Attempt to establish contact with ground
-        :return: (bool) whether function ran
+        :return: whether function ran successfully
+        :rtype: bool
         """
         print("Transmitting proof of life...")
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
@@ -58,6 +70,11 @@ class Startup(Mode):
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
+        """
+        Executes one iteration of mode
+        For example: measure signal strength as the orbit location changes.
+        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
+        """
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off

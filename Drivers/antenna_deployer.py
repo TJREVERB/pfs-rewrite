@@ -124,7 +124,7 @@ class AntennaDeployer(Device):
         if v > 2616 or v < 769:
             raise AntennaError("Bad data readout")
         return True
-        
+
 
     @wrap_errors(AntennaError)
     def reset(self):
@@ -150,7 +150,7 @@ class AntennaDeployer(Device):
         """
         self.write(AntennaDeployerCommand.ARM_ANTS, 0x00)
         return True
-    
+
     @wrap_errors(AntennaError)
     def deploy(self) -> bool:
         self.enable()
@@ -165,5 +165,3 @@ class AntennaDeployer(Device):
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
         self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed
-
-

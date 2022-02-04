@@ -31,6 +31,8 @@ class CommandExecutor:
             "GPR": self.GPR,
             "GOP": self.GOP,
             "GCS": self.GCS,
+            "GID": self.GID,
+            "GSM": self.GSM,
             "GSV": self.GSV,
             "GSG": self.GSG,
             "GTB": self.GTB,
@@ -44,6 +46,7 @@ class CommandExecutor:
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
+            "SSF": self.SSF,
             "USM": self.USM,
             "ULG": self.ULG,
             "ITM": self.ITM,
@@ -83,14 +86,15 @@ class CommandExecutor:
             "command": packet.descriptor,
             "arg": ":".join(packet.args),
             "registry": "Primary",
-            "msn": packet.msn
+            "msn": packet.msn,
+            "result": ":".join([str(s) for s in packet.return_data]),
         }
         packet.set_time()
         if packet.descriptor == "GRB": # Handle garbled iridium messages
             self.transmit(packet, packet.args, string = True)
         try:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
-            to_log["result"] = ":".join(result)
+            to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
             self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
             to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
@@ -286,7 +290,7 @@ class CommandExecutor:
         """
         Transmits time since last command run
         """
-        dif = time.time() - self.sfr.LAST_COMMAND_RUN
+        dif = time.time() - self.sfr.vars.LAST_COMMAND_RUN
         self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
@@ -530,6 +534,15 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def SSF(self, packet: TransmissionPacket) -> list:
+        """
+        Enables or disables safe mode
+        """
+        self.sfr.vars.ENABLE_SAFE_MODE = packet.args[0]
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
@@ -611,12 +624,33 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def IGO(self, packet: TransmissionPacket):
+        """Exits remote code execution and attempts to restart MCL"""
         self.sfr.vars.ENABLE_SAFE_MODE = False
         self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):
+        """
+        Acknowledges attempt to establish contact
+        """
         self.sfr.vars.CONTACT_ESTABLISHED = True
+        self.transmit(packet, result := [])
+        return result
+
+    def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
+        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        if str(self.sfr.MODE) != "Gamer":
+            raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
+        self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
+        self.transmit(packet, result := [])
+        return result
+
+    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
+        if str(self.sfr.MODE) == "Gamer":
+            raise CommandExecutionException("Already in gamer mode")
+        self.sfr.MODE.terminate_mode()
+        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
+        self.sfr.MODE.start()
         self.transmit(packet, result := [])
         return result

@@ -9,7 +9,7 @@ from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
-from MainControlLoop.Mode.outreach import Outreach
+from MainControlLoop.Mode.outreach.outreach import Outreach
 from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
@@ -38,6 +38,7 @@ class Vars:
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
+        self.OUTREACH_MAX_CALCULATION_TIME = 0.1  # max calculation time for minimax calculations in outreach (seconds)
         self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
         self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
@@ -286,6 +287,7 @@ class StateFieldRegistry:
         Syncs voltage to integrated charge if necessary
         :return: (bool) whether switch is required
         """
+        print(f"Checking lower threshold, vbat {self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
             # Sync up the battery charge integration to voltage
@@ -321,7 +323,7 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log and readable log
         """
         self.logs["sfr"].write(self.vars)
-        self.logs["sfr_readable"].write(self.vars.to_dict())
+        # self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
@@ -548,8 +550,12 @@ class StateFieldRegistry:
         Takes care of logic for locking off devices
         :param component: (str) name of device to lock off
         :param force: (bool) if true, this will overwrite any previous locks on this device
-        :return: whether the device was able to be locked off (only false if force == False and it was previously in LOCKED_ON_DEVICES)
+        :return: whether the device was able to be locked off (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
         """
+        if component == "APRS" and "Iridium" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
+            return False
+        if component == "Iridium" and "APRS" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
+            return False
         if component in self.vars.LOCKED_OFF_DEVICES:
             return True  # if it's already locked off
         if component in self.vars.LOCKED_ON_DEVICES:  # if it was locked on before

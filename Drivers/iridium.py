@@ -59,6 +59,8 @@ class Iridium(Device):
         "GPR",
         "GOP",
         "GCS",
+        "GID",
+        "GSM",
         "GSV",
         "GSG",
         "GTB",

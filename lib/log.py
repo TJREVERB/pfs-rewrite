@@ -16,11 +16,14 @@ class Logger:
         }
 
     @wrap_errors(LogicalError)
-    def log_pwr(self, buspower, pwr) -> None:
+    def log_pwr(self, buspower: float, pwr: list) -> None:
         """
         Logs the power draw of every pdm
+
         :param buspower: power draw of bus
+        :type buspower: float
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
+        :type pwr: list
         """
         print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
         self.sfr.logs["power"].write({
@@ -33,7 +36,8 @@ class Logger:
     def log_solar(self, gen: list) -> None:
         """
         Logs the solar power generation from each panel (sum of A and B)
-        :param gen: array of power inputs from each panel, in W.
+        :param gen: array of power inputs from each panel, in Watts
+        :type gen: list
         """
         print("Solar: ", int(t := time.time()), gen := [round(i, 3) for i in gen])
         self.sfr.logs["solar"].write({
@@ -42,7 +46,7 @@ class Logger:
         } | {self.sfr.PANELS[i]: gen[i] for i in range(len(gen))})
 
     @wrap_errors(LogicalError)
-    def log_imu(self) -> None:  # Probably scuffed
+    def log_imu(self) -> None:
         """
         Logs IMU data
         """
@@ -57,7 +61,7 @@ class Logger:
 
     def log_power_full(self) -> None:
         """
-        Call log_power, log_solar
+        Calls log_power and log_solar
         """
         # Log total power, store values into variables
         self.log_pwr(self.sfr.eps.bus_power(), self.sfr.eps.raw_pdm_draw()[1])
@@ -67,17 +71,17 @@ class Logger:
     @wrap_errors(LogicalError)
     def integrate_charge(self) -> None:
         """
-        Integrate charge in Joules
+        Integrate battery charge in Joules
         """
         delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(power) > 999:  # TODO: ARBITRARY THRESHOLD
+        if abs(power) > 10:
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):
                 total_draw.append(self.sfr.eps.bus_power() + sum(self.sfr.eps.raw_pdm_draw()[1]))
                 time.sleep(1)
-            if (avg_draw := sum(total_draw) / 5) >= 999:  # TODO: ARBITRARY THRESHOLD
+            if (avg_draw := sum(total_draw) / 5) >= 10: 
                 raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
             else:  # If value was bogus, truncate logs
                 self.sfr.logs["power"].truncate(1)
@@ -87,7 +91,7 @@ class Logger:
             self.sfr.vars.BATTERY_CAPACITY_INT += delta
 
     @wrap_errors(LogicalError)
-    def update_orbits(self):
+    def update_orbits(self) -> None:
         """
         Update orbits log when sun is detected
         """
@@ -98,7 +102,10 @@ class Logger:
         self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
 
     @wrap_errors(LogicalError)
-    def log(self):
+    def log(self) -> None:
+        """
+        Calls :class:'lib.clock.Clock' of all logging functions
+        """
         for i in self.clocks.keys():
             if self.clocks[i][0].time_elapsed():
                 self.clocks[i][1]()
