@@ -511,7 +511,7 @@ class Iridium(Device):
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
-                print("Recieved message " + str(self.sfr.vars.command_buffer[-1]))
+                print("Recieved message " + self.sfr.vars.command_buffer[-1].descriptor)
             except Exception as e:
                 self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))
                 print("Garbled message recieved " + repr(e))
@@ -546,7 +546,7 @@ class Iridium(Device):
                         raw += self.serial.read(50)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
-                    print("Recieved message " + str(self.sfr.vars.command_buffer[-1]))
+                    print("Recieved message " + self.sfr.vars.command_buffer[-1].descriptor)
                 except Exception as e:
                     self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
                     print("Garbled message recieved " + repr(e))
