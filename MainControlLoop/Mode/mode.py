@@ -122,12 +122,12 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.transmit(UnsolicitedData("GPL", [
+        self.sfr.command_executor.transmit(UnsolicitedData("GPL"), [
             self.sfr.battery.telemetry["VBAT"](),
             self.sfr.recent_gen(),
             self.sfr.recent_power(),
             self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
-        ]))
+        ])
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
