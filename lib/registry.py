@@ -506,6 +506,8 @@ class StateFieldRegistry:
         :return: True if the primary radio could be set as specified (or it already was that one).
             False only if it is locked off, or it's APRS and antenna not deployed
         """
+        if new_radio in self.vars.LOCKED_OFF_DEVICES:
+            return False
         previous_radio = self.vars.PRIMARY_RADIO
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
@@ -550,8 +552,12 @@ class StateFieldRegistry:
         Takes care of logic for locking off devices
         :param component: (str) name of device to lock off
         :param force: (bool) if true, this will overwrite any previous locks on this device
-        :return: whether the device was able to be locked off (only false if force == False and it was previously in LOCKED_ON_DEVICES)
+        :return: whether the device was able to be locked off (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
         """
+        if component == "APRS" and "Iridium" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
+            return False
+        if component == "Iridium" and "APRS" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
+            return False
         if component in self.vars.LOCKED_OFF_DEVICES:
             return True  # if it's already locked off
         if component in self.vars.LOCKED_ON_DEVICES:  # if it was locked on before
