@@ -31,6 +31,8 @@ class CommandExecutor:
             "GPR": self.GPR,
             "GOP": self.GOP,
             "GCS": self.GCS,
+            "GID": self.GID,
+            "GSM": self.GSM,
             "GSV": self.GSV,
             "GSG": self.GSG,
             "GTB": self.GTB,
