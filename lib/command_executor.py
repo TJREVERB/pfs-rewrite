@@ -46,6 +46,7 @@ class CommandExecutor:
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
+            "SSF": self.SSF,
             "USM": self.USM,
             "ULG": self.ULG,
             "ITM": self.ITM,
@@ -533,6 +534,15 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def SSF(self, packet: TransmissionPacket) -> list:
+        """
+        Enables or disables safe mode
+        """
+        self.sfr.vars.ENABLE_SAFE_MODE = packet.args[0]
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
@@ -614,12 +624,16 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def IGO(self, packet: TransmissionPacket):
+        """Exits remote code execution"""
         self.sfr.vars.ENABLE_SAFE_MODE = False
         self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):
+        """
+        Acknowledges attempt to establish contact
+        """
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
         return result
