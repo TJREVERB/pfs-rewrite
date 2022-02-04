@@ -124,8 +124,8 @@ class Mode:
         print("Transmitting heartbeat...")
         self.sfr.command_executor.transmit(UnsolicitedData("GPL"), [
             self.sfr.battery.telemetry["VBAT"](),
-            self.sfr.recent_gen(),
-            self.sfr.recent_power(),
+            sum(self.sfr.recent_gen()),
+            sum(self.sfr.recent_power()),
             self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
         ])
 
