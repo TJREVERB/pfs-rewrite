@@ -6,23 +6,43 @@ import os
 
 
 class Mode:
+    """
+    This is the python equivalent of an interface for the different modes.
+    All the modes extend this mode. Some functions are placeholders in :class: 'Mode' and
+    only serve as a framework of what functions to include for development of the child classes.
+    """
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=2): #TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr, wait=10, thresh=2):  # TODO: replace wait with appropriate time when done testing
+        """
+        Initializes constants specific to instance of Mode
+        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :param wait: poll iridium ever "wait" seconds, defaults to 10
+        :type wait: int, optional
+        :param thresh: signal threshold for polling iridium, defaults to 2
+        :type thresh: int, optional
+        """
         self.SIGNAL_THRESHOLD = thresh  # TODO: FIX
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
 
     @wrap_errors(LogicalError)
-    def __str__(self):  # returns mode name as string
+    def __str__(self) -> str:
+        """
+        Returns mode name as string
+        :return: mode name
+        :rtype: str
+        """
         return "Mode"
 
     @wrap_errors(LogicalError)
     def start(self, enabled_components: list) -> None:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
-        :param enabled_components: list of components which are enabled in this mode
+        :param enabled_components: list of components which need to be enabled in this mode
+        :type enabled_components: list
         """
         self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
@@ -34,7 +54,8 @@ class Mode:
         Checks all conditions and returns which mode the current mode believes we should be in
         If we don't want to switch, return same mode
         If we do, return the mode we want to switch to
-        :return: (Mode) instantiated mode object to switch to
+        This method in mode.py is just a framework for child classes, see specific
+        child for actual implementation
         """
         pass
 
@@ -54,10 +75,11 @@ class Mode:
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
         """
-        Read Iridium messages and append to buffer
-        Transmit any messages in the transmit queue
-        Update hardware clock
-        :return: (bool) whether function ran
+        Reads Iridium messages and appends to buffer
+        Transmits any messages in the transmit queue
+        Updates rtc clock based on iridium time if needed
+        :return: whether the function ran (whether it polled iridium or not)
+        :rtype: bool
         """
         if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
             return False
@@ -89,7 +111,8 @@ class Mode:
     def read_aprs(self) -> bool:
         """
         Read from the APRS if it exists
-        :return: (bool) whether the function ran
+        :return: whether the function ran (whether it read aprs messages or not)
+        :rtype: bool
         """
         if self.sfr.devices["APRS"] is None:
             return False
@@ -97,10 +120,13 @@ class Mode:
         return True
 
     @wrap_errors(LogicalError)
-    def systems_check(self):
+    def systems_check(self) -> bool:
         """
-        Performs a systems check of components that are on and returns a list of component failures
+        Performs a systems check of components that are not locked off and returns if a part failed or not
         Throws error if .functional() fails
+
+        :return: whether there was a failure in non-locked off components
+        :rtype: bool
         """
         for device in self.sfr.devices.keys():
             if not (device in self.sfr.vars.LOCKED_OFF_DEVICES):  # if it is not locked off, run functional check

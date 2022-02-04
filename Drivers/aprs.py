@@ -5,11 +5,9 @@ from lib.exceptions import wrap_errors, APRSError, LogicalError
 from Drivers.device import Device
 import copy
 
+
 class APRS(Device):
-    """
-    Class for APRS
-    """
-    TRANSMISSION_ENERGY = 4.8 # Energy used per transmission, in J
+    TRANSMISSION_ENERGY = 4.8  # Energy used per transmission, in J
     SERIAL_CONVERTERS = ["USB-UART"]
     PORT = '/dev/serial0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
