@@ -232,7 +232,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def DLN(self, packet: TransmissionPacket):
+    def DLN(self, packet: TransmissionPacket) -> list:
         """
         Lock a device on
         """
@@ -248,8 +248,11 @@ class CommandExecutor:
         device_name = device_codes[dcode]
         self.sfr.lock_device_on(component=device_name, force=True)
 
+        self.transmit(packet, result := [dcode])
+        return result
+
     @wrap_errors(CommandExecutionException)
-    def DLF(self, packet: TransmissionPacket):
+    def DLF(self, packet: TransmissionPacket) -> list:
         """
         Lock a device off
         """
@@ -265,8 +268,11 @@ class CommandExecutor:
         device_name = device_codes[dcode]
         self.sfr.lock_device_off(component=device_name, force=True)
 
+        self.transmit(packet, result := [dcode])
+        return result
+
     @wrap_errors(CommandExecutionException)
-    def DDF(self, packet: TransmissionPacket) -> bool:
+    def DDF(self, packet: TransmissionPacket) -> list:
         """
         Disable Device Lock
         """
@@ -280,9 +286,11 @@ class CommandExecutor:
         if dcode < 0 or dcode >= len(device_codes):
             raise CommandExecutionException("Invalid Device Code")
         device_name = device_codes[dcode]
-        result = self.sfr.unlock_device(device_name)  # returns True if it was previously locked (otherwise False)
-        if result is False:
+        success = self.sfr.unlock_device(device_name)  # returns True if it was previously locked (otherwise False)
+        if success is False:
             raise CommandExecutionException("Device not locked")
+
+        self.transmit(packet, result := [dcode, success])
         return result
 
     @wrap_errors(CommandExecutionException)
