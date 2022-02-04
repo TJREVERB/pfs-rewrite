@@ -40,7 +40,7 @@ class JSONLog(Log):
         """
         Create a new json Log
         """
-        super().__init__(path, self)
+        super().__init__(path)
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.clear()
 
@@ -75,7 +75,7 @@ class PKLLog(Log):
         """
         Create a new pkl Log
         """
-        super().__init__(path, self)
+        super().__init__(path)
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.clear()
 
@@ -107,7 +107,7 @@ class CSVLog(Log):
         """
         Create a new csv Log
         """
-        super().__init__(path, self)
+        super().__init__(path)
         self.headers = headers
         if pd.read_csv(self.path).columns.tolist() != self.headers:
             self.clear()  # Clear log if columns don't match up (out of date log)
