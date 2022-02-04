@@ -33,7 +33,8 @@ class Science(Mode):
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
+            #return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
+            return self.sfr.modes_list["Science"](self.sfr)
             return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
         return self  # Otherwise, stay in science
 
