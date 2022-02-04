@@ -522,6 +522,7 @@ class Iridium(Device):
         """
         Stores next received messages in sfr
         """
+        print("Checking Iridium Messages")
         self.check_buffer()
         self.SBD_TIMEOUT(60)
         time.sleep(1)
