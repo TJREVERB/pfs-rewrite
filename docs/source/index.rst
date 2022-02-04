@@ -1,27 +1,16 @@
-.. TJREVERB documentation master file, created by
-   sphinx-quickstart on Wed Feb  2 17:41:41 2022.
+.. TJ REVERB documentation master file, created by
+   sphinx-quickstart on Fri Feb  4 11:04:13 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-TJ REVERB PFS Documentation
-===========================
+Welcome to TJ REVERB's documentation!
+=====================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
-.. toctree::
-   structure
-.. toctree::
-   drivers
-.. toctree::
-   backend
-.. toctree::
-   modes
-.. toctree::
-   main_control_loop
-.. toctree::
-   mission_control
 
+.. toctree:: Mode
+   .. autoclass:: lib.analyts
 
 
 Indices and tables
