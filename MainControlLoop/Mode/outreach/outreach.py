@@ -3,6 +3,7 @@ from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
 from MainControlLoop.Mode.mode import Mode
 import random
+import time
 
 
 class Outreach(Mode):
@@ -53,12 +54,15 @@ class Outreach(Mode):
     def execute_cycle(self) -> None:
         self.simulate_games()
         game_queue = self.decode_game_queue()
-        for game in game_queue:
+        time_started = time.time()
+        while len(game_queue) > 0:
+            game = game_queue.pop()
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
-        self.game_queue.clear()
+            if time.time() - 60 > time_started:  # limit compute time per cycle
+                break
 
     def transmit_string(self, message: str):
         packet = UnsolicitedString(return_data=[message])
