@@ -31,6 +31,8 @@ class CommandExecutor:
             "GPR": self.GPR,
             "GOP": self.GOP,
             "GCS": self.GCS,
+            "GID": self.GID,
+            "GSM": self.GSM,
             "GSV": self.GSV,
             "GSG": self.GSG,
             "GTB": self.GTB,
@@ -83,7 +85,8 @@ class CommandExecutor:
             "command": packet.descriptor,
             "arg": ":".join(packet.args),
             "registry": "Primary",
-            "msn": packet.msn
+            "msn": packet.msn,
+            "result": ":".join([str(s) for s in packet.return_data]),
         }
         packet.set_time()
         if packet.descriptor == "GRB": # Handle garbled iridium messages

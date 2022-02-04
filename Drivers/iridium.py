@@ -59,6 +59,8 @@ class Iridium(Device):
         "GPR",
         "GOP",
         "GCS",
+        "GID",
+        "GSM",
         "GSV",
         "GSG",
         "GTB",
@@ -79,7 +81,6 @@ class Iridium(Device):
         "ICE",
         "IGO",
         "IAK",
-        "GID",
     ]
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii

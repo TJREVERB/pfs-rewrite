@@ -72,7 +72,6 @@ class Science(Mode):
     def execute_cycle(self) -> None:
         super().execute_cycle()
         # If enough time has passed and we haven't performed enough pings
-        print(f"Debug: pings_performed: {self.pings_performed} time_elapsed: {self.ping_clock.time_elapsed()}")
         if self.ping_clock.time_elapsed() and self.pings_performed < self.NUMBER_OF_REQUIRED_PINGS:
             self.ping()  # Execute ping function
             self.ping_clock.update_time()
