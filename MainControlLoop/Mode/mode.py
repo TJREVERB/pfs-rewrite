@@ -120,7 +120,7 @@ class Mode:
         """
         print("Transmitting heartbeat...")
         self.sfr.command_executor.transmit(UnsolicitedData("GPL", [
-            self.sfr.battery.battery_telemetry["VBAT"](),
+            self.sfr.battery.telemetry["VBAT"](),
             self.sfr.recent_gen(),
             self.sfr.recent_power(),
             self.sfr.vars.PRIMARY_RADIO,
