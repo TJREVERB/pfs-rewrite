@@ -85,7 +85,8 @@ class CommandExecutor:
             "command": packet.descriptor,
             "arg": ":".join(packet.args),
             "registry": "Primary",
-            "msn": packet.msn
+            "msn": packet.msn,
+            "result": ":".join([str(s) for s in packet.return_data]),
         }
         packet.set_time()
         if packet.descriptor == "GRB": # Handle garbled iridium messages
