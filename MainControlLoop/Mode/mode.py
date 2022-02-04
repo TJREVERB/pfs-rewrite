@@ -14,7 +14,7 @@ class Mode:
     """
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=2):  # TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
         """
         Initializes constants specific to instance of Mode
         :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
