@@ -1,8 +1,4 @@
 import time
-import os
-import pandas as pd
-import pickle
-import json
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
@@ -14,6 +10,7 @@ from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
+from lib.log import CSVLog, JSONLog, PKLLog
 from lib.log import Logger
 from lib.exceptions import wrap_errors, LogicalError
 from Drivers.aprs import APRS
@@ -103,81 +100,6 @@ class Vars:
         return result
 
 
-class Log:
-    @wrap_errors(LogicalError)
-    def __init__(self, path, headers):
-        self.path = path
-        self.headers = headers
-        self.ext = path.split(".")[-1]
-        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-            self.clear()
-        elif self.ext == "csv":  # For csv files
-            if pd.read_csv(self.path).columns.tolist() != self.headers:
-                self.clear()  # Clear log if columns don't match up (out of date log)
-
-    @wrap_errors(LogicalError)
-    def clear(self):
-        """
-        Reset log
-        """
-        if self.ext == "csv" and self.path.find("volt-energy-map") == -1:  # For csv files
-            with open(self.path, "w") as f:  # Open file
-                f.write(",".join(self.headers) + "\n")  # Write headers + newline
-        elif self.ext == "pkl" and os.path.exists(self.path):  # For pkl files which exist
-            os.remove(self.path)  # Delete
-        elif self.ext == "json":  # For json files
-            if os.path.exists(self.path):  # IF file exists
-                os.remove(self.path)  # Delete
-            open(self.path, "x").close()  # Create empty file
-
-    @wrap_errors(LogicalError)
-    def write(self, data):
-        """
-        Append one line of data to a csv log or dump to a pickle or json log
-        :param data: dictionary of the form {"column_name": value} if csv log
-            object if pkl log
-            dictionary of the form {"field": float_val} if json log
-        """
-        if self.ext == "csv":
-            if list(data.keys()) != self.headers:  # Raise error if keys are wrong
-                raise LogicalError(details="Incorrect keys for logging")
-            # Append to log
-            pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()}).to_csv(
-                self.path, mode="a", header=False, index=False)
-        elif self.ext == "pkl":  # If log is pkl
-            with open(self.path, "wb") as f:
-                pickle.dump(data, f)  # Dump to file
-        elif self.ext == "json":  # If log is json
-            with open(self.path, "w") as f:
-                json.dump(data, f)  # Dump to file
-
-    @wrap_errors(LogicalError)
-    def truncate(self, n):
-        """
-        Remove n rows from log file
-        """
-        if self.ext != "csv":
-            raise LogicalError(details="Attempted to truncate non-csv log!")
-        elif len(df := self.read()) <= n:
-            self.clear()
-        else:
-            df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
-
-    @wrap_errors(LogicalError)
-    def read(self):
-        """
-        Read and return entire log
-        :return: dataframe if csv, object if pickle, dictionary if json
-        """
-        if self.ext == "csv":  # Return dataframe if csv
-            return pd.read_csv(self.path, header=0)
-        if self.ext == "pkl":  # Return object if pickle
-            with open(self.path, "rb") as f:
-                return pickle.load(f)
-        with open(self.path, "r") as f:
-            return json.load(f)  # Return dict if json
-
-
 class StateFieldRegistry:
     PDMS = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
     PANELS = ["bcr1", "bcr2", "bcr3"]
@@ -207,18 +129,18 @@ class StateFieldRegistry:
         Vars in the "vars" object get logged
         """
         self.logs = {
-            "sfr": Log("./lib/data/state_field_log.pkl", None),
-            "sfr_readable": Log("./lib/data/state_field_log.json", None),
-            "power": Log("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
-            "solar": Log("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
-            "voltage_energy": Log("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
-            "orbits": Log("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
-            "iridium": Log("./lib/data/iridium_data.csv",
+            "sfr": PKLLog("./lib/data/state_field_log.pkl"),
+            "sfr_readable": JSONLog("./lib/data/state_field_log.json"),
+            "power": CSVLog("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
+            "solar": CSVLog("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
+            "voltage_energy": CSVLog("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
+            "orbits": CSVLog("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
+            "iridium": CSVLog("./lib/data/iridium_data.csv",
                            ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
-            "imu": Log("./lib/data/imu_data.csv", ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
-            "command": Log("./lib/data/command_log.csv",
+            "imu": CSVLog("./lib/data/imu_data.csv", ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
+            "command": CSVLog("./lib/data/command_log.csv",
                            ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
-            "transmission": Log("./lib/data/transmission_log.csv", ["ts0", "ts1", "radio", "size"]),
+            "transmission": CSVLog("./lib/data/transmission_log.csv", ["ts0", "ts1", "radio", "size"]),
         }
 
         self.eps = EPS(self)  # EPS never turns off
