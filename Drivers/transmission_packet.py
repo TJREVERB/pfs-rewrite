@@ -44,7 +44,7 @@ class FullPacket(TransmissionPacket): # Use this for anything that responds to a
             return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-\
                 {self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}:{self.msn}:{self.return_data[0]}:"
         return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-\
-            {self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}:{self.msn}:{':'.join([f'{s:.5}' for s in self.return_data])}:"
+            {self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}:{self.msn}:{':'.join([f'{float(s):.5}' for s in self.return_data])}:"
 
 
 class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data returns, such as with Science mode and POL beaconing
@@ -61,7 +61,7 @@ class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data retur
     @wrap_errors(LogicalError)
     def __str__(self):
         return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-{self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}\
-            :{':'.join([f'{s:.5}' for s in self.return_data])}:"  # Basically the same as FullPacket but without MSN
+            :{':'.join([f'{float(s):.5}' for s in self.return_data])}:"  # Basically the same as FullPacket but without MSN
 
 class UnsolicitedString(TransmissionPacket): # Use this for unsolicited string messages like error and mode switch notifications, or GAMER MODE UPDATES
     @wrap_errors(LogicalError)
