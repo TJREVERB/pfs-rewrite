@@ -10,7 +10,7 @@ class Clock:
         :param delay: time to wait (seconds)
         """
         self.delay = delay
-        self.last_iteration = 0
+        self.last_iteration = time.time()
 
     @wrap_errors(LogicalError)
     def time_elapsed(self) -> bool:

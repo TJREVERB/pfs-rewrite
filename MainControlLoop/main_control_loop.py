@@ -32,6 +32,7 @@ class MainControlLoop:
         if not self.sfr.vars.MODE_LOCK:
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 self.sfr.MODE.terminate_mode()
+                print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 self.sfr.MODE = new_mode
                 self.sfr.MODE.start()
 
