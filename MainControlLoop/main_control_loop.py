@@ -46,5 +46,6 @@ class MainControlLoop:
                 self.sfr.MODE = new_mode
                 self.sfr.MODE.start()
 
+        print([p.descriptor for p in self.sfr.vars.command_buffer])
         self.sfr.command_executor.execute_buffers()  # Execute commands
         self.sfr.logger.log()  # Logs data
