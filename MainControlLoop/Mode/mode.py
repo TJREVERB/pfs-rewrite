@@ -109,6 +109,7 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
+            print("Updating time")
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
