@@ -71,13 +71,13 @@ class Logger:
         """
         delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(power) > 999:  # TODO: ARBITRARY THRESHOLD
+        if abs(power) > 10:
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):
                 total_draw.append(self.sfr.eps.bus_power() + sum(self.sfr.eps.raw_pdm_draw()[1]))
                 time.sleep(1)
-            if (avg_draw := sum(total_draw) / 5) >= 999:  # TODO: ARBITRARY THRESHOLD
+            if (avg_draw := sum(total_draw) / 5) >= 10: 
                 raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
             else:  # If value was bogus, truncate logs
                 self.sfr.logs["power"].truncate(1)
