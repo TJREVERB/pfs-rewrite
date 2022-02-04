@@ -286,7 +286,7 @@ class CommandExecutor:
         """
         Transmits time since last command run
         """
-        dif = time.time() - self.sfr.LAST_COMMAND_RUN
+        dif = time.time() - self.sfr.vars.LAST_COMMAND_RUN
         self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
