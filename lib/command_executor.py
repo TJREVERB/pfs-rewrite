@@ -92,6 +92,7 @@ class CommandExecutor:
         packet.set_time()
         if packet.descriptor == "GRB": # Handle garbled iridium messages
             self.transmit(packet, packet.args, string = True)
+            return
         try:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
