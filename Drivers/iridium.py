@@ -408,6 +408,7 @@ class Iridium(Device):
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """
+        print("Transmitting " + str(packet))
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
