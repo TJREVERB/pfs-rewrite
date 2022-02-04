@@ -9,15 +9,12 @@ from lib.clock import Clock
 
 class Log:
     @wrap_errors(LogicalError)
-    def __init__(self, path: str, sub):
+    def __init__(self, path: str):
         """
         Common routines for every log
         :param path: path to log
-        :param sub: log subclass whose clear function to use
         """
         self.path = path
-        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-            sub.clear()
 
     @wrap_errors(LogicalError)
     def clear(self):
@@ -26,7 +23,7 @@ class Log:
         """
 
     @wrap_errors(LogicalError)
-    def write(self):
+    def write(self, data):
         """
         IMPLEMENTED IN SUBCLASSES
         """
@@ -44,6 +41,8 @@ class JSONLog(Log):
         Create a new json Log
         """
         super().__init__(path, self)
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
 
     @wrap_errors(LogicalError)
     def clear(self):
@@ -77,6 +76,8 @@ class PKLLog(Log):
         Create a new pkl Log
         """
         super().__init__(path, self)
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
 
     @wrap_errors(LogicalError)
     def clear(self):
@@ -110,6 +111,8 @@ class CSVLog(Log):
         self.headers = headers
         if pd.read_csv(self.path).columns.tolist() != self.headers:
             self.clear()  # Clear log if columns don't match up (out of date log)
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
 
     @wrap_errors(LogicalError)
     def clear(self):
