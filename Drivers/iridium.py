@@ -79,6 +79,7 @@ class Iridium(Device):
         "ICE",
         "IGO",
         "IAK",
+        "GID",
     ]
 
     ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
