@@ -22,7 +22,6 @@ class Science(Mode):
 
         super().__init__(sfr)
         self.ping_clock = Clock(5)  # TODO: MAKE 60
-        self.pings_performed = 0
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -36,10 +35,12 @@ class Science(Mode):
     @wrap_errors(LogicalError)
     def start(self) -> None:
         """
-        Runs initial setup for a mode. Turns on and off devices for a specific mode.
+        Powers on Iridium and APRS (if it is the primary radio)
         """
         super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
+        self.sfr.vars.SIGNAL_STRENGTH_MEAN = -1
+        self.pings_performed = 0
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
@@ -48,11 +49,10 @@ class Science(Mode):
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
-            #return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
+            # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            #return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
-            return self.sfr.modes_list["Science"](self.sfr)
-            #return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
+            return self.sfr.modes_list["Science"](self.sfr) # TODO: remove this after testing
+            # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
@@ -66,7 +66,7 @@ class Science(Mode):
         print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
-        except NoSignalException:  # Log NaN geolocation, 0 signal strength
+        except NoSignalException:  # Log 0,0,0 geolocation, 0 signal strength
             geolocation = (0, 0, 0)
         self.sfr.log_iridium(geolocation, self.sfr.devices["Iridium"].check_signal_active())
         self.pings_performed += 1

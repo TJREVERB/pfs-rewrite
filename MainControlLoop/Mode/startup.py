@@ -41,7 +41,7 @@ class Startup(Mode):
         :return: whether antenna was deployed successfully
         :rtype: bool
         """
-        if self.sfr.vars.ANTENNA_DEPLOYED or self.sfr.imu.is_tumbling or \
+        if self.sfr.vars.ANTENNA_DEPLOYED or self.sfr.imu.is_tumbling() or \
                 time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
             return False
         # Enable power to antenna deployer
@@ -55,6 +55,7 @@ class Startup(Mode):
             print("Antenna deployment successful")
         else:
             print("Antenna deployment unsuccessful")
+            return False
         return True
 
     @wrap_errors(LogicalError)
@@ -73,7 +74,6 @@ class Startup(Mode):
         """
         Executes one iteration of mode
         For example: measure signal strength as the orbit location changes.
-        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
         """
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
@@ -95,7 +95,7 @@ class Startup(Mode):
                  "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES):
             # if the antennae haven't been deployed, or contact hasn't been established, stay in startup mode as long
             # as the APRS and Antenna Deployer are not locked off
-            return self
+            return self 
         elif self.sfr.check_lower_threshold():
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
         else:
