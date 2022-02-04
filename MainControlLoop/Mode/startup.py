@@ -6,7 +6,7 @@ from lib.clock import Clock
 
 
 class Startup(Mode):
-    ANTENNA_WAIT_TIME = 15  # TODO: CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :)
+    ANTENNA_WAIT_TIME = 15  # TODO: CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 1800 seconds
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
