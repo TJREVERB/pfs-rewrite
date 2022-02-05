@@ -60,7 +60,7 @@ class Startup(Mode):
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
         print("Antenna deployment attempted")
-        time.sleep(30)
+        self.sfr.sleep(30)
         self.sfr.devices["Antenna Deployer"].check_deployment()
         if not self.sfr.vars.ANTENNA_DEPLOYED:  # If antenna deployment failed
             print("Antenna deployment unsuccessful")
@@ -69,6 +69,7 @@ class Startup(Mode):
             self.sfr.power_off("Antenna Deployer")
             self.sfr.set_primary_radio("Iridium", True)
             self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.vars.FAILURES.append("Antenna Deployer")
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
             return False

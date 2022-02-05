@@ -553,6 +553,44 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def SFA(self, packet: TransmissionPacket) -> list:
+        """
+        Adds component to failed components list
+        """
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if 0 > packet.args[0] < len(device_codes):
+            raise CommandExecutionException("Invalid device code!")
+        if device_codes[packet.args[0]] in self.sfr.vars.FAILURES:
+            raise CommandExecutionException("Component already marked as failed!")
+        self.sfr.vars.FAILURES.append(device_codes[packet.args[0]])
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def SFR(self, packet: TransmissionPacket) -> list:
+        """
+        Removes component to failed components list
+        """
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if 0 > packet.args[0] < len(device_codes):
+            raise CommandExecutionException("Invalid device code!")
+        if device_codes[packet.args[0]] not in self.sfr.vars.FAILURES:
+            raise CommandExecutionException("Component not marked as failed!")
+        self.sfr.vars.FAILURES.remove(device_codes[packet.args[0]])
+        self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def USM(self, packet: TransmissionPacket) -> list:
         """
         Transmits down summary statistics about our mission
