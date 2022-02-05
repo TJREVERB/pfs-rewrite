@@ -299,7 +299,7 @@ class StateFieldRegistry:
         if len(df := self.logs["power"].read()) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
         # Get last row, only include columns which store information about power
-        return df[[i for i in self.logs["power"].headers if i.endswith("_pwr")]].iloc[-1].tolist()
+        return df[["buspower"] + self.PDMS].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def recent_gen(self) -> list:
@@ -310,7 +310,7 @@ class StateFieldRegistry:
         if len(df := self.logs["solar"].read()) == 0:
             return self.eps.raw_solar_gen()
         # Get last row, exclude timestamp columns
-        return df[[i for i in self.logs["solar"].headers if i.find("ts") == -1]].iloc[-1].tolist()
+        return df[self.PANELS].iloc[-1].tolist()
 
     @wrap_errors(LogicalError)
     def sun_detected(self) -> bool:
