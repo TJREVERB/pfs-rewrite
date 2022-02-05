@@ -81,22 +81,24 @@ class Startup(Mode):
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
         else:  # Execute cycle normal
-            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
-            self.deploy_antenna()
+            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # Make sure primary radio is on
+            # If aprs and antenna deployer aren't locked off
+            if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
+                    "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+                self.deploy_antenna()  # Attempt to deploy antenna (checks other conditions required for deployment)
             if self.beacon.time_elapsed():
-                self.ping()
+                self.ping()  # Attempt to establish contact every 2 minutes
                 self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         super().suggested_mode()
-        if (not self.sfr.vars.ANTENNA_DEPLOYED or not self.sfr.vars.CONTACT_ESTABLISHED) and \
-                ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
-                 "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES):
-            # if the antennae haven't been deployed, or contact hasn't been established, stay in startup mode as long
-            # as the APRS and Antenna Deployer are not locked off
-            return self 
-        elif self.sfr.check_lower_threshold():
+        if not self.sfr.vars.CONTACT_ESTABLISHED:
+            return self  # If contact hasn't been established, stay in startup
+        elif ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
+              "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES) and not self.sfr.vars.ANTENNA_DEPLOYED:
+            return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
+        elif self.sfr.check_lower_threshold():  # Charging if we can switch but are low on power
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
-        else:
+        else:  # Science if we can switch and have enough power
             return self.sfr.modes_list["Science"](self.sfr)
