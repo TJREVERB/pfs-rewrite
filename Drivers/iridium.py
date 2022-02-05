@@ -74,6 +74,7 @@ class Iridium(Device):
         "AMS",
         "SUV",
         "SLV",
+        "SSF",
         "USM",
         "ULG",
         "ITM",
