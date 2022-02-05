@@ -9,7 +9,7 @@ TJ REVERB Documentation
         backend/backend
 
 .. toctree::
-
+        sfr
 
 
 Indices and tables

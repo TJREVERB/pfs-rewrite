@@ -41,6 +41,9 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="backend/backend.html">Backend</a></li>
 </ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sfr.html">StateFieldRegistry</a></li>
+</ul>
 
         </div>
       </div>
@@ -77,14 +80,17 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -97,7 +103,15 @@
 </li>
         <li><a href="backend/classes/command_executor.html#lib.command_executor.CommandExecutor.__init__">(lib.command_executor.CommandExecutor method)</a>
 </li>
+        <li><a href="backend/classes/log.html#lib.log.CSVLog.__init__">(lib.log.CSVLog method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.JSONLog.__init__">(lib.log.JSONLog method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.Log.__init__">(lib.log.Log method)</a>
+</li>
         <li><a href="backend/classes/log.html#lib.log.Logger.__init__">(lib.log.Logger method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.PKLLog.__init__">(lib.log.PKLLog method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -108,6 +122,8 @@
         <li><a href="backend/classes/clock.html#lib.clock.Clock.__weakref__">(lib.clock.Clock attribute)</a>
 </li>
         <li><a href="backend/classes/command_executor.html#lib.command_executor.CommandExecutor.__weakref__">(lib.command_executor.CommandExecutor attribute)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.Log.__weakref__">(lib.log.Log attribute)</a>
 </li>
         <li><a href="backend/classes/log.html#lib.log.Logger.__weakref__">(lib.log.Logger attribute)</a>
 </li>
@@ -144,11 +160,23 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="backend/classes/analytics.html#lib.analytics.Analytics.calc_orbital_period">calc_orbital_period() (lib.analytics.Analytics method)</a>
 </li>
+      <li><a href="backend/classes/log.html#lib.log.CSVLog.clear">clear() (lib.log.CSVLog method)</a>
+
+      <ul>
+        <li><a href="backend/classes/log.html#lib.log.JSONLog.clear">(lib.log.JSONLog method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.Log.clear">(lib.log.Log method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.PKLLog.clear">(lib.log.PKLLog method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="backend/classes/clock.html#lib.clock.Clock">Clock (class in lib.clock)</a>
 </li>
       <li><a href="backend/classes/command_executor.html#lib.command_executor.CommandExecutor">CommandExecutor (class in lib.command_executor)</a>
+</li>
+      <li><a href="backend/classes/log.html#lib.log.CSVLog">CSVLog (class in lib.log)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -249,17 +277,27 @@
   </ul></td>
 </tr></table>
 
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/log.html#lib.log.JSONLog">JSONLog (class in lib.log)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/log.html#lib.log.Log">Log (class in lib.log)</a>
+</li>
       <li><a href="backend/classes/log.html#lib.log.Logger.log">log() (lib.log.Logger method)</a>
 </li>
       <li><a href="backend/classes/log.html#lib.log.Logger.log_imu">log_imu() (lib.log.Logger method)</a>
 </li>
-      <li><a href="backend/classes/log.html#lib.log.Logger.log_power_full">log_power_full() (lib.log.Logger method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/log.html#lib.log.Logger.log_power_full">log_power_full() (lib.log.Logger method)</a>
+</li>
       <li><a href="backend/classes/log.html#lib.log.Logger.log_pwr">log_pwr() (lib.log.Logger method)</a>
 </li>
       <li><a href="backend/classes/log.html#lib.log.Logger.log_solar">log_solar() (lib.log.Logger method)</a>
@@ -300,12 +338,30 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="backend/classes/analytics.html#lib.analytics.Analytics.predicted_consumption">predicted_consumption() (lib.analytics.Analytics method)</a>
+      <li><a href="backend/classes/log.html#lib.log.PKLLog">PKLLog (class in lib.log)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/analytics.html#lib.analytics.Analytics.predicted_consumption">predicted_consumption() (lib.analytics.Analytics method)</a>
+</li>
       <li><a href="backend/classes/analytics.html#lib.analytics.Analytics.predicted_generation">predicted_generation() (lib.analytics.Analytics method)</a>
 </li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/log.html#lib.log.CSVLog.read">read() (lib.log.CSVLog method)</a>
+
+      <ul>
+        <li><a href="backend/classes/log.html#lib.log.JSONLog.read">(lib.log.JSONLog method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.Log.read">(lib.log.Log method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.PKLLog.read">(lib.log.PKLLog method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -346,6 +402,8 @@
 </li>
       <li><a href="backend/classes/command_executor.html#lib.command_executor.CommandExecutor.transmit_from_buffer">transmit_from_buffer() (lib.command_executor.CommandExecutor method)</a>
 </li>
+      <li><a href="backend/classes/log.html#lib.log.CSVLog.truncate">truncate() (lib.log.CSVLog method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -370,6 +428,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="backend/classes/analytics.html#lib.analytics.Analytics.volt_to_charge">volt_to_charge() (lib.analytics.Analytics method)</a>
 </li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="backend/classes/log.html#lib.log.CSVLog.write">write() (lib.log.CSVLog method)</a>
+
+      <ul>
+        <li><a href="backend/classes/log.html#lib.log.JSONLog.write">(lib.log.JSONLog method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.Log.write">(lib.log.Log method)</a>
+</li>
+        <li><a href="backend/classes/log.html#lib.log.PKLLog.write">(lib.log.PKLLog method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
