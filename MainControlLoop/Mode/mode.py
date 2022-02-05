@@ -1,5 +1,5 @@
 import time
-from lib.exceptions import wrap_errors, LogicalError
+from lib.exceptions import wrap_errors, LogicalError, NoSignalException
 from lib.clock import Clock
 from Drivers.transmission_packet import UnsolicitedData
 import datetime
@@ -14,7 +14,7 @@ class Mode:
     """
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=2):  # TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
         """
         Initializes constants specific to instance of Mode
         :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
@@ -66,14 +66,18 @@ class Mode:
         """
         Executes one iteration of mode
         For example: measure signal strength as the orbit location changes.
-        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
+        Additionally, it resets EPS watchdog and transmits heartbeat
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
         if self.iridium_clock.time_elapsed():  # If enough time has passed
-            self.poll_iridium()  # Poll Iridium
+            try:
+                self.poll_iridium()  # Poll Iridium
+            except NoSignalException as e:
+                print("Signal Lost")
             self.iridium_clock.update_time()  # Update last iteration
         if self.heartbeat_clock.time_elapsed():  # If enough time has passed
             self.heartbeat()  # Transmit heartbeat ping
+            self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
@@ -85,15 +89,14 @@ class Mode:
         :return: whether the function ran (whether it polled iridium or not)
         :rtype: bool
         """
-        if self.sfr.devices["Iridium"] is None and self.sfr.vars.PRIMARY_RADIO != "Iridium":
+        if self.sfr.devices["Iridium"] is None or self.sfr.vars.PRIMARY_RADIO != "Iridium":
             return False
+
         signal = self.sfr.devices["Iridium"].check_signal_passive()
         print("Iridium signal strength: ", signal)
         if signal <= self.SIGNAL_THRESHOLD:
             return False
-        # TODO: add this back after testing
-        # if self.sfr.devices["Iridium"].check_signal_passive() <= self.SIGNAL_THRESHOLD:
-        #     return False
+
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
         print("Attempting to transmit queue")
@@ -106,6 +109,7 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
+            print("Updating time")
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
@@ -119,13 +123,12 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.transmit(UnsolicitedData("GPL", [
-            self.sfr.battery_telemetry["VBAT"](),
-            self.sfr.recent_gen(),
-            self.sfr.recent_power(),
-            self.sfr.vars.PRIMARY_RADIO,
+        self.sfr.command_executor.transmit(UnsolicitedData("GPL"), [
+            self.sfr.battery.telemetry["VBAT"](),
+            sum(self.sfr.recent_gen()),
+            sum(self.sfr.recent_power()),
             self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
-        ]))
+        ])
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

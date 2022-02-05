@@ -31,7 +31,7 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
 4. **command_executor.py** contains all code pertaining to executing commands from TransmissionPackets
    1. The **primary_registry** dictionary contains method declarations for all of the commands that APRS and Iridium can execute.
    2. The **secondary_registry** dictionary contains method declarations for all of the commands that are accessible to outreach partners.
-   3. The **execute** method is called through **execute_buffers**, reading any TransmissionPackets that have been recieved.
+   3. The **execute** method is called through **execute_buffers**, reading any TransmissionPackets that have been received.
       1. It reads the packet for whatever command is given, handling any garbled messages.
       2. It then tries to execute the command, handling any exceptions in the process.
       3. It then logs the command through the **StateFieldRegistry**. 

@@ -1,6 +1,154 @@
 import time
+import os
+import pandas as pd
+import json
+import pickle
 from lib.exceptions import wrap_errors, LogicalError, HighPowerDrawError
 from lib.clock import Clock
+
+
+class Log:
+    @wrap_errors(LogicalError)
+    def __init__(self, path: str):
+        """
+        Common routines for every log
+        :param path: path to log
+        """
+        self.path = path
+
+    @wrap_errors(LogicalError)
+    def clear(self):
+        """
+        IMPLEMENTED IN SUBCLASSES
+        """
+
+    @wrap_errors(LogicalError)
+    def write(self, data):
+        """
+        IMPLEMENTED IN SUBCLASSES
+        """
+
+    @wrap_errors(LogicalError)
+    def read(self):
+        """
+        IMPLEMENTED IN SUBCLASSES
+        """
+
+
+class JSONLog(Log):
+    def __init__(self, path: str):
+        """
+        Create a new json Log
+        """
+        super().__init__(path)
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
+
+    @wrap_errors(LogicalError)
+    def clear(self):
+        if os.path.exists(self.path):  # IF file exists
+            os.remove(self.path)  # Delete
+        open(self.path, "x").close()  # Create empty file
+
+    @wrap_errors(LogicalError)
+    def write(self, data):
+        """
+        Append one line of data to a csv log or dump to a pickle or json log
+        :param data: dictionary of the form {"field": float_val}
+        """
+        with open(self.path, "w") as f:
+            json.dump(data, f)  # Dump to file
+
+    @wrap_errors(LogicalError)
+    def read(self):
+        """
+        Read and return entire log
+        :return: dictionary stored in log
+        """
+        with open(self.path, "r") as f:
+            return json.load(f)  # Return dict if json
+
+
+class PKLLog(Log):
+    @wrap_errors(LogicalError)
+    def __init__(self, path: str):
+        """
+        Create a new pkl Log
+        """
+        super().__init__(path)
+
+    @wrap_errors(LogicalError)
+    def clear(self):
+        os.remove(self.path)  # Delete
+
+    def write(self, data: object):
+        """
+        Append one line of data to a csv log or dump to a pickle or json log
+        :param data: object
+        """
+        with open(self.path, "wb") as f:
+            pickle.dump(data, f)  # Dump to file
+
+    @wrap_errors(LogicalError)
+    def read(self) -> object:
+        """
+        Read and return entire log
+        :return: object stored in log
+        """
+        with open(self.path, "rb") as f:
+            return pickle.load(f)
+
+
+class CSVLog(Log):
+    @wrap_errors(LogicalError)
+    def __init__(self, path: str, headers: list):
+        """
+        Create a new csv Log
+        """
+        super().__init__(path)
+        self.headers = headers
+        if pd.read_csv(self.path).columns.tolist() != self.headers:
+            self.clear()  # Clear log if columns don't match up (out of date log)
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.clear()
+
+    @wrap_errors(LogicalError)
+    def clear(self):
+        with open(self.path, "w") as f:  # Open file
+            f.write(",".join(self.headers) + "\n")  # Write headers + newline
+
+    @wrap_errors(LogicalError)
+    def write(self, data: dict) -> None:
+        """
+        Append one line of data to a csv log or dump to a pickle or json log
+        :param data: dictionary of the form {"column_name": value}
+        """
+        if list(data.keys()) != self.headers:  # Raise error if keys are wrong
+            raise LogicalError(details="Incorrect keys for logging")
+        new_row = pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()})  # DataFrame from dict
+        if len(df := self.read()) > 1000000:  # If this log is extremely long
+            # Remove first row and append to log
+            df.iloc[1:].append(new_row).to_csv(self.path, mode="w", header=True, index=False)
+        else:
+            new_row.to_csv(self.path, mode="a", header=False, index=False)  # Append to log
+
+    @wrap_errors(LogicalError)
+    def read(self) -> pd.DataFrame:
+        """
+        Read and return entire log
+        :return: dataframe of entire log
+        """
+        return pd.read_csv(self.path, header=0)
+
+    @wrap_errors(LogicalError)
+    def truncate(self, n):
+        """
+        Remove n rows from csv log
+        """
+        if len(df := self.read()) <= n:
+            self.clear()
+        else:
+            df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
 
 
 class Logger:

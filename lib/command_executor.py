@@ -92,6 +92,7 @@ class CommandExecutor:
         packet.set_time()
         if packet.descriptor == "GRB": # Handle garbled iridium messages
             self.transmit(packet, packet.args, string = True)
+            return
         try:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
@@ -607,19 +608,19 @@ class CommandExecutor:
         """
         Power cycle satellite
         """
-        self.sfr.mode_obj.sfr.instruct["All Off"](exceptions=[])
+        self.sfr.all_off(override_default_exceptions=True)
         time.sleep(.5)
+        self.transmit(packet, result := [])
         if not packet.simulate:
             exit(0)  # Exit script, eps will reset after 4 minutes without ping
-        return []
+        return result
 
     @wrap_errors(CommandExecutionException)
     def IRB(self, packet: TransmissionPacket) -> None:
         """
         Reboot pi
         """
-        self.transmit(packet, result := [])
-        time.sleep(5)
+        self.transmit(packet, [])
         os.system("sudo reboot")
 
     @wrap_errors(CommandExecutionException)
