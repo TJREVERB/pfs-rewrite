@@ -304,7 +304,7 @@ class Iridium(Device):
                 else:
                     flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
                 # num will always have five digits, with trailing zeros if necessary to fill it in
-                num = int((n / (10 ** exp)) * 10000)
+                num = abs(int((n / (10 ** exp)) * 10000))
                 if n < 0:
                     num &= 0x3ffff  # make sure num is 18 bits long
                     num = (1 << 18) - num  # twos comp
