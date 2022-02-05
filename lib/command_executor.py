@@ -180,7 +180,7 @@ class CommandExecutor:
         if str(self.sfr.MODE) == "Charging":
             raise CommandExecutionException("Already in Charging")
         self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Charging"](
-            self.sfr, self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]]))])
+            self.sfr, self.sfr.modes_list[list(self.sfr.modes_list.keys())[ int(packet.args[0]) ]]))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -236,7 +236,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -256,7 +256,7 @@ class CommandExecutor:
         """
         Lock a device off
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -276,7 +276,7 @@ class CommandExecutor:
         """
         Disable Device Lock
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -446,7 +446,7 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(packet.args[0])])
+        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(int(packet.args[0]))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -454,7 +454,7 @@ class CommandExecutor:
         """
         Transmits last n power draw datapoints
         """
-        df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.pwr_log_path).tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -463,7 +463,7 @@ class CommandExecutor:
         """
         Transmits last n signal strength datapoints
         """
-        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.iridium_data_path).tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -472,7 +472,7 @@ class CommandExecutor:
         """
         Transmits last n solar generation datapoints
         """
-        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.solar_log_path).tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -481,7 +481,7 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
+        df = pd.read_csv(self.sfr.imu_log_path).tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -548,7 +548,7 @@ class CommandExecutor:
         """
         Enables or disables safe mode
         """
-        self.sfr.vars.ENABLE_SAFE_MODE = packet.args[0]
+        self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
