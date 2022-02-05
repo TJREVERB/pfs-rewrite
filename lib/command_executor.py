@@ -568,7 +568,8 @@ class CommandExecutor:
         if device_codes[packet.args[0]] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
         self.sfr.vars.FAILURES.append(device_codes[packet.args[0]])
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [sum([1 << i for i in range(len(device_codes))
+            if device_codes[i] in self.sfr.vars.FAILURES])])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -587,7 +588,8 @@ class CommandExecutor:
         if device_codes[packet.args[0]] not in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component not marked as failed!")
         self.sfr.vars.FAILURES.remove(device_codes[packet.args[0]])
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [sum([1 << i for i in range(len(device_codes))
+            if device_codes[i] in self.sfr.vars.FAILURES])])
         return result
 
     @wrap_errors(CommandExecutionException)
