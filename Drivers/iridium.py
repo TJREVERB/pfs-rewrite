@@ -79,6 +79,7 @@ class Iridium(Device):
         "ULG",
         "ITM",
         "IPC",
+        "IRB",
         "ICE",
         "IGO",
         "IAK",

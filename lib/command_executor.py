@@ -51,6 +51,7 @@ class CommandExecutor:
             "ULG": self.ULG,
             "ITM": self.ITM,
             "IPC": self.IPC,
+            "IRB": self.IRB,
             "ICE": self.ICE,
             "IGO": self.IGO,
             "IAK": self.IAK
