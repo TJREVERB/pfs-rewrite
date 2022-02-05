@@ -85,7 +85,7 @@ class CommandExecutor:
             "ts1": int(t.timestamp()) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
-            "arg": ":".join(packet.args),
+            "arg": ":".join([str(s) for s in packet.args]),
             "registry": "Primary",
             "msn": packet.msn,
             "result": ":".join([str(s) for s in packet.return_data]),
