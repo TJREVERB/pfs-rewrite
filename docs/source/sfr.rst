@@ -9,4 +9,4 @@ StateFieldRegistry
 .. autoclass:: lib.registry.Vars
     :members:
     :special-members:
-    :show-inheritance:
+
