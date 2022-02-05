@@ -649,6 +649,7 @@ class CommandExecutor:
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
         game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        #TODO: packet can only have a single string arg, so you gotta figure out a delimiter for these and only use args[0]
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
         self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
