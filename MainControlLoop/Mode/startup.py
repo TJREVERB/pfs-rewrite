@@ -53,7 +53,7 @@ class Startup(Mode):
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
         if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
-            if self.sfr.imu.is_tumbling():  # If we're still tumbling
+            if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
                 return False  # Do nothing
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")

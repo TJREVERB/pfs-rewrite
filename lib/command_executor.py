@@ -347,7 +347,7 @@ class CommandExecutor:
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY,
             self.sfr.vars.BATTERY_CAPACITY_INT,
-            *(tumble := self.sfr.imu.get_tumble())[0],
+            *(tumble := self.sfr.devices["IMU"].get_tumble())[0],
             *tumble[1]
         ])
         return result
@@ -416,7 +416,9 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        if self.sfr.devices["IMU"] is None:
+            tum = ((0, 0, 0), (0, 0, 0))
+        tum = self.sfr.devices["IMU"].get_tumble()
         self.transmit(packet, result := [*tum[0], *tum[1]])
         return result
 
@@ -425,7 +427,7 @@ class CommandExecutor:
         """
         Transmit magnitude IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        tum = self.sfr.devices["IMU"].get_tumble()
         mag = (tum[0][0] ** 2 + tum[0][1] ** 2 + tum[0][2] ** 2) ** 0.5
         self.transmit(packet, result := [mag])
         return result
