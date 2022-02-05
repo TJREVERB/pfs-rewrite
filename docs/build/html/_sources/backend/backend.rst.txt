@@ -4,5 +4,6 @@ Backend
 .. toctree::
         classes/analytics
         classes/clock
-        command_executor
+        classes/command_executor
+        classes/log
         :maxdepth: 2
