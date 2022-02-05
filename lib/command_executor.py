@@ -85,7 +85,7 @@ class CommandExecutor:
             "ts1": int(t.timestamp()) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
-            "arg": ":".join(packet.args),
+            "arg": ":".join([str(s) for s in packet.args]),
             "registry": "Primary",
             "msn": packet.msn,
             "result": ":".join([str(s) for s in packet.return_data]),
@@ -98,8 +98,8 @@ class CommandExecutor:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
-            self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
-            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+            self.transmit(packet, [repr(e)], True)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else repr(e.details))
         finally:
             self.sfr.logs["command"].write(to_log)
             self.sfr.vars.LAST_COMMAND_RUN = time.time()
@@ -347,7 +347,7 @@ class CommandExecutor:
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY,
             self.sfr.vars.BATTERY_CAPACITY_INT,
-            *(tumble := self.sfr.imu.get_tumble())[0],
+            *(tumble := self.sfr.devices["IMU"].get_tumble())[0],
             *tumble[1]
         ])
         return result
@@ -416,7 +416,9 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        if self.sfr.devices["IMU"] is None:
+            tum = ((0, 0, 0), (0, 0, 0))
+        tum = self.sfr.devices["IMU"].get_tumble()
         self.transmit(packet, result := [*tum[0], *tum[1]])
         return result
 
@@ -425,7 +427,7 @@ class CommandExecutor:
         """
         Transmit magnitude IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        tum = self.sfr.devices["IMU"].get_tumble()
         mag = (tum[0][0] ** 2 + tum[0][1] ** 2 + tum[0][2] ** 2) ** 0.5
         self.transmit(packet, result := [mag])
         return result
