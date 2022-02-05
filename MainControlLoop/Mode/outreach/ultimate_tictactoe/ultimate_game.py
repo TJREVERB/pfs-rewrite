@@ -99,7 +99,7 @@ class UltimateTicTacToeGame:
     def get_best_move(self):
         search = MCTSSearch(self.board)
         return search.get_best_move()
-    
+
     def random(self):
         while True:
             board = UltimateTicTacToeGame(self.sfr, self.game_id)
