@@ -166,7 +166,7 @@ class CommandExecutor:
         """
         Switches current mode to charging mode
         """
-        if str(self.sfr.mode_obj) == "Charging":
+        if str(self.sfr.MODE) == "Charging":
             raise CommandExecutionException("Already in Charging")
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
@@ -180,7 +180,7 @@ class CommandExecutor:
         """
         Switches current mode to science mode
         """
-        if str(self.sfr.mode_obj) == "Science":
+        if str(self.sfr.MODE) == "Science":
             raise CommandExecutionException("Already in Science")
         self.sfr.MODE.terminate_mode()
         self.sfr.logs["iridium"].clear()
@@ -194,7 +194,7 @@ class CommandExecutor:
         """
         Switches current mode to outreach mode
         """
-        if str(self.sfr.mode_obj) == "Outreach":
+        if str(self.sfr.MODE) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Outreach"](self.sfr)
@@ -207,7 +207,7 @@ class CommandExecutor:
         """
         Switches current mode to Repeater mode
         """
-        if str(self.sfr.mode_obj) == "Repeater":
+        if str(self.sfr.MODE) == "Repeater":
             raise CommandExecutionException("Already in Repeater")
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Repeater"](self.sfr)
