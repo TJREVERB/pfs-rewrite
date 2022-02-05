@@ -511,7 +511,8 @@ class Iridium(Device):
         while result[5] >= 0:
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
             lastqueued.append(result[5])
-            if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
+            if len(lastqueued) > 3 and sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
+                print("GSS Not Changing, aborting")
                 break  # If GSS queue is not changing, don't bother to keep trying, just break
             if result[2] == 1:
                 try:
