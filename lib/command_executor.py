@@ -99,7 +99,7 @@ class CommandExecutor:
             to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
             self.transmit(packet, [repr(e)], True)
-            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else repr(e.details))
         finally:
             self.sfr.logs["command"].write(to_log)
             self.sfr.vars.LAST_COMMAND_RUN = time.time()
