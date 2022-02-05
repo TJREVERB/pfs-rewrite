@@ -18,7 +18,7 @@ class Mode:
         """
         Initializes constants specific to instance of Mode
         :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :type sfr: :class: 'lib.registry.StateFieldRegistry'
         :param wait: poll iridium ever "wait" seconds, defaults to 10
         :type wait: int, optional
         :param thresh: signal threshold for polling iridium, defaults to 2
@@ -40,15 +40,21 @@ class Mode:
         return "Mode"
 
     @wrap_errors(LogicalError)
-    def start(self, enabled_components: list) -> None:
+    def start(self, enabled_components: list) -> bool:
         """
+        Checks if we can be in this mode (if any required components are locked off, we can't)
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         :param enabled_components: list of components which need to be enabled in this mode
         :type enabled_components: list
+        :return: whether we should be in this mode
+        :rtype: bool
         """
+        if any([i in self.sfr.vars.LOCKED_OFF_DEVICES for i in enabled_components]):
+            return False
         self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
             self.sfr.power_on(component)
+        return True
 
     @wrap_errors(LogicalError)
     def suggested_mode(self):
@@ -151,18 +157,14 @@ class Mode:
         :return: whether there was a failure in non-locked off components
         :rtype: bool
         """
-        for device in self.sfr.devices.keys():
-            if not (device in self.sfr.vars.LOCKED_OFF_DEVICES):  # if it is not locked off, run functional check
-                device_object = self.sfr.devices[device]
-                was_off = False
-                if device_object is None:  # if the device is off, turn it on for the system check
-                    was_off = True
-                    self.sfr.power_on(device)
-                    device_object = self.sfr.devices[device]
-                if device_object.functional() is False:
-                    return False
-                if was_off:  # if it was previously off, turn it back off now that the systems check is complete
-                    self.sfr.power_off(device)
+        # Iterate over all devices which aren't locked off
+        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.values()):
+            if device is None:
+                self.sfr.power_on(device)
+                device.functional()
+                self.sfr.power_off(device)
+            else:
+                device.functional()
         return True
 
     @wrap_errors(LogicalError)

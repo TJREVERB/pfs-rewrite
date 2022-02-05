@@ -2,6 +2,7 @@ import time
 from Drivers.eps import EPS
 from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
+from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
@@ -25,10 +26,10 @@ class Vars:
         self.ANTENNA_DEPLOYED = False
         # Integral estimate of remaining battery capacity
         self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
-        self.FAILURES = []
+        self.FAILURES = []  # TODO: WHY DOES THIS EXIST?
         self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
         self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-        self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()  # TODO: Don't be an idiot, this won't work
+        self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
         self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE
@@ -49,7 +50,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
-        self.PACKET_AGE_LIMIT = 999999 # TODO: USE REAL VALUE
+        self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
 
     @wrap_errors(LogicalError)
     def encode(self):
@@ -347,6 +348,19 @@ class StateFieldRegistry:
         Resets state field registry log
         """
         self.logs["sfr"].write(Vars())  # Write default log
+
+    @wrap_errors(LogicalError)
+    def switch_mode(self, mode: Mode) -> bool:
+        """
+        Switches current mode if new mode is possible based on locked devices, returns whether mode was switched
+        :param mode: mode object to switch to
+        :return: whether the mode switch was executed
+        """
+        if not mode.start():
+            return False
+        self.MODE.terminate_mode()
+        self.MODE = mode
+        return True
 
     @wrap_errors(LogicalError)
     def power_on(self, component: str) -> None:

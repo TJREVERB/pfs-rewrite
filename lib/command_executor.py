@@ -161,6 +161,17 @@ class CommandExecutor:
             print("No Iridium connectivity, aborting transmit")
             return False
 
+    @wrap_errors(LogicalError)
+    def switch_mode(self, mode):
+        """
+        Switches current mode to given mode, raises exception if mode switch fails
+        :param mode: mode to switch to
+        """
+        switch = self.sfr.switch_mode(mode)
+        if not switch:
+            raise CommandExecutionException("Necessary devices locked off!")
+        return switch
+
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
         """
@@ -168,11 +179,8 @@ class CommandExecutor:
         """
         if str(self.sfr.MODE) == "Charging":
             raise CommandExecutionException("Already in Charging")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
-            self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Charging"](
+            self.sfr, self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]]))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -182,11 +190,7 @@ class CommandExecutor:
         """
         if str(self.sfr.MODE) == "Science":
             raise CommandExecutionException("Already in Science")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.logs["iridium"].clear()
-        self.sfr.MODE = self.sfr.modes_list["Science"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Science"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -196,10 +200,7 @@ class CommandExecutor:
         """
         if str(self.sfr.MODE) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Outreach"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Outreach"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -209,10 +210,7 @@ class CommandExecutor:
         """
         if str(self.sfr.MODE) == "Repeater":
             raise CommandExecutionException("Already in Repeater")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Repeater"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Repeater"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
