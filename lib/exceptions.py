@@ -92,7 +92,7 @@ def wrap_errors(exception: callable) -> callable:
         :param func: function to wrap
         :return: (callable) decorated function
         """
-        @functools.wraps(func)
+
         def wrapper(*args, **kwargs) -> callable:
             """
             Attempt to run function

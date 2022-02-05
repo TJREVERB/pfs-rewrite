@@ -3,13 +3,11 @@ import time
 import copy
 
 
-class TicTacToeGame:
-    def __init__(self, sfr, game_id):
-        self.sfr = sfr
-        self.game_id = game_id
+class TicTacToe:
+    def __init__(self, is_ai_turn):
+        self.is_ai_turn = is_ai_turn
         self.human_board = np.zeros((3, 3))  # X
         self.ai_board = np.zeros((3, 3))  # O
-        self.is_ai_turn = True
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
 
@@ -17,15 +15,10 @@ class TicTacToeGame:
         """
         Encoding: flattened array turned into string, with x as human and o as ai.
         Nothing is encoded as -
-        Turn is represented as either h for human turn or a for ai turn.
-        Turn char is added at the end of the board encoding.
         X - O
         O O X
-        - - X  with human to move would be encoded as:
-        x-ooox--xh
-        Note: all encodings are with lowercase chars
-
-        Game ID: string of 10 random numbers
+        - - X
+        x-ooox--x
         """
         encoded_string = ""
         human_board = self.human_board.reshape((9,))
@@ -37,11 +30,7 @@ class TicTacToeGame:
                 encoded_string += "o"
             else:
                 encoded_string += "-"
-        if self.is_ai_turn:
-            encoded_string += "a"
-        else:
-            encoded_string += "h"
-        return f"TicTacToe;{encoded_string};{self.game_id}"
+        return f"{encoded_string}"
 
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
@@ -54,51 +43,7 @@ class TicTacToeGame:
                 ai_board[i] = 1.0
         self.human_board = human_board.reshape((3, 3))
         self.ai_board = ai_board.reshape((3, 3))
-        #  always be ai turn
-
-    def get_best_move(self):
-        possible_moves = self.get_valid_moves()
-        best = -10000
-        best_move = []
-        time_started = time.time()
-        for move in possible_moves:
-            if time.time() - 10 >= time_started:
-                break
-            score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
-            print(move, score)
-            if score > best:
-                best_move = move
-                best = score
-        return best_move
-
-    def minimax(self, board, alpha, beta):
-        state = board.check_winner()
-        if state == (1, 0):
-            return -10
-        elif state == (0, 1):
-            return 10
-        elif state == (1, 1):
-            return 0
-        if board.is_ai_turn:
-            best_max = -10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_max = max(best_max, score)
-                alpha = max(alpha, score)
-                if beta <= alpha:
-                    break
-            return best_max
-        else:
-            best_min = 10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_min = min(best_min, score)
-                beta = min(beta, score)
-                if beta <= alpha:
-                    break
-            return best_min
+        return self
 
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
@@ -155,7 +100,7 @@ class TicTacToeGame:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = np.reshape(array, (3 ** 2,)).tolist()
+        new_list = np.reshape(array, (9,)).tolist()
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
@@ -165,7 +110,7 @@ class TicTacToeGame:
         return np.add(self.human_board, self.ai_board * -1)
 
     def deepcopy(self):
-        new_object = TicTacToeGame(self.sfr, self.game_id)
+        new_object = TicTacToe(self.is_ai_turn)
         new_object.is_ai_turn = self.is_ai_turn
         new_object.human_board = self.human_board.copy()
         new_object.ai_board = self.ai_board.copy()
@@ -174,36 +119,5 @@ class TicTacToeGame:
 
 
 
-
-"""class SFR:
-    def __init__(self):
-        self.MINIMAX_TIMEOUT = 10
-game = TicTacToeGame(SFR())
-while True:
-    if game.check_winner() == (1, 0):
-        print(game)
-        print("Human Wins")
-        break
-    elif game.check_winner() == (0, 1):
-        print(game)
-        print("AI Wins")
-        break
-    elif game.check_winner() == (1, 1):
-        print(game)
-        print("Draw")
-        break
-    if game.is_ai_turn:
-        move = game.get_best_move()
-        game.push(move)
-    else:
-        while True:
-            x = int(input("Move Row "))
-            y = int(input("Move Col "))
-            try:
-                game.push([x, y])
-                break
-            except InvalidMoveError:
-                pass
-    print(game)"""
 
 
