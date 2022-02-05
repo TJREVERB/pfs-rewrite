@@ -413,19 +413,7 @@ class Iridium(Device):
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
             if not discardmtbuf:
-                try:
-                    self.SBD_RB()
-                    raw = self.serial.read(50)
-                    t = time.perf_counter()
-                    while raw.find(b'OK') == -1:
-                        if time.perf_counter() - t > 5:
-                            raise IridiumError(details="Serial Timeout")
-                        raw += self.serial.read(50)
-                    raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                    self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
-                except Exception as e:
-                    self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))  
-                    # Append garbled message indicator and msn, args set to exception string to debug
+                self.check_buffer()
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         result = self.transmit_raw(raw := self.encode(packet))
@@ -438,19 +426,7 @@ class Iridium(Device):
         if result[0] not in [0, 1, 2, 3, 4]:
             raise IridiumError(details="Error transmitting buffer")
         if result[2] == 1:
-            try:
-                self.SBD_RB()
-                raw = self.serial.read(50)
-                t = time.perf_counter()
-                while raw.find(b'OK') == -1:
-                    if time.perf_counter() - t > 5:
-                        raise IridiumError(details="Serial Timeout")
-                    raw += self.serial.read(50)
-                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
-            except Exception as e:
-                self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
-                # Append garbled message indicator and msn, args set to exception string to debug
+            self.check_buffer()
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         return True
