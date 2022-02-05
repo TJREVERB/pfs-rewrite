@@ -15,36 +15,36 @@ class CustomException(Exception):
 
 class AntennaError(CustomException):
     def __repr__(self):
-        return "AntennaError: " + super().__repr__()
+        return "AntennaError: " + repr(super().__repr__())
 
 
 class APRSError(CustomException):
     def __repr__(self):
-        return "APRSError: " + super().__repr__()
+        return "APRSError: " + repr(super().__repr__())
 
 
 class IridiumError(CustomException): 
     def __repr__(self):
-        return "IridiumError: " + super().__repr__()
+        return "IridiumError: " + repr(super().__repr__())
 
 
 class SignalStrengthException(CustomException): 
     def __repr__(self):
-        return "SignalStrengthException: " + super().__repr__()
+        return "SignalStrengthException: " + repr(super().__repr__())
 
 class EPSError(CustomException): 
     def __repr__(self):
-        return "EPSError: " + super().__repr__()
+        return "EPSError: " + repr(super().__repr__())
 
 
 class IMUError(CustomException): 
     def __repr__(self):
-        return "IMUError: " + super().__repr__()
+        return "IMUError: " + repr(super().__repr__())
 
 
 class BatteryError(CustomException): 
     def __repr__(self):
-        return "BatteryError: " + super().__repr__()
+        return "BatteryError: " + repr(super().__repr__())
 
 
 class CommandExecutionException(CustomException):
@@ -52,7 +52,7 @@ class CommandExecutionException(CustomException):
         super().__init__(exception, details)
     
     def __repr__(self):
-        return "CommandExecutionException: " + super().__repr__()
+        return "CommandExecutionException: " + repr(super().__repr__())
 
 
 class InvalidCommandException(CustomException):
@@ -60,22 +60,22 @@ class InvalidCommandException(CustomException):
         super().__init__(exception, details)
     
     def __repr__(self):
-        return "InvalidCommandException: " + super().__repr__()
+        return "InvalidCommandException: " + repr(super().__repr__())
 
 
 class NoSignalException(CustomException): 
     def __repr__(self):
-        return "NoSignalException: " + super().__repr__()
+        return "NoSignalException: " + repr(super().__repr__())
 
 
 class HighPowerDrawError(CustomException):
     def __repr__(self):
-        return "HighPowerDrawError: " + super().__repr__()
+        return "HighPowerDrawError: " + repr(super().__repr__())
 
 
 class LogicalError(CustomException): 
     def __repr__(self):
-        return "LogicalError: " + super().__repr__()
+        return "LogicalError: " + repr(super().__repr__())
 
 
 def wrap_errors(exception: callable) -> callable:
