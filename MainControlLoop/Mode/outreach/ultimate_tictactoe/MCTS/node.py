@@ -5,7 +5,7 @@ class Node:
         self.children = []
 
         self.times_visited = 0
-        self.wins = 0
+        self.value = 0
 
     def add_children(self, children: list):
         self.children.extend(children)

@@ -1,6 +1,7 @@
 from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import time
@@ -47,8 +48,8 @@ class Outreach(Mode):
 
     def simulate_games(self):  # debug
         for _ in range(1):
-            obj = ChessGame(self.sfr, 1)
-            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            obj = UltimateTicTacToeGame(self.sfr, 1)
+            game = f"Ultimate;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
             self.game_queue.append(game)
 
     def execute_cycle(self) -> None:

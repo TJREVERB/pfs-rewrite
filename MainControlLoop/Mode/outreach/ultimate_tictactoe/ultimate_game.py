@@ -1,6 +1,7 @@
 import numpy as np
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTacToe
-
+import random
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 
 class UltimateTicTacToeGame:
     def __init__(self, sfr, game_id):
@@ -95,6 +96,22 @@ class UltimateTicTacToeGame:
         bitboard = int("".join(new_list), 2)
         return bitboard
 
+    def get_best_move(self):
+        search = MCTSSearch(self.board)
+        return search.get_best_move()
+    
+    def random(self):
+        while True:
+            board = UltimateTicTacToeGame(self.sfr, self.game_id)
+            for _ in range(random.randint(10, 20)):
+                move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
+                board.push(move)
+                if not board.check_winner() == (0, 0):
+                    break
+            if not board.check_winner() == (0, 0):
+                continue
+            else:
+                return str(board)
 #e = UltimateTicTacToeGame(5, 5)
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-x--x-oxo")
