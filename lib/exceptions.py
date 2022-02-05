@@ -23,34 +23,35 @@ class APRSError(CustomException):
         return "APRSError: " + super().__repr__()
 
 
-class IridiumError(CustomException): 
+class IridiumError(CustomException):
     def __repr__(self):
         return "IridiumError: " + super().__repr__()
 
 
-class SignalStrengthException(CustomException): 
+class SignalStrengthException(CustomException):
     def __repr__(self):
         return "SignalStrengthException: " + super().__repr__()
 
-class EPSError(CustomException): 
+
+class EPSError(CustomException):
     def __repr__(self):
         return "EPSError: " + super().__repr__()
 
 
-class IMUError(CustomException): 
+class IMUError(CustomException):
     def __repr__(self):
         return "IMUError: " + super().__repr__()
 
 
-class BatteryError(CustomException): 
+class BatteryError(CustomException):
     def __repr__(self):
         return "BatteryError: " + super().__repr__()
 
 
 class CommandExecutionException(CustomException):
-    def __init__(self, details, exception: Exception = None):
+    def __init__(self, details: str, exception: Exception = None):
         super().__init__(exception, details)
-    
+
     def __repr__(self):
         return "CommandExecutionException: " + super().__repr__()
 
@@ -58,12 +59,12 @@ class CommandExecutionException(CustomException):
 class InvalidCommandException(CustomException):
     def __init__(self, details, exception: Exception = None):
         super().__init__(exception, details)
-    
+
     def __repr__(self):
         return "InvalidCommandException: " + super().__repr__()
 
 
-class NoSignalException(CustomException): 
+class NoSignalException(CustomException):
     def __repr__(self):
         return "NoSignalException: " + super().__repr__()
 
@@ -73,7 +74,7 @@ class HighPowerDrawError(CustomException):
         return "HighPowerDrawError: " + super().__repr__()
 
 
-class LogicalError(CustomException): 
+class LogicalError(CustomException):
     def __repr__(self):
         return "LogicalError: " + super().__repr__()
 
