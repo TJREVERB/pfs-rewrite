@@ -85,7 +85,7 @@ class Iridium(Device):
         "IAK",
     ]
 
-    ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
+    ASCII_ARGS = {"ICE", "ZMV"}  # Commands whose arguments should be decoded as ascii
 
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
