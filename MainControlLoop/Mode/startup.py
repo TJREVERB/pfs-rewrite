@@ -82,6 +82,8 @@ class Startup(Mode):
         :return: whether function ran successfully
         :rtype: bool
         """
+        if self.sfr.vars.CONTACT_ESTABLISHED:
+            return False
         print("Transmitting proof of life...")
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         return True
@@ -101,7 +103,7 @@ class Startup(Mode):
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # Make sure primary radio is on
             self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
             if self.beacon.time_elapsed():
-                self.ping()  # Attempt to establish contact every 2 minutes
+                self.ping()  # Attempt to establish contact every 2 minutes (checks if contact is already established)
                 self.beacon.update_time()
 
     @wrap_errors(LogicalError)
