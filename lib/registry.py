@@ -455,7 +455,8 @@ class StateFieldRegistry:
         if new_radio != previous_radio:  # if it's a new radio
             if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
                 return False
-            if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:  # don't switch to APRS as primary if the antenna haven't deployed
+            # don't switch to APRS as primary if the antenna haven't deployed
+            if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
                 return False
             if turn_off_old:
                 self.power_off(previous_radio)

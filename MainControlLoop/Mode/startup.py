@@ -1,6 +1,6 @@
 import time
 from MainControlLoop.Mode.mode import Mode
-from Drivers.transmission_packet import UnsolicitedData
+from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 from lib.exceptions import wrap_errors, LogicalError
 from lib.clock import Clock
 
@@ -62,11 +62,17 @@ class Startup(Mode):
         print("Antenna deployment attempted")
         time.sleep(30)
         self.sfr.devices["Antenna Deployer"].check_deployment()
-        if self.sfr.vars.ANTENNA_DEPLOYED:
-            print("Antenna deployment successful")
-        else:
+        if not self.sfr.vars.ANTENNA_DEPLOYED:  # If antenna deployment failed
             print("Antenna deployment unsuccessful")
+            # Lock off antenna deployer/aprs and set primary radio to iridium
+            # better to use nonfunctional radio than send power to a loadless aprs
+            self.sfr.power_off("Antenna Deployer")
+            self.sfr.set_primary_radio("Iridium", True)
+            self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.command_executor.transmit(UnsolicitedString(
+                "Antenna deployment failed, Iridium is now primary radio"))
             return False
+        print("Antenna deployment successful")
         return True
 
     @wrap_errors(LogicalError)
