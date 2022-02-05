@@ -7,6 +7,7 @@ from lib.clock import Clock
 
 class Startup(Mode):
     ANTENNA_WAIT_TIME = 15  # TODO: CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 1800 seconds
+    ANTENNA_MAXIMUM_THRESHOLD = 5400  # TODO: CHANGE ARBITRARY VALUE
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -41,9 +42,19 @@ class Startup(Mode):
         :return: whether antenna was deployed successfully
         :rtype: bool
         """
-        if self.sfr.vars.ANTENNA_DEPLOYED or self.sfr.imu.is_tumbling() or \
-                time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+        if self.sfr.vars.ANTENNA_DEPLOYED:  # If the antenna has already been deployed, do nothing
             return False
+        # If aprs and antenna deployer are locked off, do nothing
+        if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
+                "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+            return False
+        # If not enough time has passed to deploy the antenna, do nothing
+        elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+            return False
+        # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
+        if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
+            if self.sfr.imu.is_tumbling():  # If we're still tumbling
+                return False  # Do nothing
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
@@ -82,10 +93,7 @@ class Startup(Mode):
             self.start()  # Run start again to turn on devices
         else:  # Execute cycle normal
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)  # Make sure primary radio is on
-            # If aprs and antenna deployer aren't locked off
-            if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
-                    "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
-                self.deploy_antenna()  # Attempt to deploy antenna (checks other conditions required for deployment)
+            self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
             if self.beacon.time_elapsed():
                 self.ping()  # Attempt to establish contact every 2 minutes
                 self.beacon.update_time()
