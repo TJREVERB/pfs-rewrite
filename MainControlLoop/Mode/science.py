@@ -22,8 +22,8 @@ class Science(Mode):
 
         super().__init__(sfr)
         self.ping_clock = Clock(5)  # TODO: MAKE 60
-        if len(df := self.sfr.logs["Iridium"].read()) >= 50:
-            self.sfr.logs["Iridium"].clear()
+        if len(df := self.sfr.logs["iridium"].read()) >= 50:
+            self.sfr.logs["iridium"].clear()
             self.pings_performed = 0
         else:
             self.pings_performed = len(df)
