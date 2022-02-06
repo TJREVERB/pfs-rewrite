@@ -376,7 +376,7 @@ class CommandExecutor:
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
         """
-        self.transmit(packet, result := [self.sfr.vars.encode()])
+        self.transmit(packet, result := self.sfr.vars.encode())
         return result
 
     @wrap_errors(CommandExecutionException)
