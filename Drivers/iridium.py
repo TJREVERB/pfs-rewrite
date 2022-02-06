@@ -374,6 +374,10 @@ class Iridium(Device):
         """
         Splits the packet into a list of packets which abide by size limits
         """
+        if len(packet.return_data) == 0:
+            # Special case to avoid losing packets with zero data
+            return [packet]
+
         FLOAT_LEN = 3
 
         DESCRIPTOR_LEN = 4
@@ -381,7 +385,7 @@ class Iridium(Device):
             DESCRIPTOR_LEN = 7
         elif packet.numerical:
             DESCRIPTOR_LEN = 5
-        
+
         if packet.numerical:
             data = packet.return_data
             ls = [data[0 + i:(Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)//FLOAT_LEN + i] for i in range(
@@ -392,6 +396,8 @@ class Iridium(Device):
                 result[_].index = _
         else:
             data = packet.return_data[0]
+            if len(data) == 0:
+                return [packet]
             ls = [data[0 + i:Iridium.MAX_DATASIZE-DESCRIPTOR_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
             for _ in range(len(ls)):
