@@ -525,12 +525,11 @@ class CommandExecutor:
         msn = packet.args[0]  # Read Packet Value
         df = self.sfr.logs["command"].read()  # Read logs
         # If search for msn returns results
-        if len(row := df[df["msn"] == msn]) != 0:
-            # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
-        else:
-            raise CommandExecutionException("Command does not exist in log!")
-        return result
+        for i in range(len(df["msn"])): # Iterate through dataframe (sorry nikhil)
+            if(df["msn"[i] == msn]):
+                self.transmit(packet, result := df[i, "result"])
+                return result
+        raise CommandExecutionException("Command does not exist in log!")
 
     @wrap_errors(CommandExecutionException)
     def SUV(self, packet: TransmissionPacket) -> list:
