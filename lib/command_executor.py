@@ -464,7 +464,7 @@ class CommandExecutor:
         """
         Transmits last n signal strength datapoints
         """
-        df = pd.read_csv(self.sfr.iridium_data_path).tail(int(packet.args[0]))  # Read logs
+        df = self.sfr.logs["iridium"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
