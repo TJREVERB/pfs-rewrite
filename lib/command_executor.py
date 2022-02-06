@@ -446,7 +446,7 @@ class CommandExecutor:
         """
         Transmits time since last mode switch
         """
-        dif = time.time() - self.sfr.LAST_MODE_SWITCH
+        dif = time.time() - self.sfr.vars.LAST_MODE_SWITCH
         self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
