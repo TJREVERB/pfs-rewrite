@@ -42,7 +42,7 @@ class Science(Mode):
         """
         Powers on Iridium and APRS (if it is the primary radio)
         """
-        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
+        return super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

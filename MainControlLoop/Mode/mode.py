@@ -51,7 +51,6 @@ class Mode:
         """
         print(self.sfr.vars.LOCKED_OFF_DEVICES)
         if any([(i in self.sfr.vars.LOCKED_OFF_DEVICES) for i in enabled_components]):
-            print("Huh")
             return False
         self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
