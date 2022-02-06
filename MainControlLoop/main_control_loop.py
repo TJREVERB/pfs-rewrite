@@ -35,11 +35,11 @@ class MainControlLoop:
     @wrap_errors(LogicalError)
     def iterate(self):  # Repeat main control loop forever
         """
-        Iterates mode and checks if the mode should change if there isn't a mode lock.
+        Iterates mode and checks if the mode should change if there isn't a mode lock and there isn't low power.
         Executes command buffers and logs data.
         """
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
-        if not self.sfr.vars.MODE_LOCK:
+        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold(): # Change modes while there isn't a mode lock or there is low battery 
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING
