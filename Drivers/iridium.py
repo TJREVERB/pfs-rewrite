@@ -292,7 +292,7 @@ class Iridium(Device):
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
-                    exp = int(math.log10(abs(n)))
+                    exp = math.floor(math.log10(abs(n)))
                 else:
                     exp = 0
                 if exp < 0:
