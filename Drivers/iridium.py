@@ -296,10 +296,10 @@ class Iridium(Device):
                 else:
                     exp = 0
                 if exp < 0:
-                    exp = abs(exp) + 1
+                    exp = abs(exp)
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
-                    exp = (1 << 4) - exp  # twos comp
-                    flt |= exp << 19
+                    signexp = (1 << 4) - exp  # twos comp
+                    flt |= signexp << 19
                     flt |= 1 << 23
                 else:
                     flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
