@@ -169,10 +169,9 @@ class CommandExecutor:
         Switches current mode to given mode, raises exception if mode switch fails
         :param mode: mode to switch to
         """
-        switch = self.sfr.switch_mode(mode)
-        if not switch:
+        if not self.sfr.switch_mode(mode):
             raise CommandExecutionException("Necessary devices locked off!")
-        return switch
+        return True
 
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
