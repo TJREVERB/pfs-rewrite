@@ -531,7 +531,7 @@ class CommandExecutor:
         Set upper threshold for mode switch
         """
         v = packet.args[0]  # get only argument from arg list
-        self.sfr.vars.UPPER_THRESHOLD = float(v)
+        self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
         self.transmit(packet, result := [v])
         return result
 
@@ -541,7 +541,7 @@ class CommandExecutor:
         Set lower threshold for mode switch
         """
         v = packet.args[0]
-        self.sfr.vars.LOWER_THRESHOLD = float(v)
+        self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
         self.transmit(packet, result := [v])
         return result
 
