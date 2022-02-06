@@ -473,7 +473,7 @@ class CommandExecutor:
         """
         Transmits last n solar generation datapoints
         """
-        df = pd.read_csv(self.sfr.solar_log_path).tail(int(packet.args[0]))  # Read logs
+        df = self.sfr.logs["solar"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -482,7 +482,7 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        df = pd.read_csv(self.sfr.imu_log_path).tail(int(packet.args[0]))  # Read logs
+        df = self.sfr.logs["imu"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
