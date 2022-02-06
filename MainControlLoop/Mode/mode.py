@@ -137,19 +137,6 @@ class Mode:
             self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
         ]
         self.sfr.command_executor.transmit(packet, pol)
-        
-        # Logs heartbeat, but doesn't set it to last command ran
-        to_log = {
-            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
-            "radio": self.sfr.vars.PRIMARY_RADIO,
-            "command": packet.descriptor,
-            "arg": ":".join([str(s) for s in packet.args]),
-            "registry": "Primary",
-            "msn": packet.msn,
-            "result": ":".join([str(s) for s in packet.return_data]),
-        }
-        self.sfr.logs["command"].write(to_log)
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
