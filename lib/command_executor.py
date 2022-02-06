@@ -525,10 +525,10 @@ class CommandExecutor:
         msn = packet.args[0]  # Read Packet Value
         df = self.sfr.logs["command"].read()  # Read logs
         # If search for msn returns results
-        for i in range(len(df["msn"])): # Iterate through dataframe
-            if(df["msn"[i] == msn]):
+        for i, v in df["msn"].items(): # Iterate through dataframe
+            if(v == msn):
                 try: # A little jank but I don't care
-                    self.transmit(packet, result := [float(s) for s in df[i, "result"].split(":")])
+                    self.transmit(packet, result := [float(df[i, "result"].split(":"))])
                 except ValueError: # Error casting to float indicates string
                     self.transmit(packet, result := [df[i, "result"]], True)
                 return result

@@ -1,3 +1,7 @@
 ts0,ts1,radio,command,arg,registry,msn,result
 1644000000.0,99129,Iridium,GTB,,Primary,150,"ERR:AttributeError(""'StateFieldRegistry' object has no attribute 'imu'"")"
 1644000000.0,99152,Iridium,GTB,,Primary,151,"ERR:AttributeError(""'StateFieldRegistry' object has no attribute 'imu'"")"
+1644100000.0,81171,Iridium,AMS,150.0,Primary,212,"ERR:KeyError((0, 'result'))"
+1644100000.0,81687,Iridium,AMS,150.0,Primary,213,"ERR:KeyError((0, 'result'))"
+1644100000.0,81828,Iridium,AMS,151.0,Primary,214,"ERR:KeyError((1, 'result'))"
+1644100000.0,82203,Iridium,AMS,151.0,Primary,215,"ERR:KeyError(('result', 1))"
