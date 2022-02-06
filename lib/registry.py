@@ -357,6 +357,7 @@ class StateFieldRegistry:
         :return: whether the mode switch was executed
         """
         if not mode.start():
+            print("HuhHuh")
             return False
         self.MODE.terminate_mode()
         self.MODE = mode
