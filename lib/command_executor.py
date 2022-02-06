@@ -447,7 +447,7 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(int(packet.args[0]))])
+        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(int(packet.args[0])).sum()/packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)
