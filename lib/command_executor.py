@@ -523,7 +523,7 @@ class CommandExecutor:
         Repeat result of command with given MSN
         """
         msn = packet.args[0]  # Read Packet Value
-        df = pd.read_csv(self.sfr.command_log_path)
+        df = self.sfr.logs["command"].read()  # Read logs
         # If search for msn returns results
         if len(row := df[df["msn"] == msn]) != 0:
             # Transmit last element of log with given msn if duplicates exist
