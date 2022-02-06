@@ -457,8 +457,7 @@ class CommandExecutor:
         """
         Transmits last n power draw datapoints
         """
-        df = pd.read_csv(self.sfr.pwr_log_path).tail(int(packet.args[0]))  # Read logs
-        self.transmit(packet, result := df.to_numpy().flatten().tolist())
+        self.transmit(packet, result := list(self.sfr.analytics.historical_consumption(int(packet.args[0]))))
         return result
 
     @wrap_errors(CommandExecutionException)
