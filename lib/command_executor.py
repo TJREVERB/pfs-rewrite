@@ -43,6 +43,7 @@ class CommandExecutor:
             "ASV": self.ASV,
             "ASG": self.ASG,
             "ATB": self.ATB,
+            "ARS": self.ARS,
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,

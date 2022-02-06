@@ -71,6 +71,7 @@ class Iridium(Device):
         "ASV",
         "ASG",
         "ATB",
+        "ARS",
         "AMS",
         "SUV",
         "SLV",
