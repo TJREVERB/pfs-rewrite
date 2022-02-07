@@ -52,6 +52,7 @@ class Outreach(Mode):
 
     def simulate_games(self):  # debug
         for _ in range(10):
+            print(self.game_queue)
             obj = UltimateTicTacToeGame(self.sfr, 1)
             game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             self.game_queue.append(game)
