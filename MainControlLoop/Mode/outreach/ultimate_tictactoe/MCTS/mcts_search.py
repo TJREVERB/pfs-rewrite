@@ -33,6 +33,7 @@ class MCTSSearch:
         while not len(node.children) == 0:
             node = self.best_uct(node)
 
+<<<<<<< Updated upstream
         legal_moves = node.board_state.get_valid_moves()
         if len(legal_moves) == 0:  # already winner
             return node
@@ -64,6 +65,8 @@ class MCTSSearch:
             node.times_visited += 1
             node = node.parent
 
+=======
+>>>>>>> Stashed changes
     def best_uct(self, node):
         def _uct(child_node):
             return (child_node.value/child_node.times_visited) \
