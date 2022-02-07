@@ -49,7 +49,7 @@ class Mode:
         :return: whether we should be in this mode
         :rtype: bool
         """
-        if any([i in self.sfr.vars.LOCKED_OFF_DEVICES for i in enabled_components]):
+        if any([(i in self.sfr.vars.LOCKED_OFF_DEVICES) for i in enabled_components]):
             return False
         self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
@@ -129,12 +129,14 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.transmit(UnsolicitedData("GPL"), [
+        packet = UnsolicitedData("GPL")
+        pol = [
             self.sfr.battery.telemetry["VBAT"](),
             sum(self.sfr.recent_gen()),
             sum(self.sfr.recent_power()),
             self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
-        ])
+        ]
+        self.sfr.command_executor.transmit(packet, pol)
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

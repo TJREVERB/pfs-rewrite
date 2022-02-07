@@ -71,6 +71,7 @@ class Iridium(Device):
         "ASV",
         "ASG",
         "ATB",
+        "ARS",
         "AMS",
         "SUV",
         "SLV",
@@ -85,7 +86,7 @@ class Iridium(Device):
         "IAK",
     ]
 
-    ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
+    ASCII_ARGS = {"ICE", "ZMV"}  # Commands whose arguments should be decoded as ascii
 
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
@@ -292,14 +293,14 @@ class Iridium(Device):
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
-                    exp = int(math.log10(abs(n)))
+                    exp = int(math.floor(math.log10(abs(n))))
                 else:
                     exp = 0
                 if exp < 0:
-                    exp = abs(exp) + 1
+                    exp = abs(exp)
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
-                    exp = (1 << 4) - exp  # twos comp
-                    flt |= exp << 19
+                    signexp = (1 << 4) - exp  # twos comp
+                    flt |= signexp << 19
                     flt |= 1 << 23
                 else:
                     flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
@@ -374,6 +375,10 @@ class Iridium(Device):
         """
         Splits the packet into a list of packets which abide by size limits
         """
+        if len(packet.return_data) == 0:
+            # Special case to avoid losing packets with zero data
+            return [packet]
+
         FLOAT_LEN = 3
 
         DESCRIPTOR_LEN = 4
@@ -381,7 +386,7 @@ class Iridium(Device):
             DESCRIPTOR_LEN = 7
         elif packet.numerical:
             DESCRIPTOR_LEN = 5
-        
+
         if packet.numerical:
             data = packet.return_data
             ls = [data[0 + i:(Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)//FLOAT_LEN + i] for i in range(
@@ -392,6 +397,8 @@ class Iridium(Device):
                 result[_].index = _
         else:
             data = packet.return_data[0]
+            if len(data) == 0:
+                return [packet]
             ls = [data[0 + i:Iridium.MAX_DATASIZE-DESCRIPTOR_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
             for _ in range(len(ls)):
@@ -426,7 +433,22 @@ class Iridium(Device):
             "size": len(raw),
         })
         if result[0] not in [0, 1, 2, 3, 4]:
-            raise IridiumError(details="Error transmitting buffer")
+            match result[0]:
+                case 33:
+                    raise IridiumError(details="Error transmitting buffer, Antenna fault")
+                case 16:
+                    raise IridiumError(details="Error transmitting buffer, ISU locked")
+                case 15:
+                    raise IridiumError(details="Error transmitting buffer, Gateway reports that Access is Denied")
+                case 10 | 11| 12 | 13 | 14 | 17 | 18 | 19 | 32 | 35 | 36 | 37 | 38: 
+                    # These all vaguely indicate no signal, or at least the issue is not hardware fault
+                    raise NoSignalException()
+                case 65:
+                    raise IridiumError(details="Error transmitting buffer, Hardware Error (PLL Lock failure)")
+                case 34:
+                    raise IridiumError(details="Error transmitting buffer, Radio is disabled (see AT*Rn)")
+                case _:
+                    raise IridiumError(details=f"Error transmitting buffer, error code {result[0]}")
         if result[2] == 1:
             self.check_buffer()
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:

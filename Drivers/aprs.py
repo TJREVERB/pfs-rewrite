@@ -163,11 +163,17 @@ class APRS(Device):
         """
         Splits the packet into a list of packets which abide by size limits
         """
+        if len(packet.return_data) == 0:
+            # Special case to avoid losing packets with zero data
+            return [packet]
+
         result = []
         if packet.numerical:
             data = packet.return_data
         else:
             data = packet.return_data[0]
+            if len(data) == 0:
+                return [packet]
 
         result.append(packet)
         lastindex = 0

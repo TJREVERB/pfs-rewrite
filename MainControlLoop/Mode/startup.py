@@ -33,7 +33,7 @@ class Startup(Mode):
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
-        super().start(["Iridium"])
+        return super().start(["Iridium"])
 
     @wrap_errors(LogicalError)
     def deploy_antenna(self) -> bool:

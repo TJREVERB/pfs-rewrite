@@ -49,7 +49,7 @@ class MissionControl:
                 print("safe mode iteration")
                 self.safe_mode()
             else:
-                print("mcl iteration")
+                print("=================================================== ~ MCL ITERATION ~ ===================================================")
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
