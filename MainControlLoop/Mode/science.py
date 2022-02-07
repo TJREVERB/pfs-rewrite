@@ -22,6 +22,11 @@ class Science(Mode):
 
         super().__init__(sfr)
         self.ping_clock = Clock(5)  # TODO: MAKE 60
+        if len(df := self.sfr.logs["iridium"].read()) >= 50:
+            self.sfr.logs["iridium"].clear()
+            self.pings_performed = 0
+        else:
+            self.pings_performed = len(df)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -37,10 +42,7 @@ class Science(Mode):
         """
         Powers on Iridium and APRS (if it is the primary radio)
         """
-        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
-        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
-        self.sfr.vars.SIGNAL_STRENGTH_MEAN = -1
-        self.pings_performed = 0
+        return super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
@@ -50,8 +52,8 @@ class Science(Mode):
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
             # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
-        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            return self.sfr.modes_list["Science"](self.sfr) # TODO: remove this after testing
+        elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
+            return self.sfr.modes_list["Science"](self.sfr)  # TODO: remove this after testing
             # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
         return self  # Otherwise, stay in science
 

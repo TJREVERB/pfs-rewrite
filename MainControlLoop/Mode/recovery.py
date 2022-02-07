@@ -32,7 +32,7 @@ class Recovery(Mode):
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
-        super().start([self.sfr.vars.PRIMARY_RADIO])
+        return super().start([self.sfr.vars.PRIMARY_RADIO])
         self.sfr.vars.CONTACT_ESTABLISHED = False
 
     @wrap_errors(LogicalError)

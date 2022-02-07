@@ -29,22 +29,22 @@ class MainControlLoop:
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
         #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
         #     self.sfr.vars.LOCKED_OFF_DEVICES) else Startup(self.sfr)
-        self.sfr.MODE = Outreach(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
+        self.sfr.MODE = Charging(self.sfr, Science)  # TODO: REMOVE THIS DEBUG LINE
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
     def iterate(self):  # Repeat main control loop forever
         """
-        Iterates mode and checks if the mode should change if there isn't a mode lock.
+        Iterates mode and checks if the mode should change if there isn't a mode lock and there isn't low power.
         Executes command buffers and logs data.
         """
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
-        if not self.sfr.vars.MODE_LOCK:
+        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold(): # Change modes while there isn't a mode lock or there is low battery 
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
-                self.sfr.MODE.terminate_mode()
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
-                self.sfr.MODE = new_mode
-                self.sfr.MODE.start()
+                # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING
+                if not self.sfr.switch_mode(new_mode):
+                    print(f"Switch failed because of locked components! Staying in {self.sfr.MODE}")
 
         print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
         self.sfr.command_executor.execute_buffers()  # Execute commands

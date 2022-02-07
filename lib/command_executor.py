@@ -43,6 +43,7 @@ class CommandExecutor:
             "ASV": self.ASV,
             "ASG": self.ASG,
             "ATB": self.ATB,
+            "ARS": self.ARS,
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
@@ -51,9 +52,11 @@ class CommandExecutor:
             "ULG": self.ULG,
             "ITM": self.ITM,
             "IPC": self.IPC,
+            "IRB": self.IRB,
             "ICE": self.ICE,
             "IGO": self.IGO,
             "IAK": self.IAK
+            #TODO: Add gamer mode commands once done with dev
         }
 
         # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -84,7 +87,7 @@ class CommandExecutor:
             "ts1": int(t.timestamp()) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
-            "arg": ":".join(packet.args),
+            "arg": ":".join([str(s) for s in packet.args]),
             "registry": "Primary",
             "msn": packet.msn,
             "result": ":".join([str(s) for s in packet.return_data]),
@@ -97,8 +100,8 @@ class CommandExecutor:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
-            self.transmit(packet, [repr(e.exception) if e.exception is not None else e.details], True)
-            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else e.details)
+            self.transmit(packet, [repr(e)], True)
+            to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else repr(e.details))
         finally:
             self.sfr.logs["command"].write(to_log)
             self.sfr.vars.LAST_COMMAND_RUN = time.time()
@@ -160,18 +163,25 @@ class CommandExecutor:
             print("No Iridium connectivity, aborting transmit")
             return False
 
+    @wrap_errors(LogicalError)
+    def switch_mode(self, mode):
+        """
+        Switches current mode to given mode, raises exception if mode switch fails
+        :param mode: mode to switch to
+        """
+        if not self.sfr.switch_mode(mode):
+            raise CommandExecutionException("Necessary devices locked off!")
+        return True
+
     @wrap_errors(CommandExecutionException)
     def MCH(self, packet: TransmissionPacket) -> list:
         """
         Switches current mode to charging mode
         """
-        if str(self.sfr.mode_obj) == "Charging":
+        if str(self.sfr.MODE) == "Charging":
             raise CommandExecutionException("Already in Charging")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Charging"](self.sfr,
-            self.sfr.modes_list[list(self.sfr.modes_list.keys())[packet.args[0]]])
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Charging"](
+            self.sfr, self.sfr.modes_list[list(self.sfr.modes_list.keys())[ int(packet.args[0]) ]]))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -179,13 +189,9 @@ class CommandExecutor:
         """
         Switches current mode to science mode
         """
-        if str(self.sfr.mode_obj) == "Science":
+        if str(self.sfr.MODE) == "Science":
             raise CommandExecutionException("Already in Science")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.logs["iridium"].clear()
-        self.sfr.MODE = self.sfr.modes_list["Science"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Science"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -193,12 +199,9 @@ class CommandExecutor:
         """
         Switches current mode to outreach mode
         """
-        if str(self.sfr.mode_obj) == "Outreach":
+        if str(self.sfr.MODE) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Outreach"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Outreach"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -206,12 +209,9 @@ class CommandExecutor:
         """
         Switches current mode to Repeater mode
         """
-        if str(self.sfr.mode_obj) == "Repeater":
+        if str(self.sfr.MODE) == "Repeater":
             raise CommandExecutionException("Already in Repeater")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Repeater"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Repeater"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -237,7 +237,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -257,7 +257,7 @@ class CommandExecutor:
         """
         Lock a device off
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -277,7 +277,7 @@ class CommandExecutor:
         """
         Disable Device Lock
         """
-        dcode = packet.args[0]
+        dcode = int(packet.args[0])
         device_codes = [
             "Iridium",
             "APRS",
@@ -340,6 +340,10 @@ class CommandExecutor:
         7. Current battery charge
         8. Current tumble
         """
+        if self.sfr.devices["IMU"] is None:
+            tumble = ((0, 0, 0), (0, 0, 0))
+        else:
+            tumble = self.sfr.devices["IMU"].get_tumble()
         self.transmit(packet, result := [
             self.sfr.analytics.historical_consumption(50).mean(),  # Average power consumption
             self.sfr.analytics.historical_generation(50).mean(),  # Average solar panel generation
@@ -348,7 +352,7 @@ class CommandExecutor:
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY,
             self.sfr.vars.BATTERY_CAPACITY_INT,
-            *(tumble := self.sfr.imu.get_tumble())[0],
+            *tumble[0],
             *tumble[1]
         ])
         return result
@@ -375,7 +379,7 @@ class CommandExecutor:
         Transmits down information about the satellite's current status
         Transmits all sfr fields as str
         """
-        self.transmit(packet, result := [self.sfr.vars.encode()])
+        self.transmit(packet, result := self.sfr.vars.encode())
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -417,7 +421,10 @@ class CommandExecutor:
         """
         Transmit full IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        if self.sfr.devices["IMU"] is None:
+            tum = ((0, 0, 0), (0, 0, 0))
+        else:
+            tum = self.sfr.devices["IMU"].get_tumble()
         self.transmit(packet, result := [*tum[0], *tum[1]])
         return result
 
@@ -426,7 +433,10 @@ class CommandExecutor:
         """
         Transmit magnitude IMU tumble
         """
-        tum = self.sfr.imu.get_tumble()
+        if self.sfr.devices["IMU"] is None:
+            tum = ((0, 0, 0), (0, 0, 0))
+        else:
+            tum = self.sfr.devices["IMU"].get_tumble()
         mag = (tum[0][0] ** 2 + tum[0][1] ** 2 + tum[0][2] ** 2) ** 0.5
         self.transmit(packet, result := [mag])
         return result
@@ -436,7 +446,7 @@ class CommandExecutor:
         """
         Transmits time since last mode switch
         """
-        dif = time.time() - self.sfr.LAST_MODE_SWITCH
+        dif = time.time() - self.sfr.vars.LAST_MODE_SWITCH
         self.transmit(packet, result := [int(dif / 100000) * 100000, int(dif % 100000)])
         return result
 
@@ -445,7 +455,8 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        self.transmit(packet, result := [self.sfr.analytics.historical_consumption(packet.args[0])])
+        ls = self.sfr.analytics.historical_consumption(int(packet.args[0]))
+        self.transmit(packet, result := [ls.sum()/ls.size])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -453,8 +464,7 @@ class CommandExecutor:
         """
         Transmits last n power draw datapoints
         """
-        df = pd.read_csv(self.sfr.pwr_log_path).tail(packet.args[0])  # Read logs
-        self.transmit(packet, result := df.to_numpy().flatten().tolist())
+        self.transmit(packet, result := list(self.sfr.analytics.historical_consumption(int(packet.args[0]))))
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -462,7 +472,7 @@ class CommandExecutor:
         """
         Transmits last n signal strength datapoints
         """
-        df = pd.read_csv(self.sfr.iridium_data_path).tail(packet.args[0])  # Read logs
+        df = self.sfr.logs["iridium"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -471,7 +481,7 @@ class CommandExecutor:
         """
         Transmits last n solar generation datapoints
         """
-        df = pd.read_csv(self.sfr.solar_log_path).tail(packet.args[0])  # Read logs
+        df = self.sfr.logs["solar"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -480,7 +490,7 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        df = pd.read_csv(self.sfr.imu_log_path).tail(packet.args[0])  # Read logs
+        df = self.sfr.logs["imu"].read().tail(int(packet.args[0]))  # Read logs
         self.transmit(packet, result := df.to_numpy().flatten().tolist())
         return result
 
@@ -513,14 +523,16 @@ class CommandExecutor:
         Repeat result of command with given MSN
         """
         msn = packet.args[0]  # Read Packet Value
-        df = pd.read_csv(self.sfr.command_log_path)
+        df = self.sfr.logs["command"].read()  # Read logs
         # If search for msn returns results
-        if len(row := df[df["msn"] == msn]) != 0:
-            # Transmit last element of log with given msn if duplicates exist
-            self.transmit(packet, result := [float(i) for i in row["result"][-1].split(":")])
-        else:
-            raise CommandExecutionException("Command does not exist in log!")
-        return result
+        for i, v in df["msn"].items(): # Iterate through dataframe
+            if(v == msn):
+                try: # A little jank but I don't care
+                    self.transmit(packet, result := [float(df[i, "result"].split(":"))])
+                except ValueError: # Error casting to float indicates string
+                    self.transmit(packet, result := [df[i, "result"]], True)
+                return result
+        raise CommandExecutionException("Command does not exist in log!")
 
     @wrap_errors(CommandExecutionException)
     def SUV(self, packet: TransmissionPacket) -> list:
@@ -528,7 +540,7 @@ class CommandExecutor:
         Set upper threshold for mode switch
         """
         v = packet.args[0]  # get only argument from arg list
-        self.sfr.vars.UPPER_THRESHOLD = float(v)
+        self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
         self.transmit(packet, result := [v])
         return result
 
@@ -538,7 +550,7 @@ class CommandExecutor:
         Set lower threshold for mode switch
         """
         v = packet.args[0]
-        self.sfr.vars.LOWER_THRESHOLD = float(v)
+        self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
         self.transmit(packet, result := [v])
         return result
 
@@ -547,8 +559,48 @@ class CommandExecutor:
         """
         Enables or disables safe mode
         """
-        self.sfr.vars.ENABLE_SAFE_MODE = packet.args[0]
+        self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
         self.transmit(packet, result := [])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def SFA(self, packet: TransmissionPacket) -> list:
+        """
+        Adds component to failed components list
+        """
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if 0 > packet.args[0] < len(device_codes):
+            raise CommandExecutionException("Invalid device code!")
+        if device_codes[packet.args[0]] in self.sfr.vars.FAILURES:
+            raise CommandExecutionException("Component already marked as failed!")
+        self.sfr.vars.FAILURES.append(device_codes[packet.args[0]])
+        self.transmit(packet, result := [sum([1 << i for i in range(len(device_codes))
+            if device_codes[i] in self.sfr.vars.FAILURES])])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def SFR(self, packet: TransmissionPacket) -> list:
+        """
+        Removes component to failed components list
+        """
+        device_codes = [
+            "Iridium",
+            "APRS",
+            "IMU",
+            "Antenna Deployer"
+        ]
+        if 0 > packet.args[0] < len(device_codes):
+            raise CommandExecutionException("Invalid device code!")
+        if device_codes[packet.args[0]] not in self.sfr.vars.FAILURES:
+            raise CommandExecutionException("Component not marked as failed!")
+        self.sfr.vars.FAILURES.remove(device_codes[packet.args[0]])
+        self.transmit(packet, result := [sum([1 << i for i in range(len(device_codes))
+            if device_codes[i] in self.sfr.vars.FAILURES])])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -608,9 +660,9 @@ class CommandExecutor:
         """
         Power cycle satellite
         """
+        self.transmit(packet, result := [])
         self.sfr.all_off(override_default_exceptions=True)
         time.sleep(.5)
-        self.transmit(packet, result := [])
         if not packet.simulate:
             exit(0)  # Exit script, eps will reset after 4 minutes without ping
         return result
@@ -648,8 +700,8 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
         #TODO: packet can only have a single string arg, so you gotta figure out a delimiter for these and only use args[0]
+        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2] 
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
         self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")

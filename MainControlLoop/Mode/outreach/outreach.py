@@ -18,7 +18,7 @@ class Outreach(Mode):
         return "Gamer"
 
     def start(self):
-        super().start([self.sfr.vars.PRIMARY_RADIO])
+        return super().start([self.sfr.vars.PRIMARY_RADIO])
 
     def suggested_mode(self):
         super().suggested_mode()
