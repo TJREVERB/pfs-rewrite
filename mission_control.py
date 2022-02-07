@@ -91,8 +91,6 @@ class MissionControl:
             # Move on with MCL if troubleshooting solved problem (no additional exception)
         except Exception:
             return False
-            self.testing_mode(e)  # troubleshooting fails
-            # self.error_handle(e) <-- uncomment when done testing lower level things
 
     def error_handle(self, e: Exception):
         """
@@ -108,6 +106,7 @@ class MissionControl:
             # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
             while True:
                 try:
+                    self.sfr.eps.commands["Reset Watchdog"]()
                     self.sfr.devices["Iridium"].transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
                     break
                 except NoSignalException:
@@ -120,7 +119,8 @@ class MissionControl:
                 self.sfr.devices["APRS"].functional()
                 self.sfr.devices["APRS"].transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
             except APRSError:  # If aprs fails
-                print("L :(")
+                print("Nikhil f*cked up L :(")
+                print("The haters were right")
                 exit()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
@@ -132,17 +132,17 @@ class MissionControl:
         if there is message, attempt to exec method
         Should only switch back to mcl from confirmation from ground
         """
+        self.sfr.eps.commands["Reset Watchdog"]()
         if self.sfr.devices["Iridium"] is not None:  # If iridium is on
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()  # Read
         if self.sfr.devices["APRS"] is not None:  # If aprs is on
             self.sfr.devices["APRS"].next_msg()  # Read
 
-        for message in self.sfr.vars.command_buffer:  # Execute command buffer
-            self.sfr.command_executor.primary_registry[message.command_string](message)
+        self.sfr.command_executor.execute_buffers()  # execute command buffer
 
         if self.sfr.check_lower_threshold():  # if battery is low
-            print("cry")
+            print("cri")
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(5400)  # charge for one orbit

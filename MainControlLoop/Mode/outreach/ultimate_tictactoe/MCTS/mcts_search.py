@@ -6,7 +6,8 @@ from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
 
 
 class MCTSSearch:
-    def __init__(self, initial_state):
+    def __init__(self, sfr, initial_state):
+        self.sfr = sfr
         self.root = Node(initial_state, None)
 
         self.start_time = time.time()
@@ -14,7 +15,7 @@ class MCTSSearch:
     def resources_left(self):
         if self.root.times_visited > 2000:
             return False
-        if time.time() - 30 > self.start_time:
+        if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
             return False
         else:
             return True

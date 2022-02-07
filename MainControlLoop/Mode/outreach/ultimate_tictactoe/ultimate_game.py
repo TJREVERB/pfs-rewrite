@@ -144,7 +144,7 @@ class UltimateTicTacToeGame:
         return bitboard
 
     def get_best_move(self):
-        search = MCTSSearch(self)
+        search = MCTSSearch(self.sfr, self.board)
         return search.get_best_move()
 
     def random(self):
