@@ -33,15 +33,6 @@ class MCTSSearch:
         while not len(node.children) == 0:
             node = self.best_uct(node)
 
-<<<<<<< Updated upstream
-        legal_moves = node.board_state.get_valid_moves()
-        if len(legal_moves) == 0:  # already winner
-            return node
-        node.children = [Node(node.board_state.push_move_to_copy(move), node)
-                         for move in legal_moves]
-
-        return random.choice(node.children)
-
     def rollout(self, node):
         board_state = node.board_state.deepcopy()
         while True:
@@ -65,8 +56,6 @@ class MCTSSearch:
             node.times_visited += 1
             node = node.parent
 
-=======
->>>>>>> Stashed changes
     def best_uct(self, node):
         def _uct(child_node):
             return (child_node.value/child_node.times_visited) \
