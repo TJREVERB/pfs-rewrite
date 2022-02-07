@@ -38,7 +38,7 @@ class Science(Mode):
         return "Science"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
         Powers on Iridium and APRS (if it is the primary radio)
         """

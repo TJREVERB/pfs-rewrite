@@ -60,7 +60,7 @@ class JSONLog(Log):
             json.dump(data, f)  # Dump to file
 
     @wrap_errors(LogicalError)
-    def read(self):
+    def read(self) -> dict:
         """
         Read and return entire log
         :return: dictionary stored in log

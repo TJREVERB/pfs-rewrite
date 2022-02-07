@@ -28,12 +28,13 @@ class Recovery(Mode):
         return "Recovery"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
-        return super().start([self.sfr.vars.PRIMARY_RADIO])
-        self.sfr.vars.CONTACT_ESTABLISHED = False
+        if result := super().start([self.sfr.vars.PRIMARY_RADIO]):
+            self.sfr.vars.CONTACT_ESTABLISHED = False
+        return result
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:

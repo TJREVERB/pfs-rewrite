@@ -19,7 +19,7 @@ class Charging(Mode):
         return "Charging"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
