@@ -544,6 +544,16 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def SDT(self, packet: TransmissionPacket) -> list:
+        """
+        Set detumble threshold for antenna deployment
+        """
+        v = packet.args[0]
+        self.sfr.vars.DETUMBLE_THRESHOLD = float(v)
+        self.transmit(packet, result := [v])
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def SSF(self, packet: TransmissionPacket) -> list:
         """
         Enables or disables safe mode
