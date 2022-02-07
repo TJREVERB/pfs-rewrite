@@ -44,6 +44,10 @@ class Outreach(Mode):
                 obj.set_game(board_string)
                 game_objects.append(obj)
 
+            elif game == "Ultimate":
+                obj = UltimateTicTacToeGame(self.sfr, game_id)
+                obj.set_game(board_string)
+                game_objects.append(obj)
         return game_objects
 
     def simulate_games(self):  # debug
