@@ -32,6 +32,24 @@ class TicTacToe:
                 encoded_string += "-"
         return f"{encoded_string}"
 
+    def board_string(self, row):  # for testing, human only
+        row = row % 3
+        string = ""
+        human_list = np.reshape(self.human_board, (9,))
+        ai_list = -1 * np.reshape(self.ai_board, (9,))
+
+        combined_list = list(map(int, (human_list + ai_list).tolist()))
+        for col in range(3):
+            string += " "
+            if combined_list[row*3 + col] == 1:  # if human piece
+                string += 'x'
+            elif combined_list[row*3 + col] == -1:
+                string += 'o'
+            else:
+                string += '.'
+            string += " |"
+        return string
+
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
         human_board = np.zeros((9,))
@@ -80,8 +98,8 @@ class TicTacToe:
         """
 
         possible_moves = [[x, y] for y in range(3) for x in range(3)]
-        possible_moves = list(map(self.is_valid_move, possible_moves))
-        valid_moves = [move for move in possible_moves if move is not None]
+        legal_move_distribution = list(map(self.is_valid_move, possible_moves))
+        valid_moves = [possible_moves[i] for i in range(9) if legal_move_distribution[i] is True]
         return valid_moves
 
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
@@ -115,9 +133,3 @@ class TicTacToe:
         new_object.human_board = self.human_board.copy()
         new_object.ai_board = self.ai_board.copy()
         return new_object
-
-
-
-
-
-

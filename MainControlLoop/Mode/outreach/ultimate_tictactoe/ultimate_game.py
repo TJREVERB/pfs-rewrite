@@ -3,11 +3,13 @@ from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTac
 import random
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 
+
 class UltimateTicTacToeGame:
     def __init__(self, sfr, game_id):
         self.sfr = sfr
         self.game_id = game_id
-        self.board = [] # must call set_game
+        self.board = [TicTacToe(True).set_game("---------") for _ in range(9)]  # must call set_game
+        self.previous_move = None
         self.is_ai_turn = True
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
@@ -17,11 +19,31 @@ class UltimateTicTacToeGame:
         board is encoded as the nine 3x3 tictactoe boards, flattened then run through 3x3 string encoder
         the 3x3 board strings are seperated as commas
         current turn is encoded at the end by h or a, h is human turn next, a is ai turn next
+        the previous move is
         i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-h
         'UltimateTicTacToe' is then inserted to the front, and turn char is appended at the back, either
         """
         board_string = ",".join([str(board) for board in self.board])
         return f"Ultimate;{board_string};{self.game_id}"
+
+    def print_board(self):  # testing, prints board for human
+        string = ""
+        for row in range(9):
+            if row < 3:
+                board_index = 0
+            elif row < 6:
+                board_index = 3
+            else:
+                board_index = 6
+            for board in range(board_index, board_index+3):
+                string += "|"
+                string += self.board[board].board_string(row)
+                string += "   "
+            string += "     "
+            string += "\n"
+            if row == 2 or row == 5:
+                string += "\n\n"
+        print(string)
 
     def set_game(self, board_string):
         lst = board_string.split(";")
@@ -33,10 +55,31 @@ class UltimateTicTacToeGame:
         Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
         """
         move_list = []
-        for i, board in enumerate(self.board):
-            if board.check_winner() == (0, 0):
-                legal_moves = [move.insert[i] for move in board.get_valid_moves()]
-                move_list.extend(legal_moves)
+        if self.previous_move is None:
+            for i, board in enumerate(self.board):
+                if board.check_winner() == (0, 0):
+                    legal_moves = []
+                    for move in board.get_valid_moves():
+                        move.insert(0, i)
+                        legal_moves.append(move)
+                    move_list.extend(legal_moves)
+            return move_list
+        section_index = self.previous_move[1]*3 + self.previous_move[2]
+        board = self.board[section_index]
+        if board.check_winner() == (0, 0):
+            legal_moves = []
+            for move in board.get_valid_moves():
+                move.insert(0, section_index)
+                legal_moves.append(move)
+            move_list.extend(legal_moves)
+        else:
+            for i, board in enumerate(self.board):
+                if board.check_winner() == (0, 0):
+                    legal_moves = []
+                    for move in board.get_valid_moves():
+                        move.insert(0, i)
+                        legal_moves.append(move)
+                    move_list.extend(legal_moves)
         return move_list
 
     def push(self, location: list):
@@ -47,6 +90,7 @@ class UltimateTicTacToeGame:
         for i, board in enumerate(self.board):
             if not i == location[0]:
                 board.switch_turn()
+        self.previous_move = location
 
     def push_move_to_copy(self, location: list):
         """
@@ -97,7 +141,7 @@ class UltimateTicTacToeGame:
         return bitboard
 
     def get_best_move(self):
-        search = MCTSSearch(self.board)
+        search = MCTSSearch(self)
         return search.get_best_move()
 
     def random(self):
@@ -112,6 +156,33 @@ class UltimateTicTacToeGame:
                 continue
             else:
                 return str(board)
+
+
+if __name__ == "__main__":
+    e = UltimateTicTacToeGame(5, 5)
+    e.print_board()
+    sec = input("Input section: ")
+    row = input("Input row: ")
+    col = input("Input col: ")
+    e.print_board()
+    while e.check_winner() == (0, 0):
+        e.push(list(map(int, [sec, row, col])))
+        e.print_board()
+        ai_move = e.get_best_move()
+        e.push(ai_move)
+        e.print_board()
+        print(e)
+        while True:
+            print("Section: " + str(e.get_valid_moves()[0][0]))
+            print(e.get_valid_moves())
+            sec = int(input("Input section: "))
+            row = int(input("Input row: "))
+            col = int(input("Input col: "))
+            if [sec, row, col] in e.get_valid_moves():
+                break
+            else:
+                print("INVALID MOVE")
+
 #e = UltimateTicTacToeGame(5, 5)
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-x--x-oxo")

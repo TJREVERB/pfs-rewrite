@@ -12,6 +12,8 @@ class MCTSSearch:
         self.start_time = time.time()
 
     def resources_left(self):
+        if self.root.times_visited > 2000:
+            return False
         if time.time() - 30 > self.start_time:
             return False
         else:
@@ -23,8 +25,9 @@ class MCTSSearch:
             simulation_result = self.rollout(leaf)
             self.backpropogate(leaf, simulation_result)
 
-        return self.best_child(self.root)
-
+        e = self.best_child_move(self.root)
+        print(e)
+        return e
     def traverse(self, node):
         while not len(node.children) == 0:
             node = self.best_uct(node)
@@ -32,7 +35,6 @@ class MCTSSearch:
         legal_moves = node.board_state.get_valid_moves()
         if len(legal_moves) == 0:  # already winner
             return node
-
         node.children = [Node(node.board_state.push_move_to_copy(move), node)
                          for move in legal_moves]
 
@@ -40,8 +42,10 @@ class MCTSSearch:
 
     def rollout(self, node):
         board_state = node.board_state.deepcopy()
-        while board_state.check_winner() == (0, 0):
+        while True:
             legal_moves = board_state.get_valid_moves()
+            if len(legal_moves) == 0:
+                break
             board_state.push(random.choice(legal_moves))
 
         outcome = board_state.check_winner()
@@ -54,22 +58,32 @@ class MCTSSearch:
 
     def backpropogate(self, leaf, simulation_result):
         node = leaf
-        while node.parent is not None:
+        while node is not None:
             node.value += simulation_result
             node.times_visited += 1
             node = node.parent
 
     def best_uct(self, node):
         def _uct(child_node):
-            return (child_node.wins/child_node.times_visited) \
+            return (child_node.value/child_node.times_visited) \
                    + (sqrt(2)*sqrt(np.log(node.times_visited)/child_node.times_visited))
 
         children_list = list(map(_uct, node.children))
         return node.children[children_list.index(max(children_list))]
 
-    def best_child(self, node):
+    def best_child_move(self, node):
         def _get_visits(child_node):
             return child_node.times_visited
 
-        visited_list = list(map(_get_visits, node.children))
-        return node[visited_list.index(max(visited_list))]
+        children_list = list(map(_get_visits, node.children))
+        max_index = children_list.index(max(children_list))
+        legal_moves = node.board_state.get_valid_moves()
+        return legal_moves[max_index]
+
+
+
+
+
+
+
+
