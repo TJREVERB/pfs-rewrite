@@ -47,7 +47,10 @@ class UltimateTicTacToeGame:
 
     def set_game(self, board_string):
         lst = board_string.split(";")
-        board_str = lst[1]
+        try:
+            board_str = lst[1]
+        except:
+            print(lst)
         self.board = np.array([TicTacToe(self.is_ai_turn).set_game(board) for board in board_str.split(",")])
 
     def get_valid_moves(self):
