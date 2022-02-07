@@ -23,10 +23,14 @@ from Drivers.transmission_packet import UnsolicitedString
 class Vars:
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
+        """
+        All variables which are logged and loaded
+        NOTE: PLEASE UPDATE TO_DICT IF YOU ADD AN SFR VARS FIELD
+        """
         self.ANTENNA_DEPLOYED = False
         # Integral estimate of remaining battery capacity
         self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
-        self.FAILURES = []  # TODO: WHY DOES THIS EXIST?
+        self.FAILURES = []
         self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
         self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
@@ -53,58 +57,52 @@ class Vars:
         self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
 
     @wrap_errors(LogicalError)
-    def encode(self):
-        """
-        :return: Dictionary containing the values of the SFR and vars
-        """
-        return [
-            int(self.ANTENNA_DEPLOYED),
-            self.BATTERY_CAPACITY_INT,
-            sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
-            int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
-            int(self.LAST_DAYLIGHT_ENTRY % 100000),
-            int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
-            int(self.LAST_ECLIPSE_ENTRY % 100000),
-            self.ORBITAL_PERIOD,
-            self.LOWER_THRESHOLD,
-            self.UPPER_THRESHOLD,
-            StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
-            self.SIGNAL_STRENGTH_MEAN,
-            self.SIGNAL_STRENGTH_VARIABILITY,
-            self.OUTREACH_MAX_CALCULATION_TIME,
-            int(self.MODE_LOCK),
-            # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
-            #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
-            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_ON_DEVICES]),
-            # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
-            sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
-                 if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_OFF_DEVICES]),
-            # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
-            int(self.CONTACT_ESTABLISHED),
-            int(self.ENABLE_SAFE_MODE),
-            int(self.START_TIME / 100000) * 100000,
-            int(self.START_TIME % 100000),
-            int(self.LAST_COMMAND_RUN / 100000) * 100000,
-            int(self.LAST_COMMAND_RUN % 100000),
-            int(self.LAST_MODE_SWITCH / 100000) * 100000,
-            int(self.LAST_MODE_SWITCH % 100000),
-            int(self.LAST_IRIDIUM_RECEIVED / 100000) * 100000,
-            int(self.LAST_IRIDIUM_RECEIVED % 100000),
-            int(self.PACKET_AGE_LIMIT)
-        ]
-
-    @wrap_errors(LogicalError)
     def to_dict(self):
         """
         Converts vars to dictionary with encoded values
+        Encoded values must be integers or floats!!!
         """
-        encoded = self.encode()
-        result = {}
-        for i in vars(self):
-            if not i.startswith("__") and i.isupper():
-                result[i] = encoded[0]  # encoded.pop(0)
-        return result
+        return {
+            "ANTENNA_DEPLOYED": int(self.ANTENNA_DEPLOYED),
+            "BATTERY_CAPACITY_INT": self.BATTERY_CAPACITY_INT,
+            "FAILURES": sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
+            "LAST_DAYLIGHT_ENTRY_0": int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
+            "LAST_DAYLIGHT_ENTRY_1": int(self.LAST_DAYLIGHT_ENTRY % 100000),
+            "LAST_ECLIPSE_ENTRY_0": int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
+            "LAST_ECLIPSE_ENTRY_1": int(self.LAST_ECLIPSE_ENTRY % 100000),
+            "ORBITAL_PERIOD": self.ORBITAL_PERIOD,
+            "LOWER_THRESHOLD": self.LOWER_THRESHOLD,
+            "UPPER_THRESHOLD": self.UPPER_THRESHOLD,
+            "PRIMARY_RADIO": StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
+            "SIGNAL_STRENGTH_MEAN": self.SIGNAL_STRENGTH_MEAN,
+            "SIGNAL_STRENGTH_VARIABILITY": self.SIGNAL_STRENGTH_VARIABILITY,
+            "OUTREACH_MAX_CALCULATION_TIME": self.OUTREACH_MAX_CALCULATION_TIME,
+            "MODE_LOCK": int(self.MODE_LOCK),
+            "LOCKED_ON_DEVICES": sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                                      if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_ON_DEVICES]),
+            # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
+            "LOCKED_OFF_DEVICES": sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
+                                       if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_OFF_DEVICES]),
+            "CONTACT_ESTABLISHED": int(self.CONTACT_ESTABLISHED),
+            "ENABLE_SAFE_MODE": int(self.ENABLE_SAFE_MODE),
+            "START_TIME_0": int(self.START_TIME / 100000) * 100000,
+            "START_TIME_1": int(self.START_TIME % 100000),
+            "LAST_COMMAND_RUN_0": int(self.LAST_COMMAND_RUN / 100000) * 100000,
+            "LAST_COMMAND_RUN_1": int(self.LAST_COMMAND_RUN % 100000),
+            "LAST_MODE_SWITCH_0": int(self.LAST_MODE_SWITCH / 100000) * 100000,
+            "LAST_MODE_SWITCH_1": int(self.LAST_MODE_SWITCH % 100000),
+            "LAST_IRIDIUM_RECEIVED_0": int(self.LAST_IRIDIUM_RECEIVED / 100000) * 100000,
+            "LAST_IRIDIUM_RECEIVED_1": int(self.LAST_IRIDIUM_RECEIVED % 100000),
+            "PACKET_AGE_LIMIT": int(self.PACKET_AGE_LIMIT),
+        }
+
+    @wrap_errors(LogicalError)
+    def encode(self) -> list:
+        """
+        Specifically for transmission of all sfr fields
+        :return: list containing the encoded values of vars
+        """
+        return list(self.to_dict().values())
 
 
 class StateFieldRegistry:
@@ -256,7 +254,7 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log and readable log
         """
         self.logs["sfr"].write(self.vars)
-        # self.logs["sfr_readable"].write(self.vars.to_dict())
+        self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
