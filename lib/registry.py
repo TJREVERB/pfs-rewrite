@@ -69,7 +69,9 @@ class Vars:
             self.LOWER_THRESHOLD,
             self.UPPER_THRESHOLD,
             StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
+            self.SIGNAL_STRENGTH_MEAN,
             self.SIGNAL_STRENGTH_VARIABILITY,
+            self.OUTREACH_MAX_CALCULATION_TIME,
             int(self.MODE_LOCK),
             # sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in list(self.LOCKED_DEVICES.keys())
             #      if self.LOCKED_DEVICES[i]]),  # TODO: change encoding for locking on/off
@@ -80,12 +82,16 @@ class Vars:
                  if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_OFF_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked off, 0 = not locked off)
             int(self.CONTACT_ESTABLISHED),
+            int(self.ENABLE_SAFE_MODE),
             int(self.START_TIME / 100000) * 100000,
             int(self.START_TIME % 100000),
             int(self.LAST_COMMAND_RUN / 100000) * 100000,
             int(self.LAST_COMMAND_RUN % 100000),
             int(self.LAST_MODE_SWITCH / 100000) * 100000,
-            int(self.LAST_MODE_SWITCH % 100000)
+            int(self.LAST_MODE_SWITCH % 100000),
+            int(self.LAST_IRIDIUM_RECEIVED / 100000) * 100000,
+            int(self.LAST_IRIDIUM_RECEIVED % 100000),
+            int(self.PACKET_AGE_LIMIT)
         ]
 
     @wrap_errors(LogicalError)
@@ -137,10 +143,10 @@ class StateFieldRegistry:
             "voltage_energy": CSVLog("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
             "orbits": CSVLog("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
             "iridium": CSVLog("./lib/data/iridium_data.csv",
-                           ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
+                              ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
             "imu": CSVLog("./lib/data/imu_data.csv", ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
             "command": CSVLog("./lib/data/command_log.csv",
-                           ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
+                              ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": CSVLog("./lib/data/transmission_log.csv", ["ts0", "ts1", "radio", "size"]),
         }
 
@@ -189,7 +195,7 @@ class StateFieldRegistry:
         while time.perf_counter() - begin < t:
             self.eps.commands["Reset Watchdog"]()
             time.sleep(60)
-    
+
     @wrap_errors(LogicalError)
     def check_upper_threshold(self):
         """
@@ -198,7 +204,7 @@ class StateFieldRegistry:
         :return: (bool) whether switch is required
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
-            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
         if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
@@ -213,9 +219,10 @@ class StateFieldRegistry:
         Syncs voltage to integrated charge if necessary
         :return: (bool) whether switch is required
         """
-        print(f"Checking lower threshold, vbat {self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
+        print(
+            f"Checking lower threshold, vbat {self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
-            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]()) 
+            self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
         if self.vars.BATTERY_CAPACITY_INT < self.vars.LOWER_THRESHOLD:
