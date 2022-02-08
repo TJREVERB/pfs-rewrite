@@ -148,6 +148,21 @@ class CommandExecutor:
                     return False
 
     @wrap_errors(LogicalError)
+    def transmit_queue(self):
+        """
+        Attempt to transmit entire transmission queue
+        """
+        print("Attempting to transmit queue")
+        while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
+            if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
+                print("Signal strength lost!")
+                # note: function will still return true if we lose signal midway, messages will be transmitted next
+                # execute cycle
+                break
+            self.sfr.vars.transmit_buffer.pop(0)
+            print(f"Transmitted {p}")
+
+    @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
         """
         Transmit a message that has been read from buffer, do not append back to buffer

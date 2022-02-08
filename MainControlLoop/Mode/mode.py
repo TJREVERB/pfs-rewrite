@@ -105,14 +105,7 @@ class Mode:
 
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
-        print("Attempting to transmit queue")
-        while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.sfr.command_executor.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
-                print("Signal strength lost!") 
-                # note: function will still return true if we lose signal midway, messages will be transmitted next execute cycle
-                break
-            self.sfr.vars.transmit_buffer.pop(0)
-            print(f"Transmitted {p}")
+        self.sfr.command_executor.transmit_queue()  # Attempt to transmit transmission queue
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
