@@ -21,6 +21,9 @@ from Drivers.transmission_packet import UnsolicitedString
 
 
 class Vars:
+    """
+    Loggable fields of sfr
+    """
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
@@ -58,10 +61,12 @@ class Vars:
         self.DETUMBLE_THRESHOLD = 10
 
     @wrap_errors(LogicalError)
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """
         Converts vars to dictionary with encoded values
         Encoded values must be integers or floats!!!
+        :return: dictionary with encoded values
+        :rtype: dict
         """
         return {
             "ANTENNA_DEPLOYED": int(self.ANTENNA_DEPLOYED),
@@ -102,12 +107,18 @@ class Vars:
     def encode(self) -> list:
         """
         Specifically for transmission of all sfr fields
-        :return: list containing the encoded values of vars
+        :return: encoded values of vars
+        :rtype: list
         """
         return list(self.to_dict().values())
 
 
 class StateFieldRegistry:
+    """
+    Collection of loggable fields, constants, functions, and devices
+    Accessible to every element of pfs
+    """
+    # Constants
     PDMS = ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x0A"]
     PANELS = ["bcr1", "bcr2", "bcr3"]
     COMPONENTS = [
@@ -185,11 +196,12 @@ class StateFieldRegistry:
         self.vars = self.load()
 
     @wrap_errors(LogicalError)
-    def sleep(self, t):
+    def sleep(self, t: int) -> None:
         """
         Use this when you need to time.sleep for longer than 4 minutes, to prevent EPS reset
         Runs in increments of 60 seconds
-        :param t: (int) number of seconds to sleep
+        :param t: number of seconds to sleep
+        :type t: int
         """
         begin = time.perf_counter()
         while time.perf_counter() - begin < t:
@@ -197,11 +209,12 @@ class StateFieldRegistry:
             time.sleep(60)
 
     @wrap_errors(LogicalError)
-    def check_upper_threshold(self):
+    def check_upper_threshold(self) -> bool:
         """
         Checks upper battery threshold for switching modes
         Syncs voltage to integrated charge if necessary
-        :return: (bool) whether switch is required
+        :return: whether switch is required
+        :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
@@ -213,14 +226,15 @@ class StateFieldRegistry:
         return False
 
     @wrap_errors(LogicalError)
-    def check_lower_threshold(self):
+    def check_lower_threshold(self) -> bool:
         """
         Checks upper battery threshold for switching modes
         Syncs voltage to integrated charge if necessary
-        :return: (bool) whether switch is required
+        :return: whether switch is required
+        :rtype: bool
         """
-        print(
-            f"Checking lower threshold, vbat {self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
+        print(f"Checking lower threshold, vbat "
+              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
@@ -233,21 +247,23 @@ class StateFieldRegistry:
     def load(self) -> Vars:
         """
         Load sfr fields from log
-        :return: (Registry) loaded registry
+        :return: loaded fields
+        :rtype: Vars
         """
         defaults = Vars(self)
         return defaults  # TODO: DEBUG
         try:
             fields = self.logs["sfr"].read()
-            if list(fields.to_dict().keys()) == list(defaults.to_dict().keys()):
+            if fields.to_dict().keys() == defaults.to_dict().keys():
                 print("Loading sfr from log...")
                 return fields
             print("Invalid log, loading default sfr...")
             return defaults
         except LogicalError as e:
-            if type(e.exception) == FileNotFoundError:
-                print("Log missing, loading default sfr...")
-                return defaults
+            if e.exception is not None:
+                if type(e.exception) == FileNotFoundError:
+                    print("Log missing, loading default sfr...")
+                    return defaults
             raise
 
     @wrap_errors(LogicalError)
@@ -283,11 +299,13 @@ class StateFieldRegistry:
         })
 
     @wrap_errors(LogicalError)
-    def log_iridium(self, location: tuple, signal) -> None:
+    def log_iridium(self, location: tuple, signal: int) -> None:
         """
         Logs iridium data
         :param location: current geolocation
+        :type location: tuple
         :param signal: iridium signal strength
+        :type signal: int
         """
         self.logs["iridium"].write({
             "ts0": (t := time.time()) // 100000 * 100000,
@@ -302,7 +320,8 @@ class StateFieldRegistry:
     def recent_power(self) -> list:
         """
         Returns list of buspower and power draws for all pdms
-        :return: (list) [buspower, 0x01, 0x02... 0x0A]
+        :return: [buspower, 0x01, 0x02... 0x0A]
+        :rtype: list
         """
         if len(df := self.logs["power"].read()) == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
@@ -313,7 +332,8 @@ class StateFieldRegistry:
     def recent_gen(self) -> list:
         """
         Returns list of input power from all bcrs
-        :return: (list) [bcr1, bcr2, bcr3]
+        :return: [bcr1, bcr2, bcr3]
+        :rtype: list
         """
         if len(df := self.logs["solar"].read()) == 0:
             return self.eps.raw_solar_gen()
@@ -323,8 +343,9 @@ class StateFieldRegistry:
     @wrap_errors(LogicalError)
     def sun_detected(self) -> bool:
         """
-        Checks if sun is detected
-        :return: (bool)
+        Checks if sun is detected (JANK IMPLEMENTATION BECAUSE WE DON'T HAVE SUN SENSORS, VERY UNRELIABLE)
+        :return: whether sun is detected
+        :rtype: bool
         """
         solar = sum(self.eps.raw_solar_gen())
         if solar > self.eps.SUN_DETECTION_THRESHOLD:  # Threshold of 1W
@@ -340,7 +361,7 @@ class StateFieldRegistry:
         return False
 
     @wrap_errors(LogicalError)
-    def clear_logs(self):
+    def clear_logs(self) -> None:
         """
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
@@ -350,9 +371,9 @@ class StateFieldRegistry:
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
-    def reset(self):
+    def reset(self) -> None:
         """
-        Resets state field registry log
+        Resets state field registry vars log
         """
         self.logs["sfr"].write(Vars())  # Write default log
 
@@ -361,7 +382,9 @@ class StateFieldRegistry:
         """
         Switches current mode if new mode is possible based on locked devices, returns whether mode was switched
         :param mode: mode object to switch to
+        :type mode: Mode
         :return: whether the mode switch was executed
+        :rtype: bool
         """
         if not mode.start():
             return False
@@ -373,7 +396,8 @@ class StateFieldRegistry:
     def power_on(self, component: str) -> None:
         """
         Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-        :param component: (str) component to turn on
+        :param component: component to turn on
+        :type component: str
         """
         if self.devices[component] is not None:
             return  # if component is already on, stop method from running further
@@ -381,17 +405,18 @@ class StateFieldRegistry:
             return  # if component is locked off, stop method from running further
 
         self.eps.commands["Pin On"](component)  # turns on component
-        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
-            self.eps.commands["Pin On"](current_converter)
-        time.sleep(.5)
-        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
-        self.devices[component] = self.component_to_class[component](self)  # registers component as on by setting
+        for i in self.component_to_class[component].SERIAL_CONVERTERS:
+            self.eps.commands["Pin On"](i)  # Turns on all serial converters for this component
+        time.sleep(.5)  # Wait for device to boot
+        # registers component as on by setting devices value to instantiated object
+        self.devices[component] = self.component_to_class[component](self)
 
     @wrap_errors(LogicalError)
     def power_off(self, component: str) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
-        :param component: (str) component to turn off
+        :param component: component to turn off
+        :type component: str
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return None
@@ -401,15 +426,15 @@ class StateFieldRegistry:
         self.devices[component].terminate()
         self.devices[component] = None  # removes from dict
         self.eps.commands["Pin Off"](component)  # turns off component
-        for current_converter in self.component_to_class[component].SERIAL_CONVERTERS:
-            self.eps.commands["Pin Off"](current_converter)
+        for i in self.component_to_class[component].SERIAL_CONVERTERS:
+            self.eps.commands["Pin Off"](i)  # Switch off serial converters for this component
 
     @wrap_errors(LogicalError)
     def reboot(self, component: str) -> None:
         """
         Powers a given component on and off again
-        :param component: (str) component to rebood
-        :return: None
+        :param component: component to reboot
+        :type component: str
         """
         self.power_off(component)
         time.sleep(5)
@@ -421,11 +446,10 @@ class StateFieldRegistry:
         """
         Turns all components on automatically, except for Antenna Deployer.
         Calls power_on for every key in self.devices except for those in exceptions parameter
-        :param exceptions: (list) components to not turn on, default is ["Antenna Deployer, IMU"]
-        :return: None
+        :param exceptions: components to not turn on, default is ["Antenna Deployer, IMU"]
+        :type exceptions: list
         """
-        if exceptions is None:  # If no argument provided
-            exceptions = ["Antenna Deployer", "IMU"]  # Set to default list
+        exceptions = (exceptions or []) + ["Antenna Deployer", "IMU"]  # Set to default list
 
         for key in self.devices:
             if not self.devices[key] and key not in exceptions:  # if device is off and not in exceptions
@@ -440,94 +464,97 @@ class StateFieldRegistry:
         :param override_default_exceptions: (bool) whether or not to use default exceptions
         :return: None
         """
-        exceptions = exceptions or []
-        if not override_default_exceptions:
-            exceptions += ["Antenna Deployer", "IMU"]
+        exceptions = (exceptions or []) + (["Antenna Deployer", "IMU"] if override_default_exceptions else [])
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
                 self.power_off(key)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def set_primary_radio(self, new_radio: str, turn_off_old=False):
+    def set_primary_radio(self, new_radio: str, turn_off_old=False) -> bool:
         """
         Takes care of switching sfr PRIMARY_RADIO field:
         instantiates primary radio if necessary, kills the previous radio if requested
-        :param new_radio: (str) string name of new radio (i.e. "APRS" or "Iridium")
-        :param turn_off_old: (bool) whether or not to turn off the old radio if it is being switched
-        :return: True if the primary radio could be set as specified (or it already was that one).
+        :param new_radio: string name of new radio (i.e. "APRS" or "Iridium")
+        :type new_radio: str
+        :param turn_off_old: whether or not to turn off the old radio if it is being switched
+        :type turn_off_old: bool
+        :return: Whether primary radio was switched
+            True if the primary radio could be set as specified (or it already was that one).
             False only if it is locked off, or it's APRS and antenna not deployed
+        :rtype: bool
         """
-        previous_radio = self.vars.PRIMARY_RADIO
-        if new_radio != previous_radio:  # if it's a new radio
-            if new_radio in self.vars.LOCKED_OFF_DEVICES:  # if it's locked off
-                return False
-            # don't switch to APRS as primary if the antenna haven't deployed
-            if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
-                return False
-            if turn_off_old:
-                self.power_off(previous_radio)
-            self.vars.PRIMARY_RADIO = new_radio
-            if self.devices[new_radio] is None:  # initialize it
-                self.power_on(new_radio)
-            # transmit update to groundstation
-            self.vars.LAST_IRIDIUM_RECEIVED = time.time()
-            unsolicited_packet = UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}")
-            self.command_executor.transmit(unsolicited_packet)
+        # If this is not a different radio or the new radio is locked off, don't run further
+        if new_radio == self.vars.PRIMARY_RADIO or new_radio in self.vars.LOCKED_OFF_DEVICES:
+            return False
+        # don't switch to APRS as primary if the antenna hasn't deployed
+        if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
+            return False
+        if turn_off_old:
+            self.power_off(self.vars.PRIMARY_RADIO)
+        # Switch radio
+        self.vars.PRIMARY_RADIO = new_radio
+        self.power_on(new_radio)
+        # transmit update to groundstation
+        self.command_executor.transmit(UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}"))
         return True
 
     @wrap_errors(LogicalError)
-    def lock_device_on(self, component: str, force=False):
+    def lock_device_on(self, component: str, force=False) -> bool:
         """
         Takes care of logic for locking on devices
-        :param component: (str) name of device to lock on
-        :param force: (bool) if true, this will overwrite any previous locks on this device
-        :return: whether the device was able to be locked on (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
+        :param component: name of device to lock on
+        :type component: str
+        :param force: if true, this will overwrite any previous locks on this device
+        :type force: bool
+        :return: whether the device was able to be locked on
+            (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
+        :rtype: bool
         """
         if component in self.vars.LOCKED_ON_DEVICES:
             return True  # if it's already locked on
-        if component in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off before
-            if not force:
-                return False  # the device was locked off before, and this is not allowed to overwrite
-            # else:
-            self.vars.LOCKED_OFF_DEVICES.remove(component)
-        # at this point, we know this is a legal action:
+        if component in self.vars.LOCKED_OFF_DEVICES:
+            if not force:  # If we're not allowed to overwrite, return
+                return False
+            self.vars.LOCKED_OFF_DEVICES.remove(component)  # Unlock device off
+        # Lock device
         self.vars.LOCKED_ON_DEVICES.add(component)
-        if self.devices[component] is None:
-            self.power_on(component)  # needs to be powered on
+        self.power_on(component)  # Power on device
         return True
 
     @wrap_errors(LogicalError)
-    def lock_device_off(self, component: str, force=False):
+    def lock_device_off(self, component: str, force=False) -> bool:
         """
         Takes care of logic for locking off devices
-        :param component: (str) name of device to lock off
-        :param force: (bool) if true, this will overwrite any previous locks on this device
-        :return: whether the device was able to be locked off (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
+        :param component: name of device to lock off
+        :type component: str
+        :param force: if true, this will overwrite any previous locks on this device
+        :type force: bool
+        :return: whether the device was able to be locked off
+            (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
+        :rtype: bool
         """
-        if component == "APRS" and "Iridium" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
-            return False
-        if component == "Iridium" and "APRS" in self.vars.LOCKED_OFF_DEVICES:  # won't allow both radios to be locked off
+        # won't allow both radios to be locked off
+        if "Iridium" in (l := list(self.vars.LOCKED_OFF_DEVICES) + [component]) and "APRS" in l:
             return False
         if component in self.vars.LOCKED_OFF_DEVICES:
             return True  # if it's already locked off
         if component in self.vars.LOCKED_ON_DEVICES:  # if it was locked on before
-            if not force:
-                return False  # the device was locked on before, and this is not allowed to overwrite
-            # else:
-            self.vars.LOCKED_ON_DEVICES.remove(component)
+            if not force:  # If we're not allowed to overwrite, return
+                return False
+            self.vars.LOCKED_ON_DEVICES.remove(component)  # Otherwise remove from LOCKED_ON_DEVICES
         # at this point, we know this is a legal action
-        self.vars.LOCKED_OFF_DEVICES.add(component)
-        if not (self.devices[component] is None):  # needs to be powered off
-            self.power_off(component)
-        self.devices[component] = None  # this is already handled in power_off, but this is making it explicit
+        self.vars.LOCKED_OFF_DEVICES.add(component)  # Add device to locked devices
+        self.power_off(component)  # Power off device
         return True
 
-    def unlock_device(self, device: str):
+    def unlock_device(self, device: str) -> bool:
         """
         Unlocks device
-        :param device: (str) name of device to unlock
-        :return: (bool) True if something had to be changed, False if it was not previously locked
+        :param device: name of device to unlock
+        :type device: str
+        :return: True if something had to be changed, False if it was not previously locked
+        :rtype: bool
         """
         if device in self.vars.LOCKED_ON_DEVICES:  # if it was locked on
             self.vars.LOCKED_ON_DEVICES.remove(device)
