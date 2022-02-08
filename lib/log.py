@@ -107,11 +107,11 @@ class CSVLog(Log):
         """
         super().__init__(path)
         self.headers = headers
-        if pd.read_csv(self.path).columns.tolist() != self.headers:
-            self.clear()  # Clear log if columns don't match up (out of date log)
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.clear()
-
+        if pd.read_csv(self.path).columns.tolist() != self.headers:
+            self.clear()  # Clear log if columns don't match up (out of date log)
+        
     @wrap_errors(LogicalError)
     def clear(self):
         with open(self.path, "w") as f:  # Open file
