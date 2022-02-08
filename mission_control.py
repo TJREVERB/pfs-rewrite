@@ -69,14 +69,22 @@ class MissionControl:
         Then cleanly exit
         """
         print("ERROR!!!")
-        print(f"Currently in {type(self.sfr.MODE).__name__}")
-        print("State field registry fields:")
-        print(self.sfr.vars.to_dict())
-        print("Exception: ")
-        print(repr(e))
-        print(get_traceback())
-        self.sfr.all_off()
-        self.sfr.clear_logs()
+        try:
+            print(f"Currently in {type(self.sfr.MODE).__name__}")
+            print("State field registry fields:")
+            print(self.sfr.vars.to_dict())
+        except Exception:
+            print("Error in sfr init, unable to print mode and sfr fields")
+        print("Exception: " + repr(e))
+        print("Traceback:\n" + get_traceback())
+        try:
+            self.sfr.all_off()
+        except Exception:
+            print("PDM power cycle failed! Manually power cycle before next testing run")
+        try:
+            self.sfr.clear_logs()
+        except Exception:
+            print("Log clearing failed! Consider manually clearing logs before next run")
         exit(1)
 
     def troubleshoot(self, e: Exception) -> bool:
