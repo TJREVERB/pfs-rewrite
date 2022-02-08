@@ -1,7 +1,7 @@
 import numpy as np
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTacToe
 import random
-from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 
 
 class UltimateTicTacToeGame:
@@ -46,12 +46,7 @@ class UltimateTicTacToeGame:
         print(string)
 
     def set_game(self, board_string):
-        lst = board_string.split(";")
-        try:
-            board_str = lst[1]
-        except:
-            print(lst)
-        self.board = np.array([TicTacToe(self.is_ai_turn).set_game(board) for board in board_str.split(",")])
+        self.board = np.array([TicTacToe(self.is_ai_turn).set_game(board) for board in board_string.split(",")])
 
     def get_valid_moves(self):
         """
@@ -137,14 +132,14 @@ class UltimateTicTacToeGame:
         return _check(self.get_bitboard(np.array(human_board)), self.get_bitboard(np.array(ai_board)))
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = np.reshape(array, (9,)).tolist()
+        new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
         return bitboard
 
     def get_best_move(self):
-        search = MCTSSearch(self.sfr, self.board)
+        search = MCTSSearch(self.sfr, self)
         return search.get_best_move()
 
     def random(self):
@@ -163,6 +158,9 @@ class UltimateTicTacToeGame:
 
 if __name__ == "__main__":
     e = UltimateTicTacToeGame(5, 5)
+    e.print_board()
+    ai_move = e.get_best_move()
+    e.push(ai_move)
     e.print_board()
     sec = input("Input section: ")
     row = input("Input row: ")

@@ -3,11 +3,13 @@ from math import sqrt
 import numpy as np
 import random
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
+#from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
 
 
 class MCTSSearch:
     def __init__(self, sfr, initial_state):
         self.sfr = sfr
+        print(initial_state)
         self.root = Node(initial_state, None)
 
         self.start_time = time.time()
@@ -15,7 +17,7 @@ class MCTSSearch:
     def resources_left(self):
         if self.root.times_visited > 2000:
             return False
-        if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
+        if time.time() - 30 > self.start_time: #self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
             return False
         else:
             return True
@@ -27,11 +29,15 @@ class MCTSSearch:
             self.backpropogate(leaf, simulation_result)
 
         e = self.best_child_move(self.root)
-        print(e)
         return e
+
     def traverse(self, node):
         while not len(node.children) == 0:
             node = self.best_uct(node)
+
+        node.children = [Node(node.board_state.push_move_to_copy(move), node)
+                         for move in node.board_state.get_valid_moves()]
+        return random.choice(node.children)
 
     def rollout(self, node):
         board_state = node.board_state.deepcopy()
