@@ -40,10 +40,10 @@ class MissionControl:
         #    self.testing_mode(e)  # TODO: change this for real pfs
 
     def main(self):
-        try:
-            self.mcl.start()  # initialize everything for mcl run
-        except Exception as e:
-            self.testing_mode(e)
+        #try:
+        self.mcl.start()  # initialize everything for mcl run
+        #except Exception as e:
+            #self.testing_mode(e)
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
