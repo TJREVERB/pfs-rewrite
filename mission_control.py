@@ -2,6 +2,7 @@ import traceback
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
+from lib.clock import Clock
 from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
@@ -49,6 +50,7 @@ class MissionControl:
                 AntennaError: self.antenna_troubleshoot,
                 HighPowerDrawError: self.high_power_draw_troubleshoot,
             }
+            self.transmission_queue_clock = Clock(10)
         except Exception as e:
             self.testing_mode(e)  # TODO: change this for real pfs
 
@@ -162,7 +164,9 @@ class MissionControl:
             self.sfr.devices["APRS"].next_msg()  # Read
 
         self.sfr.command_executor.execute_buffers()  # Execute all received commands
-        self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
+        if self.transmission_queue_clock.time_elapsed():  # Once every 10 seconds
+            self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
+            self.transmission_queue_clock.update_time()
 
         if self.sfr.check_lower_threshold():  # if battery is low
             print("cry")
