@@ -20,8 +20,8 @@ class Startup(Mode):
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
-        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :param sfr: sfr object
+        :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
         super().__init__(sfr)
         self.beacon = Clock(120)
