@@ -24,32 +24,33 @@ class MissionControl:
     SIGNAL_THRESHOLD = 2
 
     def __init__(self):
-        #try:
-        self.sfr = StateFieldRegistry()
-        self.mcl = MainControlLoop(self.sfr)
-        self.error_dict = {
-            APRSError: self.aprs_troubleshoot,
-            IridiumError: self.iridium_troubleshoot,
-            EPSError: self.eps_troubleshoot,
-            IMUError: self.imu_troubleshoot,
-            BatteryError: self.battery_troubleshoot,
-            AntennaError: self.antenna_troubleshoot,
-            HighPowerDrawError: self.high_power_draw_troubleshoot,
-        }
-        #except Exception as e:
-        #    self.testing_mode(e)  # TODO: change this for real pfs
+        try:
+            self.sfr = StateFieldRegistry()
+            self.mcl = MainControlLoop(self.sfr)
+            self.error_dict = {
+                APRSError: self.aprs_troubleshoot,
+                IridiumError: self.iridium_troubleshoot,
+                EPSError: self.eps_troubleshoot,
+                IMUError: self.imu_troubleshoot,
+                BatteryError: self.battery_troubleshoot,
+                AntennaError: self.antenna_troubleshoot,
+                HighPowerDrawError: self.high_power_draw_troubleshoot,
+            }
+        except Exception as e:
+            self.testing_mode(e)  # TODO: change this for real pfs
 
     def main(self):
-        #try:
-        self.mcl.start()  # initialize everything for mcl run
-        #except Exception as e:
-            #self.testing_mode(e)
+        try:
+            self.mcl.start()  # initialize everything for mcl run
+        except Exception as e:
+            self.testing_mode(e)
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
                 self.safe_mode()
             else:
-                print("=================================================== ~ MCL ITERATION ~ ===================================================")
+                print(
+                    "=================================================== ~ MCL ITERATION ~ ===================================================")
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
