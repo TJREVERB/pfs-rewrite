@@ -2,10 +2,16 @@ import traceback
 from MainControlLoop.main_control_loop import MainControlLoop
 from lib.exceptions import *
 from lib.registry import StateFieldRegistry
+from lib.clock import Clock
 from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 
 
-def get_traceback():
+def get_traceback() -> str:
+    """
+    Removes wrapper lines from traceback for readability
+    :return: traceback
+    :rtype: str
+    """
     tb = traceback.format_exc().split("\n")
     result = ""
     while len(tb) > 0:
@@ -21,9 +27,17 @@ def get_traceback():
 
 
 class MissionControl:
+    """
+    Manager class for entire pfs
+    Runs mcl, handles errors, contains code for safe mode
+    """
     SIGNAL_THRESHOLD = 2
 
     def __init__(self):
+        """
+        Attempts to initialize everything
+        If an error happens, testing mode is triggered
+        """
         try:
             self.sfr = StateFieldRegistry()
             self.mcl = MainControlLoop(self.sfr)
@@ -36,10 +50,14 @@ class MissionControl:
                 AntennaError: self.antenna_troubleshoot,
                 HighPowerDrawError: self.high_power_draw_troubleshoot,
             }
+            self.transmission_queue_clock = Clock(10)
         except Exception as e:
             self.testing_mode(e)  # TODO: change this for real pfs
 
     def main(self):
+        """
+        Run pfs
+        """
         try:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
@@ -49,13 +67,15 @@ class MissionControl:
                 print("safe mode iteration")
                 self.safe_mode()
             else:
-                print("=================================================== ~ MCL ITERATION ~ ===================================================")
+                print("=================================================== ~ MCL ITERATION ~ "
+                      "===================================================")
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         self.testing_mode(e)  # Debug
                         # self.error_handle(e)  # Handle error, uncomment when done testing low level things
+                    # Move on with MCL if troubleshooting solved problem (no additional exception)
             # If any packet has been in the queue for too long and APRS is not locked off, switch primary radio
             if any([i.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT for i in self.sfr.vars.transmit_buffer]):
                 if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES:
@@ -69,60 +89,65 @@ class MissionControl:
         Then cleanly exit
         """
         print("ERROR!!!")
-        print(f"Currently in {type(self.sfr.MODE).__name__}")
-        print("State field registry fields:")
-        print(self.sfr.vars.to_dict())
-        print("Exception: ")
-        print(repr(e))
-        print(get_traceback())
-        self.sfr.all_off()
-        self.sfr.clear_logs()
+        try:
+            print(f"Currently in {type(self.sfr.MODE).__name__}")
+            print("State field registry fields:")
+            print(self.sfr.vars.to_dict())
+        except Exception:
+            print("Error in sfr init, unable to print mode and sfr fields")
+        print("Exception: " + repr(e))
+        print("Traceback:\n" + get_traceback())
+        try:
+            self.sfr.all_off()
+        except Exception:
+            print("PDM power cycle failed! Manually power cycle before next testing run")
+        try:
+            self.sfr.clear_logs()
+        except Exception:
+            print("Log clearing failed! Consider manually clearing logs before next run")
         exit(1)
 
     def troubleshoot(self, e: Exception) -> bool:
         """
         Attempts to troubleshoot error
         :param e: error to troubleshoot
+        :type e: Exception
         :return: whether troubleshooting worked
+        :rtype: bool
         """
         try:
             self.error_dict[type(e)](e)  # tries to troubleshoot, raises exception if error not in dict
             return True
-            # Move on with MCL if troubleshooting solved problem (no additional exception)
-        except Exception:
+        except Exception:  # If .functional doesn't solve the problem, raises an error
             return False
 
     def error_handle(self, e: Exception):
         """
         If an error was unresolved, notifies ground and sets up satellite to enter safe mode
+        :param e: error which triggered safe mode
+        :type e: Exception
         """
         self.sfr.vars.ENABLE_SAFE_MODE = True
         self.sfr.all_off()
         try:  # Try to set up for iridium first
-            if "Iridium" in self.sfr.vars.LOCKED_OFF_DEVICES:  # If iridium is locked off
-                raise IridiumError()  # Skip to trying aprs
+            # Try to switch primary radio, returns False if Iridium is locked off
+            if not self.sfr.set_primary_radio("Iridium", True):
+                raise IridiumError()  # If primary radio switch failed, don't run further
             self.sfr.set_primary_radio("Iridium", True)
-            self.sfr.devices["Iridium"].functional()
-            # keeps trying until we successfully transmit the fact that we have gone to iridium safe mode
-            while True:
-                try:
-                    self.sfr.eps.commands["Reset Watchdog"]()
-                    self.sfr.devices["Iridium"].transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
-                    break
-                except NoSignalException:
-                    continue
+            self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
+            # Notify ground that we're in safe mode with iridium primary radio
+            self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
         except IridiumError:  # If iridium fails
             try:  # Try to set up for aprs
-                if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES:  # If aprs is locked off
-                    raise APRSError()  # Skip to exiting and waiting for watchdog reset
-                self.sfr.set_primary_radio("APRS", True)
-                self.sfr.devices["APRS"].functional()
-                self.sfr.devices["APRS"].transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
+                # Try to switch primary radio, returns False if APRS is locked off or antenna is not deployed
+                if not self.sfr.set_primary_radio("APRS", True):
+                    raise APRSError()  # If primary radio switch failed, don't run further
+                self.sfr.devices["APRS"].functional()  # Test if APRS is functional
+                self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
             except APRSError:  # If aprs fails
-                print("Nikhil f*cked up L :(")
-                print("The haters were right")
+                print("L :(")
                 exit()  # PFS team took an L
-        self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))
+        self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
 
     def safe_mode(self):
@@ -132,29 +157,39 @@ class MissionControl:
         if there is message, attempt to exec method
         Should only switch back to mcl from confirmation from ground
         """
-        self.sfr.eps.commands["Reset Watchdog"]()
         if self.sfr.devices["Iridium"] is not None:  # If iridium is on
             if self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 self.sfr.devices["Iridium"].next_msg()  # Read
         if self.sfr.devices["APRS"] is not None:  # If aprs is on
             self.sfr.devices["APRS"].next_msg()  # Read
 
-        self.sfr.command_executor.execute_buffers()  # execute command buffer
+        self.sfr.command_executor.execute_buffers()  # Execute all received commands
+        if self.transmission_queue_clock.time_elapsed():  # Once every 10 seconds
+            self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
+            self.transmission_queue_clock.update_time()
 
         if self.sfr.check_lower_threshold():  # if battery is low
-            print("cri")
+            print("cry")
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(5400)  # charge for one orbit
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 
     def aprs_troubleshoot(self):
+        """
+        Attempt to troubleshoot APRS
+        Raises error if troubleshooting fails
+        """
         self.sfr.vars.FAILURES.append("APRS")
         self.sfr.reboot("APRS")
         self.sfr.devices["APRS"].functional()
         self.sfr.vars.FAILURES.remove("APRS")
 
     def iridium_troubleshoot(self):
+        """
+        Attempt to troubleshoot Iridium
+        Raises error if troubleshooting fails
+        """
         print(get_traceback())  # TODO: DEBUG
         self.sfr.vars.FAILURES.append("Iridium")
         self.sfr.reboot("Iridium")
@@ -162,11 +197,17 @@ class MissionControl:
         self.sfr.vars.FAILURES.remove("Iridium")
 
     def eps_troubleshoot(self):
-        # EPS will reset automatically after a while,
-        # this ensures the python files don't get corrupted when that happens
+        """
+        Attempt to troubleshoot EPS by waiting for watchdog reset
+        Exiting ensures the python files don't get corrupted during reset
+        """
         exit()
 
     def imu_troubleshoot(self):
+        """
+        Attempt to troubleshoot IMU
+        Switches off IMU if troubleshooting fails because this is a noncritical component
+        """
         self.sfr.vars.FAILURES.append("IMU")
         self.sfr.reboot("IMU")
         try:
@@ -181,20 +222,33 @@ class MissionControl:
             self.sfr.command_executor.transmit(unsolicited_packet)
 
     def battery_troubleshoot(self):
-        # EPS will reset automatically after a while,
-        # this ensures the python files don't get corrupted when that happens
+        """
+        Attempt to troubleshoot battery by waiting for watchdog reset
+        Exiting ensures the python files don't get corrupted during reset
+        """
         exit()
 
     def antenna_troubleshoot(self):
-        self.sfr.vars.FAILURES.append("Antenna Deployer")
-        self.sfr.reboot("Antenna Deployer")
-        self.sfr.devices["Antenna Deployer"].functional()
-        self.sfr.vars.FAILURES.remove("Antenna Deployer")
+        """
+        Attempt to troubleshoot Antenna Deployer
+        Raises error if troubleshooting fails and locks antenna deployer/aprs off to avoid damaging satellite
+        """
+        try:
+            self.sfr.vars.FAILURES.append("Antenna Deployer")
+            self.sfr.reboot("Antenna Deployer")
+            self.sfr.devices["Antenna Deployer"].functional()
+            self.sfr.vars.FAILURES.remove("Antenna Deployer")
+        except Exception as e:  # Lock off APRS to avoid damaging satellite
+            self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.set_primary_radio("Iridium", True)
+            raise e
 
     def high_power_draw_troubleshoot(self):
+        """
+        Attempt to troubleshoot unusual power draw by waiting for watchdog reset
+        Exiting ensures the python files don't get corrupted during reset
+        """
         exit()
-        # EPS will reset automatically after a while which will reset busses
-        # this ensures the python files don't get corrupted when that happens
 
 
 if __name__ == "__main__":

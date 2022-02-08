@@ -1,76 +1,77 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
-import time
+from lib.clock import Clock
 from Drivers.transmission_packet import UnsolicitedData
 
 
 class Recovery(Mode):
+    """
+    This mode is what we boot into after deployment from the ISS
+    The condition for entering this mode (checked in mcl) is that the antenna has been deployed
+    Or that the antenna/aprs are locked off (so deployment in Startup is impossible)
+    Runs a full systems check and reestablishes contact with ground
+    """
     BEACON_WAIT_TIME = 120  # 2 minutes
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
-        Initializes constants specific to instance of Mode
-        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :param sfr: sfr object
+        :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
         super().__init__(sfr)
-        self.last_contact_attempt = 0
-        self.systems_check_complete = False
+        self.beacon = Clock(self.BEACON_WAIT_TIME)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
         """
-        Returns mode name as string
+        Returns 'Recovery'
         :return: mode name
         :rtype: str
         """
         return "Recovery"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
-        Runs initial setup for a mode. Turns on and off devices for a specific mode.
+        Runs full system check (throws error if something is wrong)
+        Turns on only primary radio
+        Returns False if we're not supposed to be in this mode due to locked devices
         """
-        return super().start([self.sfr.vars.PRIMARY_RADIO])
-        self.sfr.vars.CONTACT_ESTABLISHED = False
+        super().systems_check()  # Run only once, throws error if there's a problem with one of the devices
+        if result := super().start([self.sfr.vars.PRIMARY_RADIO]):
+            self.sfr.vars.CONTACT_ESTABLISHED = False
+        return result
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         """
-        Executes one iteration of mode
-        For example: measure signal strength as the orbit location changes.
-        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
+        Executes one iteration of Recovery mode
+        If enough time has passed, beacon a proof of life ping to ground to establish contact
+        If we're low on battery, sleep for an orbit before continuing
         """
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
-        else:
-            if not self.systems_check_complete:
-                super().systems_check()  # if systems check runs without throwing an error, everything works
-                self.systems_check_complete = True
-            if time.time() > self.last_contact_attempt + self.BEACON_WAIT_TIME:  # try to contact ground again
-                # Attempt to establish contact with ground
-                print("Transmitting proof of life...")
-                self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
-                self.last_contact_attempt = time.time()
+        if self.beacon.time_elapsed():  # Attempt to establish contact with ground
+            print("Transmitting proof of life...")
+            self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+            self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         """
-        Checks all conditions and returns which mode the current mode believes we should be in
-        If we don't want to switch, return same mode
-        If we do, return the mode we want to switch to
+        If contact hasn't been established, stay in Recovery
+        If contact has been established and Science mode is incomplete, go to Science
+        If contact has been established and Science mode is complete, go to Outreach
         :return: instantiated mode object to switch to
         :rtype: :class: 'Mode'
         """
         super().suggested_mode()
-        final_mode = self.sfr.modes_list["Outreach"] if self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1 \
-            else self.sfr.modes_list["Science"]
-        if not (self.systems_check_complete and self.sfr.vars.CONTACT_ESTABLISHED):  # we are done with recovery mode
-            return self
-        elif self.sfr.check_lower_threshold():  # if we need to enter charging mode
-            return self.sfr.modes_list["Charging"](self.sfr, final_mode(self.sfr))
-        else:
-            return final_mode(self.sfr)
+        if not self.sfr.vars.CONTACT_ESTABLISHED:  # If contact hasn't been established
+            return self  # Stay in recovery
+        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1:  # If Science mode incomplete
+            return self.sfr.modes_list["Science"](self.sfr)
+        else:  # If Science mode complete
+            return self.sfr.modes_list["Outreach"](self.sfr)
