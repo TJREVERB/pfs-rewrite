@@ -539,9 +539,8 @@ class CommandExecutor:
         """
         Set upper threshold for mode switch
         """
-        v = packet.args[0]  # get only argument from arg list
-        self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
-        self.transmit(packet, result := [v])
+        self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0])) 
+        self.transmit(packet, result := [packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -549,19 +548,18 @@ class CommandExecutor:
         """
         Set lower threshold for mode switch
         """
-        v = packet.args[0]
-        self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(v)) 
-        self.transmit(packet, result := [v])
+        self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0])) 
+        self.transmit(packet, result := [packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)
     def SDT(self, packet: TransmissionPacket) -> list:
         """
         Set detumble threshold for antenna deployment
+        This function is kinda pointless
         """
-        v = packet.args[0]
-        self.sfr.vars.DETUMBLE_THRESHOLD = float(v)
-        self.transmit(packet, result := [v])
+        self.sfr.vars.DETUMBLE_THRESHOLD = float(packet.args[0])
+        self.transmit(packet, result := [packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)

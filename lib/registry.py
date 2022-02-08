@@ -55,6 +55,7 @@ class Vars:
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
         self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
+        self.DETUMBLE_THRESHOLD = 10
 
     @wrap_errors(LogicalError)
     def to_dict(self):
@@ -94,6 +95,7 @@ class Vars:
             "LAST_IRIDIUM_RECEIVED_0": int(self.LAST_IRIDIUM_RECEIVED / 100000) * 100000,
             "LAST_IRIDIUM_RECEIVED_1": int(self.LAST_IRIDIUM_RECEIVED % 100000),
             "PACKET_AGE_LIMIT": int(self.PACKET_AGE_LIMIT),
+            "DETUMBLE_THRESHOLD": self.DETUMBLE_THRESHOLD,
         }
 
     @wrap_errors(LogicalError)
