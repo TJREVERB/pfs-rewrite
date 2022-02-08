@@ -14,8 +14,8 @@ class Analytics:
     """
     This class provides methods to analyze data from logs
 
-    :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-    :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+    :param sfr: sfr object
+    :type sfr: :class: 'lib.registry.StateFieldRegistry'
     """
 
     @wrap_errors(LogicalError)

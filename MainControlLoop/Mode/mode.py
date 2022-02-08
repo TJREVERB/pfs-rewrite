@@ -17,7 +17,7 @@ class Mode:
     def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
         """
         Initializes constants specific to instance of Mode
-        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :param sfr: sfr object
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
         :param wait: poll iridium ever "wait" seconds, defaults to 10
         :type wait: int, optional
@@ -150,17 +150,17 @@ class Mode:
         Performs a systems check of components that are not locked off and returns if a part failed or not
         Throws error if .functional() fails
 
-        :return: whether there was a failure in non-locked off components
+        :return: ALWAYS TRUE, a problem will result in an exception being raised
         :rtype: bool
         """
         # Iterate over all devices which aren't locked off
-        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.values()):
-            if device is None:
+        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.keys()):
+            if self.sfr.devices[device] is None:
                 self.sfr.power_on(device)
-                device.functional()
+                self.sfr.devices[device].functional()
                 self.sfr.power_off(device)
             else:
-                device.functional()
+                self.sfr.devices[device].functional()
         return True
 
     @wrap_errors(LogicalError)

@@ -29,6 +29,8 @@ class Vars:
         """
         All variables which are logged and loaded
         NOTE: PLEASE UPDATE TO_DICT IF YOU ADD AN SFR VARS FIELD
+        :param sfr: sfr object
+        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
         """
         self.ANTENNA_DEPLOYED = False
         # Integral estimate of remaining battery capacity
@@ -248,7 +250,7 @@ class StateFieldRegistry:
         """
         Load sfr fields from log
         :return: loaded fields
-        :rtype: Vars
+        :rtype: :class: 'lib.registry.Vars'
         """
         defaults = Vars(self)
         return defaults  # TODO: DEBUG
