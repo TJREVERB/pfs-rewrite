@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
@@ -114,3 +115,5 @@ class Outreach(Mode):
         Make one final move on all games in buffer and transmit results
         """
         self.execute_cycle()  # finish all games in buffer
+=======
+>>>>>>> parent of db47368 (Merge branch 'master' into dev)

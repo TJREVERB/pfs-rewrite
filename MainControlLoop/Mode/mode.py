@@ -17,7 +17,7 @@ class Mode:
     def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
         """
         Initializes constants specific to instance of Mode
-        :param sfr: sfr object
+        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
         :param wait: poll iridium ever "wait" seconds, defaults to 10
         :type wait: int, optional
@@ -105,7 +105,13 @@ class Mode:
 
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
-        self.sfr.command_executor.transmit_queue()  # Attempt to transmit transmission queue
+        print("Attempting to transmit queue")
+        while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
+            if not self.sfr.command_executor.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
+                print("Signal strength lost!")
+                break
+            self.sfr.vars.transmit_buffer.pop(0)
+            print(f"Transmitted {p}")
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
@@ -150,17 +156,17 @@ class Mode:
         Performs a systems check of components that are not locked off and returns if a part failed or not
         Throws error if .functional() fails
 
-        :return: ALWAYS TRUE, a problem will result in an exception being raised
+        :return: whether there was a failure in non-locked off components
         :rtype: bool
         """
         # Iterate over all devices which aren't locked off
-        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.keys()):
-            if self.sfr.devices[device] is None:
+        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.values()):
+            if device is None:
                 self.sfr.power_on(device)
-                self.sfr.devices[device].functional()
+                device.functional()
                 self.sfr.power_off(device)
             else:
-                self.sfr.devices[device].functional()
+                device.functional()
         return True
 
     @wrap_errors(LogicalError)
