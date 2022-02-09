@@ -156,7 +156,7 @@ class UltimateTicTacToeGame:
             else:
                 return str(board)
 
-
+"""
 if __name__ == "__main__":
     e = UltimateTicTacToeGame(5, 5)
     e.print_board()
@@ -183,7 +183,7 @@ if __name__ == "__main__":
             if [sec, row, col] in e.get_valid_moves():
                 break
             else:
-                print("INVALID MOVE")
+                print("INVALID MOVE")"""
 
 #e = UltimateTicTacToeGame(5, 5)
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
