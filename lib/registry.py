@@ -41,7 +41,7 @@ class Vars:
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE
+        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE (* .8)
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
@@ -223,7 +223,6 @@ class StateFieldRegistry:
             # Sync up the battery charge integration to voltage
             return True
         if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
-            print("Exiting charging, BATTERY_CAPACITY_INT", self.vars.BATTERY_CAPACITY_INT)
             return True
         return False
 
@@ -421,9 +420,9 @@ class StateFieldRegistry:
         :type component: str
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
-            return None
+            return
         if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
-            return None
+            return
 
         self.devices[component].terminate()
         self.devices[component] = None  # removes from dict
@@ -466,7 +465,7 @@ class StateFieldRegistry:
         :param override_default_exceptions: (bool) whether or not to use default exceptions
         :return: None
         """
-        exceptions = (exceptions or []) + (["Antenna Deployer", "IMU"] if override_default_exceptions else [])
+        exceptions = (exceptions or []) + (["Antenna Deployer", "IMU"] if not override_default_exceptions else [])
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
@@ -561,8 +560,7 @@ class StateFieldRegistry:
         if device in self.vars.LOCKED_ON_DEVICES:  # if it was locked on
             self.vars.LOCKED_ON_DEVICES.remove(device)
             return True
-        elif device in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off
+        if device in self.vars.LOCKED_OFF_DEVICES:  # if it was locked off
             self.vars.LOCKED_OFF_DEVICES.remove(device)
             return True
-        else:
-            return False
+        return False
