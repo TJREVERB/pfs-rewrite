@@ -47,6 +47,7 @@ class MainControlLoop:
                 if not self.sfr.switch_mode(new_mode):
                     print(f"Switch failed because of locked components! Staying in {self.sfr.MODE}")
 
+        print(self.sfr.devices)
         print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
         self.sfr.command_executor.execute_buffers()  # Execute commands
         self.sfr.logger.log()  # Logs data
