@@ -3,6 +3,7 @@ import time
 import copy
 import random
 
+
 class TicTacToeGame:
     def __init__(self, sfr, game_id):
         self.sfr = sfr
