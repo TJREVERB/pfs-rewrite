@@ -23,6 +23,7 @@ class MainControlLoop:
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
         self.sfr.power_on("IMU")
+        print(self.sfr.devices)
         for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
             self.sfr.power_on(device)
         # Set mode to Recovery if (antenna deployed) or (aprs or ad are locked off), Startup otherwise
