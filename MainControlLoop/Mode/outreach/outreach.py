@@ -78,6 +78,9 @@ class Outreach(Mode):
                 obj.set_game(board_string)
                 game_objects.append(obj)
 
+            elif game == "Jokes":
+                obj = JokesGame(self.sfr, game_id)
+                game_objects.append(obj)
         return game_objects
 
     def simulate_games(self) -> None:  # debug
