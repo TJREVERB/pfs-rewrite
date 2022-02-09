@@ -101,7 +101,7 @@ class Outreach(Mode):
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
                 game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
-            self.game_queue.append(game)
+            self.string_game_queue.append(game)
 
     def execute_cycle(self) -> None:
         """
