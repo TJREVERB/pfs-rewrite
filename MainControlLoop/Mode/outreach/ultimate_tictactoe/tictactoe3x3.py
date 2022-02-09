@@ -113,12 +113,12 @@ class TicTacToe:
 
     def push_move_to_copy(self, location: list):
         """returns new game object with pushed move"""
-        new_board = self.deepcopy()
+        new_board = copy.deepcopy(self)
         new_board.push(location)
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = np.reshape(array, (9,)).tolist()
+        new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
@@ -127,9 +127,3 @@ class TicTacToe:
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
-    def deepcopy(self):
-        new_object = TicTacToe(self.is_ai_turn)
-        new_object.is_ai_turn = self.is_ai_turn
-        new_object.human_board = self.human_board.copy()
-        new_object.ai_board = self.ai_board.copy()
-        return new_object

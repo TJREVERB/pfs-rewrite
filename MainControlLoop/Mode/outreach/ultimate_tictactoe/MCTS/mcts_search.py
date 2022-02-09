@@ -4,6 +4,7 @@ import numpy as np
 import random
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
 #from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
+import copy
 
 
 class MCTSSearch:
@@ -28,8 +29,7 @@ class MCTSSearch:
             simulation_result = self.rollout(leaf)
             self.backpropogate(leaf, simulation_result)
 
-        e = self.best_child_move(self.root)
-        return e
+        return self.best_child_move(self.root)
 
     def traverse(self, node):
         while not len(node.children) == 0:
@@ -40,7 +40,7 @@ class MCTSSearch:
         return random.choice(node.children)
 
     def rollout(self, node):
-        board_state = node.board_state.deepcopy()
+        board_state = copy.deepcopy(node.board_state)
         while True:
             legal_moves = board_state.get_valid_moves()
             if len(legal_moves) == 0:

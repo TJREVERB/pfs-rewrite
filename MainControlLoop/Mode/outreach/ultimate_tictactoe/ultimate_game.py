@@ -2,6 +2,7 @@ import numpy as np
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTacToe
 import random
+import copy
 
 
 class UltimateTicTacToeGame:
@@ -101,10 +102,7 @@ class UltimateTicTacToeGame:
         return game
 
     def deepcopy(self):
-        new_board = np.array([board.deepcopy() for board in self.board])
-        game = UltimateTicTacToeGame(self.sfr, self.game_id)
-        game.board = new_board
-        return game
+        return copy.deepcopy(self)
 
     def check_winner(self):
         def _check(human_bitboard, ai_bitboard):

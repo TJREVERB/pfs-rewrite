@@ -79,8 +79,8 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            obj = UltimateTicTacToeGame()
-            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            obj = UltimateTicTacToeGame(self.sfr, 5)
+            game = f"Chess;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             self.game_queue.append(game)
 
     def execute_cycle(self) -> None:

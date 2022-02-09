@@ -165,11 +165,7 @@ class TicTacToeGame:
         return np.add(self.human_board, self.ai_board * -1)
 
     def deepcopy(self):
-        new_object = TicTacToeGame(self.sfr, self.game_id)
-        new_object.is_ai_turn = self.is_ai_turn
-        new_object.human_board = self.human_board.copy()
-        new_object.ai_board = self.ai_board.copy()
-        return new_object
+        return copy.deepcopy()
 
 
 
