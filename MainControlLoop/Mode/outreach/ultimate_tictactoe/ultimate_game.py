@@ -114,20 +114,23 @@ class UltimateTicTacToeGame:
             if human_bitboard | ai_bitboard == self.draw_combination:
                 return 1, 1
             return 0, 0
-        human_board = []
-        ai_board = []
-        for board in self.board:
-            if board.check_winner() == (1, 0):  # human won
-                human_board.append(1)
-                ai_board.append(0)
-            elif board.check_winner() == (0, 1):  # ai won
-                human_board.append(0)
-                ai_board.append(1)
-            else:  # draw, append 0 bc doesn't matter whether no one won or draw for overall winner calc
-                human_board.append(0)
-                ai_board.append(0)
 
-        return _check(self.get_bitboard(np.array(human_board)), self.get_bitboard(np.array(ai_board)))
+        # 1 for result (1,0) -> human won
+        human_board = [1 if board.check_winner() == (1, 0) else 0 for board in self.board]
+        ai_board = [1 if board.check_winner() == (0, 1) else 0 for board in self.board]
+        # 1 for result (0,1) -> ai won
+        # 0 for draw bc doesn't affect winner, check draw later
+        check_result = _check(self.get_bitboard(np.array(human_board)), self.get_bitboard(np.array(ai_board)))
+        if check_result == (0, 0):  # if no one has won, must check draw
+            draw_board = ["1" if board.check_winner != (0, 0) else "0"
+                          for board in self.board]  # checks if board is full
+            if int("".join(draw_board), 2) == self.draw_combination:
+                return 1, 1
+            else:
+                return 0, 0
+        else:
+            return check_result
+
 
     def get_bitboard(self, array: np.array) -> int:
         new_list = list(np.reshape(array, (9,)))

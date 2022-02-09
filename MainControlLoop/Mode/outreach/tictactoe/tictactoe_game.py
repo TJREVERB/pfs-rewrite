@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import copy
-
+import random
 
 class TicTacToeGame:
     def __init__(self, sfr, game_id):
@@ -155,7 +155,7 @@ class TicTacToeGame:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = np.reshape(array, (3 ** 2,)).tolist()
+        new_list = list(np.reshape(array, (3 ** 2,)))
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
@@ -165,7 +165,20 @@ class TicTacToeGame:
         return np.add(self.human_board, self.ai_board * -1)
 
     def deepcopy(self):
-        return copy.deepcopy()
+        return copy.deepcopy(self)
+
+    def random(self):
+        while True:
+            board = TicTacToeGame(self.sfr, self.game_id)
+            for _ in range(random.randint(2, 4)):
+                move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
+                board.push(move)
+                if not board.check_winner() == (0, 0):
+                    break
+            if not board.check_winner() == (0, 0):
+                continue
+            else:
+                return str(board)
 
 
 

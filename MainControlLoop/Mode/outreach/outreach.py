@@ -2,6 +2,7 @@ from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import time
@@ -72,6 +73,11 @@ class Outreach(Mode):
                 obj.set_game(board_string)
                 game_objects.append(obj)
 
+            elif game == "Ultimate":
+                obj = UltimateTicTacToeGame(self.sfr, game_id)
+                obj.set_game(board_string)
+                game_objects.append(obj)
+
         return game_objects
 
     def simulate_games(self) -> None:  # debug
@@ -79,8 +85,18 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            obj = UltimateTicTacToeGame(self.sfr, 5)
-            game = f"Chess;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            game_int = random.randint(0, 4)
+            if game_int == 0:
+                obj = UltimateTicTacToeGame(self.sfr, 5)
+                game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            elif game_int == 1:
+                obj = ChessGame(self.sfr, 5)
+                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            elif game_int == 2:
+                obj = TicTacToeGame(self.sfr, 5)
+                game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            else:
+                game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
             self.game_queue.append(game)
 
     def execute_cycle(self) -> None:
@@ -99,8 +115,8 @@ class Outreach(Mode):
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
-            if time.time() - 60 > time_started:  # limit compute time per cycle
-                break
+            #if time.time() - 60 > time_started:  # limit compute time per cycle
+            #    break
 
     def transmit_string(self, message: str):
         """
