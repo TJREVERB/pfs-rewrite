@@ -20,7 +20,8 @@ class Outreach(Mode):
         """
         super().__init__(sfr)
         self.sfr = sfr
-        self.game_queue = []  # string format = game;board_string;game_id
+        self.string_game_queue = []  # string format = game;board_string;game_id
+        self.object_game_queue = []
         # games are "TicTacToe", "Chess"
 
     def __str__(self) -> str:
@@ -51,7 +52,7 @@ class Outreach(Mode):
         else:
             return self
 
-    def decode_game_queue(self) -> list:
+    def decode_game_queue(self):
         """
         Turns encoded strings in game_queue, returns the list of game objects.
         Clears game_queue.
@@ -59,7 +60,7 @@ class Outreach(Mode):
         :rtype: list
         """
         game_objects = []
-        for encoded_string in self.game_queue:
+        for encoded_string in self.string_game_queue:
             encoded_list = encoded_string.split(";")
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
 
@@ -81,7 +82,7 @@ class Outreach(Mode):
             elif game == "Jokes":
                 obj = JokesGame(self.sfr, game_id)
                 game_objects.append(obj)
-        return game_objects
+        self.object_game_queue.extend(game_objects)
 
     def simulate_games(self) -> None:  # debug
         """
@@ -110,16 +111,17 @@ class Outreach(Mode):
         Computing time for executing queue
         """
         self.simulate_games()
-        game_queue = self.decode_game_queue()
+        self.decode_game_queue()
         time_started = time.time()
-        while len(game_queue) > 0:
-            game = game_queue.pop()
+        while len(self.object_game_queue) > 0:
+            game = self.object_game_queue.pop()
             ai_move = game.get_best_move()
+            print(game)
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
-            #if time.time() - 60 > time_started:  # limit compute time per cycle
-            #    break
+            if time.time() - 60 > time_started:  # limit compute time per cycle
+                break
 
     def transmit_string(self, message: str):
         """
