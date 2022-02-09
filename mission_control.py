@@ -69,11 +69,11 @@ class MissionControl:
             else:
                 print("=================================================== ~ MCL ITERATION ~ "
                       "===================================================")
-                #try:
-                self.mcl.iterate()  # Run a single iteration of MCL
-                #except Exception as e:  # If a problem happens
-                    #if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                        #self.testing_mode(e)  # Debug
+                try:
+                    self.mcl.iterate()  # Run a single iteration of MCL
+                except Exception as e:  # If a problem happens
+                    if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                        self.testing_mode(e)  # Debug
                         # self.error_handle(e)  # Handle error, uncomment when done testing low level things
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
             # If any packet has been in the queue for too long and APRS is not locked off, switch primary radio
