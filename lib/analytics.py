@@ -65,7 +65,7 @@ class Analytics:
         :rtype: :class:'pd.Series'
         """
         df = self.sfr.logs["solar"].read().tail(n)
-        return df[df[self.sfr.PANELS].sum(axis=1) > self.sfr.eps.SUN_DETECTION_THRESHOLD].sum(axis=1)
+        return (sums := df[df[self.sfr.PANELS].sum(axis=1)])[sums > self.sfr.eps.SUN_DETECTION_THRESHOLD]
 
     @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> float:
