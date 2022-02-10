@@ -82,7 +82,6 @@ class Iridium(Device):
         "IPC",
         "IRB",
         "ICE",
-        "IGO",
         "IAK",
     ]
 

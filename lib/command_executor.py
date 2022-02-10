@@ -56,7 +56,6 @@ class CommandExecutor:
             "IPC": self.IPC,
             "IRB": self.IRB,
             "ICE": self.ICE,
-            "IGO": self.IGO,
             "IAK": self.IAK
             # TODO: Add gamer mode commands once done with dev
         }
