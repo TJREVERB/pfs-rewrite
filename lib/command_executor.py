@@ -701,13 +701,6 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IGO(self, packet: TransmissionPacket):
-        """Exits remote code execution and attempts to restart MCL"""
-        self.sfr.vars.ENABLE_SAFE_MODE = False
-        self.transmit(packet, result := [])
-        return result
-
-    @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):
         """
         Acknowledges attempt to establish contact
