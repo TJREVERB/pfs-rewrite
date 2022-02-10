@@ -253,7 +253,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device lock failed!")
@@ -265,7 +265,7 @@ class CommandExecutor:
         """
         Lock a device off
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_off(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device Lock Failed!")
@@ -277,7 +277,7 @@ class CommandExecutor:
         """
         Disable Device Lock
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode:
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         # returns True if it was previously locked (otherwise False)
         if not (success := self.sfr.unlock_device(self.sfr.COMPONENTS[dcode])):
@@ -292,7 +292,7 @@ class CommandExecutor:
         :return: list transmitted
         :rtype: list
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
             raise CommandExecutionException("Device already locked")
@@ -306,7 +306,7 @@ class CommandExecutor:
         :return: list transmitted
         :rtype: list
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
             raise CommandExecutionException("Device already locked")
