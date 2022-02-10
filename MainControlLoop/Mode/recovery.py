@@ -63,15 +63,16 @@ class Recovery(Mode):
     def suggested_mode(self) -> Mode:
         """
         If contact hasn't been established, stay in Recovery
-        If contact has been established and Science mode is incomplete, go to Science
-        If contact has been established and Science mode is complete, go to Outreach
+        If contact has been established and Science mode is incomplete (and Iridium isn't locked off), go to Science
+        If contact has been established and Science mode is complete (or Iridium is locked off), go to Outreach
         :return: instantiated mode object to switch to
-        :rtype: :class: 'Mode'
+        :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
         """
         super().suggested_mode()
         if not self.sfr.vars.CONTACT_ESTABLISHED:  # If contact hasn't been established
             return self  # Stay in recovery
-        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1:  # If Science mode incomplete
+        # If Science mode incomplete and Iridium isn't locked off, suggest Science
+        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1 and "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES:
             return self.sfr.modes_list["Science"](self.sfr)
-        else:  # If Science mode complete
+        else:  # If Science mode complete or Iridium is locked off, suggest Outreach
             return self.sfr.modes_list["Outreach"](self.sfr)
