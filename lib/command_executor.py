@@ -56,7 +56,6 @@ class CommandExecutor:
             "IPC": self.IPC,
             "IRB": self.IRB,
             "ICE": self.ICE,
-            "IGO": self.IGO,
             "IAK": self.IAK
             # TODO: Add gamer mode commands once done with dev
         }
@@ -697,13 +696,6 @@ class CommandExecutor:
         """Runs exec on string"""
         command = packet.args[0]
         exec(f"{command}")
-        self.transmit(packet, result := [])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def IGO(self, packet: TransmissionPacket):
-        """Exits remote code execution and attempts to restart MCL"""
-        self.sfr.vars.ENABLE_SAFE_MODE = False
         self.transmit(packet, result := [])
         return result
 
