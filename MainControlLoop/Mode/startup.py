@@ -116,8 +116,10 @@ class Startup(Mode):
         If contact hasn't been established, always stay in Startup
         If contact has been established but antenna is not deployed (and neither the antenna deployer
             nor APRS are locked off), stay in Startup
-        If above conditions to leave Startup are satisfied and we're low on power, suggest Charging -> Science
-        If above conditions to leave Startup are satisfied and we have sufficient power, suggest Science
+        If above conditions to leave Startup are satisfied, set final mode to Science if Iridium isn't locked off,
+            otherwise Outreach
+        If we're then low on power, suggest Charging -> final mode
+        Otherwise if we have sufficient power, suggest final mode
         """
         super().suggested_mode()
         if not self.sfr.vars.CONTACT_ESTABLISHED:
@@ -125,7 +127,10 @@ class Startup(Mode):
         elif ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
               "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES) and not self.sfr.vars.ANTENNA_DEPLOYED:
             return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
-        elif self.sfr.check_lower_threshold():  # Charging if we can switch but are low on power
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Science"])
-        else:  # Science if we can switch and have enough power
-            return self.sfr.modes_list["Science"](self.sfr)
+        else:  # If we can switch out of this mode
+            final_mode = self.sfr.modes_list["Science"] if "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES \
+                else self.sfr.modes_list["Outreach"]  # End up in Science if Iridium is unlocked, otherwise Outreach
+            if self.sfr.check_lower_threshold():  # Charging if we can switch but are low on power
+                return self.sfr.modes_list["Charging"](self.sfr, final_mode)
+            else:  # Science if we can switch and have enough power
+                return final_mode(self.sfr)
