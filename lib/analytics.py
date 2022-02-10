@@ -161,7 +161,7 @@ class Analytics:
         """
         df = self.sfr.logs["power"].read()
         df["timestamp"] = df["ts0"] + df["ts1"]
-        return (df["timestamp"].diff() * df[self.sfr.PDMS + ["buspower"]].sum(axis=0).iloc[1:]).sum()
+        return (df["timestamp"].diff().iloc[1:] * df[self.sfr.PDMS + ["buspower"]].sum(axis=1).iloc[1:]).sum()
 
     @wrap_errors(LogicalError)
     def total_energy_generated(self) -> float:
