@@ -122,15 +122,12 @@ class UltimateTicTacToeGame:
         # 0 for draw bc doesn't affect winner, check draw later
         check_result = _check(self.get_bitboard(np.array(human_board)), self.get_bitboard(np.array(ai_board)))
         if check_result == (0, 0):  # if no one has won, must check draw
-            draw_board = ["1" if board.check_winner != (0, 0) else "0"
-                          for board in self.board]  # checks if board is full
-            if int("".join(draw_board), 2) == self.draw_combination:
-                return 1, 1
-            else:
-                return 0, 0
+            for board in self.board:
+                if board.check_winner() == (0, 0):
+                    return 0, 0
+            return 1, 1
         else:
             return check_result
-
 
     def get_bitboard(self, array: np.array) -> int:
         new_list = list(np.reshape(array, (9,)))
@@ -146,19 +143,35 @@ class UltimateTicTacToeGame:
     def random(self):
         while True:
             board = UltimateTicTacToeGame(self.sfr, self.game_id)
-            for _ in range(random.randint(10, 20)):
+            for _ in range(random.randint(5, 10)):
                 move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
                 board.push(move)
                 if not board.check_winner() == (0, 0):
                     break
+            print(board)
+            print(board.check_winner())
             if not board.check_winner() == (0, 0):
                 continue
             else:
                 return str(board)
 
-"""
+    def generate_random_draw(self):
+        board = UltimateTicTacToeGame(self.sfr, 5)
+        string = TicTacToe(True).random()
+
+        board.board = [TicTacToe(True).set_game(string) for i in range(9)]
+        if (board.check_winner() == (1, 0)):
+            return True
+
+
 if __name__ == "__main__":
     e = UltimateTicTacToeGame(5, 5)
+    #for _ in range(10000):
+    #    if e.generate_random_draw():
+    #        continue
+    #    else:
+    #        print("ERROR")
+    print(e.random())
     e.print_board()
     ai_move = e.get_best_move()
     e.push(ai_move)
@@ -183,7 +196,7 @@ if __name__ == "__main__":
             if [sec, row, col] in e.get_valid_moves():
                 break
             else:
-                print("INVALID MOVE")"""
+                print("INVALID MOVE")
 
 #e = UltimateTicTacToeGame(5, 5)
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")

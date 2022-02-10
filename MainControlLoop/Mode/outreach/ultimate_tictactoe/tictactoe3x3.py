@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import copy
+import random
 
 
 class TicTacToe:
@@ -127,3 +128,15 @@ class TicTacToe:
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
+    def random(self):
+        while True:
+            board = TicTacToe(True)
+            for r in range(3):
+                for c in range(3):
+                    rand = random.randint(0, 2)
+                    if rand == 0:
+                        board.human_board[r, c] = 1.0
+                    else:
+                        board.ai_board[r, c] = 1.0
+            if board.check_winner() == (1, 1):
+                return str(board)

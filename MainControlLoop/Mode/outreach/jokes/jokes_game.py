@@ -5,7 +5,6 @@ class JokesGame:
     def __init__(self, sfr, game_id):
         self.sfr = sfr
         self.game_id = game_id
-        self.type = "Dad Joke"
         self.joke = "No Joke Generated Yet :("
 
     def __str__(self):
@@ -18,7 +17,7 @@ class JokesGame:
             return random.choice(lines)
 
     def set_joke(self, joke_type):  # set joke type
-        self.type = joke_type
+        pass
 
     def get_best_move(self):  # so that it works with outreach.py
         self.joke = self.get_joke()
