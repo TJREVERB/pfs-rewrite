@@ -1,7 +1,8 @@
-<<<<<<< HEAD
 from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import time
@@ -20,7 +21,7 @@ class Outreach(Mode):
         super().__init__(sfr)
         self.sfr = sfr
         self.string_game_queue = []  # string format = game;board_string;game_id
-        self.decoded_game_queue = []  # game objects
+        self.object_game_queue = []
         # games are "TicTacToe", "Chess"
 
     def __str__(self) -> str:
@@ -51,35 +52,55 @@ class Outreach(Mode):
         else:
             return self
 
-    def decode_game_queue(self) -> None:
+    def decode_game_queue(self):
         """
-        Turns encoded strings in string_game_queue, appends game objects to self.decoded_game_queue.
+        Turns encoded strings in game_queue, returns the list of game objects.
         Clears game_queue.
+        :return: list of game objects
+        :rtype: list
         """
-        while len(self.string_game_queue) > 0:
-            encoded_string = self.string_game_queue.pop()
+        game_objects = []
+        for encoded_string in self.string_game_queue:
             encoded_list = encoded_string.split(";")
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
 
             if game == "TicTacToe":
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                self.decoded_game_queue.append(obj)
+                game_objects.append(obj)
 
             elif game == "Chess":
                 obj = ChessGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                self.decoded_game_queue.append(obj)
+                game_objects.append(obj)
 
+            elif game == "Ultimate":
+                obj = UltimateTicTacToeGame(self.sfr, game_id)
+                obj.set_game(board_string)
+                game_objects.append(obj)
 
+            elif game == "Jokes":
+                obj = JokesGame(self.sfr, game_id)
+                game_objects.append(obj)
+        self.object_game_queue.extend(game_objects)
 
     def simulate_games(self) -> None:  # debug
         """
         Debug only
         """
-        for _ in range(1):
-            obj = ChessGame(self.sfr, 1)
-            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+        for _ in range(10):
+            game_int = random.randint(0, 4)
+            if game_int == 0:
+                obj = UltimateTicTacToeGame(self.sfr, 5)
+                game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            elif game_int == 1:
+                obj = ChessGame(self.sfr, 5)
+                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+            elif game_int == 2:
+                obj = TicTacToeGame(self.sfr, 5)
+                game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            else:
+                game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
 
     def execute_cycle(self) -> None:
@@ -89,11 +110,12 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-        self.simulate_games()  # DEBUG
+        self.simulate_games()
         self.decode_game_queue()
         time_started = time.time()
-        while len(self.decoded_game_queue) > 0:
-            game = self.decoded_game_queue.pop()
+        while len(self.object_game_queue) > 0:
+            game = self.object_game_queue.pop()
+            print(game)
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
@@ -115,5 +137,3 @@ class Outreach(Mode):
         Make one final move on all games in buffer and transmit results
         """
         self.execute_cycle()  # finish all games in buffer
-=======
->>>>>>> parent of db47368 (Merge branch 'master' into dev)
