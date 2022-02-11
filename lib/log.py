@@ -36,6 +36,7 @@ class Log:
 
 
 class JSONLog(Log):
+    @wrap_errors(LogicalError)
     def __init__(self, path: str):
         """
         Create a new json Log
@@ -51,7 +52,7 @@ class JSONLog(Log):
         open(self.path, "x").close()  # Create empty file
 
     @wrap_errors(LogicalError)
-    def write(self, data):
+    def write(self, data: dict):
         """
         Append one line of data to a csv log or dump to a pickle or json log
         :param data: dictionary of the form {"field": float_val}
@@ -79,7 +80,8 @@ class PKLLog(Log):
 
     @wrap_errors(LogicalError)
     def clear(self):
-        os.remove(self.path)  # Delete
+        if os.path.exists(self.path):  # IF file exists
+            os.remove(self.path)  # Delete
 
     def write(self, data: object):
         """

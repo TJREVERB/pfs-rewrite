@@ -23,13 +23,14 @@ class MainControlLoop:
         print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
         self.sfr.power_on("IMU")
+        #print(self.sfr.devices)
         for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on
             self.sfr.power_on(device)
         # Set mode to Recovery if (antenna deployed) or (aprs or ad are locked off), Startup otherwise
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
         #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
         #     self.sfr.vars.LOCKED_OFF_DEVICES) else Startup(self.sfr)
-        self.sfr.MODE = Outreach(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
+        self.sfr.MODE = Charging(self.sfr, Science)  # TODO: REMOVE THIS DEBUG LINE
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
@@ -38,14 +39,17 @@ class MainControlLoop:
         Iterates mode and checks if the mode should change if there isn't a mode lock and there isn't low power.
         Executes command buffers and logs data.
         """
+        #print(self.sfr.devices)
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
-        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold(): # Change modes while there isn't a mode lock or there is low battery
+        #print(self.sfr.devices)
+        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold(): # Change modes while there isn't a mode lock or there is low battery 
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING
                 if not self.sfr.switch_mode(new_mode):
                     print(f"Switch failed because of locked components! Staying in {self.sfr.MODE}")
 
+        #print(self.sfr.devices)
         print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
         self.sfr.command_executor.execute_buffers()  # Execute commands
         self.sfr.logger.log()  # Logs data
