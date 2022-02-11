@@ -64,6 +64,7 @@ class Outreach(Mode):
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
 
             if game == "TicTacToe":
+                print(game_id)
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
                 self.object_game_queue.append(obj)
