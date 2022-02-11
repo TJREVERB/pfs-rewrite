@@ -88,17 +88,16 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            game_int = random.randint(0, 1)
-            if game_int == 5:
+            game_int = random.randint(0, 4)
+            if game_int == 0:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-            elif game_int == 5:
+            elif game_int == 1:
                 obj = ChessGame(self.sfr, str(5))
                 game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
-            elif game_int == 0:
+            elif game_int == 2:
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-                print("EEEE" + game)
             else:
                 game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
@@ -117,6 +116,7 @@ class Outreach(Mode):
             game = self.object_game_queue.pop()
             print(game)
             ai_move = game.get_best_move()
+            print(game)
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
