@@ -88,14 +88,14 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            game_int = random.randint(0, 4)
-            if game_int == 0:
+            game_int = random.randint(0, 1)
+            if game_int == 5:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-            elif game_int == 1:
+            elif game_int == 5:
                 obj = ChessGame(self.sfr, str(5))
                 game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
-            elif game_int == 2:
+            elif game_int == 0:
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
