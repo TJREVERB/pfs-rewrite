@@ -42,7 +42,7 @@ class TicTacToeGame:
             encoded_string += "a"
         else:
             encoded_string += "h"
-        return f"TicTacToe;{encoded_string};{self.game_id}"
+        return f"--TicTacToe;{encoded_string};{self.game_id}--"
 
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
