@@ -43,7 +43,7 @@ class ChessGame:
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
         for i in range(3):  # try three times to ping engine
             try:
-                result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+                result = engine.play(self.board, chess.engine.Limit(0.2))
             except Exception:  # if stockfish errors
                 if i == 2:  # stockfish hasnt worked all 3 times, return random move
                     engine.quit()
@@ -53,7 +53,6 @@ class ChessGame:
             else:  # if stockfish works, dont try again
                 engine.quit()
                 return result.move
-
 
     def push(self, move: chess.Move):
         """
