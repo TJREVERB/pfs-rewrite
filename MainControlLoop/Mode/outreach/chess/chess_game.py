@@ -5,7 +5,7 @@ import random
 
 class ChessGame:
     """
-    Backend AI for chess
+    Chess Game Object
     """
     def __init__(self, sfr, game_id):
         """

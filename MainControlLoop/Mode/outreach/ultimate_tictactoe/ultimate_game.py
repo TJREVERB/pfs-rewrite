@@ -148,12 +148,10 @@ class UltimateTicTacToeGame:
                 board.push(move)
                 if not board.check_winner() == (0, 0):
                     break
-            print(board)
-            print(board.check_winner())
             if not board.check_winner() == (0, 0):
                 continue
             else:
-                return str(board)
+                return str(board).split(";")[1]
 
     def generate_random_draw(self):
         board = UltimateTicTacToeGame(self.sfr, 5)

@@ -10,15 +10,14 @@ import copy
 class MCTSSearch:
     def __init__(self, sfr, initial_state):
         self.sfr = sfr
-        print(initial_state)
         self.root = Node(initial_state, None)
 
         self.start_time = time.time()
 
     def resources_left(self):
-        if self.root.times_visited > 500:
+        if self.root.times_visited > 400:
             return False
-        if time.time() - 10 > self.start_time: #self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
+        if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
             return False
         else:
             return True

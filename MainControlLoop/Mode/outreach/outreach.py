@@ -59,30 +59,29 @@ class Outreach(Mode):
         :return: list of game objects
         :rtype: list
         """
-        game_objects = []
         for encoded_string in self.string_game_queue:
             encoded_list = encoded_string.split(";")
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
 
             if game == "TicTacToe":
+                print(game_id)
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Chess":
                 obj = ChessGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Ultimate":
                 obj = UltimateTicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Jokes":
                 obj = JokesGame(self.sfr, game_id)
-                game_objects.append(obj)
-        self.object_game_queue.extend(game_objects)
+                self.object_game_queue.append(obj)
 
     def simulate_games(self) -> None:  # debug
         """
@@ -91,13 +90,13 @@ class Outreach(Mode):
         for _ in range(10):
             game_int = random.randint(0, 4)
             if game_int == 0:
-                obj = UltimateTicTacToeGame(self.sfr, 5)
+                obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 1:
-                obj = ChessGame(self.sfr, 5)
+                obj = ChessGame(self.sfr, str(5))
                 game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 2:
-                obj = TicTacToeGame(self.sfr, 5)
+                obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
                 game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
