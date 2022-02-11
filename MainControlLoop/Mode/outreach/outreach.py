@@ -64,7 +64,6 @@ class Outreach(Mode):
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
 
             if game == "TicTacToe":
-                print(game_id)
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
                 self.object_game_queue.append(obj)
@@ -116,7 +115,6 @@ class Outreach(Mode):
             game = self.object_game_queue.pop()
             print(game)
             ai_move = game.get_best_move()
-            print(game)
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
