@@ -60,10 +60,10 @@ class TicTacToeGame:
     def get_best_move(self):
         possible_moves = self.get_valid_moves()
         best = -10000
-        best_move = []
+        best_move = possible_moves[0]  # in case weird error where no move calculated
         time_started = time.time()
         for move in possible_moves:
-            if time.time() - 10 >= time_started:
+            if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > time_started:
                 break
             score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
             if score > best:
