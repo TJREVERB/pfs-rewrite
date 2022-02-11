@@ -701,18 +701,11 @@ class CommandExecutor:
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
         #TODO: packet can only have a single string arg, so you gotta figure out a delimiter for these and only use args[0]
-        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2] 
+        game_type, game_string, game_id = packet.args[0].split(";")
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
         self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
         self.transmit(packet, result := [])
         return result
 
-    def MOU(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Outreach":
-            raise CommandExecutionException("Already in outreach mode")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
-        self.sfr.MODE.start()
-        self.transmit(packet, result := [])
-        return result
+
