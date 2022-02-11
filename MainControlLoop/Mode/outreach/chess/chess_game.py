@@ -41,7 +41,10 @@ class ChessGame:
         :rtype: :class: 'chess.Move'
         """
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        try:
+            result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        except TimeoutError:  # if stockfish times out
+            result = random.choice(list(self.board.legal_moves))
         engine.quit()
         return result.move
 

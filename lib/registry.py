@@ -36,7 +36,7 @@ class Vars:
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
-        self.OUTREACH_MAX_CALCULATION_TIME = 10  # max calculation time for minimax calculations in outreach (seconds)
+        self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
         self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
         self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
