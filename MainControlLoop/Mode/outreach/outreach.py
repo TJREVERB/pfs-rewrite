@@ -98,6 +98,7 @@ class Outreach(Mode):
             elif game_int == 0:
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+                print("EEEE" + game)
             else:
                 game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
