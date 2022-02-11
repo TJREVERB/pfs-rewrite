@@ -186,7 +186,7 @@ class Analytics:
         df = self.sfr.logs["orbits"].read()
         df["timestamp"] = df["ts0"] + df["ts1"]
         if len(df) < 3:
-            raise RuntimeError("Not enough data!")
+            return 0
         return (df["timestamp"].iloc[-1] - df["timestamp"].iloc[-3]) - \
                (df["timestamp"].iloc[2] - df["timestamp"].iloc[0])
 

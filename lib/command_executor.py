@@ -24,7 +24,7 @@ class CommandExecutor:
             "DLF": self.DLF,
             "DDF": self.DDF,
             "DNT": self.DNT,
-            "DFR": self.DFT,
+            "DFT": self.DFT,
             "GCR": self.GCR,
             "GVT": self.GVT,
             "GPL": self.GPL,
