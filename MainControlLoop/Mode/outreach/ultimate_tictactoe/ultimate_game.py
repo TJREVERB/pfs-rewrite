@@ -171,7 +171,7 @@ if __name__ == "__main__":
     #        continue
     #    else:
     #        print("ERROR")
-    print(e.random())
+
     e.print_board()
     ai_move = e.get_best_move()
     e.push(ai_move)
@@ -186,7 +186,6 @@ if __name__ == "__main__":
         ai_move = e.get_best_move()
         e.push(ai_move)
         e.print_board()
-        print(e)
         while True:
             print("Section: " + str(e.get_valid_moves()[0][0]))
             print(e.get_valid_moves())
@@ -197,6 +196,13 @@ if __name__ == "__main__":
                 break
             else:
                 print("INVALID MOVE")
+    e.print_board()
+    if e.check_winner() == (1, 0):
+        print("HUMAN WON")
+    elif e.check_winner() == (0, 1):
+        print("AI WON L")
+    else:
+        print("DRAW")
 
 #e = UltimateTicTacToeGame(5, 5)
 #e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
