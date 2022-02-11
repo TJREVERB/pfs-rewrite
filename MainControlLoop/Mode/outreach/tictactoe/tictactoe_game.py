@@ -66,7 +66,6 @@ class TicTacToeGame:
             if time.time() - 10 >= time_started:
                 break
             score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
-            print(move, score)
             if score > best:
                 best_move = move
                 best = score

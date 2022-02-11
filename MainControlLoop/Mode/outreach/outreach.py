@@ -74,7 +74,6 @@ class Outreach(Mode):
                 self.object_game_queue.append(obj)
 
             elif game == "Ultimate":
-                print(f"ENCODED_LIST: {encoded_list}")
                 obj = UltimateTicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
                 self.object_game_queue.append(obj)

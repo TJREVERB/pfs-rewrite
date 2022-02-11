@@ -10,7 +10,6 @@ import copy
 class MCTSSearch:
     def __init__(self, sfr, initial_state):
         self.sfr = sfr
-        print(initial_state)
         self.root = Node(initial_state, None)
 
         self.start_time = time.time()

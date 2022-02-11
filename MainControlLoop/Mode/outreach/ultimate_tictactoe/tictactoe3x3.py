@@ -54,7 +54,6 @@ class TicTacToe:
         """Sets board to proper board according to string"""
         human_board = np.zeros((9,))
         ai_board = np.zeros((9,))
-        print(board_string)
         for i in range(9):
             if board_string[i] == "x":
                 human_board[i] = 1.0
