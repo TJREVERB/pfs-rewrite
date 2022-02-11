@@ -708,9 +708,9 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
-    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in gamer mode")
+    def MOU(self, packet: TransmissionPacket):  # PROTO, not put in registry
+        if str(self.sfr.MODE) == "Outreach":
+            raise CommandExecutionException("Already in outreach mode")
         self.sfr.MODE.terminate_mode()
         self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
         self.sfr.MODE.start()

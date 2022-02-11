@@ -59,7 +59,6 @@ class Outreach(Mode):
         :return: list of game objects
         :rtype: list
         """
-        game_objects = []
         for encoded_string in self.string_game_queue:
             encoded_list = encoded_string.split(";")
             game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
@@ -67,22 +66,21 @@ class Outreach(Mode):
             if game == "TicTacToe":
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Chess":
                 obj = ChessGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Ultimate":
                 obj = UltimateTicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Jokes":
                 obj = JokesGame(self.sfr, game_id)
-                game_objects.append(obj)
-        self.object_game_queue.extend(game_objects)
+                self.object_game_queue.append(obj)
 
     def simulate_games(self) -> None:  # debug
         """
