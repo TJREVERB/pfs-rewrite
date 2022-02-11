@@ -15,9 +15,9 @@ class MCTSSearch:
         self.start_time = time.time()
 
     def resources_left(self):
-        if self.root.times_visited > 500:
+        if self.root.times_visited > 400:
             return False
-        if time.time() > self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
+        if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > self.start_time:
             return False
         else:
             return True
