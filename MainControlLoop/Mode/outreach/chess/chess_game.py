@@ -41,9 +41,9 @@ class ChessGame:
         :rtype: :class: 'chess.Move'
         """
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        #result = engine.play(self.board, chess.engine.Limit(time=self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
-        #return result.move
-        return 22
+        result = engine.play(self.board, chess.engine.Limit(time=100))
+        return result.move
+        #return 22
 
     def push(self, move: chess.Move):
         """
