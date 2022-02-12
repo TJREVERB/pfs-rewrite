@@ -221,7 +221,7 @@ class Logger:
         delta = (power := self.sfr.battery.charging_power()) * \
                 (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(power) > 10:
+        if abs(power) > 10: # 10W
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):
@@ -229,9 +229,6 @@ class Logger:
                 time.sleep(1)
             if (avg_draw := sum(total_draw) / 5) >= 10: 
                 raise HighPowerDrawError(details="Average Draw: " + str(avg_draw))  # Raise exception
-            else:  # If value was bogus, truncate logs
-                self.sfr.logs["power"].truncate(1)
-                self.sfr.logs["solar"].truncate(1)
         else:
             # Add delta * time to BATTERY_CAPACITY_INT
             self.sfr.vars.BATTERY_CAPACITY_INT += delta
@@ -241,7 +238,7 @@ class Logger:
         """
         Update orbits log when sun is detected
         """
-        if sun := self.sfr.sun_detected() and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
+        if (sun := self.sfr.sun_detected()) and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_sunlight()
         elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
             self.sfr.enter_eclipse()
