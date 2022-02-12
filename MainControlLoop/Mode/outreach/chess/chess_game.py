@@ -42,6 +42,7 @@ class ChessGame:
         """
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
         result = engine.play(self.board, chess.engine.Limit(time=100))
+        engine.quit()
         return result.move
         #return 22
 

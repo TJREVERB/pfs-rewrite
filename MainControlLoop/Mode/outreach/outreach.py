@@ -87,7 +87,7 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            game_int = random.randint(1, 2)
+            game_int = random.randint(1, 1)
             if game_int == 0:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
