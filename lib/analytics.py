@@ -210,7 +210,7 @@ class Analytics:
         :return: what fraction of each orbit we spend in sunlight (0 if not enough data)
         :rtype: float
         """
-        orbits_data = self.sfr.logs["orbits"].tail(n * 2 + 1)
+        orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
         # Calculate sunlight period
         if len(orbits_data > 2):
             sunlight_period = orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"].diff(periods=2).mean()
