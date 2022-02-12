@@ -70,9 +70,10 @@ class TicTacToeGame:
         f = open(path, "r")
         table = json.load(f)
         f.close()
-        if str(self).split(';')[1] in table:
+        game_string = str(self).split(';')[1]
+        if game_string in table:
             print("IN FILE")
-            return list(table[str(self)])
+            return list(table[game_string])
         else:
             print("NOT IN FILE")
         del table
