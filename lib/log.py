@@ -23,25 +23,6 @@ class Log:
             self.sub.clear()
 
     @wrap_errors(LogicalError)
-    def access_wrap(self, func: callable) -> callable:
-        """
-        Decorator which wraps log interactions and handles log corruption
-        :param func: function to wrap
-        :type func: callable
-        :return: decorated function
-        :rtype: callable
-        """
-        def wrapped(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
-                print("Assuming corruption, attempting to proceed by clearing log")
-                self.sub.clear()
-                return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
-        return wrapped
-
-    @wrap_errors(LogicalError)
     def clear(self, func):
         """
         IMPLEMENTED IN SUBCLASSES
@@ -59,6 +40,23 @@ class Log:
         IMPLEMENTED IN SUBCLASSES
         """
 
+def access_wrap(self, func: callable) -> callable:
+    """
+    Decorator which wraps log interactions and handles log corruption
+    :param func: function to wrap
+    :type func: callable
+    :return: decorated function
+    :rtype: callable
+    """
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
+            print("Assuming corruption, attempting to proceed by clearing log")
+            self.sub.clear()
+            return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
+    return wrapped
 
 class JSONLog(Log):
     @wrap_errors(LogicalError)
@@ -74,8 +72,8 @@ class JSONLog(Log):
             os.remove(self.path)  # Delete
         open(self.path, "x").close()  # Create empty file
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def write(self, data: dict):
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -84,8 +82,8 @@ class JSONLog(Log):
         with open(self.path, "w") as f:
             json.dump(data, f)  # Dump to file
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def read(self) -> dict:
         """
         Read and return entire log
@@ -108,8 +106,8 @@ class PKLLog(Log):
         if os.path.exists(self.path):  # If file exists
             os.remove(self.path)  # Delete
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def write(self, data: object):
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -118,8 +116,8 @@ class PKLLog(Log):
         with open(self.path, "wb") as f:
             pickle.dump(data, f)  # Dump to file
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def read(self) -> object:
         """
         Read and return entire log
@@ -145,8 +143,8 @@ class CSVLog(Log):
         with open(self.path, "w") as f:  # Open file
             f.write(",".join(self.headers) + "\n")  # Write headers + newline
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def write(self, data: dict) -> None:
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -161,8 +159,8 @@ class CSVLog(Log):
         else:
             new_row.to_csv(self.path, mode="a", header=False, index=False)  # Append to log
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def read(self) -> pd.DataFrame:
         """
         Read and return entire log
@@ -170,8 +168,8 @@ class CSVLog(Log):
         """
         return pd.read_csv(self.path, header=0)
 
-    @super().access_wrap
-    @wrap_errors(LogicalError)
+    @access_wrap()
+    #@wrap_errors(LogicalError)
     def truncate(self, n):
         """
         Remove n rows from csv log
