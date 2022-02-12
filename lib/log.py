@@ -177,10 +177,9 @@ class Logger:
         """
         print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
         self.sfr.logs["power"].write({
-            "ts0": t // 100000 * 100000,
-            "ts1": int(t % 100000),
-            "buspower": str(buspower),
-        } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))})
+            "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
+            "buspower": buspower,
+        } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))})  # "|" is a dictionary merge
 
     @wrap_errors(LogicalError)
     def log_solar(self, gen: list) -> None:
@@ -191,8 +190,7 @@ class Logger:
         """
         print("Solar: ", int(t := time.time()), gen := [round(i, 3) for i in gen])
         self.sfr.logs["solar"].write({
-            "ts0": t // 100000 * 100000,
-            "ts1": int(t % 100000),
+            "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
         } | {self.sfr.PANELS[i]: gen[i] for i in range(len(gen))})
 
     @wrap_errors(LogicalError)
@@ -202,11 +200,8 @@ class Logger:
         """
         print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]])
         self.sfr.logs["imu"].write({
-            "ts0": t // 100000 * 100000,
-            "ts1": int(t % 100000),
-            "xgyro": tbl[0],
-            "ygyro": tbl[1],
-            "zgyro": tbl[2],
+            "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
+            "xgyro": tbl[0], "ygyro": tbl[1], "zgyro": tbl[2],
         })
 
     def log_power_full(self) -> None:
@@ -223,7 +218,8 @@ class Logger:
         """
         Integrate battery charge in Joules
         """
-        delta = (power := self.sfr.battery.charging_power()) * (time.time() - self.clocks["integrate"][0].last_iteration)
+        delta = (power := self.sfr.battery.charging_power()) * \
+                (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
         if abs(power) > 10:
             # Verify we're actually drawing an absurd amount of power
