@@ -28,11 +28,6 @@ class IridiumError(CustomException):
         return "IridiumError: " + repr(super().__repr__())
 
 
-class SignalStrengthException(CustomException):
-    def __repr__(self):
-        return "SignalStrengthException: " + repr(super().__repr__())
-
-
 class EPSError(CustomException):
     def __repr__(self):
         return "EPSError: " + repr(super().__repr__())
