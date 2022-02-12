@@ -44,11 +44,17 @@ class ChessGame:
         if self.board.is_valid():
             transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
             result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+            result = result.move
             await engine.quit()
-            return result.move
+            return result
         else:
             print("INVALID BOARD")
             raise Exception
+
+    def __get_best_mvoe(self):
+        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
+        result = engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+        #result.move
 
     def get_best_move(self):
         asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
