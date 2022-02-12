@@ -51,6 +51,8 @@ class Iridium(Device):
         "DLN",
         "DLF",
         "DDF",
+        "DNT",
+        "DFT",
         "GCR",
         "GVT",
         "GPL",
