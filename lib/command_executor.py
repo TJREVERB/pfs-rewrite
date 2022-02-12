@@ -49,6 +49,7 @@ class CommandExecutor:
             "AMS": self.AMS,
             "SUV": self.SUV,
             "SLV": self.SLV,
+            "SDT": self.SDT,
             "SSF": self.SSF,
             "USM": self.USM,
             "ULG": self.ULG,
