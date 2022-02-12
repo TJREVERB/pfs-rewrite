@@ -64,9 +64,10 @@ class TicTacToeGame:
 
     def get_best_move(self):
         possible_moves = self.get_valid_moves()
-        best = -10000
+        best = -10000   
         best_move = possible_moves[0]  # in case weird error where no move calculated
-        with open("MainControlLoop/Mode/outreach/tictactoe/table.json", "r") as f:
+        path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
+        with open(path, "r") as f:
             table = json.load(f)
             if str(self) in table:
                 return list(table[str(self)])
