@@ -41,11 +41,14 @@ class ChessGame:
         :return: best move
         :rtype: :class: 'chess.Move'
         """
-        print(self.board.is_valid())
-        transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
-        await engine.quit()
-        return result.move
+        if self.board.is_valid():
+            transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
+            result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+            await engine.quit()
+            return result.move
+        else:
+            print("INVALID BOARD")
+            raise Exception
 
     def get_best_move(self):
         asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
