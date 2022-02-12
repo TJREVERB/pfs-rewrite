@@ -1,7 +1,7 @@
 import chess
 import chess.engine
 import random
-
+import asyncio
 
 class ChessGame:
     """
@@ -34,25 +34,16 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
-    def get_best_move(self) -> chess.Move:
+    def get_best_move(self): #-> chess.Move:
         """
         Get best move by using Stockfish
         :return: best move
         :rtype: :class: 'chess.Move'
         """
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        for i in range(3):  # try three times to ping engine
-            try:
-                result = engine.play(self.board, chess.engine.Limit(time=self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
-            except Exception:  # if stockfish errors
-                if i == 2:  # stockfish hasnt worked all 3 times, return random move
-                    engine.quit()
-                    return random.choice(list(self.board.legal_moves)).move
-                else:
-                    continue
-            else:  # if stockfish works, dont try again
-                engine.quit()
-                return result.move
+        #result = engine.play(self.board, chess.engine.Limit(time=self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        #return result.move
+        return 22
 
     def push(self, move: chess.Move):
         """
