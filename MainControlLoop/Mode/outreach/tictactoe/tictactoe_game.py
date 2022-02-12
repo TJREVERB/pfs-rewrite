@@ -67,12 +67,13 @@ class TicTacToeGame:
         best = -10000
         best_move = possible_moves[0]  # in case weird error where no move calculated
         path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
-        with open(path, "r") as f:
-            table = json.load(f)
-            if str(self) in table:
-                print("IN FILE")
-                return list(table[str(self)])
-            del table
+        f = open(path, "r")
+        table = json.load(f)
+        f.close()
+        if str(self) in table:
+            print("IN FILE")
+            return list(table[str(self)])
+        del table
         time_started = time.time()
         for move in possible_moves:
             if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > time_started:
