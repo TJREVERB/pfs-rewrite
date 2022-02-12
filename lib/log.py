@@ -155,7 +155,7 @@ class CSVLog(Log):
         if list(data.keys()) != self.headers:  # Raise error if keys are wrong
             raise LogicalError(details="Incorrect keys for logging")
         new_row = pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()})  # DataFrame from dict
-        if len(df := self.read()) > 1000000:  # If this log is extremely long
+        if len(df := self.read()) > 100000:  # If this log is extremely long
             # Remove first row and append to log
             df.iloc[1:].append(new_row).to_csv(self.path, mode="w", header=True, index=False)
         else:
