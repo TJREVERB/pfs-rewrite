@@ -3,6 +3,7 @@ import chess.engine
 import random
 import asyncio
 
+
 class ChessGame:
     """
     Chess Game Object
