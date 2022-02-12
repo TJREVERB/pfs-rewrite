@@ -93,7 +93,7 @@ class Outreach(Mode):
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 1:
                 obj = ChessGame(self.sfr, str(5))
-                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+                game = f"Chess;rqb1kbnr/pp2pppp/2np4/8/1Pp5/2P2N1P/P1QPPPP1/RNB1KB1R w KQkq - 4 7;{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 2:
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
