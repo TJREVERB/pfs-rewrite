@@ -54,9 +54,8 @@ class ChessGame:
         return result.move
     #rnbqk2r/pp1pnpp1/2p1p3/b6p/P1P1N1P1/3P4/3BPP1P/RN1QKB1R b KQkq - 2 10
     def get_best_move(self):
-        #asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        #result = asyncio.run(self._get_best_move())
-        result = self.__get_best_move()
+        asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
+        result = asyncio.run(self._get_best_move())
         return result
 
     def push(self, move: chess.Move):
