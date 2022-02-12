@@ -66,10 +66,10 @@ class TicTacToeGame:
         path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
         f = open(path, "r")
         table = json.load(f)
-        f.close()
         game_string = str(self).split(';')[1]
         if game_string in table:
             return list(table[game_string])
+        f.close()
         del table
 
         possible_moves = self.get_valid_moves()

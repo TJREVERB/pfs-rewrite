@@ -143,7 +143,7 @@ class UltimateTicTacToeGame:
     def random(self):
         while True:
             board = UltimateTicTacToeGame(self.sfr, self.game_id)
-            for _ in range(random.randint(5, 10)):
+            for _ in range(random.randint(0, 81)):
                 move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
                 board.push(move)
                 if not board.check_winner() == (0, 0):
