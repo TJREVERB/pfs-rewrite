@@ -9,15 +9,40 @@ from lib.clock import Clock
 
 class Log:
     @wrap_errors(LogicalError)
-    def __init__(self, path: str):
+    def __init__(self, path: str, sub):
         """
         Common routines for every log
         :param path: path to log
+        :type path: str
+        :param sub: subclass instance to use for common operations
+        :type sub: Log
         """
         self.path = path
+        self.sub = sub
+        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
+            self.sub.clear()
 
     @wrap_errors(LogicalError)
-    def clear(self):
+    def access_wrap(self, func: callable) -> callable:
+        """
+        Decorator which wraps log interactions and handles log corruption
+        :param func: function to wrap
+        :type func: callable
+        :return: decorated function
+        :rtype: callable
+        """
+        def wrapped(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
+                print("Assuming corruption, attempting to proceed by clearing log")
+                self.sub.clear()
+                return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
+        return wrapped
+
+    @wrap_errors(LogicalError)
+    def clear(self, func):
         """
         IMPLEMENTED IN SUBCLASSES
         """
@@ -41,16 +66,15 @@ class JSONLog(Log):
         """
         Create a new json Log
         """
-        super().__init__(path)
-        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-            self.clear()
+        super().__init__(path, self)
 
     @wrap_errors(LogicalError)
     def clear(self):
-        if os.path.exists(self.path):  # IF file exists
+        if os.path.exists(self.path):  # If file exists
             os.remove(self.path)  # Delete
         open(self.path, "x").close()  # Create empty file
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def write(self, data: dict):
         """
@@ -60,6 +84,7 @@ class JSONLog(Log):
         with open(self.path, "w") as f:
             json.dump(data, f)  # Dump to file
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def read(self) -> dict:
         """
@@ -76,13 +101,15 @@ class PKLLog(Log):
         """
         Create a new pkl Log
         """
-        super().__init__(path)
+        super().__init__(path, self)
 
     @wrap_errors(LogicalError)
     def clear(self):
-        if os.path.exists(self.path):  # IF file exists
+        if os.path.exists(self.path):  # If file exists
             os.remove(self.path)  # Delete
 
+    @super().access_wrap
+    @wrap_errors(LogicalError)
     def write(self, data: object):
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -91,6 +118,7 @@ class PKLLog(Log):
         with open(self.path, "wb") as f:
             pickle.dump(data, f)  # Dump to file
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def read(self) -> object:
         """
@@ -107,10 +135,8 @@ class CSVLog(Log):
         """
         Create a new csv Log
         """
-        super().__init__(path)
+        super().__init__(path, self)
         self.headers = headers
-        if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
-            self.clear()
         if pd.read_csv(self.path).columns.tolist() != self.headers:
             self.clear()  # Clear log if columns don't match up (out of date log)
         
@@ -119,6 +145,7 @@ class CSVLog(Log):
         with open(self.path, "w") as f:  # Open file
             f.write(",".join(self.headers) + "\n")  # Write headers + newline
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def write(self, data: dict) -> None:
         """
@@ -128,12 +155,13 @@ class CSVLog(Log):
         if list(data.keys()) != self.headers:  # Raise error if keys are wrong
             raise LogicalError(details="Incorrect keys for logging")
         new_row = pd.DataFrame.from_dict({k: [v] for (k, v) in data.items()})  # DataFrame from dict
-        if len(df := self.read()) > 1000000:  # If this log is extremely long
+        if len(df := self.read()) > 100000:  # If this log is extremely long
             # Remove first row and append to log
             df.iloc[1:].append(new_row).to_csv(self.path, mode="w", header=True, index=False)
         else:
             new_row.to_csv(self.path, mode="a", header=False, index=False)  # Append to log
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def read(self) -> pd.DataFrame:
         """
@@ -142,6 +170,7 @@ class CSVLog(Log):
         """
         return pd.read_csv(self.path, header=0)
 
+    @super().access_wrap
     @wrap_errors(LogicalError)
     def truncate(self, n):
         """
