@@ -68,9 +68,9 @@ class TicTacToeGame:
         best_move = possible_moves[0]  # in case weird error where no move calculated
         path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
         with open(path, "r") as f:
-            print("IN FILE")
             table = json.load(f)
             if str(self) in table:
+                print("IN FILE")
                 return list(table[str(self)])
             del table
         time_started = time.time()
