@@ -64,6 +64,7 @@ class TicTacToeGame:
         time_started = time.time()
         for move in possible_moves:
             if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > time_started:
+                print("TIMEOUT")
                 break
             score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
             if score > best:
