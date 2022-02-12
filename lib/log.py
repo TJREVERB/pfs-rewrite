@@ -22,6 +22,24 @@ class Log:
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.sub.clear()
 
+    def access_wrap(self, func: callable) -> callable:
+        """
+        Decorator which wraps log interactions and handles log corruption
+        :param func: function to wrap
+        :type func: callable
+        :return: decorated function
+        :rtype: callable
+        """
+        def wrapped(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
+                print("Assuming corruption, attempting to proceed by clearing log")
+                self.sub.clear()
+                return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
+        return wrapped
+
     @wrap_errors(LogicalError)
     def clear(self, func):
         """
@@ -40,23 +58,6 @@ class Log:
         IMPLEMENTED IN SUBCLASSES
         """
 
-def access_wrap(self, func: callable) -> callable:
-    """
-    Decorator which wraps log interactions and handles log corruption
-    :param func: function to wrap
-    :type func: callable
-    :return: decorated function
-    :rtype: callable
-    """
-    def wrapped(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
-            print("Assuming corruption, attempting to proceed by clearing log")
-            self.sub.clear()
-            return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
-    return wrapped
 
 class JSONLog(Log):
     @wrap_errors(LogicalError)
