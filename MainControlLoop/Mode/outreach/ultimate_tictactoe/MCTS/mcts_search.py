@@ -34,9 +34,12 @@ class MCTSSearch:
         while not len(node.children) == 0:
             node = self.best_uct(node)
 
-        node.children = [Node(node.board_state.push_move_to_copy(move), node)
-                         for move in node.board_state.get_valid_moves()]
-        return random.choice(node.children)
+        if len(node.board_state.get_valid_moves()) == 0:
+            return node
+        else:
+            node.children = [Node(node.board_state.push_move_to_copy(move), node)
+                             for move in node.board_state.get_valid_moves()]
+            return random.choice(node.children)
 
     def rollout(self, node):
         board_state = copy.deepcopy(node.board_state)
