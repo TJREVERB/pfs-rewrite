@@ -73,6 +73,8 @@ class TicTacToeGame:
         if str(self) in table:
             print("IN FILE")
             return list(table[str(self)])
+        else:
+            print("NOT IN FILE")
         del table
         time_started = time.time()
         for move in possible_moves:
