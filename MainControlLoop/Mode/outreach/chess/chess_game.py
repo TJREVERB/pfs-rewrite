@@ -41,18 +41,11 @@ class ChessGame:
         :return: best move
         :rtype: :class: 'chess.Move'
         """
-        #print(self.board.is_game_over())
         transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
         result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
         await engine.quit()
         return result.move
-        #return 22
-    def __get_best_move(self):
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        result = engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
-        engine.quit()
-        return result.move
-    #rnbqk2r/pp1pnpp1/2p1p3/b6p/P1P1N1P1/3P4/3BPP1P/RN1QKB1R b KQkq - 2 10
+
     def get_best_move(self):
         asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
         result = asyncio.run(self._get_best_move())

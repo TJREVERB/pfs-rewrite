@@ -93,7 +93,7 @@ class Outreach(Mode):
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 1:
                 obj = ChessGame(self.sfr, str(5))
-                game = f"Chess;rnbqkb2/1ppppn1r/p5pp/8/1P1N1p1P/2P2P1N/P2PP1P1/1RBQKB1R w Kq - 0 11;{str(random.randint(1000000000, 9999999999))}"
+                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
             elif game_int == 2:
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
@@ -118,8 +118,8 @@ class Outreach(Mode):
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
-            if time.time() - 60 > time_started:  # limit compute time per cycle
-                break
+            #if time.time() - 60 > time_started:  # limit compute time per cycle
+                #break
 
     def transmit_string(self, message: str):
         """
