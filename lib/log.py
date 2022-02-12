@@ -73,7 +73,7 @@ class JSONLog(Log):
             os.remove(self.path)  # Delete
         open(self.path, "x").close()  # Create empty file
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def write(self, data: dict):
         """
@@ -83,7 +83,7 @@ class JSONLog(Log):
         with open(self.path, "w") as f:
             json.dump(data, f)  # Dump to file
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def read(self) -> dict:
         """
@@ -107,7 +107,7 @@ class PKLLog(Log):
         if os.path.exists(self.path):  # If file exists
             os.remove(self.path)  # Delete
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def write(self, data: object):
         """
@@ -117,7 +117,7 @@ class PKLLog(Log):
         with open(self.path, "wb") as f:
             pickle.dump(data, f)  # Dump to file
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def read(self) -> object:
         """
@@ -144,7 +144,7 @@ class CSVLog(Log):
         with open(self.path, "w") as f:  # Open file
             f.write(",".join(self.headers) + "\n")  # Write headers + newline
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def write(self, data: dict) -> None:
         """
@@ -160,7 +160,7 @@ class CSVLog(Log):
         else:
             new_row.to_csv(self.path, mode="a", header=False, index=False)  # Append to log
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def read(self) -> pd.DataFrame:
         """
@@ -169,7 +169,7 @@ class CSVLog(Log):
         """
         return pd.read_csv(self.path, header=0)
 
-    @super.access_wrap()
+    @super().access_wrap()
     #@wrap_errors(LogicalError)
     def truncate(self, n):
         """
