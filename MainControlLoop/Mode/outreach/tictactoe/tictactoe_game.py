@@ -2,6 +2,7 @@ import numpy as np
 import time
 import copy
 import random
+import json
 
 
 class TicTacToeGame:
@@ -55,12 +56,20 @@ class TicTacToeGame:
                 ai_board[i] = 1.0
         self.human_board = human_board.reshape((3, 3))
         self.ai_board = ai_board.reshape((3, 3))
+        if board_string[9] == "h":
+            self.is_ai_turn = False
+        else:
+            self.is_ai_turn = True
         #  always be ai turn
 
     def get_best_move(self):
         possible_moves = self.get_valid_moves()
         best = -10000
         best_move = possible_moves[0]  # in case weird error where no move calculated
+        with open("table.json", "r") as f:
+            table = json.load(f)
+            if str(self) in table:
+                return list(table[str(self)])
         time_started = time.time()
         for move in possible_moves:
             if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > time_started:
@@ -171,7 +180,7 @@ class TicTacToeGame:
     def random(self):
         while True:
             board = TicTacToeGame(self.sfr, self.game_id)
-            for _ in range(random.randint(2, 4)):
+            for _ in range(random.randint(0, 9)):
                 move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
                 board.push(move)
                 if not board.check_winner() == (0, 0):
