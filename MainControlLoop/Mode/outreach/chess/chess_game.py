@@ -41,10 +41,11 @@ class ChessGame:
         :rtype: :class: 'chess.Move'
         """
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        result = engine.play(self.board, chess.engine.Limit(time=self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
+        result = engine.play(self.board, chess.engine.Limit(time=self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME, white_clock=5, black_clock=5))
         engine.quit()
         return result.move
         #return 22
+    #rnbqk2r/pp1pnpp1/2p1p3/b6p/P1P1N1P1/3P4/3BPP1P/RN1QKB1R b KQkq - 2 10
 
     def push(self, move: chess.Move):
         """
