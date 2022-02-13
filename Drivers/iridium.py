@@ -289,7 +289,15 @@ class Iridium(Device):
 
         if packet.numerical:
             for n in packet.return_data:
-                #n = 0 if n is NaN else n
+                # Jank way to check for NaN without figuring out where to import it from
+                try:
+                    n = float(n)
+                    int(n)
+                except ValueError as e:
+                    if "nan" in repr(e) or "NaN" in repr(e):
+                        n = 0
+                    else:
+                        raise ValueError(repr(e))
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
