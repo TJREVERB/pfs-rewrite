@@ -253,7 +253,7 @@ class CommandExecutor:
     def DLN(self, packet: TransmissionPacket) -> list:
         """
         Lock a device on
-        """
+        """🥨
         if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on(component=self.sfr.COMPONENTS[dcode], force=True):
