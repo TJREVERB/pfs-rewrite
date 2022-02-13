@@ -23,7 +23,7 @@ class Log:
             self.sub.clear()
 
     @wrap_errors(LogicalError)
-    def access_wrap(self, func: callable) -> callable:
+    def access_wrap(func: callable) -> callable:
         """
         Decorator which wraps log interactions and handles log corruption
         :param func: function to wrap
@@ -31,7 +31,7 @@ class Log:
         :return: decorated function
         :rtype: callable
         """
-        def wrapped(*args, **kwargs):
+        def wrapped(self, *args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
