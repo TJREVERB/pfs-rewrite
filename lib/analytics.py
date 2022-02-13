@@ -32,8 +32,8 @@ class Analytics:
         :return: estimated charge in Joules
         :rtype: float
         """
-        max_index = len(df := self.sfr.logs["voltage_energy"].read()) - 1
-        for i in range(len(df)):
+        max_index = (df := self.sfr.logs["voltage_energy"].read()).shape[0] - 1
+        for i in range(df.shape[0]):
             if df["voltage"][i] > voltage:
                 max_index = i
         line = line_eq((df["voltage"][max_index - 1], df["energy"][max_index - 1]),
@@ -92,30 +92,40 @@ class Analytics:
         :rtype: tuple
         """
         current_time = time.time()  # Set current time
-        orbits = self.sfr.logs["orbits"].read().tail(51)  # Read orbits log
-        if len(orbits) < 4:  # If we haven't logged any orbits
-            solar = self.sfr.logs["solar"].read().tail(50)  # Read solar power log
-            if len(solar) > 0:  # If we have solar data
+        orbits = self.sfr.logs["orbits"].read().tail(51)  # Read first 51 elements of orbits log
+        if orbits.shape[0] < 4:  # If we haven't logged any orbits
+            solar = self.sfr.logs["solar"].read().tail(50)  # Read first 50 elements of solar power log
+            if solar.shape[0] > 0:  # If we have solar data
                 # Estimate based on what we have
-                return solar[self.sfr.PANELS].sum(axis=1).mean() * duration
+                return (solar[self.sfr.PANELS]  # Get only panels columns
+                        .sum(axis=1)  # Get total generation for each row
+                        .mean()  # Mean generation over dataset
+                        * duration)  # Multiply by duration to predict generation
             else:  # If we haven't logged any solar data
-                return self.sfr.eps.solar_power() * duration  # Poll eps for estimate
-        # Generate timestamp column
-        orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]
+                return self.sfr.eps.solar_power() * duration  # Poll eps for power estimate and multiply by duration
+        orbits["timestamp"] = orbits["ts0"] + orbits["ts1"]  # Generate timestamp column
         # Calculate sunlight period
-        sunlight_period = orbits[orbits["phase"] == "daylight"]["timestamp"].diff().mean(skipna=True)
+        sunlight_period = (orbits[orbits["phase"] == "daylight"]  # Get all rows where phase is daylight
+                           ["timestamp"]  # Get timestamp column of those rows
+                           .diff()  # Difference between daylight entries
+                           .mean(skipna=True))  # Mean difference between daylight entries
         orbital_period = self.calc_orbital_period()  # Calculate orbital period
         in_sun = self.historical_generation(50)  # Filter out all data points which weren't taken in sunlight
         solar_gen = in_sun.mean()  # Calculate average solar power generation
 
         # Function to calculate energy generation over a given time since entering sunlight
-        def energy_over_time(t):
+        def energy_over_time(t):  # Magic
             return int(t / orbital_period) * sunlight_period * solar_gen + \
                    min([t % orbital_period, sunlight_period]) * solar_gen
+
         # Set start time for simulation
-        start = current_time - orbits[orbits["phase"] == "daylight"]["timestamp"].iloc[-1]
+        start = (current_time  # Start with current time
+                 -  # Subtract last time we entered daylight (to get current orbital position)
+                 orbits[orbits["phase"] == "daylight"]  # All rows where we're in daylight
+                 ["timestamp"]  # Get timestamp column
+                 .iloc[-1])  # Get last row (last time we entered daylight)
         # Calculate and return total energy production over duration
-        return energy_over_time(start + duration) - energy_over_time(start)
+        return energy_over_time(start + duration) - energy_over_time(start)  # f(a + b) - f(a) = f(b)
 
     @wrap_errors(LogicalError)
     def calc_orbital_period(self) -> float:
@@ -125,7 +135,7 @@ class Analytics:
         """
         df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
         df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
-        if len(df) > 2:  # If we have enough rows
+        if df.shape[0] > 2:  # If we have enough rows
             return df["timestamp"].diff(periods=2).mean(skipna=True)  # Return orbital period
         return 90 * 60  # Return assumed orbital period
 
@@ -185,7 +195,7 @@ class Analytics:
         """
         df = self.sfr.logs["orbits"].read()
         df["timestamp"] = df["ts0"] + df["ts1"]
-        if len(df) < 3:
+        if df.shape[0] < 3:
             return 0
         return (df["timestamp"].iloc[-1] - df["timestamp"].iloc[-3]) - \
                (df["timestamp"].iloc[2] - df["timestamp"].iloc[0])
@@ -213,7 +223,7 @@ class Analytics:
         orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
         orbits_data["timestamp"] = orbits_data["ts0"] + orbits_data["ts1"]
         # Calculate sunlight period
-        if len(orbits_data) > 2:
+        if orbits_data.shape[0] > 2:
             sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"]).diff(periods=2).mean()
         else:
             sunlight_period = 0
