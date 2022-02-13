@@ -52,7 +52,6 @@ class CommandExecutor:
             "SDT": self.SDT,
             "SSF": self.SSF,
             "USM": self.USM,
-            "ULG": self.ULG,
             "ITM": self.ITM,
             "IPC": self.IPC,
             "IRB": self.IRB,
