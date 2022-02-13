@@ -211,10 +211,10 @@ class Analytics:
         :rtype: float
         """
         orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
+        orbits_data["timestamp"] = orbits_data["ts0"] + orbits_data["ts1"]
         # Calculate sunlight period
         if len(orbits_data) > 2:
-            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["ts0"] +
-                               orbits_data[orbits_data["phase"] == "sunlight"]["ts1"]).diff(periods=2).mean()
+            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"]).diff(periods=2).mean()
         else:
             sunlight_period = 0
         return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # How much of our orbit we spend in sunlight
