@@ -136,10 +136,11 @@ class CSVLog(Log):
         if pd.read_csv(self.path).columns.tolist() != self.headers:
             self.clear()  # Clear log if columns don't match up (out of date log)
         
-    @wrap_errors(LogicalError)
+    #@wrap_errors(LogicalError)
     def clear(self):
-        with open(self.path, "w") as f:  # Open file
-            f.write(",".join(self.headers) + "\n")  # Write headers + newline
+        f= open(self.path, "w")  # Open file
+        f.write(",".join(self.headers) + "\n")  # Write headers + newline
+        f.close()
 
     @Log.access_wrap
     def write(self, data: dict) -> None:
