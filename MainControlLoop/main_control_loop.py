@@ -39,10 +39,9 @@ class MainControlLoop:
         Iterates mode and checks if the mode should change if there isn't a mode lock and there isn't low power.
         Executes command buffers and logs data.
         """
-        # print(self.sfr.devices)
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
-        # print(self.sfr.devices)
-        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold(): # Change modes while there isn't a mode lock or there is low battery 
+        # Change modes while there isn't a mode lock or there is low battery
+        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold():
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING

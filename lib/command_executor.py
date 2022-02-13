@@ -281,38 +281,9 @@ class CommandExecutor:
         if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid Device Code")
         # returns True if it was previously locked (otherwise False)
-        if not (success := self.sfr.unlock_device(self.sfr.COMPONENTS[dcode])):
+        if not self.sfr.unlock_device(self.sfr.COMPONENTS[dcode]):
             raise CommandExecutionException("Device not locked")
-        self.transmit(packet, result := [dcode, success])
-        return result
-
-        
-    @wrap_errors(CommandExecutionException)
-    def DNT(self, packet: TransmissionPacket) -> list:
-        """
-        Locks a device on for a set amount of time
-        :return: list transmitted
-        :rtype: list
-        """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
-            raise CommandExecutionException("Invalid Device Code")
-        if not self.sfr.lock_device_on_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
-            raise CommandExecutionException("Device already locked")
-        self.transmit(packet, result := [dcode, time])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def DFT(self, packet: TransmissionPacket) -> list:
-        """
-        Locks a device off for a set amount of time
-        :return: list transmitted
-        :rtype: list
-        """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
-            raise CommandExecutionException("Invalid Device Code")
-        if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
-            raise CommandExecutionException("Device already locked")
-        self.transmit(packet, result := [dcode, time])
+        self.transmit(packet, result := [dcode])
         return result
 
     @wrap_errors(CommandExecutionException)

@@ -85,7 +85,6 @@ class Mode:
             self.heartbeat()  # Transmit heartbeat ping
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
-        self.sfr.iterate_locked_clocks() 
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
