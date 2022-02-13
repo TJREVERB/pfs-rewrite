@@ -32,13 +32,16 @@ class Analytics:
         :return: estimated charge in Joules
         :rtype: float
         """
-        max_index = (df := self.sfr.logs["voltage_energy"].read()).shape[0] - 1
-        for i in range(df.shape[0]):
-            if df["voltage"][i] > voltage:
-                max_index = i
-        line = line_eq((df["voltage"][max_index - 1], df["energy"][max_index - 1]),
-                       (df["voltage"][max_index], df["energy"][max_index]))
-        return line(voltage)
+        max_index = ((df := self.sfr.logs["voltage_energy"].read())  # Read voltage-energy log and walrus into "df"
+                     [df["voltage"] > voltage]  # Get all rows where voltage is above target voltage
+                     .shape[0]  # Get length of result
+                     - 1)  # Length - 1 is last index
+        # Linearize function near target voltage
+        line = line_eq((df["voltage"][max_index],  # x: voltage at row immediately greater than target
+                        df["energy"][max_index]),  # y: energy at row immediately greater than target
+                       (df["voltage"][max_index + 1],  # x: voltage at row immediately less than target
+                        df["energy"][max_index + 1]))  # y: energy at row immediately less than target
+        return line(voltage)  # Calculate energy at target voltage
 
     @wrap_errors(LogicalError)
     def historical_consumption(self, n: int) -> pd.Series:
@@ -51,8 +54,9 @@ class Analytics:
         :rtype: :class:'pd.Series'
         """
 
-        df = self.sfr.logs["power"].read().tail(n)
-        return df[["buspower"] + self.sfr.PDMS].sum(axis=1)
+        df = self.sfr.logs["power"].read().tail(n)  # Get last n elements
+        return (df[["buspower"] + self.sfr.PDMS]  # Get columns containing power draw values
+                .sum(axis=1))  # Sum over first axis to get a Series containing total power draw for each row
 
     @wrap_errors(LogicalError)
     def historical_generation(self, n: int) -> pd.Series:
@@ -64,8 +68,11 @@ class Analytics:
         :return: :class:'pd.Series' of last n data points while in sunlight
         :rtype: :class:'pd.Series'
         """
-        df = self.sfr.logs["solar"].read().tail(n)
-        return (sums := df[self.sfr.PANELS].sum(axis=1))[sums > self.sfr.eps.SUN_DETECTION_THRESHOLD]
+        df = self.sfr.logs["solar"].read().tail(n)  # Get last n elements
+        return ((sums :=  # Walrus into variable "sums"
+                 df[self.sfr.PANELS]  # Get columns for all panels
+                 .sum(axis=1))  # Find the sum
+                [sums > self.sfr.eps.SUN_DETECTION_THRESHOLD])  # Rows of sums where sum is greater than threshold
 
     @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> float:
@@ -79,7 +86,9 @@ class Analytics:
         :return: predicted amount of energy consumed
         :rtype: float
         """
-        return self.historical_consumption(50).mean() * duration
+        return (self.historical_consumption(50)  # Sum of 50 rows of power log
+                .mean()  # Get mean
+                * duration)  # Multiply by duration to predict consumption
 
     @wrap_errors(LogicalError)
     def predicted_generation(self, duration: int) -> tuple:
