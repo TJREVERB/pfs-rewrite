@@ -213,7 +213,7 @@ class Analytics:
         orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
         # Calculate sunlight period
         if orbits_data.size > 2:
-            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["ts0"] + orbits_data[orbits_data["phase"] == "sunlight"]["ts1"]).diff(periods=2)].mean()
+            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["ts0"] + orbits_data[orbits_data["phase"] == "sunlight"]["ts1"]).diff(periods=2).mean()
         else:
             sunlight_period = 0
         return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # How much of our orbit we spend in sunlight
