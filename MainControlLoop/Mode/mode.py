@@ -85,7 +85,6 @@ class Mode:
             self.heartbeat()  # Transmit heartbeat ping
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
-        self.sfr.iterate_locked_clocks() 
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
@@ -130,14 +129,7 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        packet = UnsolicitedData("GPL")
-        pol = [
-            self.sfr.battery.telemetry["VBAT"](),
-            sum(self.sfr.recent_gen()),
-            sum(self.sfr.recent_power()),
-            self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
-        ]
-        self.sfr.command_executor.transmit(packet, pol)
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

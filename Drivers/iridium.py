@@ -1,6 +1,5 @@
 import time, datetime
 import math
-from numpy import nan, NaN
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -41,54 +40,6 @@ class Iridium(Device):
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
-        "GRB",  # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
-        "MCH",
-        "MSC",
-        "MOU",
-        "MRP",
-        "MLK",
-        "MDF",
-        "DLN",
-        "DLF",
-        "DDF",
-        "DNT",
-        "DFT",
-        "GCR",
-        "GVT",
-        "GPL",
-        "GCD",
-        "GPW",
-        "GPR",
-        "GOP",
-        "GCS",
-        "GID",
-        "GSM",
-        "GSV",
-        "GSG",
-        "GTB",
-        "GMT",
-        "GTS",
-        "AAP",
-        "APW",
-        "ASV",
-        "ASG",
-        "ATB",
-        "ARS",
-        "AMS",
-        "SUV",
-        "SLV",
-        "SDT",
-        "SSF",
-        "USM",
-        "ULG",
-        "ITM",
-        "IPC",
-        "IRB",
-        "ICE",
-        "IAK",
-    ]
-
     ASCII_ARGS = {"ICE", "ZMV"}  # Commands whose arguments should be decoded as ascii
 
     @wrap_errors(IridiumError)
@@ -97,6 +48,11 @@ class Iridium(Device):
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
+        
+        # Maps each 3 character string to a number code
+        self.ENCODED_REGISTRY = list(self.sfr.command_executor.primary_registry.keys())
+        self.ENCODED_REGISTRY.insert(0, "GRB")
+
         self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
         # return format: <x>, <y>, <z>, <time_stamp>
         # time_stamp uses same 32 bit format as MSSTM
@@ -275,22 +231,30 @@ class Iridium(Device):
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
         if packet.response:
-            if packet.descriptor in Iridium.ENCODED_REGISTRY:
-                encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
+            if packet.descriptor in self.ENCODED_REGISTRY:
+                encoded.append(self.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
             else:
                 raise LogicalError(details="Invalid descriptor string")
             encoded.append((packet.msn >> 8) & 0xff) # Sixth and Seventh byte msn
             encoded.append(packet.msn & 0xff)
         else:
             if packet.numerical:
-                if packet.descriptor in Iridium.ENCODED_REGISTRY:
-                    encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
+                if packet.descriptor in self.ENCODED_REGISTRY:
+                    encoded.append(self.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
                 else:
                     raise LogicalError(details="Invalid descriptor string")
 
         if packet.numerical:
             for n in packet.return_data:
-                n = 0 if n is nan or n is NaN else n
+                # Jank way to check for NaN without figuring out where to import it from
+                try:
+                    n = float(n)
+                    int(n)
+                except ValueError as e:
+                    if "nan" in repr(e) or "NaN" in repr(e):
+                        n = 0
+                    else:
+                        raise ValueError(repr(e))
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
@@ -344,9 +308,9 @@ class Iridium(Device):
 
         if checksum != actual_checksum or length != len(msg):
             raise IridiumError(details="Incorrect checksum/length")
-        if msg[0] < 0 or msg[0] >= len(Iridium.ENCODED_REGISTRY):
+        if msg[0] < 0 or msg[0] >= len(self.ENCODED_REGISTRY):
             raise InvalidCommandException(details="Invalid command received")
-        decoded = Iridium.ENCODED_REGISTRY[msg[0]]
+        decoded = self.ENCODED_REGISTRY[msg[0]]
         args = []
 
         if decoded in Iridium.ASCII_ARGS:
@@ -366,9 +330,9 @@ class Iridium(Device):
                     coef /= 10 ** int(math.log10(abs(coef)))
                 args.append(coef * 10 ** exp)
         if decoded == "ARS":
-            if args[0] < 0 or args[0] >= len(Iridium.ENCODED_REGISTRY):
+            if args[0] < 0 or args[0] >= len(self.ENCODED_REGISTRY):
                 raise InvalidCommandException(details="Invalid command received")
-            args[0] = Iridium.ENCODED_REGISTRY[int(args[0])]
+            args[0] = self.ENCODED_REGISTRY[int(args[0])]
         return (decoded, args)
 
     @wrap_errors(IridiumError)

@@ -32,13 +32,16 @@ class Analytics:
         :return: estimated charge in Joules
         :rtype: float
         """
-        max_index = (df := self.sfr.logs["voltage_energy"].read()).shape[0] - 1
-        for i in range(df.shape[0]):
-            if df["voltage"][i] > voltage:
-                max_index = i
-        line = line_eq((df["voltage"][max_index - 1], df["energy"][max_index - 1]),
-                       (df["voltage"][max_index], df["energy"][max_index]))
-        return line(voltage)
+        max_index = ((df := self.sfr.logs["voltage_energy"].read())  # Read voltage-energy log and walrus into "df"
+                     [df["voltage"] > voltage]  # Get all rows where voltage is above target voltage
+                     .shape[0]  # Get length of result
+                     - 1)  # Length - 1 is last index
+        # Linearize function near target voltage
+        line = line_eq((df["voltage"][max_index],  # x: voltage at row immediately greater than target
+                        df["energy"][max_index]),  # y: energy at row immediately greater than target
+                       (df["voltage"][max_index + 1],  # x: voltage at row immediately less than target
+                        df["energy"][max_index + 1]))  # y: energy at row immediately less than target
+        return line(voltage)  # Calculate energy at target voltage
 
     @wrap_errors(LogicalError)
     def historical_consumption(self, n: int) -> pd.Series:
@@ -51,8 +54,9 @@ class Analytics:
         :rtype: :class:'pd.Series'
         """
 
-        df = self.sfr.logs["power"].read().tail(n)
-        return df[["buspower"] + self.sfr.PDMS].sum(axis=1)
+        df = self.sfr.logs["power"].read().tail(n)  # Get last n elements
+        return (df[["buspower"] + self.sfr.PDMS]  # Get columns containing power draw values
+                .sum(axis=1))  # Sum over first axis to get a Series containing total power draw for each row
 
     @wrap_errors(LogicalError)
     def historical_generation(self, n: int) -> pd.Series:
@@ -64,8 +68,11 @@ class Analytics:
         :return: :class:'pd.Series' of last n data points while in sunlight
         :rtype: :class:'pd.Series'
         """
-        df = self.sfr.logs["solar"].read().tail(n)
-        return (sums := df[self.sfr.PANELS].sum(axis=1))[sums > self.sfr.eps.SUN_DETECTION_THRESHOLD]
+        df = self.sfr.logs["solar"].read().tail(n)  # Get last n elements
+        return ((sums :=  # Walrus into variable "sums"
+                 df[self.sfr.PANELS]  # Get columns for all panels
+                 .sum(axis=1))  # Find the sum
+                [sums > self.sfr.eps.SUN_DETECTION_THRESHOLD])  # Rows of sums where sum is greater than threshold
 
     @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> float:
@@ -79,7 +86,9 @@ class Analytics:
         :return: predicted amount of energy consumed
         :rtype: float
         """
-        return self.historical_consumption(50).mean() * duration
+        return (self.historical_consumption(50)  # Sum of 50 rows of power log
+                .mean()  # Get mean
+                * duration)  # Multiply by duration to predict consumption
 
     @wrap_errors(LogicalError)
     def predicted_generation(self, duration: int) -> tuple:
@@ -133,11 +142,13 @@ class Analytics:
         Calculate orbital period over last 50 orbits
         :return: average orbital period over last 50 orbits
         """
-        df = self.sfr.logs["orbits"].read().tail(51)  # Reads in data
-        df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
+        df = self.sfr.logs["orbits"].read().tail(51)  # Reads in last 51 rows
         if df.shape[0] > 2:  # If we have enough rows
-            return df["timestamp"].diff(periods=2).mean(skipna=True)  # Return orbital period
-        return 90 * 60  # Return assumed orbital period
+            return ((df["ts0"] + df["ts1"])  # Create timestamp column
+                    # Difference between every other row (daylight - previous daylight, eclipse - previous eclipse)
+                    .diff(periods=2)
+                    .mean(skipna=True))  # Return mean orbital period (excluding nan values)
+        return 90 * 60  # If not enough rows, return assumed orbital period
 
     @wrap_errors(LogicalError)
     def signal_strength_mean(self) -> float:
@@ -147,8 +158,9 @@ class Analytics:
         :return: average signal strength
         :rtype: float
         """
-        df = self.sfr.logs["iridium"].read()
-        return df["signal"].mean()
+        return (self.sfr.logs["iridium"].read()  # Read iridium log
+                ["signal"]  # Get signal strength column
+                .mean())  # Find mean
 
     @wrap_errors(LogicalError)
     def signal_strength_variability(self) -> float:
@@ -158,8 +170,9 @@ class Analytics:
         :return: standard deviation of signal strength
         :rtype: float
         """
-        df = self.sfr.logs["iridium"].read()
-        return df["signal"].std()
+        return (self.sfr.logs["iridium"].read()  # Read iridium log
+                ["signal"]  # Get signal strength column
+                .std())  # Find standard deviation
 
     @wrap_errors(LogicalError)
     def total_energy_consumed(self) -> float:
@@ -169,9 +182,15 @@ class Analytics:
         :return: total energy consumed by satellite over mission duration
         :rtype: float
         """
-        df = self.sfr.logs["power"].read()
-        df["timestamp"] = df["ts0"] + df["ts1"]
-        return (df["timestamp"].diff().iloc[1:] * df[self.sfr.PDMS + ["buspower"]].sum(axis=1).iloc[1:]).sum()
+        return ((((df := self.sfr.logs["power"].read())  # Read entire power log and walrus into "df"
+                  ["ts0"] + df["ts1"])  # Calculate timestamp column
+                 .diff()  # Find differences between consecutive timestamps (delta t)
+                 .iloc[1:]  # Remove nan value created by diff
+                 *  # Multiply delta t by
+                 df[self.sfr.PDMS + ["buspower"]]  # Power draw columns
+                 .sum(axis=1)  # Sum to find total power draw for each row
+                 .iloc[1:])  # Exclude first element to keep size the same as timestamp diff column
+                .sum())  # Sum of total power draws for each row to get total power draw over entire mission
 
     @wrap_errors(LogicalError)
     def total_energy_generated(self) -> float:
@@ -181,9 +200,15 @@ class Analytics:
         :return: total energy generated by satellite over mission duration
         :rtype: float
         """
-        df = self.sfr.logs["solar"].read()
-        df["timestamp"] = df["ts0"] + df["ts1"]
-        return (df["timestamp"].diff() * df[self.sfr.PANELS].sum(axis=0).iloc[1:]).sum()
+        return ((((df := self.sfr.logs["solar"].read())  # Read entire solar log and walrus into "df"
+                  ["ts0"] + df["ts1"])  # Calculate timestamp column
+                 .diff()  # Find differences between consecutive timestamps (delta t)
+                 .iloc[1:]  # Remove nan value created by diff
+                 *  # Multiply delta t by
+                 df[self.sfr.PANELS]  # Solar generation columns
+                 .sum(axis=1)  # Sum to find total power draw for each row
+                 .iloc[1:])  # Exclude first element to keep size the same as timestamp diff column
+                .sum())  # Sum of total power draws for each row to get total power draw over entire mission
 
     @wrap_errors(LogicalError)
     def orbital_decay(self) -> float:
@@ -193,12 +218,13 @@ class Analytics:
         :return: orbital decay of satellite in seconds
         :rtype: float
         """
-        df = self.sfr.logs["orbits"].read()
-        df["timestamp"] = df["ts0"] + df["ts1"]
-        if df.shape[0] < 3:
+        df = self.sfr.logs["orbits"].read()  # Read orbits log
+        df["timestamp"] = df["ts0"] + df["ts1"]  # Create timestamp column
+        if df.shape[0] < 3:  # If log is too small, assume no orbital decay
             return 0
-        return (df["timestamp"].iloc[-1] - df["timestamp"].iloc[-3]) - \
-               (df["timestamp"].iloc[2] - df["timestamp"].iloc[0])
+        return ((df["timestamp"].iloc[-1] - df["timestamp"].iloc[-3])  # Last orbit duration
+                -  # Minus
+                (df["timestamp"].iloc[2] - df["timestamp"].iloc[0]))  # Fist orbit duration
 
     @wrap_errors(LogicalError)
     def total_data_transmitted(self) -> int:
@@ -208,7 +234,9 @@ class Analytics:
         :return: total amount of data transmitted by satellite
         :rtype: int
         """
-        return self.sfr.logs["transmission"].read()["size"].sum()
+        return (self.sfr.logs["transmission"].read()  # Read transmission log
+                ["size"]  # Get size column
+                .sum())  # Calculate and return sum
 
     @wrap_errors(LogicalError)
     def sunlight_ratio(self, n: int) -> float:
@@ -220,11 +248,14 @@ class Analytics:
         :return: what fraction of each orbit we spend in sunlight (0 if not enough data)
         :rtype: float
         """
-        orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
-        orbits_data["timestamp"] = orbits_data["ts0"] + orbits_data["ts1"]
+        orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)  # Read last n orbits
+        orbits_data["timestamp"] = orbits_data["ts0"] + orbits_data["ts1"]  # Create timestamp column
         # Calculate sunlight period
-        if orbits_data.shape[0] > 2:
-            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"]).diff(periods=2).mean()
-        else:
+        if orbits_data.shape[0] > 2:  # If we have enough data, calculate
+            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]  # Rows which were taken in sunlight
+                                          ["timestamp"]  # Get timestamp column
+                               .diff(periods=2)  # Take difference of every other timestamp (sunlight period)
+                               .mean())  # Mean of sunlight periods
+        else:  # Assume 0 if we have no orbits data
             sunlight_period = 0
-        return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # How much of our orbit we spend in sunlight
+        return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # What fraction of our orbit we spend in sunlight

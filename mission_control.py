@@ -165,8 +165,14 @@ class MissionControl:
 
         self.sfr.command_executor.execute_buffers()  # Execute all received commands
         if self.transmission_queue_clock.time_elapsed():  # Once every 10 seconds
-            self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
-            self.transmission_queue_clock.update_time()
+            if self.sfr.devices["Iridium"] is not None and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD: 
+                # If iridium is on and signal is present
+                self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
+                self.transmission_queue_clock.update_time()
+            elif self.sfr.devices["APRS"] is not None:   
+                # If APRS is on, don't check for signal
+                self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
+                self.transmission_queue_clock.update_time()
 
         if self.sfr.check_lower_threshold():  # if battery is low
             print("cry")

@@ -13,7 +13,6 @@ from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
 from lib.log import CSVLog, JSONLog, PKLLog, NonWritableCSV
 from lib.log import Logger
-from lib.clock import Clock
 from lib.exceptions import wrap_errors, LogicalError
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
@@ -50,7 +49,6 @@ class Vars:
         self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
         self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
-        self.LOCKED_CLOCKS = []
         self.CONTACT_ESTABLISHED = False
         self.ENABLE_SAFE_MODE = False
         self.transmit_buffer = []
@@ -133,8 +131,7 @@ class StateFieldRegistry:
         "EPS",
         "RTC",
         "UART-RS232",  # Iridium Serial Converter
-        "SPI-UART",  # APRS Serial Converter
-        "USB-UART"
+        "USB-UART"  # APRS Serial Converter
     ]
     UNSUCCESSFUL_SEND_TIME_CUTOFF = 60 * 60 * 24  # if it has been unsuccessfully trying to send messages
     # via iridium for this amount of time, switch primary to APRS
@@ -326,7 +323,7 @@ class StateFieldRegistry:
         :return: [buspower, 0x01, 0x02... 0x0A]
         :rtype: list
         """
-        if len(df := self.logs["power"].read()) == 0:
+        if (df := self.logs["power"].read()).shape[0] == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
         # Get last row, only include columns which store information about power
         return df[["buspower"] + self.PDMS].iloc[-1].tolist()
@@ -338,7 +335,7 @@ class StateFieldRegistry:
         :return: [bcr1, bcr2, bcr3]
         :rtype: list
         """
-        if len(df := self.logs["solar"].read()) == 0:
+        if (df := self.logs["solar"].read()).shape[0] == 0:
             return self.eps.raw_solar_gen()
         # Get last row, exclude timestamp columns
         return df[self.PANELS].iloc[-1].tolist()
@@ -369,8 +366,7 @@ class StateFieldRegistry:
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
         for i in self.logs.keys():
-            if i != "voltage_energy":
-                self.logs[i].clear()
+            self.logs[i].clear()
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
@@ -566,63 +562,3 @@ class StateFieldRegistry:
             self.vars.LOCKED_OFF_DEVICES.remove(device)
             return True
         return False
-
-    def lock_device_on_timed(self, device: str, time: int) -> bool:
-        """
-        Locks device on for a specific amount of time
-        :param device: device to lock on
-        :type device: string
-        :param time: time to lock on for
-        :type time: int
-        :return: True if something had to be changed, else False
-        :rtype: bool
-        """
-
-        if device in self.vars.LOCKED_ON_DEVICES:
-            return False  # if it's already locked on
-        if device in self.vars.LOCKED_OFF_DEVICES:
-            return False # timed lock doesn't override permenant locks
-        # Lock device
-        self.vars.LOCKED_ON_DEVICES.add(device)
-        self.power_on(device)  # Power on device
-
-        self.vars.LOCKED_CLOCKS.append((device, Clock(time))) # tuple: device, clock for time
-
-        return True
-
-    def lock_device_off_timed(self, device: str, time: int) -> bool:
-        """
-        Locks a device off for a specific amount of time
-        :param device: device to lock off
-        :type device: string
-        :param time: time to lock off for
-        :type time: int
-        :return: True if something had to be changed, else False
-        :rtype: bool
-        """
-
-        # won't allow both radios to be locked off
-        if "Iridium" in (l := list(self.vars.LOCKED_OFF_DEVICES) + [device]) and "APRS" in l:
-            return False
-        if device in self.vars.LOCKED_OFF_DEVICES:
-            return False  # if it's already locked off
-        if device in self.vars.LOCKED_ON_DEVICES:
-            return False # timed lock doesn't override permenant locks
-        # Lock device
-        self.vars.LOCKED_OFF_DEVICES.add(device)
-        self.power_off(device)  # Power off device
-
-        self.vars.LOCKED_CLOCKS.append((device, Clock(time))) # tuple: device, clock for time
-
-        return True
-
-    def iterate_locked_clocks(self):
-        """
-        Updates locking clocks
-        :return: none
-        """
-
-        for k in self.vars.LOCKED_CLOCKS:
-            if k[1].time_elapsed():
-                self.unlock_device(k[0]) # unlock device after elapsed time
-                self.vars.LOCKED_CLOCKS.remove(k) # delete tuple
