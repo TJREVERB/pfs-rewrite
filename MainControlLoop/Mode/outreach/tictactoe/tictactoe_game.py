@@ -131,13 +131,15 @@ class TicTacToeGame:
         self.is_ai_turn = not self.is_ai_turn
 
     def is_valid_move(self, location: list) -> bool:
-        if any([type(i) != int for i in location]):
+        x, y = location[0], location[1]
+        if type(x) != int or type(y) != int:
             return False
-        elif any([i > 2 or i < 0 for i in location]):
+        if x > 2 or x < 0 or y > 2 or y < 0:
             return False
-        elif not self.human_board[location] == 0 and self.ai_board[location] == 0:
+        if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
+            return True
+        else:
             return False
-        return True
 
     def get_valid_moves(self) -> list:
         """
