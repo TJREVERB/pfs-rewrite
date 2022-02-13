@@ -51,7 +51,7 @@ class Iridium(Device):
         
         # Maps each 3 character string to a number code
         self.ENCODED_REGISTRY = list(self.sfr.command_executor.primary_registry.keys())
-        self.ENCODED_REGISTRY.insert("GRB", 0)
+        self.ENCODED_REGISTRY.insert(0, "GRB")
 
         self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
         # return format: <x>, <y>, <z>, <time_stamp>
