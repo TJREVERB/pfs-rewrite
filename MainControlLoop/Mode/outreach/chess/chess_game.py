@@ -35,7 +35,7 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
-    async def _get_best_move(self) -> chess.Move:
+    def _get_best_move(self) -> chess.Move:
         """
         Get best move by using Stockfish
         :return: best move
@@ -45,9 +45,11 @@ class ChessGame:
             with asyncio.run(chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')) as tup:
                 transport, engine = tup
                 # transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-                result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+                result = asyncio.run(engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))))
+                # result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
                 result = result.move
-                await engine.quit()
+                # await engine.quit()
+                asyncio.run(engine.quit())
                 return result
         else:
             print("INVALID BOARD")
@@ -60,7 +62,8 @@ class ChessGame:
 
     def get_best_move(self):
         asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        result = asyncio.run(self._get_best_move())
+        # result = asyncio.run(self._get_best_move())
+        result = self._get_best_move()
         return result
 
     def push(self, move: chess.Move):
