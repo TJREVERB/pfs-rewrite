@@ -52,7 +52,6 @@ class CommandExecutor:
             "SDT": self.SDT,
             "SSF": self.SSF,
             "USM": self.USM,
-            "ULG": self.ULG,
             "ITM": self.ITM,
             "IPC": self.IPC,
             "IRB": self.IRB,
@@ -254,7 +253,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
+        if (dcode := int(packet.args[0])) < 0 or dcode > 3: # Any components after index 3 should not be locked off
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device lock failed!")
@@ -266,7 +265,7 @@ class CommandExecutor:
         """
         Lock a device off
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
+        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_off(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device Lock Failed!")
@@ -278,7 +277,7 @@ class CommandExecutor:
         """
         Disable Device Lock
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
+        if (dcode := int(packet.args[0])) < 0 or dcode > 3:
             raise CommandExecutionException("Invalid Device Code")
         # returns True if it was previously locked (otherwise False)
         if not self.sfr.unlock_device(self.sfr.COMPONENTS[dcode]):
@@ -588,7 +587,7 @@ class CommandExecutor:
         if self.sfr.COMPONENTS[int(packet.args[0])] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
         self.sfr.vars.FAILURES.append(self.sfr.COMPONENTS[int(packet.args[0])])
-        self.transmit(packet, result := [sum([1 << i for i in range(self.sfr.COMPONENTS)
+        self.transmit(packet, result := [sum([1 << i for i in range(len(self.sfr.COMPONENTS))
                                               if self.sfr.COMPONENTS[i] in self.sfr.vars.FAILURES])])
         return result
 
@@ -620,7 +619,8 @@ class CommandExecutor:
         7. Total number of iridium commands received
         8. Total number of aprs commands received
         9. Total number of iridium signal strength measurements taken
-        10. Total number of power consumption/generation measurements
+        10. Total number of power consumption measurements
+        11. Total number of power generation measurements
         """
         startdif = time.time() - self.sfr.vars.START_TIME
         laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
@@ -633,20 +633,12 @@ class CommandExecutor:
             self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
             self.sfr.analytics.orbital_decay(),
-            len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "Iridium"]),
-            len((df := pd.read_csv(self.sfr.command_log))[df["radio"] == "APRS"]),
-            len(pd.read_csv(self.sfr.iridium_data_path)),
-            len(pd.read_csv(self.sfr.pwr_log_path)),
+            (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
+            (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
+            self.sfr.logs["iridium"].read().shape[0],
+            self.sfr.logs["power"].read().shape[0],
+            self.sfr.logs["solar"].read().shape[0]
         ])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def ULG(self, packet: TransmissionPacket) -> list:
-        """
-        Transmit full rssi data logs
-        """
-        with open(self.sfr.command_log_path, "r") as f:
-            self.transmit(packet, result := [f.read()])
         return result
 
     @wrap_errors(CommandExecutionException)
