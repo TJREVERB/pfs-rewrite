@@ -339,7 +339,8 @@ class CommandExecutor:
         """
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
-                                         sum(self.sfr.recent_power())])
+                                         sum(self.sfr.recent_power()), 
+                                         self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0])
         return result
 
     @wrap_errors(CommandExecutionException)
