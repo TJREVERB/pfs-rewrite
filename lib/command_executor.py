@@ -49,6 +49,8 @@ class CommandExecutor:
             "SLV": self.SLV,
             "SDT": self.SDT,
             "SSF": self.SSF,
+            "SFA": self.SFA,
+            "SFR": self.SFR,
             "USM": self.USM,
             "ITM": self.ITM,
             "IPC": self.IPC,
