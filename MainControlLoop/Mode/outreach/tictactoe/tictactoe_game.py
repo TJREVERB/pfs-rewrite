@@ -71,6 +71,7 @@ class TicTacToeGame:
             return list(table[game_string])
         del table
 
+        e  # to crash script
         # WILL NEVER EXECUTE
         possible_moves = self.get_valid_moves()
         best = -10000
