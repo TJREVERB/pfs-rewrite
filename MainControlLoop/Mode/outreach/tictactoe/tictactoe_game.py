@@ -69,6 +69,7 @@ class TicTacToeGame:
             table = json.load(f)
         game_string = str(self).split(';')[1]
         if game_string in table:
+            print("IN TABLE")
             return list(table[game_string])
         # f.close()
         del table
