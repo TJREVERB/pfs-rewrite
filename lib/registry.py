@@ -323,7 +323,7 @@ class StateFieldRegistry:
         :return: [buspower, 0x01, 0x02... 0x0A]
         :rtype: list
         """
-        if len(df := self.logs["power"].read()) == 0:
+        if (df := self.logs["power"].read()).shape[0] == 0:
             return [self.eps.bus_power()] + self.eps.raw_pdm_draw()[1]
         # Get last row, only include columns which store information about power
         return df[["buspower"] + self.PDMS].iloc[-1].tolist()
@@ -335,7 +335,7 @@ class StateFieldRegistry:
         :return: [bcr1, bcr2, bcr3]
         :rtype: list
         """
-        if len(df := self.logs["solar"].read()) == 0:
+        if (df := self.logs["solar"].read()).shape[0] == 0:
             return self.eps.raw_solar_gen()
         # Get last row, exclude timestamp columns
         return df[self.PANELS].iloc[-1].tolist()

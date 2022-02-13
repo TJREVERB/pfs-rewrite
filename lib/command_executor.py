@@ -309,8 +309,9 @@ class CommandExecutor:
         """
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
-                                         sum(self.sfr.recent_power()), 
-                                         self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0])
+                                         sum(self.sfr.recent_power()),
+                                         self.sfr.devices["Iridium"].check_signal_passive()
+                                         if self.sfr.devices["Iridium"] is not None else 0])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -340,19 +341,11 @@ class CommandExecutor:
         else:
             tumble = self.sfr.devices["IMU"].get_tumble()
         hist_consumption = self.sfr.analytics.historical_consumption(50)
-        if hist_consumption.shape[0] > 0:
-            mean_consumption = hist_consumption.mean()
-        else:
-            mean_consumption = 0
         hist_generation = self.sfr.analytics.historical_generation(50)
-        if hist_generation.shape[0] > 0:
-            mean_generation= hist_generation.mean()
-        else:
-            mean_generation = 0
         
         self.transmit(packet, result := [
-            mean_consumption,  # Average power consumption
-            mean_generation,  # Average solar panel generation
+            hist_consumption.mean() if hist_consumption.shape[0] > 0 else 0,  # Average power consumption
+            hist_generation.mean() if hist_generation.shape[0] > 0 else 0,  # Average solar panel generation
             self.sfr.vars.ORBITAL_PERIOD,
             self.sfr.analytics.sunlight_ratio(50),  # Sunlight ratio over last 50 orbits
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
@@ -461,8 +454,8 @@ class CommandExecutor:
         """
         Transmits average power draw over n data points
         """
-        ls = self.sfr.analytics.historical_consumption(int(packet.args[0]))
-        self.transmit(packet, result := [ls.sum() / ls.size])
+        df = self.sfr.analytics.historical_consumption(int(packet.args[0]))
+        self.transmit(packet, result := [df.mean() if df.shape[0] > 0 else 0])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -470,7 +463,10 @@ class CommandExecutor:
         """
         Transmits last n power draw datapoints
         """
-        self.transmit(packet, result := list(self.sfr.analytics.historical_consumption(int(packet.args[0]))))
+        self.transmit(packet, result := self.sfr.analytics.historical_consumption(int(packet.args[0]))  # Read logs
+                      .to_numpy()  # Convert dataframe to numpy array
+                      .flatten()  # Convert shape to 1d
+                      .tolist())  # Convert numpy array to list
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -478,8 +474,11 @@ class CommandExecutor:
         """
         Transmits last n signal strength datapoints
         """
-        df = self.sfr.logs["iridium"].read().tail(int(packet.args[0]))  # Read logs
-        self.transmit(packet, result := df.to_numpy().flatten().tolist())
+        self.transmit(packet, result := self.sfr.logs["iridium"].read()  # Read log
+                      .tail(int(packet.args[0]))  # Get last n rows
+                      .to_numpy()  # Convert to numpy array
+                      .flatten()  # Compress to 1d
+                      .tolist())  # Convert to list
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -487,8 +486,10 @@ class CommandExecutor:
         """
         Transmits last n solar generation datapoints
         """
-        df = self.sfr.logs["solar"].read().tail(int(packet.args[0]))  # Read logs
-        self.transmit(packet, result := df.to_numpy().flatten().tolist())
+        self.transmit(packet, result := self.sfr.analytics.historical_generation(int(packet.args[0]))  # Last n rows
+                      .to_numpy()  # Convert to numpy array
+                      .flatten()  # Compress to 1d
+                      .tolist())  # Convert to list
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -496,8 +497,11 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        df = self.sfr.logs["imu"].read().tail(int(packet.args[0]))  # Read logs
-        self.transmit(packet, result := df.to_numpy().flatten().tolist())
+        self.transmit(packet, result := self.sfr.logs["imu"].read()
+                      .tail(int(packet.args[0]))
+                      .to_numpy()
+                      .flatten()
+                      .tolist())
         return result
 
     @wrap_errors(CommandExecutionException)
