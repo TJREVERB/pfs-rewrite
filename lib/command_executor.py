@@ -237,7 +237,7 @@ class CommandExecutor:
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
-        self.transmit(packet, result := [])  # OK code
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -246,7 +246,7 @@ class CommandExecutor:
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
-        self.transmit(packet, result := [])  # OK code
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -286,19 +286,6 @@ class CommandExecutor:
         self.transmit(packet, result := [dcode, success])
         return result
 
-    @wrap_errors(CommandExecutionException)
-    def DFT(self, packet: TransmissionPacket) -> list:
-        """
-        Locks a device off for a set amount of time
-        :return: list transmitted
-        :rtype: list
-        """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
-            raise CommandExecutionException("Invalid Device Code")
-        if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
-            raise CommandExecutionException("Device already locked")
-        self.transmit(packet, result := [dcode, time])
-        return result
         
     @wrap_errors(CommandExecutionException)
     def DNT(self, packet: TransmissionPacket) -> list:
@@ -314,6 +301,19 @@ class CommandExecutor:
         self.transmit(packet, result := [dcode, time])
         return result
 
+    @wrap_errors(CommandExecutionException)
+    def DFT(self, packet: TransmissionPacket) -> list:
+        """
+        Locks a device off for a set amount of time
+        :return: list transmitted
+        :rtype: list
+        """
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
+            raise CommandExecutionException("Invalid Device Code")
+        if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
+            raise CommandExecutionException("Device already locked")
+        self.transmit(packet, result := [dcode, time])
+        return result
 
     @wrap_errors(CommandExecutionException)
     def GCR(self, packet: TransmissionPacket) -> list:
@@ -339,11 +339,15 @@ class CommandExecutor:
         """
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
-                                         sum(self.sfr.recent_power())])
+                                         sum(self.sfr.recent_power()), 
+                                         self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0])
         return result
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
+        """
+        Transmits primary radio
+        """
         self.transmit(packet, result := [self.sfr.COMPONENTS.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
@@ -608,7 +612,7 @@ class CommandExecutor:
         """
         Adds component to failed components list
         """
-        if int(packet.args[0]) < 0 or int(packet.args[0]) > 3:
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid device code!")
         if self.sfr.COMPONENTS[int(packet.args[0])] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
@@ -622,11 +626,11 @@ class CommandExecutor:
         """
         Removes component to failed components list
         """
-        if (dcode := int(packet.args[0]) < 0) or dcode > 3:
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid device code!")
-        if self.sfr.COMPONENTS[dcode] not in self.sfr.vars.FAILURES:
+        if self.sfr.COMPONENTS[int(packet.args[0])] not in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component not marked as failed!")
-        self.sfr.vars.FAILURES.remove(self.sfr.COMPONENTS[dcode])
+        self.sfr.vars.FAILURES.remove(self.sfr.COMPONENTS[int(packet.args[0])])
         self.transmit(packet, result := [sum([1 << i for i in range(len(self.sfr.COMPONENTS))
                                               if self.sfr.COMPONENTS[i] in self.sfr.vars.FAILURES])])
         return result
@@ -677,7 +681,7 @@ class CommandExecutor:
     @wrap_errors(CommandExecutionException)
     def ITM(self, packet: TransmissionPacket) -> list:
         """
-        Transmits an OK code
+        Transmits No-op acknowledgement
         """
         self.transmit(packet, result := [])
         return result
