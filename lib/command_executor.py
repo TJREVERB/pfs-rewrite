@@ -55,6 +55,7 @@ class CommandExecutor:
             "ITM": self.ITM,
             "IPC": self.IPC,
             "IRB": self.IRB,
+            "ICT": self.ICT,
             "ICE": self.ICE,
             "IAK": self.IAK
             # TODO: Add gamer mode commands once done with dev
@@ -673,6 +674,14 @@ class CommandExecutor:
         """
         self.transmit(packet, [])
         os.system("sudo reboot")
+
+    def ICT(self, packet: TransmissionPacket):
+        """
+        Clears transmission queue, only to be used in an emergency
+        """
+        self.sfr.vars.transmit_buffer = []
+        self.transmit(packet, result := [])
+        return result
 
     @wrap_errors(CommandExecutionException)
     def ICE(self, packet: TransmissionPacket):
