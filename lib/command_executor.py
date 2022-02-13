@@ -576,7 +576,7 @@ class CommandExecutor:
         Enables or disables safe mode
         """
         self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)
