@@ -672,15 +672,6 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def ULG(self, packet: TransmissionPacket) -> list:
-        """
-        Transmit full rssi data logs
-        """
-        with open(self.sfr.command_log_path, "r") as f:
-            self.transmit(packet, result := [f.read()])
-        return result
-
-    @wrap_errors(CommandExecutionException)
     def ITM(self, packet: TransmissionPacket) -> list:
         """
         Transmits No-op acknowledgement
