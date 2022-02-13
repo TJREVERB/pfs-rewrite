@@ -614,8 +614,8 @@ class CommandExecutor:
         Transmits:
         1. Time since mission start
         2. Time since last satellite startup
-        3. Total power consumed over mission
-        4. Total power generated over mission
+        3. Total energy consumed over mission
+        4. Total energy generated over mission
         5. Total amount of data transmitted
         6. Orbital decay (seconds of period lost over mission duration)
         7. Total number of iridium commands received
