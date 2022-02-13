@@ -175,6 +175,29 @@ class CSVLog(Log):
             df.iloc[:-n].to_csv(self.path, mode="w", header=True, index=False)
 
 
+class NonWritableCSV(CSVLog):
+    """
+    A special log type which is read-only
+    """
+    @wrap_errors(LogicalError)
+    def clear(self):
+        """
+        Do nothing because log shouldn't ever be touched
+        """
+
+    @wrap_errors(LogicalError)
+    def write(self):
+        """
+        Do nothing because log shouldn't ever be touched
+        """
+
+    @wrap_errors(LogicalError)
+    def truncate(self):
+        """
+        Do nothing because log shouldn't ever be touched
+        """
+
+
 class Logger:
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
