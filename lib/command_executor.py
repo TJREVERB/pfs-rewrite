@@ -237,7 +237,7 @@ class CommandExecutor:
         Enable Mode Lock
         """
         self.sfr.vars.MODE_LOCK = True
-        self.transmit(packet, result := [])  # OK code
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -246,7 +246,7 @@ class CommandExecutor:
         Disable mode lock
         """
         self.sfr.vars.MODE_LOCK = False
-        self.transmit(packet, result := [])  # OK code
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -286,19 +286,6 @@ class CommandExecutor:
         self.transmit(packet, result := [dcode, success])
         return result
 
-    @wrap_errors(CommandExecutionException)
-    def DFT(self, packet: TransmissionPacket) -> list:
-        """
-        Locks a device off for a set amount of time
-        :return: list transmitted
-        :rtype: list
-        """
-        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
-            raise CommandExecutionException("Invalid Device Code")
-        if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
-            raise CommandExecutionException("Device already locked")
-        self.transmit(packet, result := [dcode, time])
-        return result
         
     @wrap_errors(CommandExecutionException)
     def DNT(self, packet: TransmissionPacket) -> list:
@@ -314,6 +301,19 @@ class CommandExecutor:
         self.transmit(packet, result := [dcode, time])
         return result
 
+    @wrap_errors(CommandExecutionException)
+    def DFT(self, packet: TransmissionPacket) -> list:
+        """
+        Locks a device off for a set amount of time
+        :return: list transmitted
+        :rtype: list
+        """
+        if (dcode := int(packet.args[0])) < 0 or dcode >= len(self.sfr.COMPONENTS):
+            raise CommandExecutionException("Invalid Device Code")
+        if not self.sfr.lock_device_off_timed(self.sfr.COMPONENTS[dcode], time := int(packet.args[1])):
+            raise CommandExecutionException("Device already locked")
+        self.transmit(packet, result := [dcode, time])
+        return result
 
     @wrap_errors(CommandExecutionException)
     def GCR(self, packet: TransmissionPacket) -> list:
@@ -677,7 +677,7 @@ class CommandExecutor:
     @wrap_errors(CommandExecutionException)
     def ITM(self, packet: TransmissionPacket) -> list:
         """
-        Transmits an OK code
+        Transmits No-op acknowledgement
         """
         self.transmit(packet, result := [])
         return result

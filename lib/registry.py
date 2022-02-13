@@ -133,8 +133,7 @@ class StateFieldRegistry:
         "EPS",
         "RTC",
         "UART-RS232",  # Iridium Serial Converter
-        "SPI-UART",  # APRS Serial Converter
-        "USB-UART"
+        "USB-UART"  # APRS Serial Converter
     ]
     UNSUCCESSFUL_SEND_TIME_CUTOFF = 60 * 60 * 24  # if it has been unsuccessfully trying to send messages
     # via iridium for this amount of time, switch primary to APRS
