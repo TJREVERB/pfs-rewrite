@@ -14,6 +14,7 @@ class JokesGame:
         with open("MainControlLoop/Mode/outreach/jokes/jokes.txt", "r") as f:
             txt = f.read()
             lines = [str(line) for line in txt.split()]
+            print(lines)
             return random.choice(lines)
 
     def set_joke(self, joke_type):  # set joke type
