@@ -56,6 +56,8 @@ class ChessGame:
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
         print("EEEE")
         result = engine.play(self.board, chess.engine.Limit(time=0.2))
+        print("FFFF")
+        engine.quit()
         return result.move
 
     def get_best_move(self):
