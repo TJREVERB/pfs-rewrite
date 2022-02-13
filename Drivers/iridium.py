@@ -1,6 +1,6 @@
 import time, datetime
 import math
-from numpy import nan
+from numpy import nan, NaN
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -291,7 +291,7 @@ class Iridium(Device):
 
         if packet.numerical:
             for n in packet.return_data:
-                n = 0 if n is nan else n
+                n = 0 if n is nan or n is NaN else n
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
