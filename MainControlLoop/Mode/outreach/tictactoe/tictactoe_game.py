@@ -147,11 +147,12 @@ class TicTacToeGame:
         return [i for i in possible_moves if self.is_valid_move(i)]
 
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
-        location = [int(i) for i in location]
+        location = list(map(int, location))
+        x, y = location[0], location[1]
         if self.is_ai_turn:
-            self.ai_board[location] = 1.0
+            self.ai_board[x][y] = 1.0
         else:
-            self.human_board[location] = 1.0
+            self.human_board[x][y] = 1.0
         self.switch_turn()
 
     def push_move_to_copy(self, location: list):
@@ -161,8 +162,11 @@ class TicTacToeGame:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        bits = np.flatten(array).vectorize(round).astype(str)
-        return int("".join(bits), 2)
+        new_list = list(np.reshape(array, (3 ** 2,)))
+        new_list = map(int, new_list)
+        new_list = list(map(str, new_list))
+        bitboard = int("".join(new_list), 2)
+        return bitboard
 
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
