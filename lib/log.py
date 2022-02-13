@@ -74,7 +74,7 @@ class JSONLog(Log):
             os.remove(self.path)  # Delete
         open(self.path, "x").close()  # Create empty file
 
-    ##@Log.access_wrap
+    @Log.access_wrap
     def write(self, data: dict):
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -83,7 +83,7 @@ class JSONLog(Log):
         with open(self.path, "w") as f:
             json.dump(data, f)  # Dump to file
 
-    ##@Log.access_wrap
+    @Log.access_wrap
     def read(self) -> dict:
         """
         Read and return entire log
@@ -106,7 +106,7 @@ class PKLLog(Log):
         if os.path.exists(self.path):  # If file exists
             os.remove(self.path)  # Delete
 
-    #@Log.access_wrap
+    @Log.access_wrap
     def write(self, data: object):
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -115,7 +115,7 @@ class PKLLog(Log):
         with open(self.path, "wb") as f:
             pickle.dump(data, f)  # Dump to file
 
-    #@Log.access_wrap
+    @Log.access_wrap
     def read(self) -> object:
         """
         Read and return entire log
@@ -141,7 +141,7 @@ class CSVLog(Log):
         with open(self.path, "w") as f:  # Open file
             f.write(",".join(self.headers) + "\n")  # Write headers + newline
 
-    #@Log.access_wrap
+    @Log.access_wrap
     def write(self, data: dict) -> None:
         """
         Append one line of data to a csv log or dump to a pickle or json log
@@ -156,7 +156,7 @@ class CSVLog(Log):
         else:
             new_row.to_csv(self.path, mode="a", header=False, index=False)  # Append to log
 
-    #@Log.access_wrap
+    @Log.access_wrap
     def read(self) -> pd.DataFrame:
         """
         Read and return entire log
@@ -164,7 +164,7 @@ class CSVLog(Log):
         """
         return pd.read_csv(self.path, header=0)
 
-    #@Log.access_wrap
+    @Log.access_wrap
     def truncate(self, n):
         """
         Remove n rows from csv log
