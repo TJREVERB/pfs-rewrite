@@ -57,10 +57,15 @@ class ChessGame:
         #result.move
 
     def get_best_move(self):
-        asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        result = asyncio.run(self._get_best_move())
-        # result = self._get_best_move()
-        return result
+        while True:
+            try:
+                asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
+                result = asyncio.run(self._get_best_move())
+            except:
+                print("CHESS EXCEPTION: "+ str(self.board))
+                continue
+            else:
+                return result
 
     def push(self, move: chess.Move):
         """
