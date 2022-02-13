@@ -13,7 +13,6 @@ class JokesGame:
     def get_joke(self):
         with open("MainControlLoop/Mode/outreach/jokes/jokes.txt", "r") as f:
             lines = f.readlines()
-            print(lines)
             return random.choice(lines).strip()
 
     def set_joke(self, joke_type):  # so that it works with outreach.py
