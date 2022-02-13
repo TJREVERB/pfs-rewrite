@@ -14,16 +14,16 @@ class JokesGame:
         with open("MainControlLoop/Mode/outreach/jokes/jokes.txt", "r") as f:
             lines = f.readlines()
             print(lines)
-            return random.choice(lines)
+            return random.choice(lines).strip()
 
-    def set_joke(self, joke_type):  # set joke type
+    def set_joke(self, joke_type):  # so that it works with outreach.py
         pass
 
     def get_best_move(self):  # so that it works with outreach.py
         self.joke = self.get_joke()
         return self.joke
 
-    def push(self):  # so that it works with outreach.py
+    def push(self, move):  # so that it works with outreach.py
         pass
 
 
