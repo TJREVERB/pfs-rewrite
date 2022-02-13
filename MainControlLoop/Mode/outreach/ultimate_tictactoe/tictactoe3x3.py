@@ -98,8 +98,7 @@ class TicTacToe:
         """
 
         possible_moves = [[x, y] for y in range(3) for x in range(3)]
-        legal_move_distribution = list(map(self.is_valid_move, possible_moves))
-        valid_moves = [possible_moves[i] for i in range(9) if legal_move_distribution[i] is True]
+        valid_moves = [move for move in possible_moves if self.is_valid_move(move)]
         return valid_moves
 
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
