@@ -11,7 +11,7 @@ from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
-from lib.log import CSVLog, JSONLog, PKLLog
+from lib.log import CSVLog, JSONLog, PKLLog, NonWritableCSV
 from lib.log import Logger
 from lib.clock import Clock
 from lib.exceptions import wrap_errors, LogicalError
@@ -155,7 +155,7 @@ class StateFieldRegistry:
             "sfr_readable": JSONLog("./lib/data/state_field_log.json"),
             "power": CSVLog("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": CSVLog("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
-            "voltage_energy": CSVLog("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
+            "voltage_energy": NonWritableCSV("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
             "orbits": CSVLog("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
             "iridium": CSVLog("./lib/data/iridium_data.csv",
                               ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
