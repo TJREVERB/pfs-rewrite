@@ -46,21 +46,27 @@ class ChessGame:
             raise Exception
         transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
         result = await engine.play(
-            self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+            self.board, chess.engine.Limit(time=0.2))
         result = result.move
+        print(result)
         await engine.quit()
         return result
 
     def __get_best_move(self):
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
-        result = engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+        result = engine.play(self.board, chess.engine.Limit(time=0.2))
         #result.move
 
     def get_best_move(self):
-        asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        result = asyncio.run(self._get_best_move())
-        # result = self._get_best_move()
-        return result
+        while True:
+            try:
+                asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
+                result = asyncio.run(self._get_best_move())
+            except:
+                print("CHESS EXCEPTION: " + str(self.board))
+                continue
+            else:
+                return result
 
     def push(self, move: chess.Move):
         """
