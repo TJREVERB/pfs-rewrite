@@ -345,6 +345,9 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def GPR(self, packet: TransmissionPacket):
+        """
+        Transmits primary radio
+        """
         self.transmit(packet, result := [self.sfr.COMPONENTS.index(self.sfr.vars.PRIMARY_RADIO)])
         return result
 
