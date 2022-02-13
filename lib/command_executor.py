@@ -612,7 +612,7 @@ class CommandExecutor:
         """
         Adds component to failed components list
         """
-        if int(packet.args[0]) < 0 or int(packet.args[0]) > 3:
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid device code!")
         if self.sfr.COMPONENTS[int(packet.args[0])] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
@@ -626,11 +626,11 @@ class CommandExecutor:
         """
         Removes component to failed components list
         """
-        if (dcode := int(packet.args[0]) < 0) or dcode > 3:
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
             raise CommandExecutionException("Invalid device code!")
-        if self.sfr.COMPONENTS[dcode] not in self.sfr.vars.FAILURES:
+        if self.sfr.COMPONENTS[int(packet.args[0])] not in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component not marked as failed!")
-        self.sfr.vars.FAILURES.remove(self.sfr.COMPONENTS[dcode])
+        self.sfr.vars.FAILURES.remove(self.sfr.COMPONENTS[int(packet.args[0])])
         self.transmit(packet, result := [sum([1 << i for i in range(len(self.sfr.COMPONENTS))
                                               if self.sfr.COMPONENTS[i] in self.sfr.vars.FAILURES])])
         return result
