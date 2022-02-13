@@ -47,15 +47,12 @@ If you see a robbery at an Apple Store what re you? An iWitness?
 Spring is here! I got so excited I wet my plants!
 What’s Forrest Gump’s password? 1forrest1
 Why did the Clydesdale give the pony a glass of water? Because he was a little horse!
-CASHIER: "Would you like the milk in a bag, sir?" DAD: "No, just leave it in the carton!’”
 Did you hear about the guy who invented Lifesavers? They say he made a mint.
 I bought some shoes from a drug dealer. I don't know what he laced them with, but I was tripping all day!
 Why do chicken coops only have two doors? Because if they had four, they would be chicken sedans!
 How do you make a Kleenex dance? Put a little boogie in it!
-A termite walks into a bar and asks"Is the bar tender here?"
 Why did the invisible man turn down the job offer? He couldn't see himself doing it.
 I used to have a job at a calendar factory but I got the sack because I took a couple of days off.
-A woman is on trial for beating her husband to death with his guitar collection. Judge says, "First offender?" She says, "No, first a Gibson! Then a Fender!”
 How do you make holy water? You boil the hell out of it.
 I had a dream that I was a muffler last night. I woke up exhausted!
 Did you hear about the circus fire? It was in tents!
@@ -156,8 +153,6 @@ How many tickles does it take to tickle an octopus? Ten-tickles!
 What musical instrument is found in the bathroom? A tuba toothpaste.
 My boss told me to attach two pieces of wood together... I totally nailed it!
 What was the pumpkin’s favorite sport?Squash.
-Nikhil's code
-One line
 What do you call corn that joins the army? Kernel.
 I've been trying to come up with a dad joke about momentum but I just can't seem to get it going.
 Why don't sharks eat clowns?  Because they taste funny.
@@ -251,3 +246,4 @@ How do you weigh a millennial? In Instagrams.
 The wedding was so beautiful even the cake was in tiers.
 What’s the most patriotic sport? Flag football.
 Dictionary Comprehensions.
+Nikhil's code.

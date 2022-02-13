@@ -13,7 +13,7 @@ class JokesGame:
     def get_joke(self):
         with open("MainControlLoop/Mode/outreach/jokes/jokes.txt", "f") as f:
             txt = f.read()
-            lines = list(map(str, txt.split()))
+            lines = [str(line) for line in txt.split()]
             return random.choice(lines)
 
     def set_joke(self, joke_type):  # set joke type

@@ -99,7 +99,7 @@ class Outreach(Mode):
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
-                game = f"Joke;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
+                game = f"Jokes;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
 
     def execute_cycle(self) -> None:
