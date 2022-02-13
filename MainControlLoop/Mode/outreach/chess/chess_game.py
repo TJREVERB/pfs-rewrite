@@ -42,11 +42,13 @@ class ChessGame:
         :rtype: :class: 'chess.Move'
         """
         if self.board.is_valid():
-            transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-            result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
-            result = result.move
-            await engine.quit()
-            return result
+            with asyncio.run(chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')) as tup:
+                transport, engine = tup
+                # transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
+                result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+                result = result.move
+                await engine.quit()
+                return result
         else:
             print("INVALID BOARD")
             raise Exception
