@@ -33,7 +33,7 @@ class Log:
         """
         def wrapped(self, *args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
             except Exception as e:
                 print(f"Error in handling log of type {type(self.sub).__name__}: {e}")
                 print("Assuming corruption, attempting to proceed by clearing log")
