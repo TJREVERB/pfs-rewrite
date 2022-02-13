@@ -21,8 +21,8 @@ class TicTacToe:
         x-ooox--x
         """
         encoded_string = ""
-        human_board = self.human_board.flatten()
-        ai_board = self.ai_board.flatten()
+        human_board = self.human_board.reshape((9,))
+        ai_board = self.ai_board.reshape((9,))
         for i in range(9):
             if int(human_board[i]) == 1:
                 encoded_string += "x"
