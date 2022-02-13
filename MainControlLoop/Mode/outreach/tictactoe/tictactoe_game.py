@@ -135,7 +135,7 @@ class TicTacToeGame:
             return False
         elif any([i > 2 or i < 0 for i in location]):
             return False
-        elif not self.human_board[x := location[0]][y := location[1]] == 0 and not self.ai_board[x][y] == 0:
+        elif not self.human_board[x := location[0]][y := location[1]] == 0 and self.ai_board[x][y] == 0:
             return False
         return True
 
