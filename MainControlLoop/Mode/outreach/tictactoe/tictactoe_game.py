@@ -71,6 +71,7 @@ class TicTacToeGame:
             return list(table[game_string])
         del table
 
+        # WILL NEVER EXECUTE
         possible_moves = self.get_valid_moves()
         best = -10000
         best_move = possible_moves[0]  # in case weird error where no move calculated
@@ -127,21 +128,16 @@ class TicTacToeGame:
         return 0, 0
 
     def switch_turn(self):
-        if self.is_ai_turn:
-            self.is_ai_turn = False
-        else:
-            self.is_ai_turn = True
+        self.is_ai_turn = not self.is_ai_turn
 
     def is_valid_move(self, location: list) -> bool:
-        x, y = location[0], location[1]
-        if type(x) != int or type(y) != int:
+        if any([type(i) != int for i in location]):
             return False
-        if x > 2 or x < 0 or y > 2 or y < 0:
+        elif any([i > 2 or i < 0 for i in location]):
             return False
-        if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
-            return True
-        else:
+        elif not self.human_board[location] == 0 and self.ai_board[location] == 0:
             return False
+        return True
 
     def get_valid_moves(self) -> list:
         """
