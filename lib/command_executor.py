@@ -365,9 +365,20 @@ class CommandExecutor:
             tumble = ((0, 0, 0), (0, 0, 0))
         else:
             tumble = self.sfr.devices["IMU"].get_tumble()
+        hist_consumption = self.sfr.analytics.historical_consumption(50)
+        if len(hist_consumption) > 0:
+            mean_consumption = 0
+        else:
+            mean_consumption = hist_consumption.mean()
+        hist_generation = self.sfr.analytics.historical_generation(50)
+        if len(hist_generation) > 0:
+            mean_generation= 0
+        else:
+            mean_generation = hist_generation.mean()
+        
         self.transmit(packet, result := [
-            self.sfr.analytics.historical_consumption(50).mean(),  # Average power consumption
-            self.sfr.analytics.historical_generation(50).mean(),  # Average solar panel generation
+            mean_consumption,  # Average power consumption
+            mean_generation,  # Average solar panel generation
             self.sfr.vars.ORBITAL_PERIOD,
             self.sfr.analytics.sunlight_ratio(50),  # Sunlight ratio over last 50 orbits
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
