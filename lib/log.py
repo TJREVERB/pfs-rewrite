@@ -133,7 +133,7 @@ class CSVLog(Log):
         """
         self.headers = headers
         super().__init__(path, self)
-        if pd.read_csv(self.path).columns.tolist() != self.headers:
+        if (df := pd.read_csv(self.path)).shape[0] > 0 and df.columns.tolist() != self.headers:
             self.clear()  # Clear log if columns don't match up (out of date log)
         
     @wrap_errors(LogicalError)
