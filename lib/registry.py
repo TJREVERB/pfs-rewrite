@@ -369,8 +369,7 @@ class StateFieldRegistry:
         WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG
         """
         for i in self.logs.keys():
-            if i != "voltage_energy":
-                self.logs[i].clear()
+            self.logs[i].clear()
         print("Logs cleared")
 
     @wrap_errors(LogicalError)
