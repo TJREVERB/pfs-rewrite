@@ -23,8 +23,6 @@ class CommandExecutor:
             "DLN": self.DLN,
             "DLF": self.DLF,
             "DDF": self.DDF,
-            "DNT": self.DNT,
-            "DFT": self.DFT,
             "GCR": self.GCR,
             "GVT": self.GVT,
             "GPL": self.GPL,
