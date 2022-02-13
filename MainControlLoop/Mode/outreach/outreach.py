@@ -114,8 +114,8 @@ class Outreach(Mode):
         time_started = time.time()
         while len(self.object_game_queue) > 0:
             game = self.object_game_queue.pop()
-            print(game)
             ai_move = game.get_best_move()
+            print(game)
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))
