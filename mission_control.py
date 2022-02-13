@@ -80,7 +80,7 @@ class MissionControl:
             if any([i.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT for i in self.sfr.vars.transmit_buffer]):
                 if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES:
                     self.sfr.set_primary_radio("APRS", True)
-                    self.sfr.devices["APRS"].transmit(UnsolicitedString("PRIMARY RADIO SWITCHED"))
+                    self.sfr.command_executor.transmit(UnsolicitedString("PRIMARY RADIO SWITCHED"))
 
     def testing_mode(self, e: Exception):
         """

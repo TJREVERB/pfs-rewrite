@@ -1,6 +1,6 @@
 import time, datetime
 import math
-from numpy import nan
+from numpy import nan, NaN
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -36,12 +36,13 @@ class Iridium(Device):
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 
-    MAX_DATASIZE = 300 # Maximum permissible data size including descriptor size, in bytes. Hardware limitation should be 340 bytes total
+    # Maximum permissible data size including descriptor size, in bytes. Hardware limitation should be 340 bytes total
+    MAX_DATASIZE = 300
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
     ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
-        "GRB", # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
+        "GRB",  # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
         "MCH",
         "MSC",
         "MOU",
@@ -102,8 +103,8 @@ class Iridium(Device):
 
         # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
         # Optional param location
-        self.REGISTER = lambda location="": self.request("AT+SBDREG") if len(location) == 0 \
-            else self.request("AT+SBDREG=" + location)
+        self.REGISTER = lambda location=None: self.request(f"AT+SBDREG={location}") if location \
+            else self.request("AT+SBDREG")
 
         self.MODEL = lambda: self.request("AT+CGMM")
         self.PHONE_REV = lambda: self.request("AT+CGMR")
@@ -120,14 +121,13 @@ class Iridium(Device):
         # ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF")  # Returns last known signal strength, immediately
 
-        self.CIER = lambda ls: self.request(
-            "AT+CIER=" + ",".join([str(s) for s in ls]))  # Sets unsolicited notifications of signal strength on or off
+        # Sets unsolicited notifications of signal strength on or off
+        self.CIER = lambda ls: self.request("AT+CIER=" + ",".join([str(s) for s in ls]))
 
         # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI
         # line and issues the unsolicited result code SBDRING when an SBD ring alert is received Ring alerts can only
         # be sent after the unit is registered :optional param b: set 1/0 enable/disable
-        self.RING_ALERT = lambda b="": self.request("AT+SBDMTA") if len(str(b)) == 0 \
-            else self.request("AT+SBDMTA" + str(b))
+        self.RING_ALERT = lambda b="": self.request(f"AT+SBDMTA{b}")
 
         # doesn't seem relevant to us?
         self.BAT_CHECK = lambda: self.request("AT+CBC")
@@ -136,13 +136,13 @@ class Iridium(Device):
         self.SOFT_RST = lambda: self.request("ATZn", 1)
 
         # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary. 
-        self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
+        self.SBD_WT = lambda message: self.request(f"AT+SBDWT={message}")
         # For SBDWB, input message byte length
         # Once "READY" is read in, write each byte, then the two least significant checksum bytes, MSB first
         # Final response: 0: success, 1: timeout (insufficient number of bytes transferred in 60 seconds)
         # 2: Checksum does not match calculated checksum, 3: message length too long or short
         # Keep messages 340 bytes or shorter
-        self.SBD_WB = lambda length: self.write("AT+SBDWB=" + str(length))
+        self.SBD_WB = lambda length: self.write(f"AT+SBDWB={length}")
         # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is
         # contained in buffer at a time
         self.SBD_RT = lambda: self.request("AT+SBDRT")
@@ -162,8 +162,7 @@ class Iridium(Device):
 
         # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS,
         # in seconds. 0 means infinite timeout
-        self.SBD_TIMEOUT = lambda time="": self.request("AT+SBDST") if len(str(time)) == 0 \
-            else self.request("AT+SBDST=" + str(time))
+        self.SBD_TIMEOUT = lambda t=None: self.request(f"AT+SBDST={t}") if t else self.request("AT+SBDST")
 
         # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to
         # ISU without initiating SBD sessions with GSS/ESS returns response of the form "SBDTC: Outbound SBD copied
@@ -291,7 +290,7 @@ class Iridium(Device):
 
         if packet.numerical:
             for n in packet.return_data:
-                n = 0 if n is nan else n
+                n = 0 if n is nan or n is NaN else n
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:

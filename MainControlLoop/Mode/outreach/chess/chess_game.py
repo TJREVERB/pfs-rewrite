@@ -55,7 +55,7 @@ class ChessGame:
             print("INVALID BOARD")
             raise Exception
 
-    def __get_best_mvoe(self):
+    def __get_best_move(self):
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
         result = engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
         #result.move

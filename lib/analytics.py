@@ -65,7 +65,7 @@ class Analytics:
         :rtype: :class:'pd.Series'
         """
         df = self.sfr.logs["solar"].read().tail(n)
-        return (sums := df[df[self.sfr.PANELS].sum(axis=1)])[sums > self.sfr.eps.SUN_DETECTION_THRESHOLD]
+        return (sums := df[self.sfr.PANELS].sum(axis=1))[sums > self.sfr.eps.SUN_DETECTION_THRESHOLD]
 
     @wrap_errors(LogicalError)
     def predicted_consumption(self, duration: int) -> float:
@@ -210,10 +210,11 @@ class Analytics:
         :return: what fraction of each orbit we spend in sunlight (0 if not enough data)
         :rtype: float
         """
-        orbits_data = pd.read_csv(self.sfr.orbit_log_path, header=0).tail(n * 2 + 1)
+        orbits_data = self.sfr.logs["orbits"].read().tail(n * 2 + 1)
+        orbits_data["timestamp"] = orbits_data["ts0"] + orbits_data["ts1"]
         # Calculate sunlight period
-        if len(orbits_data > 2):
-            sunlight_period = orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"].diff(periods=2).mean()
+        if len(orbits_data) > 2:
+            sunlight_period = (orbits_data[orbits_data["phase"] == "sunlight"]["timestamp"]).diff(periods=2).mean()
         else:
             sunlight_period = 0
         return sunlight_period / self.sfr.vars.ORBITAL_PERIOD  # How much of our orbit we spend in sunlight
