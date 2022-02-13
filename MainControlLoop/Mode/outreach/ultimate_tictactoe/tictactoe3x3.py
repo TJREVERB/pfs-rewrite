@@ -82,15 +82,13 @@ class TicTacToe:
             self.is_ai_turn = True
 
     def is_valid_move(self, location: list) -> bool:
-        x, y = location[0], location[1]
-        if type(x) != int or type(y) != int:
+        if any([type(i) != int for i in location]):
             return False
-        if x > 2 or x < 0 or y > 2 or y < 0:
+        elif any([i > 2 or i < 0 for i in location]):
             return False
-        if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
-            return True
-        else:
+        elif not self.human_board[location] == 0 and self.ai_board[location] == 0:
             return False
+        return True
 
     def get_valid_moves(self) -> list:
         """
@@ -102,12 +100,11 @@ class TicTacToe:
         return valid_moves
 
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
-        location = list(map(int, location))
-        x, y = location[0], location[1]
+        location = [int(i) for i in location]
         if self.is_ai_turn:
-            self.ai_board[x][y] = 1.0
+            self.ai_board[location] = 1.0
         else:
-            self.human_board[x][y] = 1.0
+            self.human_board[location] = 1.0
         self.switch_turn()
 
     def push_move_to_copy(self, location: list):
@@ -117,11 +114,8 @@ class TicTacToe:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = list(np.reshape(array, (9,)))
-        new_list = map(int, new_list)
-        new_list = list(map(str, new_list))
-        bitboard = int("".join(new_list), 2)
-        return bitboard
+        bits = np.flatten(array).vectorize(round).astype(str)
+        return int("".join(bits), 2)
 
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
