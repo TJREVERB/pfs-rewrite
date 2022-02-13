@@ -55,18 +55,19 @@ class ChessGame:
     def __get_best_move(self):
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
         result = engine.play(self.board, chess.engine.Limit(time=0.2))
-        #result.move
+        return result.move
 
     def get_best_move(self):
-        while True:
-            try:
-                asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-                result = asyncio.run(self._get_best_move())
-            except:
-                print("CHESS EXCEPTION: " + str(self.board))
-                continue
-            else:
-                return result
+        return self.__get_best_move()
+        #while True:
+        #    try:
+        #        asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
+        #        result = asyncio.run(self._get_best_move())
+        #    except:
+        #        print("CHESS EXCEPTION: " + str(self.board))
+        #        continue
+        #    else:
+        #        return result
 
     def push(self, move: chess.Move):
         """
