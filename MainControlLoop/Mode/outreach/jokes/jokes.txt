@@ -247,3 +247,4 @@ The wedding was so beautiful even the cake was in tiers.
 What’s the most patriotic sport? Flag football.
 Dictionary Comprehensions.
 Nikhil's code.
+An f string a day, keeps the java mains away
