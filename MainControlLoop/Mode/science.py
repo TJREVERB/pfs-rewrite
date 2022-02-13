@@ -12,7 +12,7 @@ class Science(Mode):
     Battery charges at a low rate while in this mode
     """
     # number of pings to do to complete orbit
-    NUMBER_OF_REQUIRED_PINGS = 5  # TODO: UPDATE TO 90
+    NUMBER_OF_REQUIRED_PINGS = 10  # TODO: UPDATE TO 90
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -98,7 +98,7 @@ class Science(Mode):
         print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN)
         print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY)
         # Transmit signal strength variability
-        self.sfr.command_executor.GID(UnsolicitedData("GID"))
+        self.sfr.command_executor.ASV(UnsolicitedData("ASV", args = [self.NUMBER_OF_REQUIRED_PINGS]))
         return True
 
     @wrap_errors(LogicalError)
