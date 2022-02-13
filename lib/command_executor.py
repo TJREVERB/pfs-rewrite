@@ -657,7 +657,7 @@ class CommandExecutor:
         self.sfr.all_off(override_default_exceptions=True)
         time.sleep(.5)
         if not packet.simulate:
-            exit(0)  # Exit script, eps will reset after 4 minutes without ping
+            exit(0)  # Exit script, eps will reset after 16 minutes without ping
         return result
 
     @wrap_errors(CommandExecutionException)
