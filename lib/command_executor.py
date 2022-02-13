@@ -366,12 +366,12 @@ class CommandExecutor:
         else:
             tumble = self.sfr.devices["IMU"].get_tumble()
         hist_consumption = self.sfr.analytics.historical_consumption(50)
-        if len(hist_consumption) > 0:
+        if hist_consumption.shape[0] > 0:
             mean_consumption = 0
         else:
             mean_consumption = hist_consumption.mean()
         hist_generation = self.sfr.analytics.historical_generation(50)
-        if len(hist_generation) > 0:
+        if hist_generation.shape[0] > 0:
             mean_generation= 0
         else:
             mean_generation = hist_generation.mean()
