@@ -35,25 +35,21 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
-    def _get_best_move(self) -> chess.Move:
+    async def _get_best_move(self) -> chess.Move:
         """
         Get best move by using Stockfish
         :return: best move
         :rtype: :class: 'chess.Move'
         """
-        if self.board.is_valid():
-            with asyncio.run(chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')) as tup:
-                transport, engine = tup
-                # transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-                result = asyncio.run(engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))))
-                # result = await engine.play(self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
-                result = result.move
-                # await engine.quit()
-                asyncio.run(engine.quit())
-                return result
-        else:
+        if not self.board.is_valid():
             print("INVALID BOARD")
             raise Exception
+        transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
+        result = await engine.play(
+            self.board, chess.engine.Limit(time=float(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)))
+        result = result.move
+        await engine.quit()
+        return result
 
     def __get_best_move(self):
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
@@ -62,8 +58,8 @@ class ChessGame:
 
     def get_best_move(self):
         asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        # result = asyncio.run(self._get_best_move())
-        result = self._get_best_move()
+        result = asyncio.run(self._get_best_move())
+        # result = self._get_best_move()
         return result
 
     def push(self, move: chess.Move):
