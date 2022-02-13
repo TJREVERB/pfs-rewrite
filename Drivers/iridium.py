@@ -1,6 +1,6 @@
 import time, datetime
 import math
-from numpy import nan, NaN
+from pandas import nan, NaN
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
