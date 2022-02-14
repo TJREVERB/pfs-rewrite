@@ -698,15 +698,9 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        # TODO: packet can only have a single string arg
-        # So you gotta figure out a delimiter for these and only use args[0]
-        # game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
-        # game_type, game_string, game_id = packet.args  # Tuple unpacking exists
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
-        # self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
-        # Don't unpack a tuple into 3 variables and join them with an f string please
-        self.sfr.MODE.game_queue.append(";".join(packet.args))
+        self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
