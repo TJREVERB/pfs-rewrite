@@ -1,7 +1,6 @@
 import datetime
 import os
 import time
-import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
