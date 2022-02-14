@@ -40,8 +40,8 @@ class Vars:
         self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
-        self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE (* .8)
+        self.LOWER_THRESHOLD = 133732.8 * .3
+        self.UPPER_THRESHOLD = 133732.8 * .8
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
@@ -138,8 +138,8 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to something
-    VOLT_LOWER_THRESHOLD = 7.3  # TODO: update this value to something
+    VOLT_UPPER_THRESHOLD = 8.0
+    VOLT_LOWER_THRESHOLD = 7.3
 
     @wrap_errors(LogicalError)
     def __init__(self):
@@ -233,8 +233,6 @@ class StateFieldRegistry:
         :return: whether switch is required
         :rtype: bool
         """
-        print(f"Checking lower threshold, vbat "
-              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
@@ -250,21 +248,11 @@ class StateFieldRegistry:
         :return: loaded fields
         :rtype: :class: 'lib.registry.Vars'
         """
-        defaults = Vars(self)
-        return defaults  # TODO: DEBUG
-        try:
-            fields = self.logs["sfr"].read()
-            if fields.to_dict().keys() == defaults.to_dict().keys():
-                print("Loading sfr from log...")
-                return fields
-            print("Invalid log, loading default sfr...")
+        if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
+            return Vars(self)
+        if fields.to_dict().keys() != (defaults := Vars(self)).to_dict().keys():
             return defaults
-        except LogicalError as e:
-            if e.exception is not None:
-                if type(e.exception) == FileNotFoundError:
-                    print("Log missing, loading default sfr...")
-                    return defaults
-            raise
+        return fields
 
     @wrap_errors(LogicalError)
     def dump(self) -> None:

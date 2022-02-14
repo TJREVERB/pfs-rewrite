@@ -14,20 +14,15 @@ class Mode:
     """
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr):
         """
         Initializes constants specific to instance of Mode
         :param sfr: sfr object
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
-        :param wait: poll iridium ever "wait" seconds, defaults to 10
-        :type wait: int, optional
-        :param thresh: signal threshold for polling iridium, defaults to 2
-        :type thresh: int, optional
         """
-        self.SIGNAL_THRESHOLD = thresh  # TODO: FIX
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
+        self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
         self.heartbeat_clock = Clock(300)  # Five minutes between each heartbeat ping
 
     @wrap_errors(LogicalError)
@@ -100,7 +95,7 @@ class Mode:
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
         print("Iridium signal strength: ", signal)
-        if signal <= self.SIGNAL_THRESHOLD:
+        if signal <= 0:
             return False
 
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
