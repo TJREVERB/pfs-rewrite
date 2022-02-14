@@ -52,7 +52,8 @@ class MissionControl:
             }
             self.transmission_queue_clock = Clock(10)
         except Exception as e:
-            self.testing_mode(e)  # TODO: change this for real pfs
+            if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                self.error_handle(e)  # Handle error
 
     def main(self):
         """
@@ -61,51 +62,24 @@ class MissionControl:
         try:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
-            self.testing_mode(e)
+            if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                self.error_handle(e)  # Handle error
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
                 self.safe_mode()
             else:
-                print("=================================================== ~ MCL ITERATION ~ "
-                      "===================================================")
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                        self.testing_mode(e)  # Debug
-                        # self.error_handle(e)  # Handle error, uncomment when done testing low level things
+                        self.error_handle(e)  # Handle error
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
             # If any packet has been in the queue for too long and APRS is not locked off, switch primary radio
             if any([i.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT for i in self.sfr.vars.transmit_buffer]):
                 if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES:
                     self.sfr.set_primary_radio("APRS", True)
                     self.sfr.command_executor.transmit(UnsolicitedString("PRIMARY RADIO SWITCHED"))
-
-    def testing_mode(self, e: Exception):
-        """
-        DEBUG ONLY!!!
-        Print current mode, values of sfr, exception's repr
-        Then cleanly exit
-        """
-        print("ERROR!!!")
-        try:
-            print(f"Currently in {type(self.sfr.MODE).__name__}")
-            print("State field registry fields:")
-            print(self.sfr.vars.to_dict())
-        except Exception:
-            print("Error in sfr init, unable to print mode and sfr fields")
-        print("Exception: " + repr(e))
-        print("Traceback:\n" + get_traceback())
-        try:
-            self.sfr.all_off()
-        except Exception:
-            print("PDM power cycle failed! Manually power cycle before next testing run")
-        try:
-            self.sfr.clear_logs()
-        except Exception:
-            print("Log clearing failed! Consider manually clearing logs before next run")
-        exit(1)
 
     def troubleshoot(self, e: Exception) -> bool:
         """
@@ -165,7 +139,8 @@ class MissionControl:
 
         self.sfr.command_executor.execute_buffers()  # Execute all received commands
         if self.transmission_queue_clock.time_elapsed():  # Once every 10 seconds
-            if self.sfr.devices["Iridium"] is not None and self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD: 
+            if self.sfr.devices["Iridium"] is not None and \
+                    self.sfr.devices["Iridium"].check_signal_passive() >= self.SIGNAL_THRESHOLD:
                 # If iridium is on and signal is present
                 self.sfr.command_executor.transmit_queue()  # Attempt to transmit entire transmission queue
                 self.transmission_queue_clock.update_time()
@@ -175,7 +150,6 @@ class MissionControl:
                 self.transmission_queue_clock.update_time()
 
         if self.sfr.check_lower_threshold():  # if battery is low
-            print("cry")
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(5400)  # charge for one orbit
@@ -196,7 +170,6 @@ class MissionControl:
         Attempt to troubleshoot Iridium
         Raises error if troubleshooting fails
         """
-        print(get_traceback())  # TODO: DEBUG
         self.sfr.vars.FAILURES.append("Iridium")
         self.sfr.reboot("Iridium")
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
@@ -246,8 +219,8 @@ class MissionControl:
             self.sfr.vars.FAILURES.remove("Antenna Deployer")
         except Exception as e:  # Lock off APRS to avoid damaging satellite
             self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
-            self.sfr.set_primary_radio("Iridium", True)
-            raise e
+            self.sfr.set_primary_radio("Iridium", True)  # Implicit APRS switch off
+            raise
 
     def high_power_draw_troubleshoot(self):
         """

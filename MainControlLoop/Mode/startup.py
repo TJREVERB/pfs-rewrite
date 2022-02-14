@@ -14,8 +14,8 @@ class Startup(Mode):
     Deploys antenna after maximum threshold regardless of tumble status
     Establishes contact with ground
     """
-    ANTENNA_WAIT_TIME = 15  # TODO: CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 1800 seconds
-    ANTENNA_MAXIMUM_THRESHOLD = 5400  # TODO: CHANGE ARBITRARY VALUE
+    ANTENNA_WAIT_TIME = 2700  # 45 minutes
+    ANTENNA_MAXIMUM_THRESHOLD = 86400  # 1 day
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
