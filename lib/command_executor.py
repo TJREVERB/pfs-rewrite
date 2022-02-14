@@ -685,7 +685,10 @@ class CommandExecutor:
         Remote code execution
         Runs exec on string
         """
-        self.transmit(packet, result := [exec(packet.args[0])])
+        result = []
+        string = False
+        exec(packet.args[0]) # Set result and string inside the exec string if return data is needed
+        self.transmit(packet, result, string)
         return result
 
     @wrap_errors(CommandExecutionException)
