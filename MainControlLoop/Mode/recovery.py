@@ -55,7 +55,6 @@ class Recovery(Mode):
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
         if self.beacon.time_elapsed():  # Attempt to establish contact with ground
-            print("Transmitting proof of life...")
             self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
             self.beacon.update_time()
 

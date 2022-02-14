@@ -68,7 +68,6 @@ class TicTacToeGame:
             if time.time() - 10 >= time_started:
                 break
             score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
-            print(move, score)
             if score > best:
                 best_move = move
                 best = score
@@ -173,42 +172,3 @@ class TicTacToeGame:
         new_object.human_board = self.human_board.copy()
         new_object.ai_board = self.ai_board.copy()
         return new_object
-
-
-
-
-
-
-
-"""class SFR:
-    def __init__(self):
-        self.MINIMAX_TIMEOUT = 10
-game = TicTacToeGame(SFR())
-while True:
-    if game.check_winner() == (1, 0):
-        print(game)
-        print("Human Wins")
-        break
-    elif game.check_winner() == (0, 1):
-        print(game)
-        print("AI Wins")
-        break
-    elif game.check_winner() == (1, 1):
-        print(game)
-        print("Draw")
-        break
-    if game.is_ai_turn:
-        move = game.get_best_move()
-        game.push(move)
-    else:
-        while True:
-            x = int(input("Move Row "))
-            y = int(input("Move Col "))
-            try:
-                game.push([x, y])
-                break
-            except InvalidMoveError:
-                pass
-    print(game)"""
-
-

@@ -73,8 +73,8 @@ class Mode:
         if self.iridium_clock.time_elapsed():  # If enough time has passed
             try:
                 self.poll_iridium()  # Poll Iridium
-            except NoSignalException as e:
-                print("Signal Lost")
+            except NoSignalException:
+                pass
             self.iridium_clock.update_time()  # Update last iteration
         if self.heartbeat_clock.time_elapsed():  # If enough time has passed
             self.heartbeat()  # Transmit heartbeat ping
@@ -94,7 +94,6 @@ class Mode:
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
-        print("Iridium signal strength: ", signal)
         if signal <= 0:
             return False
 
@@ -104,7 +103,6 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-            print("Updating time")
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
@@ -117,7 +115,6 @@ class Mode:
         :return: whether the function ran
         :rtype: bool
         """
-        print("Transmitting heartbeat...")
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
 
     @wrap_errors(LogicalError)

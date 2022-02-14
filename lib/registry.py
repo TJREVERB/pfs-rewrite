@@ -357,7 +357,6 @@ class StateFieldRegistry:
         """
         for i in self.logs.keys():
             self.logs[i].clear()
-        print("Logs cleared")
 
     @wrap_errors(LogicalError)
     def reset(self) -> None:

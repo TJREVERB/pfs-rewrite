@@ -82,7 +82,6 @@ class CommandExecutor:
         :param packet: packet for received command
         :param registry: command registry to use
         """
-        print("Executing Command: " + packet.descriptor)
         to_log = {
             "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
             "ts1": int(t.timestamp()) % 100000,  # last 5 digits
@@ -144,7 +143,6 @@ class CommandExecutor:
                     self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
                     return True
                 except NoSignalException as e:
-                    print("No Iridium connectivity, appending to buffer...")
                     self.sfr.vars.transmit_buffer.append(p)
                     return False
 
@@ -153,15 +151,12 @@ class CommandExecutor:
         """
         Attempt to transmit entire transmission queue
         """
-        print("Attempting to transmit queue")
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
             if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
-                print("Signal strength lost!")
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
                 break
             self.sfr.vars.transmit_buffer.pop(0)
-            print(f"Transmitted {p}")
 
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
@@ -176,7 +171,6 @@ class CommandExecutor:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
         except NoSignalException as e:
-            print("No Iridium connectivity, aborting transmit")
             return False
 
     @wrap_errors(LogicalError)
@@ -386,7 +380,6 @@ class CommandExecutor:
         """
         Transmit signal strength mean and variability
         """
-        print("Attempting to transmit science results")
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_MEAN,
                                          self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result

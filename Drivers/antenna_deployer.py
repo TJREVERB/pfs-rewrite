@@ -117,7 +117,6 @@ class AntennaDeployer(Device):
         try:
             raw_bytes = self.read(AntennaDeployerCommand.GET_TEMP)
         except Exception as e:
-            print(e)
             raise AntennaError("Bad Connection")
         raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
         v = raw_count * 3300 / 1023 # mV

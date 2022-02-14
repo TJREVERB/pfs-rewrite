@@ -71,11 +71,9 @@ class Startup(Mode):
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
-        print("Antenna deployment attempted")
         self.sfr.sleep(30)
         self.sfr.devices["Antenna Deployer"].check_deployment()
         if not self.sfr.vars.ANTENNA_DEPLOYED:  # If antenna deployment failed
-            print("Antenna deployment unsuccessful")
             # Lock off antenna deployer/aprs and set primary radio to iridium
             # better to use nonfunctional radio than send power to a loadless aprs
             self.sfr.power_off("Antenna Deployer")
@@ -85,7 +83,6 @@ class Startup(Mode):
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
             return False
-        print("Antenna deployment successful")
         return True
 
     @wrap_errors(LogicalError)
@@ -106,7 +103,6 @@ class Startup(Mode):
         self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
         if self.beacon.time_elapsed():
             if not self.sfr.vars.CONTACT_ESTABLISHED:  # Attempt to establish contact every 2 minutes
-                print("Transmitting proof of life...")
                 self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
             self.beacon.update_time()
 

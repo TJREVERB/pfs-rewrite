@@ -44,7 +44,6 @@ class APRS(Device):
             self.serial.write("\x0d".encode("utf-8"))
             time.sleep(1)
             serinput += str(self.serial.read(100))
-            print(serinput)
             attempts += 1
         if attempts > 2:
             raise APRSError()
@@ -59,7 +58,6 @@ class APRS(Device):
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(3)
             serinput += str(self.serial.read(100))
-            print(serinput)
             attempts += 1
         if attempts > 2:
             raise APRSError()
@@ -254,5 +252,4 @@ class APRS(Device):
             # stop reading if it reaches a newline
             if next_byte == '\n'.encode('utf-8'):
                 break
-        print(output.decode("utf-8"))
         return output.decode('utf-8')

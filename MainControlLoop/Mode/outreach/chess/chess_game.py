@@ -40,7 +40,6 @@ class ChessGame:
         :return: best move
         :rtype: :class: 'chess.Move'
         """
-        print(self.board)
         engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish2')
         result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
         engine.quit()

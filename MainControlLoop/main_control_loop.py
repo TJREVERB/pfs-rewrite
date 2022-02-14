@@ -16,7 +16,6 @@ class MainControlLoop:
         Logs startup time in sfr and powers on all locked on devices and IMU.
         Instantiates correct startup mode and starts it.
         """
-        print("MCL Start")
         self.sfr.vars.LAST_STARTUP = time.time()
         self.sfr.power_on("IMU")
         for device in self.sfr.vars.LOCKED_ON_DEVICES:  # power on all devices that are locked on

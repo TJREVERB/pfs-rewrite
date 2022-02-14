@@ -66,7 +66,6 @@ class MissionControl:
                 self.error_handle(e)  # Handle error
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
-                print("safe mode iteration")
                 self.safe_mode()
             else:
                 try:
@@ -119,7 +118,6 @@ class MissionControl:
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
             except APRSError:  # If aprs fails
-                print("L :(")
                 exit()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
