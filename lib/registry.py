@@ -59,7 +59,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
-        self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
+        self.PACKET_AGE_LIMIT = 3600*24*14 # Two weeks
         self.DETUMBLE_THRESHOLD = 10
 
     @wrap_errors(LogicalError)

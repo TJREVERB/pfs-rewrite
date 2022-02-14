@@ -12,7 +12,7 @@ class Science(Mode):
     Battery charges at a low rate while in this mode
     """
     # number of pings to do to complete orbit
-    NUMBER_OF_REQUIRED_PINGS = 90
+    NUMBER_OF_REQUIRED_PINGS = 180
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
