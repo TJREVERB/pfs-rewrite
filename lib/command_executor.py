@@ -251,7 +251,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3: # Any components after index 3 should not be locked off
+        if (dcode := int(packet.args[0])) < 0 or dcode > 3:  # Any components after index 3 should not be locked off
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device lock failed!")
@@ -340,7 +340,7 @@ class CommandExecutor:
             tumble = self.sfr.devices["IMU"].get_tumble()
         hist_consumption = self.sfr.analytics.historical_consumption(50)
         hist_generation = self.sfr.analytics.historical_generation(50)
-        
+
         self.transmit(packet, result := [
             hist_consumption.mean() if hist_consumption.shape[0] > 0 else 0,  # Average power consumption
             hist_generation.mean() if hist_generation.shape[0] > 0 else 0,  # Average solar panel generation
@@ -530,17 +530,13 @@ class CommandExecutor:
         """
         Repeat result of command with given MSN
         """
-        msn = packet.args[0]  # Read Packet Value
         df = self.sfr.logs["command"].read()  # Read logs
-        # If search for msn returns results
-        for i, v in df["msn"].items():  # Iterate through dataframe
-            if (v == msn):
-                try:  # A little jank but I don't care
-                    self.transmit(packet, result := [float(df[i, "result"].split(":"))])
-                except ValueError:  # Error casting to float indicates string
-                    self.transmit(packet, result := [df[i, "result"]], True)
-                return result
-        raise CommandExecutionException("Command does not exist in log!")
+        search = (df[df["msn"] == packet.args[0]]  # Rows of dataframe where msn is target
+                  ["result"]  # Result column
+                  [0]  # First item (first time we had a command with this msn, if multiple)
+                  .split(":"))  # Split over : to return the result (logged as a : separated string) as a list
+        self.transmit(packet, result := [float(i) for i in search])  # Cast strings to floats for transmission
+        return result
 
     @wrap_errors(CommandExecutionException)
     def SUV(self, packet: TransmissionPacket) -> list:
