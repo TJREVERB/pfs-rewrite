@@ -249,7 +249,8 @@ class StateFieldRegistry:
         :rtype: :class: 'lib.registry.Vars'
         """
         defaults = Vars(self)  # Generate default sfr vars
-        if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
+        fields = self.logs["sfr"].read()  # Load fields
+        if not fields:  # If log doesn't exist
             return defaults  # Return defaults
         if fields.to_dict().keys() != defaults.to_dict().keys():  # If the log is the wrong version
             return defaults  # Return defaults
