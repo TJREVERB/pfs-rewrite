@@ -498,11 +498,11 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        self.transmit(packet, result := self.sfr.logs["imu"].read()
-                      .tail(int(packet.args[0]))
-                      .to_numpy()
-                      .flatten()
-                      .tolist())
+        self.transmit(packet, result := self.sfr.logs["imu"].read()  # Read logs
+                      .tail(int(packet.args[0]))  # Last n rows
+                      .to_numpy()  # Convert to numpy array
+                      .flatten()  # Convert to 1d array
+                      .tolist())  # Convert to python list for transmission
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -547,7 +547,7 @@ class CommandExecutor:
         Set upper threshold for mode switch
         """
         self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0]))
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.UPPER_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -556,7 +556,7 @@ class CommandExecutor:
         Set lower threshold for mode switch
         """
         self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0]))
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.LOWER_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -566,7 +566,7 @@ class CommandExecutor:
         This function is kinda pointless
         """
         self.sfr.vars.DETUMBLE_THRESHOLD = float(packet.args[0])
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.DETUMBLE_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -575,7 +575,7 @@ class CommandExecutor:
         Enables or disables safe mode
         """
         self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -583,7 +583,7 @@ class CommandExecutor:
         """
         Adds component to failed components list
         """
-        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > 3:
             raise CommandExecutionException("Invalid device code!")
         if self.sfr.COMPONENTS[int(packet.args[0])] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
@@ -681,10 +681,11 @@ class CommandExecutor:
 
     @wrap_errors(CommandExecutionException)
     def ICE(self, packet: TransmissionPacket):
-        """Runs exec on string"""
-        command = packet.args[0]
-        exec(f"{command}")
-        self.transmit(packet, result := [])
+        """
+        Remote code execution
+        Runs exec on string
+        """
+        self.transmit(packet, result := [exec(packet.args[0])])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -697,19 +698,22 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        # TODO: packet can only have a single string arg, so you gotta figure out a delimiter for these and only use args[0]
-        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        # TODO: packet can only have a single string arg
+        # So you gotta figure out a delimiter for these and only use args[0]
+        # game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
+        # game_type, game_string, game_id = packet.args  # Tuple unpacking exists
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
-        self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
+        # self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
+        # Don't unpack a tuple into 3 variables and join them with an f string please
+        self.sfr.MODE.game_queue.append(";".join(packet.args))
         self.transmit(packet, result := [])
         return result
 
     def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
         if str(self.sfr.MODE) == "Gamer":
             raise CommandExecutionException("Already in gamer mode")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
-        self.sfr.MODE.start()
+        if not self.sfr.switch_mode("Gamer"):
+            raise CommandExecutionException("Mode switch failed due to locked devices!")
         self.transmit(packet, result := [])
         return result
