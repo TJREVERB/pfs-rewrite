@@ -1,5 +1,4 @@
 import time
-from Drivers.transmission_packet import UnsolicitedData
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Mode.science import Science
