@@ -49,11 +49,13 @@ class FullPacket(TransmissionPacket): # Use this for anything that responds to a
 
 class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data returns, such as with Science mode and POL beaconing
     @wrap_errors(LogicalError)
-    def __init__(self, descriptor: str, return_data = None, simulate = False, outreach = False): # Return data is optional
+    def __init__(self, descriptor: str, return_data = None, args = None, simulate = False, outreach = False): # Return data is optional
         super().__init__(False, True)
         self.descriptor = descriptor
         if return_data is not None:
             self.return_data = return_data
+        if args is not None: # Args is optional if emulating a fullpacket is needed
+            self.args = args
         self.simulate = simulate
         self.outreach = outreach
         self.set_time() # Unsolicited will always be instantiated upon command execution, unlike with FullPackets

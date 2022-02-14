@@ -49,10 +49,13 @@ class CommandExecutor:
             "SLV": self.SLV,
             "SDT": self.SDT,
             "SSF": self.SSF,
+            "SFA": self.SFA,
+            "SFR": self.SFR,
             "USM": self.USM,
             "ITM": self.ITM,
             "IPC": self.IPC,
             "IRB": self.IRB,
+            "ICT": self.ICT,
             "ICE": self.ICE,
             "IAK": self.IAK
             # TODO: Add gamer mode commands once done with dev
@@ -572,7 +575,7 @@ class CommandExecutor:
         Enables or disables safe mode
         """
         self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
-        self.transmit(packet, result := [])
+        self.transmit(packet, result := [packet.args[0]])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -610,8 +613,8 @@ class CommandExecutor:
         Transmits:
         1. Time since mission start
         2. Time since last satellite startup
-        3. Total power consumed over mission
-        4. Total power generated over mission
+        3. Total energy consumed over mission
+        4. Total energy generated over mission
         5. Total amount of data transmitted
         6. Orbital decay (seconds of period lost over mission duration)
         7. Total number of iridium commands received
@@ -667,6 +670,14 @@ class CommandExecutor:
         """
         self.transmit(packet, [])
         os.system("sudo reboot")
+
+    def ICT(self, packet: TransmissionPacket):
+        """
+        Clears transmission queue, only to be used in an emergency
+        """
+        self.sfr.vars.transmit_buffer = []
+        self.transmit(packet, result := [])
+        return result
 
     @wrap_errors(CommandExecutionException)
     def ICE(self, packet: TransmissionPacket):
