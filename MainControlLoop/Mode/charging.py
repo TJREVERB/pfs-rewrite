@@ -67,9 +67,9 @@ class Charging(Mode):
         Doesn't call Mode execute_cycle because we want to reimplement transmit/receive with a charging focus
         """
         super().execute_cycle()
-        if self.sfr.vars.PRIMARY_RADIO == "APRS" and self.aprs_duty_cycle.time_elapsed():
-            self.poll_aprs()
-            self.aprs_duty_cycle.update_time()
+        if self.sfr.vars.PRIMARY_RADIO == "APRS" and self.aprs_duty_cycle.time_elapsed():  # If APRS is primary
+            self.poll_aprs()  # Transmit heartbeat, read one tick
+            self.aprs_duty_cycle.update_time()  # Update last iteration
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
