@@ -696,7 +696,7 @@ class CommandExecutor:
         result = []
         string = False
         ldict = {}
-        exec(packet.args[0],globals(),ldict) 
+        exec(f"{packet.args[0]}",globals(),ldict) 
         # Set result and string inside the exec string if return data is needed
         if 'result' in ldict.keys():
             result = ldict['result']
