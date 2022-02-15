@@ -134,19 +134,19 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        if packet.outreach:
+        if packet.outreach:  # If this is an outreach packet (UNUSED)
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
-        else:
-            for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
-                try:
-                    self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-                    return True
-                except NoSignalException as e:
-                    print("No Iridium connectivity, appending to buffer...")
-                    self.sfr.vars.transmit_buffer.append(p)
-                    return False
+        # Otherwise, split the packet and transmit components
+        for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
+            try:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
+            except NoSignalException as e:
+                print("No Iridium connectivity, appending to buffer...")
+                self.sfr.vars.transmit_buffer.append(p)
+                return False
+        return True
 
     @wrap_errors(LogicalError)
     def transmit_queue(self):
