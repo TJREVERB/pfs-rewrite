@@ -693,9 +693,13 @@ class CommandExecutor:
         Runs exec on string
         """
         print(packet.args[0])
-        
+
         sfr = self.sfr
         class JankExec():
+            """
+            Class that allows exec to consistently access sfr, AND local variables (result, string)
+            https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
+            """
             def __init__(self, execstr):
                 self.sfr = sfr
                 self.result = []
