@@ -91,14 +91,19 @@ class Mode:
         """
         if self.sfr.devices["Iridium"] is None:  # Don't run if Iridium is powered off (should never happen)
             return False
-        if self.sfr.devices["Iridium"].check_signal_passive() <= 0:
+
+        signal = self.sfr.devices["Iridium"].check_signal_passive()
+        print("Iridium signal strength: ", signal)
+        if signal < 1:
             return False
 
         print("Transmitting heartbeat...")
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
 
+        startlen = len(self.sfr.vars.command_buffer)
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
-        self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
+        if len(self.sfr.vars.command_buffer) > startlen:
+            self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
 
         self.sfr.command_executor.transmit_queue()  # Attempt to transmit transmission queue
 
