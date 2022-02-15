@@ -2,6 +2,8 @@ import datetime
 import os
 import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
+from Drivers.aprs import APRS
+from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -133,18 +135,22 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        if packet.outreach:
+        if packet.outreach:  # If this is an outreach packet (UNUSED)
+            if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
+                self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
-        else:
-            for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
-                try:
-                    self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-                    return True
-                except NoSignalException as e:
-                    self.sfr.vars.transmit_buffer.append(p)
-                    return False
+        # Otherwise, split the packet and transmit components
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
+            self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+        for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
+            try:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
+            except NoSignalException:
+                self.sfr.vars.transmit_buffer.append(p)
+                return False
+        return True
 
     @wrap_errors(LogicalError)
     def transmit_queue(self):
@@ -679,7 +685,7 @@ class CommandExecutor:
         """
         result = []
         string = False
-        exec(packet.args[0])  # Set result and string inside the exec string if return data is needed
+        exec(str(packet.args[0]))  # Set result and string inside the exec string if return data is needed
         self.transmit(packet, result, string)
         return result
 

@@ -23,7 +23,6 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(300)  # Five minutes between each heartbeat ping
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -70,42 +69,45 @@ class Mode:
         Additionally, it resets EPS watchdog and transmits heartbeat
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
-        if self.iridium_clock.time_elapsed():  # If enough time has passed
+        # If enough time has passed and primary radio is Iridium
+        if self.iridium_clock.time_elapsed() and self.sfr.vars.PRIMARY_RADIO == "Iridium":
             try:
                 self.poll_iridium()  # Poll Iridium
             except NoSignalException:
                 pass
             self.iridium_clock.update_time()  # Update last iteration
-        if self.heartbeat_clock.time_elapsed():  # If enough time has passed
-            self.heartbeat()  # Transmit heartbeat ping
-            self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
         """
+        Runs every 5 minutes
         Reads Iridium messages and appends to buffer
         Transmits any messages in the transmit queue
         Updates rtc clock based on iridium time if needed
         :return: whether the function ran (whether it polled iridium or not)
         :rtype: bool
         """
-        if self.sfr.devices["Iridium"] is None or self.sfr.vars.PRIMARY_RADIO != "Iridium":
+        if self.sfr.devices["Iridium"] is None:  # Don't run if Iridium is powered off (should never happen)
+            return False
+        # Check active because passive won't work while Iridium is off
+        if self.sfr.devices["Iridium"].check_signal_active() <= 0:
             return False
 
-        signal = self.sfr.devices["Iridium"].check_signal_passive()
-        if signal <= 0:
-            return False
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
 
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
         self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
+
         self.sfr.command_executor.transmit_queue()  # Attempt to transmit transmission queue
+
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
+
         return True
 
     @wrap_errors(LogicalError)
