@@ -694,7 +694,7 @@ class CommandExecutor:
         result = []
         string = False
         print(packet.args[0])
-        exec(f"{packet.args[0]}")  # Set result and string inside the exec string if return data is needed
+        exec(str(packet.args[0]))  # Set result and string inside the exec string if return data is needed
         print(result, string)
         self.transmit(packet, result, string)
         return result
