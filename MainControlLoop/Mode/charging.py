@@ -19,10 +19,8 @@ class Charging(Mode):
         """
         super().__init__(sfr)
         self.mode = mode
-        # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
-        self.iridium_clock = Clock(10)  # Change Iridium poll interval to allow for charging
-        # TODO: CHANGE TO 90 MINUTES TO ALLOW FOR CHARGING
-        self.aprs_duty_cycle = Clock(10)  # If APRS is primary radio, transmit heartbeat every 90 minutes
+        self.iridium_clock = Clock(300)  # Change Iridium poll interval to allow for charging
+        self.aprs_duty_cycle = Clock(5400)  # If APRS is primary radio, transmit heartbeat every 90 minutes
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             self.sfr.power_on("Iridium")
