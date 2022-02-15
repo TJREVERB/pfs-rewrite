@@ -139,12 +139,14 @@ class CommandExecutor:
         if packet.outreach:  # If this is an outreach packet (UNUSED)
             if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
                 self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
+                return False
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
         if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+            return False
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
