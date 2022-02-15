@@ -24,6 +24,7 @@ class Mode:
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         # TODO: replace 10 with appropriate time when done testing
         self.iridium_clock = Clock(10)  # Poll iridium every "wait" seconds
+        self.heartbeat_clock = Clock(2700) # Heartbeat every 45 minutes
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -77,6 +78,9 @@ class Mode:
             except NoSignalException:
                 print("Signal Lost")
             self.iridium_clock.update_time()  # Update last iteration
+        if self.heartbeat_clock.time_elapsed():  # If enough time has passed
+            self.heartbeat()  # Transmit heartbeat ping
+            self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
     @wrap_errors(LogicalError)
@@ -116,6 +120,16 @@ class Mode:
             os.system("sudo hwclock -w")  # Write to RTC
 
         return True
+
+    @wrap_errors(LogicalError)
+    def heartbeat(self) -> None:
+        """
+        Transmits proof of life
+        :return: whether the function ran
+        :rtype: bool
+        """
+        print("Transmitting heartbeat...")
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
