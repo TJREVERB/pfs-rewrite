@@ -58,6 +58,7 @@ class Charging(Mode):
         self.sfr.power_on("APRS")
         print("Transmitting heartbeat...")
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
+        self.read_aprs()
         self.sfr.power_off("APRS")
 
     @wrap_errors(LogicalError)
