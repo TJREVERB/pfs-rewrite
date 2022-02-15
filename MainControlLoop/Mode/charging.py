@@ -24,6 +24,7 @@ class Charging(Mode):
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             self.sfr.power_on("Iridium")
+            self.sfr.devices["Iridium"].check_signal_active()
             result = super(Charging, self).poll_iridium()
             self.sfr.power_off("Iridium")
             return result
