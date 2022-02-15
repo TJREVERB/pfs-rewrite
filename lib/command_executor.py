@@ -2,6 +2,8 @@ import datetime
 import os
 import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
+from Drivers.aprs import APRS
+from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -135,14 +137,18 @@ class CommandExecutor:
         if data is not None:
             packet.return_data = data
         if packet.outreach:  # If this is an outreach packet (UNUSED)
+            if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
+                self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
+            self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-            except NoSignalException as e:
+            except NoSignalException:
                 print("No Iridium connectivity, appending to buffer...")
                 self.sfr.vars.transmit_buffer.append(p)
                 return False

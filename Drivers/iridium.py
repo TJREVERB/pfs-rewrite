@@ -335,8 +335,9 @@ class Iridium(Device):
             args[0] = self.ENCODED_REGISTRY[int(args[0])]
         return (decoded, args)
 
+    @staticmethod
     @wrap_errors(IridiumError)
-    def split_packet(self, packet: TransmissionPacket) -> list:
+    def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """

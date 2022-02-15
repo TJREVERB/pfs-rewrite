@@ -158,8 +158,9 @@ class APRS(Device):
             f.write(str(1))
         time.sleep(5)
 
+    @staticmethod
     @wrap_errors(APRSError)
-    def split_packet(self, packet: TransmissionPacket) -> list:
+    def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """
