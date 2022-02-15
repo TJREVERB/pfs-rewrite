@@ -693,18 +693,18 @@ class CommandExecutor:
         Runs exec on string
         """
         print(packet.args[0])
-        result = []
-        string = False
-        ldict = {}
-        exec(f"{packet.args[0]}",globals(),ldict) 
-        # Set result and string inside the exec string if return data is needed
-        if 'result' in ldict.keys():
-            result = ldict['result']
-        if 'string' in ldict.keys():
-            string = ldict['string']
-        print(result, string)
-        self.transmit(packet, result, string)
-        return result
+        class JankExec():
+            def __init__(self, execstr):
+                self.sfr = sfr
+                self.result = []
+                self.string = False
+                exec(f"{execstr}") 
+                # Set self.result and self.string inside the exec string if return data is needed
+        
+        ex = JankExec(self.sfr, packet.args[0])
+        print(ex.result, ex.string)
+        self.transmit(packet, ex.result, ex.string)
+        return ex.result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):
