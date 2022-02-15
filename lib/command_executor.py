@@ -693,6 +693,8 @@ class CommandExecutor:
         Runs exec on string
         """
         print(packet.args[0])
+        
+        sfr = self.sfr
         class JankExec():
             def __init__(self, execstr):
                 self.sfr = sfr
@@ -701,7 +703,7 @@ class CommandExecutor:
                 exec(f"{execstr}") 
                 # Set self.result and self.string inside the exec string if return data is needed
         
-        ex = JankExec(self.sfr, packet.args[0])
+        ex = JankExec(packet.args[0])
         print(ex.result, ex.string)
         self.transmit(packet, ex.result, ex.string)
         return ex.result
