@@ -91,7 +91,6 @@ class Mode:
         """
         if self.sfr.devices["Iridium"] is None:  # Don't run if Iridium is powered off (should never happen)
             return False
-        # Check active because passive won't work while Iridium is off
         if self.sfr.devices["Iridium"].check_signal_passive() <= 0:
             return False
 
