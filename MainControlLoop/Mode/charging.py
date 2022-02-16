@@ -21,8 +21,7 @@ class Charging(Mode):
         self.mode = mode
         # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
         self.iridium_clock = Clock(10)  # Change Iridium poll interval to allow for charging
-        # TODO: CHANGE TO 90 MINUTES TO ALLOW FOR CHARGING
-        self.aprs_duty_cycle = Clock(10)  # If APRS is primary radio, transmit heartbeat every 90 minutes
+        self.heartbeat_clock = Clock(5400)  # Heartbeat once per orbit
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             self.sfr.power_on("Iridium")
@@ -31,6 +30,12 @@ class Charging(Mode):
             self.sfr.power_off("Iridium")
             return result
         self.poll_iridium = charging_poll  # Cursed decoration of superclass method
+
+        def charging_heartbeat() -> None:  # Switch primary radio off when not pinging heartbeat
+            self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
+            super(Charging, self).heartbeat()
+            self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
+        self.heartbeat = charging_heartbeat  # Cursed decoration of superclass method
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -63,16 +68,6 @@ class Charging(Mode):
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
         self.read_aprs()
         self.sfr.power_off("APRS")
-
-    @wrap_errors(LogicalError)
-    def execute_cycle(self) -> None:
-        """
-        Doesn't call Mode execute_cycle because we want to reimplement transmit/receive with a charging focus
-        """
-        super().execute_cycle()
-        if self.sfr.vars.PRIMARY_RADIO == "APRS" and self.aprs_duty_cycle.time_elapsed():  # If APRS is primary
-            self.poll_aprs()  # Transmit heartbeat, read one tick
-            self.aprs_duty_cycle.update_time()  # Update last iteration
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
