@@ -86,8 +86,8 @@ class CommandExecutor:
         """
         print("Executing Command: " + packet.descriptor)
         to_log = {
-            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
+            "ts1": int(t) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
             "arg": ":".join([str(s) for s in packet.args]),
