@@ -1,7 +1,7 @@
 import chess
 import chess.engine
 import random
-import asyncio
+from stockfish import Stockfish
 
 
 class ChessGame:
@@ -51,11 +51,15 @@ class ChessGame:
         return result
 
     def __get_best_move(self):
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
-        result = engine.play(self.board, chess.engine.Limit(time=0.2))
+        #engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
+        #result = engine.play(self.board, chess.engine.Limit(time=0.2))
 
         #engine.quit()
-        return result.move
+        #return result.move
+        stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe', parameters={"Minimum Thinking Time": 5})
+        stockfish.set_fen_position(self.board.fen())
+        move = stockfish.get_best_move_time(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)
+        return move
 
     def get_best_move(self):
         return self.__get_best_move()

@@ -80,6 +80,7 @@ class Outreach(Mode):
 
             elif game == "Jokes":
                 obj = JokesGame(self.sfr, game_id)
+                obj.set_game(board_string)
                 self.object_game_queue.append(obj)
 
     def simulate_games(self) -> None:  # debug
@@ -99,7 +100,8 @@ class Outreach(Mode):
                 obj = TicTacToeGame(self.sfr, str(5))
                 game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
-                game = f"Jokes;Dad Joke;{str(random.randint(1000000000, 9999999999))}"
+                obj = JokesGame(self.sfr, str(5))
+                game = f"Jokes;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
 
     def execute_cycle(self) -> None:
