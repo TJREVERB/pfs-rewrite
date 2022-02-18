@@ -123,7 +123,7 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, string=False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
