@@ -15,7 +15,6 @@ inertial measurement unit module with sensor fusion.
   <https://www.adafruit.com/product/4646>`_ (Product ID: 4646)
 """
 # from MainControlLoop.lib.StateFieldRegistry.registry import StateFieldRegistry
-from micropython import const
 from smbus2 import SMBus
 import time
 import numpy as np
@@ -49,99 +48,99 @@ class IMU(Device):
     """
 
     # Constants:
-    _CHIP_ID = const(0xA0)
+    _CHIP_ID = 0xA0
 
-    CONFIG_MODE = const(0x00)
-    ACCONLY_MODE = const(0x01)
-    MAGONLY_MODE = const(0x02)
-    GYRONLY_MODE = const(0x03)
-    ACCMAG_MODE = const(0x04)
-    ACCGYRO_MODE = const(0x05)
-    MAGGYRO_MODE = const(0x06)
-    AMG_MODE = const(0x07)
-    IMUPLUS_MODE = const(0x08)
-    COMPASS_MODE = const(0x09)
-    M4G_MODE = const(0x0A)
-    NDOF_FMC_OFF_MODE = const(0x0B)
-    NDOF_MODE = const(0x0C)
+    CONFIG_MODE = 0x00
+    ACCONLY_MODE = 0x01
+    MAGONLY_MODE = 0x02
+    GYRONLY_MODE = 0x03
+    ACCMAG_MODE = 0x04
+    ACCGYRO_MODE = 0x05
+    MAGGYRO_MODE = 0x06
+    AMG_MODE = 0x07
+    IMUPLUS_MODE = 0x08
+    COMPASS_MODE = 0x09
+    M4G_MODE = 0x0A
+    NDOF_FMC_OFF_MODE = 0x0B
+    NDOF_MODE = 0x0C
 
-    ACCEL_2G = const(0x00)  # For accel_range property
-    ACCEL_4G = const(0x01)  # Default
-    ACCEL_8G = const(0x02)
-    ACCEL_16G = const(0x03)
-    ACCEL_7_81HZ = const(0x00)  # For accel_bandwidth property
-    ACCEL_15_63HZ = const(0x04)
-    ACCEL_31_25HZ = const(0x08)
-    ACCEL_62_5HZ = const(0x0C)  # Default
-    ACCEL_125HZ = const(0x10)
-    ACCEL_250HZ = const(0x14)
-    ACCEL_500HZ = const(0x18)
-    ACCEL_1000HZ = const(0x1C)
-    ACCEL_NORMAL_MODE = const(0x00)  # Default. For accel_mode property
-    ACCEL_SUSPEND_MODE = const(0x20)
-    ACCEL_LOWPOWER1_MODE = const(0x40)
-    ACCEL_STANDBY_MODE = const(0x60)
-    ACCEL_LOWPOWER2_MODE = const(0x80)
-    ACCEL_DEEPSUSPEND_MODE = const(0xA0)
+    ACCEL_2G = 0x00  # For accel_range property
+    ACCEL_4G = 0x01  # Default
+    ACCEL_8G = 0x02
+    ACCEL_16G = 0x03
+    ACCEL_7_81HZ = 0x00  # For accel_bandwidth property
+    ACCEL_15_63HZ = 0x04
+    ACCEL_31_25HZ = 0x08
+    ACCEL_62_5HZ = 0x0C  # Default
+    ACCEL_125HZ = 0x10
+    ACCEL_250HZ = 0x14
+    ACCEL_500HZ = 0x18
+    ACCEL_1000HZ = 0x1C
+    ACCEL_NORMAL_MODE = 0x00  # Default. For accel_mode property
+    ACCEL_SUSPEND_MODE = 0x20
+    ACCEL_LOWPOWER1_MODE = 0x40
+    ACCEL_STANDBY_MODE = 0x60
+    ACCEL_LOWPOWER2_MODE = 0x80
+    ACCEL_DEEPSUSPEND_MODE = 0xA0
 
-    GYRO_2000_DPS = const(0x00)  # Default. For gyro_range property
-    GYRO_1000_DPS = const(0x01)
-    GYRO_500_DPS = const(0x02)
-    GYRO_250_DPS = const(0x03)
-    GYRO_125_DPS = const(0x04)
-    GYRO_523HZ = const(0x00)  # For gyro_bandwidth property
-    GYRO_230HZ = const(0x08)
-    GYRO_116HZ = const(0x10)
-    GYRO_47HZ = const(0x18)
-    GYRO_23HZ = const(0x20)
-    GYRO_12HZ = const(0x28)
-    GYRO_64HZ = const(0x30)
-    GYRO_32HZ = const(0x38)  # Default
-    GYRO_NORMAL_MODE = const(0x00)  # Default. For gyro_mode property
-    GYRO_FASTPOWERUP_MODE = const(0x01)
-    GYRO_DEEPSUSPEND_MODE = const(0x02)
-    GYRO_SUSPEND_MODE = const(0x03)
-    GYRO_ADVANCEDPOWERSAVE_MODE = const(0x04)
+    GYRO_2000_DPS = 0x00  # Default. For gyro_range property
+    GYRO_1000_DPS = 0x01
+    GYRO_500_DPS = 0x02
+    GYRO_250_DPS = 0x03
+    GYRO_125_DPS = 0x04
+    GYRO_523HZ = 0x00  # For gyro_bandwidth property
+    GYRO_230HZ = 0x08
+    GYRO_116HZ = 0x10
+    GYRO_47HZ = 0x18
+    GYRO_23HZ = 0x20
+    GYRO_12HZ = 0x28
+    GYRO_64HZ = 0x30
+    GYRO_32HZ = 0x38  # Default
+    GYRO_NORMAL_MODE = 0x00  # Default. For gyro_mode property
+    GYRO_FASTPOWERUP_MODE = 0x01
+    GYRO_DEEPSUSPEND_MODE = 0x02
+    GYRO_SUSPEND_MODE = 0x03
+    GYRO_ADVANCEDPOWERSAVE_MODE = 0x04
 
-    MAGNET_2HZ = const(0x00)  # For magnet_rate property
-    MAGNET_6HZ = const(0x01)
-    MAGNET_8HZ = const(0x02)
-    MAGNET_10HZ = const(0x03)
-    MAGNET_15HZ = const(0x04)
-    MAGNET_20HZ = const(0x05)  # Default
-    MAGNET_25HZ = const(0x06)
-    MAGNET_30HZ = const(0x07)
-    MAGNET_LOWPOWER_MODE = const(0x00)  # For magnet_operation_mode property
-    MAGNET_REGULAR_MODE = const(0x08)  # Default
-    MAGNET_ENHANCEDREGULAR_MODE = const(0x10)
-    MAGNET_ACCURACY_MODE = const(0x18)
-    MAGNET_NORMAL_MODE = const(0x00)  # for magnet_power_mode property
-    MAGNET_SLEEP_MODE = const(0x20)
-    MAGNET_SUSPEND_MODE = const(0x40)
-    MAGNET_FORCEMODE_MODE = const(0x60)  # Default
+    MAGNET_2HZ = 0x00  # For magnet_rate property
+    MAGNET_6HZ = 0x01
+    MAGNET_8HZ = 0x02
+    MAGNET_10HZ = 0x03
+    MAGNET_15HZ = 0x04
+    MAGNET_20HZ = 0x05  # Default
+    MAGNET_25HZ = 0x06
+    MAGNET_30HZ = 0x07
+    MAGNET_LOWPOWER_MODE = 0x00  # For magnet_operation_mode property
+    MAGNET_REGULAR_MODE = 0x08  # Default
+    MAGNET_ENHANCEDREGULAR_MODE = 0x10
+    MAGNET_ACCURACY_MODE = 0x18
+    MAGNET_NORMAL_MODE = 0x00  # for magnet_power_mode property
+    MAGNET_SLEEP_MODE = 0x20
+    MAGNET_SUSPEND_MODE = 0x40
+    MAGNET_FORCEMODE_MODE = 0x60  # Default
 
-    _POWER_NORMAL = const(0x00)
-    _POWER_LOW = const(0x01)
-    _POWER_SUSPEND = const(0x02)
+    _POWER_NORMAL = 0x00
+    _POWER_LOW = 0x01
+    _POWER_SUSPEND = 0x02
 
-    _MODE_REGISTER = const(0x3D)
-    _PAGE_REGISTER = const(0x07)
-    _ACCEL_CONFIG_REGISTER = const(0x08)
-    _MAGNET_CONFIG_REGISTER = const(0x09)
-    _GYRO_CONFIG_0_REGISTER = const(0x0A)
-    _GYRO_CONFIG_1_REGISTER = const(0x0B)
-    _CALIBRATION_REGISTER = const(0x35)
-    _TRIGGER_REGISTER = const(0x3F)
-    _POWER_REGISTER = const(0x3E)
-    _ID_REGISTER = const(0x00)
+    _MODE_REGISTER = 0x3D
+    _PAGE_REGISTER = 0x07
+    _ACCEL_CONFIG_REGISTER = 0x08
+    _MAGNET_CONFIG_REGISTER = 0x09
+    _GYRO_CONFIG_0_REGISTER = 0x0A
+    _GYRO_CONFIG_1_REGISTER = 0x0B
+    _CALIBRATION_REGISTER = 0x35
+    _TRIGGER_REGISTER = 0x3F
+    _POWER_REGISTER = 0x3E
+    _ID_REGISTER = 0x00
     # Axis remap registers and values
-    _AXIS_MAP_CONFIG_REGISTER = const(0x41)
-    _AXIS_MAP_SIGN_REGISTER = const(0x42)
-    AXIS_REMAP_X = const(0x00)
-    AXIS_REMAP_Y = const(0x01)
-    AXIS_REMAP_Z = const(0x02)
-    AXIS_REMAP_POSITIVE = const(0x00)
-    AXIS_REMAP_NEGATIVE = const(0x01)
+    _AXIS_MAP_CONFIG_REGISTER = 0x41
+    _AXIS_MAP_SIGN_REGISTER = 0x42
+    AXIS_REMAP_X = 0x00
+    AXIS_REMAP_Y = 0x01
+    AXIS_REMAP_Z = 0x02
+    AXIS_REMAP_POSITIVE = 0x00
+    AXIS_REMAP_NEGATIVE = 0x01
 
     # Data registers (start, end)
     # X_LSB, X_MSB, Y_LSB, Y_MSB, Z_LSB, Z_MSB
