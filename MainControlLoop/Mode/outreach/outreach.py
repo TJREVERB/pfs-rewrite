@@ -60,8 +60,7 @@ class Outreach(Mode):
         :rtype: list
         """
         for encoded_string in self.string_game_queue:
-            encoded_list = encoded_string.split(";")
-            game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
+            game, board_string, game_id = encoded_string.split(";")
 
             if game == "TicTacToe":
                 obj = TicTacToeGame(self.sfr, game_id)
@@ -88,7 +87,7 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            game_int = random.randint(0, 3)
+            game_int = random.randint(1, 1)
             if game_int == 0:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
@@ -111,7 +110,7 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-        self.simulate_games()
+        self.simulate_games()  # TODO: DEBUG
         self.decode_game_queue()
         time_started = time.time()
         while len(self.object_game_queue) > 0:

@@ -172,6 +172,7 @@ if __name__ == "__main__":
 
     e.print_board()
     ai_move = e.get_best_move()
+    print(ai_move)
     e.push(ai_move)
     e.print_board()
     sec = input("Input section: ")
@@ -183,6 +184,7 @@ if __name__ == "__main__":
         e.print_board()
         ai_move = e.get_best_move()
         e.push(ai_move)
+        print(ai_move)
         e.print_board()
         while True:
             print("Section: " + str(e.get_valid_moves()[0][0]))

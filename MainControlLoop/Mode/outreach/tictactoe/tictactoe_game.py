@@ -131,13 +131,12 @@ class TicTacToeGame:
     def switch_turn(self):
         self.is_ai_turn = not self.is_ai_turn
 
-    def is_valid_move(self, location: list) -> bool:
-        x, y = location[0], location[1]
-        if type(x) != int or type(y) != int:
-            return False
+    def is_valid_move(self, location: [int, int]) -> bool:
+        idx = tuple(location)
+        x, y = idx
         if x > 2 or x < 0 or y > 2 or y < 0:
             return False
-        if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
+        if self.human_board[idx] == 0 and self.ai_board[idx] == 0:
             return True
         else:
             return False
@@ -146,19 +145,14 @@ class TicTacToeGame:
         """
         returns all valid moves as list of lists
         """
-
-        possible_moves = [[x, y] for y in range(3) for x in range(3)]
-        legal_move_distribution = list(map(self.is_valid_move, possible_moves))
-        valid_moves = [possible_moves[i] for i in range(9) if legal_move_distribution[i] is True]
-        return valid_moves
+        return [[x, y] for y in range(3) for x in range(3) if self.is_valid_move([x, y])]
 
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
-        location = list(map(int, location))
-        x, y = location[0], location[1]
+        idx = (int(location[0]), int(location[1]))
         if self.is_ai_turn:
-            self.ai_board[x][y] = 1.0
+            self.ai_board[idx] = 1.0
         else:
-            self.human_board[x][y] = 1.0
+            self.human_board[idx] = 1.0
         self.switch_turn()
 
     def push_move_to_copy(self, location: list):
@@ -168,11 +162,10 @@ class TicTacToeGame:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        new_list = list(np.reshape(array, (3 ** 2,)))
-        new_list = map(int, new_list)
-        new_list = list(map(str, new_list))
-        bitboard = int("".join(new_list), 2)
-        return bitboard
+        return int("".join(array
+                   .flatten()
+                   .vectorize(int)
+                   .vectorize(str)), 2)
 
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
@@ -192,9 +185,6 @@ class TicTacToeGame:
                 continue
             else:
                 return str(board).split(";")[1]
-
-
-
 
 
 """class SFR:
@@ -227,5 +217,3 @@ while True:
             except InvalidMoveError:
                 pass
     print(game)"""
-
-

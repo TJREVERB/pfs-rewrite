@@ -7,7 +7,7 @@ class JokesGame:
         self.game_id = game_id
         self.joke_type = None
         self.joke_dict = {
-            "Joke": "MainControlLoop/Mode/outreach/jokes/jokes.txt", #dad joke
+            "Joke": "MainControlLoop/Mode/outreach/jokes/jokes.txt",  # dad joke
             "Pickup": "MainControlLoop/Mode/outreach/jokes/pickup.txt"  # pickup line
         }
         self.joke = "No Joke Generated Yet :("
@@ -36,6 +36,3 @@ class JokesGame:
             return "Joke"
         else:
             return "Pickup"
-
-
-
