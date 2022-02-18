@@ -8,7 +8,8 @@ class JokesGame:
         self.joke_type = None
         self.joke_dict = {
             "Joke": "MainControlLoop/Mode/outreach/jokes/jokes.txt",  # dad joke
-            "Pickup": "MainControlLoop/Mode/outreach/jokes/pickup.txt"  # pickup line
+            "Pickup": "MainControlLoop/Mode/outreach/jokes/pickup.txt",  # pickup line
+            "Inside": "MainControlLoop/Mode/outreach/jokes/inside.txt"  # insider joke
         }
         self.joke = "No Joke Generated Yet :("
 
@@ -21,7 +22,10 @@ class JokesGame:
             return random.choice(lines).strip()
 
     def set_game(self, joke_type):
-        self.joke_type = joke_type
+        if joke_type == "Random":
+            self.joke_type = random.choice(list(self.joke_dict.keys()))
+        else:
+            self.joke_type = joke_type
 
     def get_best_move(self):  # so that it works with outreach.py
         self.joke = self.get_joke()
@@ -31,8 +35,12 @@ class JokesGame:
         pass
 
     def random(self):
-        rand = random.randint(0, 1)
+        rand = random.randint(0, 3)
         if rand == 0:
             return "Joke"
-        else:
+        elif rand == 1:
             return "Pickup"
+        elif rand == 2:
+            return "Inside"
+        elif rand == 3:
+            return "Random"
