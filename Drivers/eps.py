@@ -15,7 +15,7 @@ class EPS(Device):
         "Iridium": [0x03],
         "Antenna Deployer": [0x06],
         "UART-RS232": [0x08],  # Iridium Serial Converter
-        "USB-UART": [0x0A],  # APRS Serial Converter
+        "USB-UART": [0x07],  # APRS Serial Converter
         "IMU": [0x09],
     }
     V_EOC = 8.1 # EOC Voltage threshold
