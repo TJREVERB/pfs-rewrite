@@ -19,12 +19,21 @@ class UltimateTicTacToeGame:
         """
         board is encoded as the nine 3x3 tictactoe boards, flattened then run through 3x3 string encoder
         the 3x3 board strings are seperated as commas
+        the previous move is appended to the end
         current turn is encoded at the end by h or a, h is human turn next, a is ai turn next
-        the previous move is
-        i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-h
+
+        previous move = [0, 1, 2]
+        is_ai_turn = True
+        i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-,0,1,2,a
         'UltimateTicTacToe' is then inserted to the front, and turn char is appended at the back, either
         """
-        board_string = ",".join([str(board) for board in self.board])
+        board_string = ",".join([str(board) for board in self.board])  # TODO: FIX
+
+        if self.is_ai_turn:
+            board_string += "a"
+        else:
+            board_string += "h"
+
         return f"Ultimate;{board_string};{self.game_id}"
 
     def print_board(self):  # testing, prints board for human
@@ -47,15 +56,22 @@ class UltimateTicTacToeGame:
         print(string)
 
     def set_game(self, board_string):
-        self.board = np.array([TicTacToe(self.is_ai_turn).set_game(board) for board in board_string.split(",")])
+        encoded_list = board_string.split(",")
+        self.board = [TicTacToe(self.is_ai_turn).set_game(board) for board in encoded_list[:9]]
+        self.previous_move = encoded_list[9:12]
+        if encoded_list[12] == "a":
+            self.is_ai_turn = True
+        else:
+            self.is_ai_turn = False
 
     def get_valid_moves(self):
         """
         Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
         """
         move_list = []
+
         if self.previous_move is None:
-            for i, board in enumerate(self.board):
+            for i, board in enumerate(self.board):  # Generate legal moves
                 if board.check_winner() == (0, 0):
                     legal_moves = []
                     for move in board.get_valid_moves():

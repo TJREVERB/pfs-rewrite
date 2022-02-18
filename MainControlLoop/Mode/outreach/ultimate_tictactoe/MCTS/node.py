@@ -4,5 +4,5 @@ class Node:
         self.parent = parent
         self.children = []
 
-        self.times_visited = 2
-        self.value = 2
+        self.times_visited = 1
+        self.value = 1

@@ -49,13 +49,12 @@ class MCTSSearch:
                 break
             board_state.push(random.choice(legal_moves))
 
-        outcome = board_state.check_winner()
-        if outcome == (0, 1):  # ai won
-            return 2
-        elif outcome == (1, 1):  # draw
-            return 1
-        else:
-            return 0
+        outcomes = {
+            (0, 1): 2,
+            (1, 1): 1,
+            (1, 0): 0,
+        }
+        return outcomes[board_state.check_winner()]
 
     def backpropogate(self, leaf, simulation_result):
         node = leaf
