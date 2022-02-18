@@ -84,7 +84,7 @@ class Startup(Mode):
             # better to use nonfunctional radio than send power to a loadless aprs
             self.sfr.power_off("Antenna Deployer")
             self.sfr.set_primary_radio("Iridium", True)
-            self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.vars.LOCKED_OFF_DEVICES.update({"Antenna Deployer", "APRS"})
             self.sfr.vars.FAILURES.append("Antenna Deployer")
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
