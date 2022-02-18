@@ -707,6 +707,7 @@ class CommandExecutor:
                 # Set self.result and self.string inside the exec string if return data is needed
         
         ex = JankExec(packet.args[0])
+        print(self.sfr.to_dict())
         print(ex.result, ex.string)
         self.transmit(packet, ex.result, ex.string)
         return ex.result

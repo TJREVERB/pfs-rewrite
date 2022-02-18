@@ -138,8 +138,8 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to something
-    VOLT_LOWER_THRESHOLD = 7.3  # TODO: update this value to something
+    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to 8.0
+    VOLT_LOWER_THRESHOLD = 7.3  
 
     @wrap_errors(LogicalError)
     def __init__(self):
