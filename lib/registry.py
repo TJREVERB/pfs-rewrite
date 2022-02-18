@@ -252,19 +252,11 @@ class StateFieldRegistry:
         """
         defaults = Vars(self)
         return defaults  # TODO: DEBUG
-        try:
-            fields = self.logs["sfr"].read()
-            if fields.to_dict().keys() == defaults.to_dict().keys():
-                print("Loading sfr from log...")
-                return fields
-            print("Invalid log, loading default sfr...")
-            return defaults
-        except LogicalError as e:
-            if e.exception is not None:
-                if type(e.exception) == FileNotFoundError:
-                    print("Log missing, loading default sfr...")
-                    return defaults
-            raise
+        if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
+            return defaults  # Return defaults
+        if fields.to_dict().keys() != defaults.to_dict().keys():  # If the log is the wrong version
+            return defaults  # Return defaults
+        return fields  # Otherwise return loaded vars
 
     @wrap_errors(LogicalError)
     def dump(self) -> None:

@@ -335,8 +335,9 @@ class Iridium(Device):
             args[0] = self.ENCODED_REGISTRY[int(args[0])]
         return (decoded, args)
 
+    @staticmethod
     @wrap_errors(IridiumError)
-    def split_packet(self, packet: TransmissionPacket) -> list:
+    def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """
@@ -561,8 +562,8 @@ class Iridium(Device):
             if result[0] not in [0, 1, 3, 4]:
                 return (0, 0, 0)
             raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
-        lon = math.atan2(float(raw[1]), float(raw[0]))
-        lat = math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5))
+        lon = math.degrees(math.atan2(float(raw[1]), float(raw[0])))
+        lat = math.degrees(math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5)))
         alt = (float(raw[0]) ** 2 + float(raw[1]) ** 2 + float(raw[2]) ** 2) ** 0.5
         return (lat, lon, alt)
 

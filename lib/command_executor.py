@@ -1,8 +1,8 @@
-import datetime
 import os
 import time
-import pandas as pd
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
+from Drivers.aprs import APRS
+from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
@@ -49,10 +49,13 @@ class CommandExecutor:
             "SLV": self.SLV,
             "SDT": self.SDT,
             "SSF": self.SSF,
+            "SFA": self.SFA,
+            "SFR": self.SFR,
             "USM": self.USM,
             "ITM": self.ITM,
             "IPC": self.IPC,
             "IRB": self.IRB,
+            "ICT": self.ICT,
             "ICE": self.ICE,
             "IAK": self.IAK
             # TODO: Add gamer mode commands once done with dev
@@ -82,8 +85,8 @@ class CommandExecutor:
         """
         print("Executing Command: " + packet.descriptor)
         to_log = {
-            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
+            "ts1": int(t) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
             "arg": ":".join([str(s) for s in packet.args]),
@@ -132,19 +135,25 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        if packet.outreach:
+        if packet.outreach:  # If this is an outreach packet (UNUSED)
+            if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
+                self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
+                return False
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
-        else:
-            for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
-                try:
-                    self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-                    return True
-                except NoSignalException as e:
-                    print("No Iridium connectivity, appending to buffer...")
-                    self.sfr.vars.transmit_buffer.append(p)
-                    return False
+        # Otherwise, split the packet and transmit components
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
+            self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+            return False
+        for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
+            try:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
+            except NoSignalException:
+                print("No Iridium connectivity, appending to buffer...")
+                self.sfr.vars.transmit_buffer.append(p)
+                return False
+        return True
 
     @wrap_errors(LogicalError)
     def transmit_queue(self):
@@ -251,7 +260,7 @@ class CommandExecutor:
         """
         Lock a device on
         """
-        if (dcode := int(packet.args[0])) < 0 or dcode > 3: # Any components after index 3 should not be locked off
+        if (dcode := int(packet.args[0])) < 0 or dcode > 3:  # Any components after index 3 should not be locked off
             raise CommandExecutionException("Invalid Device Code")
         if not self.sfr.lock_device_on(component=self.sfr.COMPONENTS[dcode], force=True):
             raise CommandExecutionException("Device lock failed!")
@@ -340,7 +349,7 @@ class CommandExecutor:
             tumble = self.sfr.devices["IMU"].get_tumble()
         hist_consumption = self.sfr.analytics.historical_consumption(50)
         hist_generation = self.sfr.analytics.historical_generation(50)
-        
+
         self.transmit(packet, result := [
             hist_consumption.mean() if hist_consumption.shape[0] > 0 else 0,  # Average power consumption
             hist_generation.mean() if hist_generation.shape[0] > 0 else 0,  # Average solar panel generation
@@ -495,11 +504,11 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        self.transmit(packet, result := self.sfr.logs["imu"].read()
-                      .tail(int(packet.args[0]))
-                      .to_numpy()
-                      .flatten()
-                      .tolist())
+        self.transmit(packet, result := self.sfr.logs["imu"].read()  # Read logs
+                      .tail(int(packet.args[0]))  # Last n rows
+                      .to_numpy()  # Convert to numpy array
+                      .flatten()  # Convert to 1d array
+                      .tolist())  # Convert to python list for transmission
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -530,17 +539,13 @@ class CommandExecutor:
         """
         Repeat result of command with given MSN
         """
-        msn = packet.args[0]  # Read Packet Value
         df = self.sfr.logs["command"].read()  # Read logs
-        # If search for msn returns results
-        for i, v in df["msn"].items():  # Iterate through dataframe
-            if (v == msn):
-                try:  # A little jank but I don't care
-                    self.transmit(packet, result := [float(df[i, "result"].split(":"))])
-                except ValueError:  # Error casting to float indicates string
-                    self.transmit(packet, result := [df[i, "result"]], True)
-                return result
-        raise CommandExecutionException("Command does not exist in log!")
+        search = (df[df["msn"] == packet.args[0]]  # Rows of dataframe where msn is target
+                  ["result"]  # Result column
+                  [0]  # First item (first time we had a command with this msn, if multiple)
+                  .split(":"))  # Split over : to return the result (logged as a : separated string) as a list
+        self.transmit(packet, result := [float(i) for i in search])  # Cast strings to floats for transmission
+        return result
 
     @wrap_errors(CommandExecutionException)
     def SUV(self, packet: TransmissionPacket) -> list:
@@ -548,7 +553,7 @@ class CommandExecutor:
         Set upper threshold for mode switch
         """
         self.sfr.vars.UPPER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0]))
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.UPPER_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -557,7 +562,7 @@ class CommandExecutor:
         Set lower threshold for mode switch
         """
         self.sfr.vars.LOWER_THRESHOLD = self.sfr.analytics.volt_to_charge(float(packet.args[0]))
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.LOWER_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -567,7 +572,7 @@ class CommandExecutor:
         This function is kinda pointless
         """
         self.sfr.vars.DETUMBLE_THRESHOLD = float(packet.args[0])
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [self.sfr.vars.DETUMBLE_THRESHOLD])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -576,7 +581,7 @@ class CommandExecutor:
         Enables or disables safe mode
         """
         self.sfr.vars.ENABLE_SAFE_MODE = bool(packet.args[0])
-        self.transmit(packet, result := [packet.args[0]])
+        self.transmit(packet, result := [])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -584,7 +589,7 @@ class CommandExecutor:
         """
         Adds component to failed components list
         """
-        if int(packet.args[0]) < 0 or int(packet.args[0]) > len(self.sfr.COMPONENTS):
+        if int(packet.args[0]) < 0 or int(packet.args[0]) > 3:
             raise CommandExecutionException("Invalid device code!")
         if self.sfr.COMPONENTS[int(packet.args[0])] in self.sfr.vars.FAILURES:
             raise CommandExecutionException("Component already marked as failed!")
@@ -672,13 +677,39 @@ class CommandExecutor:
         self.transmit(packet, [])
         os.system("sudo reboot")
 
-    @wrap_errors(CommandExecutionException)
-    def ICE(self, packet: TransmissionPacket):
-        """Runs exec on string"""
-        command = packet.args[0]
-        exec(f"{command}")
+    def ICT(self, packet: TransmissionPacket):
+        """
+        Clears transmission queue, only to be used in an emergency
+        """
+        self.sfr.vars.transmit_buffer = []
         self.transmit(packet, result := [])
         return result
+
+    @wrap_errors(CommandExecutionException)
+    def ICE(self, packet: TransmissionPacket):
+        """
+        Remote code execution
+        Runs exec on string
+        """
+        print(packet.args[0])
+        sfr = self.sfr
+
+        class JankExec:
+            """
+            Class that allows exec to consistently access sfr, AND local variables (result, string)
+            https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
+            """
+            def __init__(self, execstr):
+                self.sfr = sfr
+                self.result = []
+                self.string = False
+                exec(f"{execstr}") 
+                # Set self.result and self.string inside the exec string if return data is needed
+        
+        ex = JankExec(packet.args[0])
+        print(ex.result, ex.string)
+        self.transmit(packet, ex.result, ex.string)
+        return ex.result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):
@@ -690,19 +721,16 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        # TODO: packet can only have a single string arg, so you gotta figure out a delimiter for these and only use args[0]
-        game_type, game_string, game_id = packet.args[0], packet.args[1], packet.args[2]
         if str(self.sfr.MODE) != "Gamer":
             raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
-        self.sfr.MODE.game_queue.append(f"{game_type};{game_string};{game_id}")
+        self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
     def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
         if str(self.sfr.MODE) == "Gamer":
             raise CommandExecutionException("Already in gamer mode")
-        self.sfr.MODE.terminate_mode()
-        self.sfr.MODE = self.sfr.modes_list["Gamer"](self.sfr)
-        self.sfr.MODE.start()
+        if not self.sfr.switch_mode("Gamer"):
+            raise CommandExecutionException("Mode switch failed due to locked devices!")
         self.transmit(packet, result := [])
         return result

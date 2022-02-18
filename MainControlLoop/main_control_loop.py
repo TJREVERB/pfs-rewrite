@@ -1,5 +1,4 @@
 import time
-from Drivers.transmission_packet import UnsolicitedData
 from lib.registry import StateFieldRegistry
 from lib.exceptions import wrap_errors, LogicalError
 from MainControlLoop.Mode.science import Science
@@ -28,9 +27,9 @@ class MainControlLoop:
             self.sfr.power_on(device)
         # Set mode to Recovery if (antenna deployed) or (aprs or ad are locked off), Startup otherwise
         # self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
-        #     ("APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
-        #     self.sfr.vars.LOCKED_OFF_DEVICES) else Startup(self.sfr)
-        self.sfr.MODE = Outreach(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
+        #     "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in
+        #     self.sfr.vars.LOCKED_OFF_DEVICES else Startup(self.sfr)
+        self.sfr.MODE = Science(self.sfr)  # TODO: REMOVE THIS DEBUG LINE
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
