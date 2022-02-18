@@ -55,17 +55,21 @@ class Startup(Mode):
         :rtype: bool
         """
         if self.sfr.vars.ANTENNA_DEPLOYED:  # If the antenna has already been deployed, do nothing
+            print("Antenna already deployed")
             return False
         # If aprs and antenna deployer are locked off, do nothing
         if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
                 "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+            print("APRS and Antenna deployer locked off")
             return False
         # If not enough time has passed to deploy the antenna, do nothing
         elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+            print("Time not elapsed")
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
         if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
             if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
+                print("currently tumbling")
                 return False  # Do nothing
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")
@@ -123,9 +127,11 @@ class Startup(Mode):
         """
         super().suggested_mode()
         if not self.sfr.vars.CONTACT_ESTABLISHED:
+            print("Contact not established")
             return self  # If contact hasn't been established, stay in startup
         elif ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
               "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES) and not self.sfr.vars.ANTENNA_DEPLOYED:
+            print("Antenna still can be deployed")
             return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
         else:  # If we can switch out of this mode
             final_mode = self.sfr.modes_list["Science"] if "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES \
