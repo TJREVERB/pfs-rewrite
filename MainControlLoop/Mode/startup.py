@@ -58,8 +58,8 @@ class Startup(Mode):
             print("Antenna already deployed")
             return False
         # If aprs and antenna deployer are locked off, do nothing
-        if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
-                "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+        if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES and \
+                "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
             print("APRS and Antenna deployer locked off")
             return False
         # If not enough time has passed to deploy the antenna, do nothing
