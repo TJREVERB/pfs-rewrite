@@ -63,7 +63,7 @@ class TicTacToeGame:
         #  always be ai turn
 
     def get_best_move(self):
-        path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
+        path = "MainControlLoop/Mode/outreach/tictactoe/table.json"
         with open(path, "r") as f:
             table = json.load(f)
         game_string = str(self).split(';')[1]
