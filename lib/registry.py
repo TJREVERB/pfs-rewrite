@@ -218,6 +218,7 @@ class StateFieldRegistry:
         :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
+            print("Syncing volt to charge (upper)")
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -236,6 +237,7 @@ class StateFieldRegistry:
         print(f"Checking lower threshold, vbat "
               f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
+            print("Syncing volt to charge")
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
