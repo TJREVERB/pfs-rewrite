@@ -80,11 +80,3 @@ class MCTSSearch:
         max_index = children_list.index(max(children_list))
         legal_moves = node.board_state.get_valid_moves()
         return legal_moves[max_index]
-
-
-
-
-
-
-
-

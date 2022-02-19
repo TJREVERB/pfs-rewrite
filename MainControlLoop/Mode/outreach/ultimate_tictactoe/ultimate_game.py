@@ -6,14 +6,22 @@ import copy
 
 
 class UltimateTicTacToeGame:
-    def __init__(self, sfr, game_id):
+    """
+    Wrapper of TicTacToe for Ultimate TicTacToe
+    """
+    def __init__(self, sfr, game_id: int):
+        """
+        Create a new game
+        :param sfr: sfr object
+        :type sfr: lib.registry.StateFieldRegistry
+        :param game_id: unique identifier for this game
+        :type game_id: int
+        """
         self.sfr = sfr
         self.game_id = game_id
         self.board = [TicTacToe(True).set_game("---------") for _ in range(9)]  # must call set_game
         self.previous_move = None
         self.is_ai_turn = True
-        self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
-        self.draw_combination = 0x1FF
 
     def __str__(self):
         """
@@ -27,7 +35,10 @@ class UltimateTicTacToeGame:
         board_string = ",".join([str(board) for board in self.board])
         return f"Ultimate;{board_string};{self.game_id}"
 
-    def print_board(self):  # testing, prints board for human
+    def print_board(self):
+        """
+        Test method, prints board for human
+        """
         string = ""
         for row in range(9):
             if row < 3:
@@ -36,7 +47,7 @@ class UltimateTicTacToeGame:
                 board_index = 3
             else:
                 board_index = 6
-            for board in range(board_index, board_index+3):
+            for board in range(board_index, board_index + 3):
                 string += "|"
                 string += self.board[board].board_string(row)
                 string += "   "
@@ -46,125 +57,118 @@ class UltimateTicTacToeGame:
                 string += "\n\n"
         print(string)
 
-    def set_game(self, board_string):
-        self.board = np.array([TicTacToe(self.is_ai_turn).set_game(board) for board in board_string.split(",")])
+    def set_game(self, board_string: str):
+        """
+        Load game from given board string
+        :param board_string: string to load from
+        :type board_string: str
+        """
+        self.board = [TicTacToe(self.is_ai_turn).set_game(board) for board in board_string.split(",")]
 
-    def get_valid_moves(self):
+    def get_valid_moves(self) -> [int]:
         """
-        Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
+        Get a list of all valid moves (list of integers)
+        :return: Moves represented as bits [xxxxxxxxx](3x3 board location)[xxxxxxxxx](location on board)
+        :rtype: list
         """
-        move_list = []
-        if self.previous_move is None:
-            for i, board in enumerate(self.board):
-                if board.check_winner() == (0, 0):
-                    legal_moves = []
-                    for move in board.get_valid_moves():
-                        move.insert(0, i)
-                        legal_moves.append(move)
-                    move_list.extend(legal_moves)
-            return move_list
-        section_index = self.previous_move[1]*3 + self.previous_move[2]
-        board = self.board[section_index]
-        if board.check_winner() == (0, 0):
-            legal_moves = []
-            for move in board.get_valid_moves():
-                move.insert(0, section_index)
-                legal_moves.append(move)
-            move_list.extend(legal_moves)
-        else:
-            for i, board in enumerate(self.board):
-                if board.check_winner() == (0, 0):
-                    legal_moves = []
-                    for move in board.get_valid_moves():
-                        move.insert(0, i)
-                        legal_moves.append(move)
-                    move_list.extend(legal_moves)
-        return move_list
+        if self.previous_move is None:  # If this is the first move
+            return [(1 << i // 9) + (1 << i % 9) for i in range(81)]  # Return all possible moves
+        section_index = np.log2(self.previous_move << 9 >> 9)  # Set 3x3 board index to last move within inner board
+        if self.board[section_index].check_winner() == -1:  # If the board we were sent to is incomplete
+            # Return all legal moves + first 9 bits saying we're on this board
+            return [(1 << section_index) + i for i in self.board[section_index].get_valid_moves()]
+        else:  # If the board we were sent to is already complete
+            move_list = []  # Initialize empty list of possible moves
+            for idx, board in enumerate(self.board):  # Iterate over all boards
+                if board.check_winner() == -1:  # If this board is incomplete
+                    # Extend possible moves list with valid moves of this board
+                    # + first 9 bits saying we're on this board
+                    move_list.extend([(1 << idx + 9) + i for i in board.get_valid_moves()])
+            return move_list  # Return complete move_list after checking all boards
 
-    def push(self, location: list):
+    def push(self, move: int):
         """
-        Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
+        Push a move to this game object (update board)
+        :param move: Moves represented as bits [xxxxxxxxx](3x3 board location)[xxxxxxxxx](location on board)
+        :type move: int
         """
-        self.board[location[0]].push([location[1], location[2]])
+        self.board[section := np.log2(move >> 9)].push(move << 9 >> 9)
         for i, board in enumerate(self.board):
-            if not i == location[0]:
+            if i != section:
                 board.switch_turn()
-        self.previous_move = location
+        self.previous_move = move
 
-    def push_move_to_copy(self, location: list):
+    def push_move_to_copy(self, move: int):
         """
-        pushes a move to new game object
-        :param location:
+        Push a move to a new game object
+        :param move: Moves represented as bits [xxxxxxxxx](3x3 board location)[xxxxxxxxx](location on board)
+        :type move: int
         :return: new UltimateTicTacToe game object
+        :rtype: UltimateTicTacToeGame
         """
-        game = self.deepcopy()
-        game.push(location)
+        game = copy.deepcopy(self)
+        game.push(move)
         return game
 
-    def deepcopy(self):
-        return copy.deepcopy(self)
-
-    def check_winner(self):
-        def _check(human_bitboard, ai_bitboard):
-            for binary in self.winning_combinations:
-                if (binary & human_bitboard) in self.winning_combinations:
-                    return 1, 0
-                elif (binary & ai_bitboard) in self.winning_combinations:
-                    return 0, 1
-            if human_bitboard | ai_bitboard == self.draw_combination:
-                return 1, 1
-            return 0, 0
-
-        # 1 for result (1,0) -> human won
-        human_board = [1 if board.check_winner() == (1, 0) else 0 for board in self.board]
-        ai_board = [1 if board.check_winner() == (0, 1) else 0 for board in self.board]
-        # 1 for result (0,1) -> ai won
-        # 0 for draw bc doesn't affect winner, check draw later
-        check_result = _check(self.get_bitboard(np.array(human_board)), self.get_bitboard(np.array(ai_board)))
-        if check_result == (0, 0):  # if no one has won, must check draw
-            for board in self.board:
-                if board.check_winner() == (0, 0):
-                    return 0, 0
-            return 1, 1
-        else:
-            return check_result
-
-    def get_bitboard(self, array: np.array) -> int:
-        new_list = list(np.reshape(array, (9,)))
-        new_list = map(int, new_list)
-        new_list = list(map(str, new_list))
-        bitboard = int("".join(new_list), 2)
-        return bitboard
+    def check_winner(self) -> int:
+        """
+        Checks for a winner of the current game
+        :return: 0 = human win, 1 = draw, 2 = ai win, -1 = game incomplete
+        :rtype: int
+        """
+        human_board, ai_board = 0, 0  # Initialize bitboards
+        game_complete = True  # Initialize as true because it's easier to check if incomplete than complete
+        for i in range(9):  # Iterate over boards
+            if winner := self.board[i].check_winner() == 0:  # If the human won this board
+                human_board += 1 << i  # Toggle this bit in human_board
+            elif winner == 2:  # If the ai won this board
+                ai_board += 1 << i  # Toggle this bit in the ai_board
+            elif winner == -1:  # If this board is incomplete
+                game_complete = False  # Update game_complete
+        # If check_winner thinks the game is incomplete,
+        # Either the game is actually complete and there are too many draws to detect a winner
+        # Or there are still some possible moves which could theoretically result in a victory
+        if (result := TicTacToe.check_winner_board(human_board, ai_board)) == -1:
+            if game_complete:  # If the game is complete, return a draw
+                return 1
+            return result  # Otherwise return that the game is in fact incomplete
+        return result  # If check_winner detected a game result, return the game result
 
     def get_best_move(self):
-        search = MCTSSearch(self.sfr, self)
-        return search.get_best_move()
+        return MCTSSearch(self.sfr, self).get_best_move()
 
-    def random(self):
+    def random(self) -> str:
+        """
+        Simulate an entirely random game, from start to finish
+        :return: board string representation
+        :rtype: str
+        """
         while True:
             board = UltimateTicTacToeGame(self.sfr, self.game_id)
             for _ in range(random.randint(0, 81)):
-                move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
+                move = random.choice(board.get_valid_moves())
                 board.push(move)
-                if not board.check_winner() == (0, 0):
+                if board.check_winner() != -1:
                     break
-            if not board.check_winner() == (0, 0):
-                continue
-            else:
-                return str(board).split(";")[1]
+            if board.check_winner() != -1:
+                break
+        return str(board).split(";")[1]
 
     def generate_random_draw(self):
+        """
+        Simulate a draw (NOT WORKING) TODO: FIX
+        """
         board = UltimateTicTacToeGame(self.sfr, 5)
         string = TicTacToe(True).random()
 
         board.board = [TicTacToe(True).set_game(string) for i in range(9)]
-        if (board.check_winner() == (1, 0)):
+        if board.check_winner() == (1, 0):
             return True
 
 
 if __name__ == "__main__":
     e = UltimateTicTacToeGame(5, 5)
-    #for _ in range(10000):
+    # for _ in range(10000):
     #    if e.generate_random_draw():
     #        continue
     #    else:
@@ -204,18 +208,10 @@ if __name__ == "__main__":
     else:
         print("DRAW")
 
-#e = UltimateTicTacToeGame(5, 5)
-#e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
-#e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-x--x-oxo")
-#print(e.board)
-#print(e.check_winner())
-#e.push([2, 0, 1])
-#print(str(e))
-
-
-
-
-
-
-
-
+# e = UltimateTicTacToeGame(5, 5)
+# e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-o--o-xox")
+# e.set_game(f"Ultimate;o-xx-x--x,x--o-o-o-,o-o-----x,o--------,xxx-----o,ox-------,--------o,-x--o--x-,-x--x-oxo")
+# print(e.board)
+# print(e.check_winner())
+# e.push([2, 0, 1])
+# print(str(e))

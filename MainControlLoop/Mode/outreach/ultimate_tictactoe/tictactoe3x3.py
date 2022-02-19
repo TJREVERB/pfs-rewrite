@@ -7,6 +7,9 @@ class TicTacToe:
     """
     TicTacToe game (used in Ultimate TicTacToe and MCTS)
     """
+    winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]  # Hardcoded winning combinations
+    draw_combination = 0x1FF  # Only possible draw combination in tictactoe
+
     def __init__(self, is_ai_turn: bool):
         """
         Create a new game
@@ -17,9 +20,6 @@ class TicTacToe:
         # Initialize boards as 0
         self.human_board = 0
         self.ai_board = 0
-        # Preprocessed winning combinations
-        self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
-        self.draw_combination = 0x1FF  # Only possible draw combination in tictactoe
 
     def __str__(self):  # returns encoded board
         """
@@ -66,9 +66,9 @@ class TicTacToe:
         """
         for i in range(9):
             if board_string[i] == "x":
-                self.human_board += 2 ** i
+                self.human_board |= 1 << i
             elif board_string[i] == "o":
-                self.ai_board += 2 ** i
+                self.ai_board |= 1 << i
 
     def check_winner(self) -> int:
         """
@@ -76,13 +76,25 @@ class TicTacToe:
         :return: 0 = human win, 1 = draw, 2 = ai win, -1 = game incomplete
         :rtype: int
         """
-        if self.human_board in self.winning_combinations:
-            return 0
-        elif self.ai_board in self.winning_combinations:
-            return 2
-        elif self.human_board == self.draw_combination:  # Split to two if statements for efficiency
-            return 1
-        elif self.ai_board == self.draw_combination:
+        return self.check_winner_board(self.human_board, self.ai_board)
+
+    @staticmethod
+    def check_winner_board(human_board: int, ai_board: int) -> int:
+        """
+        Checks the winner of the given boards
+        :param human_board: human board state
+        :type human_board: int
+        :param ai_board: ai board state
+        :type ai_board: int
+        :return: 0 = human win, 1 = draw, 2 = ai win, -1 = game incomplete
+        :rtype: int
+        """
+        for i in TicTacToe.winning_combinations:
+            if human_board & i == i:
+                return 0
+            elif ai_board & i == i:
+                return 2
+        if human_board | ai_board == TicTacToe.draw_combination:
             return 1
         return -1
 
