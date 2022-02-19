@@ -65,61 +65,10 @@ class TicTacToeGame:
         #  always be ai turn
 
     def get_best_move(self):
-        #file = open("MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb")
-        #table = pickle.load(file)
-        #if not file.closed:
-        #    file.close()
-        #with open(r"MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
-        #    table = pickle.load(f)
         table = get_table()
         game_string = str(self).split(';')[1]
         if game_string in table:
             return list(table[game_string])
-
-        e  # to crash script
-        # WILL NEVER EXECUTE
-        possible_moves = self.get_valid_moves()
-        best = -10000
-        best_move = possible_moves[0]  # in case weird error where no move calculated
-        time_started = time.time()
-        for move in possible_moves:
-            if time.time() - self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME > time_started:
-                print("TIMEOUT")
-                break
-            score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
-            if score > best:
-                best_move = move
-                best = score
-        return best_move
-
-    def minimax(self, board, alpha, beta):
-        state = board.check_winner()
-        if state == (1, 0):
-            return -10
-        elif state == (0, 1):
-            return 10
-        elif state == (1, 1):
-            return 0
-        if board.is_ai_turn:
-            best_max = -10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_max = max(best_max, score)
-                alpha = max(alpha, score)
-                if beta <= alpha:
-                    break
-            return best_max
-        else:
-            best_min = 10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_min = min(best_min, score)
-                beta = min(beta, score)
-                if beta <= alpha:
-                    break
-            return best_min
 
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
