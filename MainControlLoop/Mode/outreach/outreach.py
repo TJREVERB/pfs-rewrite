@@ -88,6 +88,8 @@ class Outreach(Mode):
         """
         for _ in range(10):
             game_int = random.randint(0, 3)
+            if game_int == 2:
+                continue
             if game_int == 0:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
@@ -119,7 +121,7 @@ class Outreach(Mode):
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
-            # self.transmit_string(str(game))  # TODO: CHANGE WHEN NOT DEBUGING
+            # self.transmit_string(str(game))  # TODO: CHANGE WHEN NOT DEBUGGING
             #if time.time() - 60 > time_started:  # limit compute time per cycle
                 #break
 
