@@ -22,13 +22,18 @@ class UltimateTicTacToeGame:
         the previous move is appended to the end
         current turn is encoded at the end by h or a, h is human turn next, a is ai turn next
 
-        previous move = [0, 1, 2]
+        previous move = [0, 1, 2]. If previous move is None, format is (board_string),None,a
         is_ai_turn = True
         i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-,0,1,2,a
         'UltimateTicTacToe' is then inserted to the front, and turn char is appended at the back, either
         """
         board_string = ",".join([str(board) for board in self.board])  # TODO: FIX
-
+        if self.previous_move is None:
+            board_string += "None"
+        else:
+            for axis in self.previous_move:
+                board_string += f",{axis}"
+            board_string += ","
         if self.is_ai_turn:
             board_string += "a"
         else:
