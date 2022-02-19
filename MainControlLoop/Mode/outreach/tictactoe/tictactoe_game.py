@@ -64,13 +64,11 @@ class TicTacToeGame:
 
     def get_best_move(self):
         path = r"MainControlLoop/Mode/outreach/tictactoe/table.json"
-        f = open(path, "r")
-        table = json.load(f)
-        f.close()
+        with open(path, "r") as f:
+            table = json.load(f)
         game_string = str(self).split(';')[1]
         if game_string in table:
             return list(table[game_string])
-        del table
 
         e  # to crash script
         # WILL NEVER EXECUTE
