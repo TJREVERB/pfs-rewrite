@@ -162,10 +162,11 @@ class TicTacToeGame:
         return new_board
 
     def get_bitboard(self, array: np.array) -> int:
-        return int("".join(array
-                   .flatten()
-                   .vectorize(int)
-                   .vectorize(str)), 2)
+        new_list = list(np.reshape(array, (9,)))
+        new_list = map(int, new_list)
+        new_list = list(map(str, new_list))
+        bitboard = int("".join(new_list), 2)
+        return bitboard
 
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
