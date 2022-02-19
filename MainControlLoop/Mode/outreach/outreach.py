@@ -87,9 +87,7 @@ class Outreach(Mode):
         Debug only
         """
         for _ in range(10):
-            game_int = random.randint(0, 3)
-            if game_int == 2:
-                continue
+            game_int = random.randint(0, 2)
             if game_int == 0:
                 obj = UltimateTicTacToeGame(self.sfr, str(5))
                 game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
@@ -97,9 +95,9 @@ class Outreach(Mode):
                 obj = ChessGame(self.sfr, str(5))
                 game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
                 #1rbqk1nr/p2pb1p1/np3p1p/2p1p3/P1P3P1/1Q1BPP1P/1P1P4/RNB1K1NR b KQk - 1 9
-            elif game_int == 2:
-                obj = TicTacToeGame(self.sfr, str(5))
-                game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            #elif game_int == 2:
+            #    obj = TicTacToeGame(self.sfr, str(5))
+            #    game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             else:
                 obj = JokesGame(self.sfr, str(5))
                 game = f"Jokes;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
