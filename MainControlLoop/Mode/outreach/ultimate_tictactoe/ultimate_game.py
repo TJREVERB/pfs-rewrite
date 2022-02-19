@@ -103,7 +103,7 @@ class UltimateTicTacToeGame:
         :param move: Moves represented as bits [xxxxxxxxx](3x3 board location)[xxxxxxxxx](location on board)
         :type move: int
         """
-        self.board[section := int(np.log2(move >> 9))].push(move & ~(~0 << 9))
+        self.board[section := int(np.log2(move >> 9), 2)].push(move & ~(~0 << 9))
         for i, board in enumerate(self.board):
             if i != section:
                 board.switch_turn()
