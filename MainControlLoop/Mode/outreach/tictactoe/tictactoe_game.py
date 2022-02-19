@@ -68,7 +68,7 @@ class TicTacToeGame:
         #table = json.load(file)
         #if not file.closed:
          #   file.close()
-        with open("MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
+        with open(r"MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
             table = pickle.load(f)
         game_string = str(self).split(';')[1]
         if game_string in table:
