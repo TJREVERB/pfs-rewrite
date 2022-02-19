@@ -65,7 +65,7 @@ class TicTacToeGame:
 
     def get_best_move(self):
         file = open("MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb")
-        table = json.load(file)
+        table = pickle.load(file)
         if not file.closed:
             file.close()
         #with open(r"MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
