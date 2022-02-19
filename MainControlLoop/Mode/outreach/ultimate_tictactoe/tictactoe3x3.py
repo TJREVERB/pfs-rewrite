@@ -112,7 +112,7 @@ class TicTacToe:
         :return: whether this move is valid
         :rtype: bool (0 or 1)
         """
-        return bool(~(self.human_board & self.ai_board) >> location & 1)
+        return bool(~(self.human_board | self.ai_board) >> location & 1)
 
     def get_valid_moves(self) -> [int]:
         """
@@ -120,7 +120,7 @@ class TicTacToe:
         :return: list of integer moves
         :rtype: list
         """
-        return [i for i in range(9) if self.is_valid_move(i)]
+        return [1 << i for i in range(9) if self.is_valid_move(i)]
 
     def push(self, move: int) -> None:  # Takes integer move
         """
