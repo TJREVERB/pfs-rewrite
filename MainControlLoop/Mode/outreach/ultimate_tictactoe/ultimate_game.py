@@ -63,8 +63,7 @@ class UltimateTicTacToeGame:
     def set_game(self, board_string):
         encoded_list = board_string.split(",")
         self.board = [TicTacToe(self.is_ai_turn).set_game(board) for board in encoded_list[:9]]
-        self.previous_move = encoded_list[9:12]
-        print(self.previous_move)
+        self.previous_move = list(map(int, encoded_list[9:12]))
         if encoded_list[12] == "a":
             self.is_ai_turn = True
         else:
