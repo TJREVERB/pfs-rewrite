@@ -35,44 +35,13 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
-    async def _get_best_move(self) -> chess.Move:
-        """
-        Get best move by using Stockfish
-        :return: best move
-        :rtype: :class: 'chess.Move'
-        """
-        if not self.board.is_valid():
-            print("INVALID BOARD")
-            raise Exception
-        transport, engine = await chess.engine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe')
-        result = await engine.play(self.board, chess.engine.Limit(time=0.2))
-        result = result.move
-        await engine.quit()
-        return result
-
-    def __get_best_move(self):
-        #engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish_exe', timeout=None)
-        #result = engine.play(self.board, chess.engine.Limit(time=0.2))
-
-        #engine.quit()
-        #return result.move
-        stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe', parameters={"Minimum Thinking Time": 5})
+    def get_best_move(self):
+        stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe',
+                              parameters={"Minimum Thinking Time": 5})
         stockfish.set_fen_position(self.board.fen())
         move = stockfish.get_best_move_time(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)
         move = self.board.parse_san(move)
         return move
-
-    def get_best_move(self):
-        return self.__get_best_move()
-        #while True:
-        #    try:
-        #        asyncio.set_event_loop_policy(chess.engine.EventLoopPolicy())
-        #        result = asyncio.run(self._get_best_move())
-        #    except:
-        #        print("CHESS EXCEPTION: " + str(self.board))
-        #        continue
-        #    else:
-        #        return result
 
     def push(self, move: chess.Move):
         """
