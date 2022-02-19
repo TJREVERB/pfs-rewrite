@@ -64,8 +64,12 @@ class TicTacToeGame:
         #  always be ai turn
 
     def get_best_move(self):
-        with open("MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
-            table = pickle.load(f)
+        file = open("MainControlLoop/Mode/outreach/tictactoe/table.pkl")
+        table = pickle.load(file)
+        if not file.closed:
+            file.close()
+        #with open("MainControlLoop/Mode/outreach/tictactoe/table.pkl", "rb") as f:
+        #    table = pickle.load(f)
         game_string = str(self).split(';')[1]
         if game_string in table:
             return list(table[game_string])
