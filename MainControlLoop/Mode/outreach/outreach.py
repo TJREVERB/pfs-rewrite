@@ -47,7 +47,7 @@ class Outreach(Mode):
         :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
         """
         super().suggested_mode()
-        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+        if self.sfr.check_lower_threshold():
             return self.sfr.modes_list["Charging"](self.sfr, self)
         else:
             return self

@@ -138,8 +138,8 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to something
-    VOLT_LOWER_THRESHOLD = 7.3  # TODO: update this value to something
+    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to 8.0
+    VOLT_LOWER_THRESHOLD = 7.3  
 
     @wrap_errors(LogicalError)
     def __init__(self):
@@ -218,6 +218,7 @@ class StateFieldRegistry:
         :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
+            print("Syncing volt to charge (upper)")
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -236,6 +237,7 @@ class StateFieldRegistry:
         print(f"Checking lower threshold, vbat "
               f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
+            print("Syncing volt to charge")
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
