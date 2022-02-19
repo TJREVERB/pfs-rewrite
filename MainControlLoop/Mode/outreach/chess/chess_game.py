@@ -59,6 +59,7 @@ class ChessGame:
         stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe', parameters={"Minimum Thinking Time": 5})
         stockfish.set_fen_position(self.board.fen())
         move = stockfish.get_best_move_time(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)
+        move = self.board.parse_san(move)
         return move
 
     def get_best_move(self):
