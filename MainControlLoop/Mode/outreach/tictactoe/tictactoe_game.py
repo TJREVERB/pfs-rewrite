@@ -67,8 +67,10 @@ class TicTacToeGame:
     def get_best_move(self):
         table = get_table()
         game_string = str(self).split(';')[1]
-        if game_string in table:
+        if game_string in table:  # always should be in table
             return list(table[game_string])
+        else:  # TODO: figure out what happens
+            raise RuntimeError
 
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
