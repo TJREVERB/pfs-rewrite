@@ -161,7 +161,7 @@ class UltimateTicTacToeGame:
                 board.push(move)
                 if board.check_winner() != -1:
                     break
-            if board.check_winner() != -1:
+            if board.check_winner() == -1:
                 break
         return str(board).split(";")[1]
 
