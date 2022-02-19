@@ -64,7 +64,7 @@ class TicTacToeGame:
         #  always be ai turn
 
     def get_best_move(self):
-        file = open("MainControlLoop/Mode/outreach/tictactoe/table.pkl")
+        file = open("MainControlLoop/Mode/outreach/tictactoe/table.json")
         table = json.load(file)
         if not file.closed:
             file.close()
