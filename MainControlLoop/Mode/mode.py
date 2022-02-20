@@ -14,21 +14,17 @@ class Mode:
     """
     # initialization: does not turn on devices, initializes instance variables
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, wait=10, thresh=0):  # TODO: replace wait with appropriate time when done testing
+    def __init__(self, sfr):
         """
         Initializes constants specific to instance of Mode
-        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :param wait: poll iridium ever "wait" seconds, defaults to 10
-        :type wait: int, optional
-        :param thresh: signal threshold for polling iridium, defaults to 2
-        :type thresh: int, optional
+        :param sfr: sfr object
+        :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
-        self.SIGNAL_THRESHOLD = thresh  # TODO: FIX
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.iridium_clock = Clock(wait)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(300)  # Five minutes between each heartbeat ping
+        # TODO: replace 10 with appropriate time when done testing
+        self.iridium_clock = Clock(10)  # Poll iridium every "wait" seconds
+        self.heartbeat_clock = Clock(2700)  # Heartbeat every 45 minutes
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -40,15 +36,21 @@ class Mode:
         return "Mode"
 
     @wrap_errors(LogicalError)
-    def start(self, enabled_components: list) -> None:
+    def start(self, enabled_components: list) -> bool:
         """
+        Checks if we can be in this mode (if any required components are locked off, we can't)
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         :param enabled_components: list of components which need to be enabled in this mode
         :type enabled_components: list
+        :return: whether we should be in this mode
+        :rtype: bool
         """
+        if any([(i in self.sfr.vars.LOCKED_OFF_DEVICES) for i in enabled_components]):
+            return False
         self.sfr.all_off(exceptions=enabled_components)
         for component in enabled_components:
             self.sfr.power_on(component)
+        return True
 
     @wrap_errors(LogicalError)
     def suggested_mode(self):
@@ -69,10 +71,11 @@ class Mode:
         Additionally, it resets EPS watchdog and transmits heartbeat
         """
         self.sfr.eps.commands["Reset Watchdog"]()  # ensures EPS doesn't reboot
-        if self.iridium_clock.time_elapsed():  # If enough time has passed
+        # If enough time has passed and primary radio is Iridium
+        if self.iridium_clock.time_elapsed() and self.sfr.vars.PRIMARY_RADIO == "Iridium":
             try:
                 self.poll_iridium()  # Poll Iridium
-            except NoSignalException as e:
+            except NoSignalException:
                 print("Signal Lost")
             self.iridium_clock.update_time()  # Update last iteration
         if self.heartbeat_clock.time_elapsed():  # If enough time has passed
@@ -83,29 +86,31 @@ class Mode:
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
         """
+        Runs every 5 minutes
         Reads Iridium messages and appends to buffer
         Transmits any messages in the transmit queue
         Updates rtc clock based on iridium time if needed
         :return: whether the function ran (whether it polled iridium or not)
         :rtype: bool
         """
-        if self.sfr.devices["Iridium"] is None or self.sfr.vars.PRIMARY_RADIO != "Iridium":
+        if self.sfr.devices["Iridium"] is None:  # Don't run if Iridium is powered off (should never happen)
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
         print("Iridium signal strength: ", signal)
-        if signal <= self.SIGNAL_THRESHOLD:
+        if signal < 1:
             return False
 
+        print("Transmitting heartbeat...")
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
+
+        startlen = len(self.sfr.vars.command_buffer)
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium
-        self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
-        print("Attempting to transmit queue")
-        while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.sfr.command_executor.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
-                print("Signal strength lost!")
-                break
-            self.sfr.vars.transmit_buffer.pop(0)
-            print(f"Transmitted {p}")
+        if len(self.sfr.vars.command_buffer) > startlen:
+            self.sfr.vars.LAST_IRIDIUM_RECEIVED = time.time()  # Update last message received
+
+        self.sfr.command_executor.transmit_queue()  # Attempt to transmit transmission queue
+
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
@@ -113,6 +118,7 @@ class Mode:
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
+
         return True
 
     @wrap_errors(LogicalError)
@@ -123,12 +129,7 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.transmit(UnsolicitedData("GPL"), [
-            self.sfr.battery.telemetry["VBAT"](),
-            sum(self.sfr.recent_gen()),
-            sum(self.sfr.recent_power()),
-            self.sfr.devices["Iridium"].check_signal_passive() if self.sfr.devices["Iridium"] is not None else 0,
-        ])
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
@@ -148,21 +149,17 @@ class Mode:
         Performs a systems check of components that are not locked off and returns if a part failed or not
         Throws error if .functional() fails
 
-        :return: whether there was a failure in non-locked off components
+        :return: ALWAYS TRUE, a problem will result in an exception being raised
         :rtype: bool
         """
-        for device in self.sfr.devices.keys():
-            if not (device in self.sfr.vars.LOCKED_OFF_DEVICES):  # if it is not locked off, run functional check
-                device_object = self.sfr.devices[device]
-                was_off = False
-                if device_object is None:  # if the device is off, turn it on for the system check
-                    was_off = True
-                    self.sfr.power_on(device)
-                    device_object = self.sfr.devices[device]
-                if device_object.functional() is False:
-                    return False
-                if was_off:  # if it was previously off, turn it back off now that the systems check is complete
-                    self.sfr.power_off(device)
+        # Iterate over all devices which aren't locked off
+        for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.keys()):
+            if self.sfr.devices[device] is None:
+                self.sfr.power_on(device)
+                self.sfr.devices[device].functional()
+                self.sfr.power_off(device)
+            else:
+                self.sfr.devices[device].functional()
         return True
 
     @wrap_errors(LogicalError)
