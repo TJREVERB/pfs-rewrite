@@ -32,7 +32,18 @@ class UltimateTicTacToeGame:
         i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-h
         'UltimateTicTacToe' is then inserted to the front, and turn char is appended at the back, either
         """
-        board_string = ",".join([str(board) for board in self.board])
+        board_string = ",".join([str(board) for board in self.board])  # TODO: FIX
+        if self.previous_move is None:
+            board_string += ",-1,-1,-1,"  # set as -1 if no previous move
+        else:
+            for axis in self.previous_move:
+                board_string += f",{axis}"
+            board_string += ","
+        if self.is_ai_turn:
+            board_string += "a"
+        else:
+            board_string += "h"
+
         return f"Ultimate;{board_string};{self.game_id}"
 
     def print_board(self):
@@ -151,7 +162,7 @@ class UltimateTicTacToeGame:
                 board.push(move)
                 if board.check_winner() != -1:
                     break
-            if board.check_winner() != -1:
+            if board.check_winner() == -1:
                 break
         return str(board).split(";")[1]
 
