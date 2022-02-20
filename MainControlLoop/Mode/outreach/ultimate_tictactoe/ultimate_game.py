@@ -73,7 +73,8 @@ class UltimateTicTacToeGame:
         """
         if self.previous_move is None:  # If this is the first move
             return [(1 << i // 9) + (1 << i % 9) for i in range(81)]  # Return all possible moves
-        section_index = np.log2(self.previous_move & ~(~0 << 9))  # Set 3x3 board index to last move within inner board
+        # Set 3x3 board index to last move within inner board
+        section_index = int(np.log2(self.previous_move & ~(~0 << 9)))
         if self.board[section_index].check_winner() == -1:  # If the board we were sent to is incomplete
             # Return all legal moves + first 9 bits saying we're on this board
             return [(1 << section_index) + i for i in self.board[section_index].get_valid_moves()]
@@ -92,7 +93,7 @@ class UltimateTicTacToeGame:
         :param move: Moves represented as bits [xxxxxxxxx](3x3 board location)[xxxxxxxxx](location on board)
         :type move: int
         """
-        self.board[section := np.log2(move >> 9)].push(move & ~(~0 << 9))
+        self.board[section := int(np.log2(move >> 9))].push(move & ~(~0 << 9))
         for i, board in enumerate(self.board):
             if i != section:
                 board.switch_turn()
