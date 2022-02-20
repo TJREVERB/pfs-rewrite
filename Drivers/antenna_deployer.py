@@ -105,9 +105,10 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.bus.write_byte(self.PRIMARY_ADDRESS, command)
-        time.sleep(0.5)
-        return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
+        #self.bus.write_byte(self.PRIMARY_ADDRESS, command)
+        #time.sleep(0.5)
+        #return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
+        return self.bus.read_word_data(self.PRIMARY_ADDRESS, command)
 
     @wrap_errors(AntennaError)
     def functional(self):
@@ -119,7 +120,8 @@ class AntennaDeployer(Device):
         except Exception as e:
             print(e)
             raise AntennaError("Bad Connection")
-        raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
+        #raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
+        raw_count = raw_bytes
         v = raw_count * 3300 / 1023 # mV
         if v > 2616 or v < 769:
             raise AntennaError("Bad data readout")
@@ -161,7 +163,8 @@ class AntennaDeployer(Device):
     @wrap_errors(AntennaError)
     def check_deployment(self):
         raw = self.read(AntennaDeployerCommand.GET_STATUS)
-        twobyte = (raw[0] << 8) | raw[1] 
+        #twobyte = (raw[0] << 8) | raw[1] 
+        twobyte = raw
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
         self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed

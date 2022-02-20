@@ -6,52 +6,65 @@ from lib.clock import Clock
 
 class Science(Mode):
     """
-    Mode for conducting experiments on the signal strength variability of iridium over an orbit
+    Mode for studying signal strength mean/variability of iridium over an orbit
+    Collects 90 pings over one orbit and calculates signal strength mean and variability
+    Transmits results to ground when complete
+    Battery charges at a low rate while in this mode
     """
     # number of pings to do to complete orbit
-    # NUMBER_OF_REQUIRED_PINGS = self.sfr.vars.analytics.calc_orbital_period / self.DATAPOINT_SPACING
-    NUMBER_OF_REQUIRED_PINGS = 5  # TODO: UPDATE
+    NUMBER_OF_REQUIRED_PINGS = 10  # TODO: UPDATE TO 90
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
         Initializes constants specific to instance of Mode
-        :param sfr: Reference to :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
-        :type sfr: :class: 'MainControlLoop.lib.registry.StateFieldRegistry'
+        :param sfr: sfr object
+        :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
 
         super().__init__(sfr)
         self.ping_clock = Clock(5)  # TODO: MAKE 60
+        if len(df := self.sfr.logs["iridium"].read()) >= self.NUMBER_OF_REQUIRED_PINGS:
+            self.sfr.logs["iridium"].clear()
+            self.pings_performed = 0
+        else:
+            self.pings_performed = len(df)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
         """
-        Returns mode name as string
+        Returns 'Science'
         :return: mode name
         :rtype: str
         """
         return "Science"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
-        Powers on Iridium and APRS (if it is the primary radio)
+        Powers on Iridium (and APRS if it is the primary radio)
+        Returns False if we're not supposed to be in this mode due to locked devices
         """
-        super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
-        self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = -1
-        self.sfr.vars.SIGNAL_STRENGTH_MEAN = -1
-        self.pings_performed = 0
+        return super().start([self.sfr.vars.PRIMARY_RADIO, "Iridium"])
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
+        """
+        If we're low on battery, suggest Charging which will return to Science in order to complete collection
+        If Iridium is ever off, suggest that we enter Outreach because data collection is impossible
+        If we've finished collection, suggest that we go to Outreach because we aren't low enough on power for Charging
+        Otherwise, suggest that we stay in science
+        :return: mode we should be in
+        :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
+        """
         super().suggested_mode()
         if self.sfr.check_lower_threshold():  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
             return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
             # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
-        elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY != -1:  # If we've finished getting our data
-            return self.sfr.modes_list["Science"](self.sfr) # TODO: remove this after testing
+        elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
+            return self.sfr.modes_list["Science"](self.sfr)  # TODO: remove this after testing
             # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
         return self  # Otherwise, stay in science
 
@@ -85,15 +98,15 @@ class Science(Mode):
         print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN)
         print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY)
         # Transmit signal strength variability
-        self.sfr.command_executor.GID(UnsolicitedData("GID"))
+        self.sfr.command_executor.ASV(UnsolicitedData("ASV", args = [self.NUMBER_OF_REQUIRED_PINGS]))
         return True
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         """
-        Executes one iteration of mode
-        For example: measure signal strength as the orbit location changes.
-        NOTE: This method should not execute_buffers radio commands, that is done by command_executor class.
+        Executes one iteration of Science mode
+        Measure signal strength when enough time passes
+        If enough pings are performed, transmit results to ground
         """
         super().execute_cycle()
         # If enough time has passed and we haven't performed enough pings
