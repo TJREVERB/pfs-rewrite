@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics &mdash; TJ REVERB 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Clock" href="clock.html" />
+    <link rel="prev" title="Backend" href="../backend.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> TJ REVERB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main/main.html">Main</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../backend.html">Backend</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Analytics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clock.html">Clock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_executor.html">Command Executor</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TJ REVERB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../backend.html">Backend</a> &raquo;</li>
+      <li>Analytics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/backend/classes/analytics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analytics">
+<h1>Analytics<a class="headerlink" href="#analytics" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.analytics.Analytics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.analytics.</span></span><span class="sig-name descname"><span class="pre">Analytics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.analytics.Analytics" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class provides methods to analyze data from logs</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.analytics.Analytics.__init__" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sfr</strong> (<em>:class:'lib.registry.StateFieldRegistry'</em>) – Reference to :class:’lib.registry.StateFieldRegistry’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#lib.analytics.Analytics.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.calc_orbital_period">
+<span class="sig-name descname"><span class="pre">calc_orbital_period</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.calc_orbital_period" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate orbital period over last 50 orbits
+:return: average orbital period over last 50 orbits</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.historical_consumption">
+<span class="sig-name descname"><span class="pre">historical_consumption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.series.Series</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.historical_consumption" title="Permalink to this definition"></a></dt>
+<dd><p>Returns pandas series of power consumption over last/latest n data points</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – number of data points to return</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>:class:’pd.Series’ of last n data points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>:class:’pd.Series’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.historical_generation">
+<span class="sig-name descname"><span class="pre">historical_generation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.series.Series</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.historical_generation" title="Permalink to this definition"></a></dt>
+<dd><p>Get power generation over last n data points while in sunlight</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – number of data points to return</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>:class:’pd.Series’ of last n data points while in sunlight</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>:class:’pd.Series’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.orbital_decay">
+<span class="sig-name descname"><span class="pre">orbital_decay</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.orbital_decay" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns total orbital decay of satellite in seconds</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>orbital decay of satellite in seconds</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.predicted_consumption">
+<span class="sig-name descname"><span class="pre">predicted_consumption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.predicted_consumption" title="Permalink to this definition"></a></dt>
+<dd><p>Uses empirical data to estimate how much energy we’d consume
+with a particular set of pdms enabled over a duration.
+Accounts for change over time in power draw of components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>duration</strong> (<em>int</em>) – time in seconds to remain in state</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>predicted amount of energy consumed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.predicted_generation">
+<span class="sig-name descname"><span class="pre">predicted_generation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.predicted_generation" title="Permalink to this definition"></a></dt>
+<dd><p>Predict how much power will be generated by solar panels over given duration
+Assumes simulation will start at current orbital position
+:param duration: time in seconds to simulate for
+:type duration: int
+:return: tuple of (estimated power generation, standard deviation of data, oldest data point)
+:rtype: tuple</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.signal_strength_mean">
+<span class="sig-name descname"><span class="pre">signal_strength_mean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.signal_strength_mean" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns signal strength mean based on Iridium data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>average signal strength</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.signal_strength_variability">
+<span class="sig-name descname"><span class="pre">signal_strength_variability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.signal_strength_variability" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns signal strength variability based on Iridium data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>standard deviation of signal strength</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.sunlight_ratio">
+<span class="sig-name descname"><span class="pre">sunlight_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.sunlight_ratio" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns over the last 50 orbits what fraction of each orbit we spend in sunlight</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – number of orbits to analyze</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>what fraction of each orbit we spend in sunlight (0 if not enough data)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.total_data_transmitted">
+<span class="sig-name descname"><span class="pre">total_data_transmitted</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.total_data_transmitted" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns total amount of data transmitted by satellite</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>total amount of data transmitted by satellite</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.total_energy_consumed">
+<span class="sig-name descname"><span class="pre">total_energy_consumed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.total_energy_consumed" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns total energy consumed by satellite over mission duration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>total energy consumed by satellite over mission duration</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.total_energy_generated">
+<span class="sig-name descname"><span class="pre">total_energy_generated</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.total_energy_generated" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns total energy generated by satellite over mission duration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>total energy generated by satellite over mission duration</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.analytics.Analytics.volt_to_charge">
+<span class="sig-name descname"><span class="pre">volt_to_charge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">voltage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#lib.analytics.Analytics.volt_to_charge" title="Permalink to this definition"></a></dt>
+<dd><p>Map volts to remaining battery charge in Joules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>voltage</strong> (<em>float</em>) – battery voltage</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>estimated charge in Joules</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../backend.html" class="btn btn-neutral float-left" title="Backend" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="clock.html" class="btn btn-neutral float-right" title="Clock" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, TJ REVERB.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

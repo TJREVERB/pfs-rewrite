@@ -22,7 +22,7 @@ class Clock:
         :return: if enough time has elapsed so function can be run
         :rtype: bool
         """
-        return time.time() >= self.last_iteration + self.delay
+        return time.time() > self.last_iteration + self.delay
 
     @wrap_errors(LogicalError)
     def update_time(self) -> None:

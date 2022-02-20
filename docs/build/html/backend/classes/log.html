@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logging &mdash; TJ REVERB 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="StateFieldRegistry" href="../../sfr.html" />
+    <link rel="prev" title="Command Executor" href="command_executor.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> TJ REVERB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../main/main.html">Main</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../backend.html">Backend</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="analytics.html">Analytics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clock.html">Clock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_executor.html">Command Executor</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Logging</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sfr.html">StateFieldRegistry</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TJ REVERB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../backend.html">Backend</a> &raquo;</li>
+      <li>Logging</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/backend/classes/log.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="logging">
+<h1>Logging<a class="headerlink" href="#logging" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.log.Log">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.log.</span></span><span class="sig-name descname"><span class="pre">Log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Log" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Log.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Log.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Common routines for every log
+:param path: path to log</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lib.log.Log.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#lib.log.Log.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Log.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Log.clear" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Log.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Log.read" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Log.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Log.write" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.log.JSONLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.log.</span></span><span class="sig-name descname"><span class="pre">JSONLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.JSONLog" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lib.log.Log" title="lib.log.Log"><code class="xref py py-class docutils literal notranslate"><span class="pre">lib.log.Log</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.JSONLog.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.JSONLog.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new json Log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.JSONLog.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.JSONLog.clear" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.JSONLog.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.JSONLog.read" title="Permalink to this definition"></a></dt>
+<dd><p>Read and return entire log
+:return: dictionary stored in log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.JSONLog.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.JSONLog.write" title="Permalink to this definition"></a></dt>
+<dd><p>Append one line of data to a csv log or dump to a pickle or json log
+:param data: dictionary of the form {“field”: float_val}</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.log.PKLLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.log.</span></span><span class="sig-name descname"><span class="pre">PKLLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.PKLLog" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lib.log.Log" title="lib.log.Log"><code class="xref py py-class docutils literal notranslate"><span class="pre">lib.log.Log</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.PKLLog.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.PKLLog.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new pkl Log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.PKLLog.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.PKLLog.clear" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.PKLLog.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">object</span></span></span><a class="headerlink" href="#lib.log.PKLLog.read" title="Permalink to this definition"></a></dt>
+<dd><p>Read and return entire log
+:return: object stored in log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.PKLLog.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.PKLLog.write" title="Permalink to this definition"></a></dt>
+<dd><p>Append one line of data to a csv log or dump to a pickle or json log
+:param data: object</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.log.CSVLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.log.</span></span><span class="sig-name descname"><span class="pre">CSVLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">headers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.CSVLog" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lib.log.Log" title="lib.log.Log"><code class="xref py py-class docutils literal notranslate"><span class="pre">lib.log.Log</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.CSVLog.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">headers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.CSVLog.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new csv Log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.CSVLog.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.CSVLog.clear" title="Permalink to this definition"></a></dt>
+<dd><p>IMPLEMENTED IN SUBCLASSES</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.CSVLog.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#lib.log.CSVLog.read" title="Permalink to this definition"></a></dt>
+<dd><p>Read and return entire log
+:return: dataframe of entire log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.CSVLog.truncate">
+<span class="sig-name descname"><span class="pre">truncate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.CSVLog.truncate" title="Permalink to this definition"></a></dt>
+<dd><p>Remove n rows from csv log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.CSVLog.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.CSVLog.write" title="Permalink to this definition"></a></dt>
+<dd><p>Append one line of data to a csv log or dump to a pickle or json log
+:param data: dictionary of the form {“column_name”: value}</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.log.Logger">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.log.</span></span><span class="sig-name descname"><span class="pre">Logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Logger" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.log.Logger.__init__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lib.log.Logger.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#lib.log.Logger.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.integrate_charge">
+<span class="sig-name descname"><span class="pre">integrate_charge</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.integrate_charge" title="Permalink to this definition"></a></dt>
+<dd><p>Integrate battery charge in Joules</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.log" title="Permalink to this definition"></a></dt>
+<dd><p>Calls :class:’lib.clock.Clock’ of all logging functions</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.log_imu">
+<span class="sig-name descname"><span class="pre">log_imu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.log_imu" title="Permalink to this definition"></a></dt>
+<dd><p>Logs IMU data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.log_power_full">
+<span class="sig-name descname"><span class="pre">log_power_full</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.log_power_full" title="Permalink to this definition"></a></dt>
+<dd><p>Calls log_power and log_solar</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.log_pwr">
+<span class="sig-name descname"><span class="pre">log_pwr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buspower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pwr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.log_pwr" title="Permalink to this definition"></a></dt>
+<dd><p>Logs the power draw of every pdm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>buspower</strong> (<em>float</em>) – power draw of bus</p></li>
+<li><p><strong>pwr</strong> (<em>list</em>) – array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W…]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.log_solar">
+<span class="sig-name descname"><span class="pre">log_solar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.log_solar" title="Permalink to this definition"></a></dt>
+<dd><p>Logs the solar power generation from each panel (sum of A and B)
+:param gen: array of power inputs from each panel, in Watts
+:type gen: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.log.Logger.update_orbits">
+<span class="sig-name descname"><span class="pre">update_orbits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.log.Logger.update_orbits" title="Permalink to this definition"></a></dt>
+<dd><p>Update orbits log when sun is detected</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="command_executor.html" class="btn btn-neutral float-left" title="Command Executor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../sfr.html" class="btn btn-neutral float-right" title="StateFieldRegistry" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, TJ REVERB.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

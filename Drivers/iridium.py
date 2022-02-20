@@ -1,5 +1,6 @@
 import time, datetime
 import math
+from numpy import nan
 from serial import Serial
 import copy
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -35,12 +36,54 @@ class Iridium(Device):
     PORT = '/dev/serial0'
     BAUDRATE = 19200
 
-    # Maximum permissible data size including descriptor size, in bytes. Hardware limitation should be 340 bytes total
-    MAX_DATASIZE = 300
+    MAX_DATASIZE = 300 # Maximum permissible data size including descriptor size, in bytes. Hardware limitation should be 340 bytes total
 
     EPOCH = datetime.datetime(2014, 5, 11, 14, 23, 55).timestamp()  # Set epoch date to 5 May, 2014, at 14:23:55 GMT
 
-    ASCII_ARGS = {"ICE", "ZMV"}  # Commands whose arguments should be decoded as ascii
+    ENCODED_REGISTRY = [  # Maps each 3 character string to a number code
+        "GRB", # DO NOT CHANGE THIS FIRST LINE! IT IS NECESSARY FOR ENCODING GARBLED MESSAGE NOTIFICATIONS
+        "MCH",
+        "MSC",
+        "MOU",
+        "MRP",
+        "MLK",
+        "MDF",
+        "DLN",
+        "DLF",
+        "DDF",
+        "GCR",
+        "GVT",
+        "GPL",
+        "GCD",
+        "GPW",
+        "GPR",
+        "GOP",
+        "GCS",
+        "GID",
+        "GSM",
+        "GSV",
+        "GSG",
+        "GTB",
+        "GMT",
+        "GTS",
+        "AAP",
+        "APW",
+        "ASV",
+        "ASG",
+        "ATB",
+        "AMS",
+        "SUV",
+        "SLV",
+        "USM",
+        "ULG",
+        "ITM",
+        "IPC",
+        "ICE",
+        "IGO",
+        "IAK",
+    ]
+
+    ASCII_ARGS = {"ICE"}  # Commands whose arguments should be decoded as ascii
 
     @wrap_errors(IridiumError)
     def __init__(self, state_field_registry):
@@ -48,19 +91,14 @@ class Iridium(Device):
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
-        
-        # Maps each 3 character string to a number code
-        self.ENCODED_REGISTRY = list(self.sfr.command_executor.primary_registry.keys())
-        self.ENCODED_REGISTRY.insert(0, "GRB")
-
         self.GEO_C = lambda: self.request("AT-MSGEO")  # Current geolocation, xyz cartesian
         # return format: <x>, <y>, <z>, <time_stamp>
         # time_stamp uses same 32 bit format as MSSTM
 
         # Performs a manual registration, consisting of attach and location update. No MO/MT messages transferred
         # Optional param location
-        self.REGISTER = lambda location=None: self.request(f"AT+SBDREG={location}") if location \
-            else self.request("AT+SBDREG")
+        self.REGISTER = lambda location="": self.request("AT+SBDREG") if len(location) == 0 \
+            else self.request("AT+SBDREG=" + location)
 
         self.MODEL = lambda: self.request("AT+CGMM")
         self.PHONE_REV = lambda: self.request("AT+CGMR")
@@ -77,13 +115,14 @@ class Iridium(Device):
         # ten seconds if iridium is in satellite handoff
         self.LAST_RSSI = lambda: self.request("AT+CSQF")  # Returns last known signal strength, immediately
 
-        # Sets unsolicited notifications of signal strength on or off
-        self.CIER = lambda ls: self.request("AT+CIER=" + ",".join([str(s) for s in ls]))
+        self.CIER = lambda ls: self.request(
+            "AT+CIER=" + ",".join([str(s) for s in ls]))  # Sets unsolicited notifications of signal strength on or off
 
         # Enable or disable ring indications for SBD Ring Alerts. When ring indication is enabled, ISU asserts RI
         # line and issues the unsolicited result code SBDRING when an SBD ring alert is received Ring alerts can only
         # be sent after the unit is registered :optional param b: set 1/0 enable/disable
-        self.RING_ALERT = lambda b="": self.request(f"AT+SBDMTA{b}")
+        self.RING_ALERT = lambda b="": self.request("AT+SBDMTA") if len(str(b)) == 0 \
+            else self.request("AT+SBDMTA" + str(b))
 
         # doesn't seem relevant to us?
         self.BAT_CHECK = lambda: self.request("AT+CBC")
@@ -92,13 +131,13 @@ class Iridium(Device):
         self.SOFT_RST = lambda: self.request("ATZn", 1)
 
         # Load message into mobile originated buffer. SBDWT uses text, SBDWB uses binary. 
-        self.SBD_WT = lambda message: self.request(f"AT+SBDWT={message}")
+        self.SBD_WT = lambda message: self.request("AT+SBDWT=" + message)
         # For SBDWB, input message byte length
         # Once "READY" is read in, write each byte, then the two least significant checksum bytes, MSB first
         # Final response: 0: success, 1: timeout (insufficient number of bytes transferred in 60 seconds)
         # 2: Checksum does not match calculated checksum, 3: message length too long or short
         # Keep messages 340 bytes or shorter
-        self.SBD_WB = lambda length: self.write(f"AT+SBDWB={length}")
+        self.SBD_WB = lambda length: self.write("AT+SBDWB=" + str(length))
         # Read message from mobile terminated buffer. SBDRT uses text, SBDRB uses binary. Only one message is
         # contained in buffer at a time
         self.SBD_RT = lambda: self.request("AT+SBDRT")
@@ -118,7 +157,8 @@ class Iridium(Device):
 
         # Reads or sets session timeout settings, after which time ISU will stop trying to transmit/receive to GSS,
         # in seconds. 0 means infinite timeout
-        self.SBD_TIMEOUT = lambda t=None: self.request(f"AT+SBDST={t}") if t else self.request("AT+SBDST")
+        self.SBD_TIMEOUT = lambda time="": self.request("AT+SBDST") if len(str(time)) == 0 \
+            else self.request("AT+SBDST=" + str(time))
 
         # Transfers contents of mobile originated buffer to mobile terminated buffer, to test reading and writing to
         # ISU without initiating SBD sessions with GSS/ESS returns response of the form "SBDTC: Outbound SBD copied
@@ -231,46 +271,38 @@ class Iridium(Device):
         encoded.append((date >> 8) & 0xff)
         encoded.append(date & 0xff)
         if packet.response:
-            if packet.descriptor in self.ENCODED_REGISTRY:
-                encoded.append(self.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
+            if packet.descriptor in Iridium.ENCODED_REGISTRY:
+                encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
             else:
                 raise LogicalError(details="Invalid descriptor string")
             encoded.append((packet.msn >> 8) & 0xff) # Sixth and Seventh byte msn
             encoded.append(packet.msn & 0xff)
         else:
             if packet.numerical:
-                if packet.descriptor in self.ENCODED_REGISTRY:
-                    encoded.append(self.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
+                if packet.descriptor in Iridium.ENCODED_REGISTRY:
+                    encoded.append(Iridium.ENCODED_REGISTRY.index(packet.descriptor)) # Fifth byte descriptor
                 else:
                     raise LogicalError(details="Invalid descriptor string")
 
         if packet.numerical:
             for n in packet.return_data:
-                # Jank way to check for NaN without figuring out where to import it from
-                try:
-                    n = float(n)
-                    int(n)
-                except ValueError as e:
-                    if "nan" in repr(e) or "NaN" in repr(e):
-                        n = 0
-                    else:
-                        raise ValueError(repr(e))
+                n = 0 if n is nan else n
                 #  convert from float or int to twos comp half precision, bytes are MSB FIRST
                 flt = 0
                 if n != 0:
-                    exp = int(math.floor(math.log10(abs(n))))
+                    exp = int(math.log10(abs(n)))
                 else:
                     exp = 0
                 if exp < 0:
-                    exp = abs(exp)
+                    exp = abs(exp) + 1
                     exp &= 0xf  # make sure exp is 4 bits, cut off anything past the 4th
-                    signexp = (1 << 4) - exp  # twos comp
-                    flt |= signexp << 19
+                    exp = (1 << 4) - exp  # twos comp
+                    flt |= exp << 19
                     flt |= 1 << 23
                 else:
                     flt |= (exp & 0xf) << 19  # make sure exp is 4 bits, cut off anything past the 4th, shift left 19
                 # num will always have five digits, with trailing zeros if necessary to fill it in
-                num = abs(int((n / (10 ** exp)) * 10000))
+                num = int((n / (10 ** exp)) * 10000)
                 if n < 0:
                     num &= 0x3ffff  # make sure num is 18 bits long
                     num = (1 << 18) - num  # twos comp
@@ -308,9 +340,9 @@ class Iridium(Device):
 
         if checksum != actual_checksum or length != len(msg):
             raise IridiumError(details="Incorrect checksum/length")
-        if msg[0] < 0 or msg[0] >= len(self.ENCODED_REGISTRY):
+        if msg[0] < 0 or msg[0] >= len(Iridium.ENCODED_REGISTRY):
             raise InvalidCommandException(details="Invalid command received")
-        decoded = self.ENCODED_REGISTRY[msg[0]]
+        decoded = Iridium.ENCODED_REGISTRY[msg[0]]
         args = []
 
         if decoded in Iridium.ASCII_ARGS:
@@ -330,21 +362,16 @@ class Iridium(Device):
                     coef /= 10 ** int(math.log10(abs(coef)))
                 args.append(coef * 10 ** exp)
         if decoded == "ARS":
-            if args[0] < 0 or args[0] >= len(self.ENCODED_REGISTRY):
+            if args[0] < 0 or args[0] >= len(Iridium.ENCODED_REGISTRY):
                 raise InvalidCommandException(details="Invalid command received")
-            args[0] = self.ENCODED_REGISTRY[int(args[0])]
+            args[0] = Iridium.ENCODED_REGISTRY[args[0]]
         return (decoded, args)
 
-    @staticmethod
     @wrap_errors(IridiumError)
-    def split_packet(packet: TransmissionPacket) -> list:
+    def split_packet(self, packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """
-        if len(packet.return_data) == 0:
-            # Special case to avoid losing packets with zero data
-            return [packet]
-
         FLOAT_LEN = 3
 
         DESCRIPTOR_LEN = 4
@@ -352,7 +379,7 @@ class Iridium(Device):
             DESCRIPTOR_LEN = 7
         elif packet.numerical:
             DESCRIPTOR_LEN = 5
-
+        
         if packet.numerical:
             data = packet.return_data
             ls = [data[0 + i:(Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)//FLOAT_LEN + i] for i in range(
@@ -363,8 +390,6 @@ class Iridium(Device):
                 result[_].index = _
         else:
             data = packet.return_data[0]
-            if len(data) == 0:
-                return [packet]
             ls = [data[0 + i:Iridium.MAX_DATASIZE-DESCRIPTOR_LEN + i] for i in range(0, len(data), Iridium.MAX_DATASIZE-DESCRIPTOR_LEN)]
             result = [copy.deepcopy(packet) for _ in range(len(ls))]
             for _ in range(len(ls)):
@@ -388,7 +413,19 @@ class Iridium(Device):
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
             if not discardmtbuf:
-                self.check_buffer()
+                try:
+                    self.SBD_RB()
+                    raw = self.serial.read(50)
+                    t = time.perf_counter()
+                    while raw.find(b'OK') == -1:
+                        if time.perf_counter() - t > 5:
+                            raise IridiumError(details="Serial Timeout")
+                        raw += self.serial.read(50)
+                    raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                    self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
+                except Exception as e:
+                    self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))  
+                    # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         result = self.transmit_raw(raw := self.encode(packet))
@@ -399,24 +436,21 @@ class Iridium(Device):
             "size": len(raw),
         })
         if result[0] not in [0, 1, 2, 3, 4]:
-            match result[0]:
-                case 33:
-                    raise IridiumError(details="Error transmitting buffer, Antenna fault")
-                case 16:
-                    raise IridiumError(details="Error transmitting buffer, ISU locked")
-                case 15:
-                    raise IridiumError(details="Error transmitting buffer, Gateway reports that Access is Denied")
-                case 10 | 11| 12 | 13 | 14 | 17 | 18 | 19 | 32 | 35 | 36 | 37 | 38: 
-                    # These all vaguely indicate no signal, or at least the issue is not hardware fault
-                    raise NoSignalException()
-                case 65:
-                    raise IridiumError(details="Error transmitting buffer, Hardware Error (PLL Lock failure)")
-                case 34:
-                    raise IridiumError(details="Error transmitting buffer, Radio is disabled (see AT*Rn)")
-                case _:
-                    raise IridiumError(details=f"Error transmitting buffer, error code {result[0]}")
+            raise IridiumError(details="Error transmitting buffer")
         if result[2] == 1:
-            self.check_buffer()
+            try:
+                self.SBD_RB()
+                raw = self.serial.read(50)
+                t = time.perf_counter()
+                while raw.find(b'OK') == -1:
+                    if time.perf_counter() - t > 5:
+                        raise IridiumError(details="Serial Timeout")
+                    raw += self.serial.read(50)
+                raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
+                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
+            except Exception as e:
+                self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
+                # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
         return True
@@ -500,8 +534,7 @@ class Iridium(Device):
         while result[5] >= 0:
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
             lastqueued.append(result[5])
-            if len(lastqueued) > 3 and sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
-                print("GSS Not Changing, aborting")
+            if sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
                 break  # If GSS queue is not changing, don't bother to keep trying, just break
             if result[2] == 1:
                 try:
@@ -562,8 +595,8 @@ class Iridium(Device):
             if result[0] not in [0, 1, 3, 4]:
                 return (0, 0, 0)
             raw = self.process(self.GEO_C(), "MSGEO").split(",")  # try again
-        lon = math.degrees(math.atan2(float(raw[1]), float(raw[0])))
-        lat = math.degrees(math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5)))
+        lon = math.atan2(float(raw[1]), float(raw[0]))
+        lat = math.atan2(float(raw[2]), ((float(raw[1]) ** 2 + float(raw[0]) ** 2) ** 0.5))
         alt = (float(raw[0]) ** 2 + float(raw[1]) ** 2 + float(raw[2]) ** 2) ** 0.5
         return (lat, lon, alt)
 
@@ -595,7 +628,7 @@ class Iridium(Device):
         :param command: (str) Command to write
         :return: (bool) if the serial write worked
         """
-        #print(command)
+        print(command)
         self.serial.write((command + "\r\n").encode("utf-8"))
         return True
 
@@ -614,5 +647,5 @@ class Iridium(Device):
             if next_byte == bytes():
                 break
             output += next_byte
-        #print(output)
+        print(output)
         return output.decode("utf-8")

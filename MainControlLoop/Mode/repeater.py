@@ -17,7 +17,7 @@ class Repeater(Mode):
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
-        return super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
+        super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
         self.sfr.devices["APRS"].enable_digi()
 
     @wrap_errors(LogicalError)
