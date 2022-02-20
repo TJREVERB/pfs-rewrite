@@ -7,7 +7,7 @@ class TicTacToe:
     """
     TicTacToe game (used in Ultimate TicTacToe and MCTS)
     """
-    winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]  # Hardcoded winning combinations
+    winning_combinations = {0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54}  # Hardcoded winning combinations
     draw_combination = 0x1FF  # Only possible draw combination in tictactoe
 
     def __init__(self, is_ai_turn: bool):
