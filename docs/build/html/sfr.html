@@ -73,6 +73,280 @@
              
   <section id="statefieldregistry">
 <h1>StateFieldRegistry<a class="headerlink" href="#statefieldregistry" title="Permalink to this headline"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.registry.</span></span><span class="sig-name descname"><span class="pre">StateFieldRegistry</span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Collection of loggable fields, constants, functions, and devices
+Accessible to every element of pfs</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.registry.StateFieldRegistry.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Variables common across our pfs
+Vars in the “vars” object get logged</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.all_off">
+<span class="sig-name descname"><span class="pre">all_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exceptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_default_exceptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.all_off" title="Permalink to this definition"></a></dt>
+<dd><p>Turns all components off automatically, except for Antenna Deployer.
+Calls power_off for every key in self.devices. Except for those in exceptions parameter
+:param exceptions: (list) components to not turn off, default is [“Antenna Deployer, IMU”]
+:param override_default_exceptions: (bool) whether or not to use default exceptions
+:return: None</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.all_on">
+<span class="sig-name descname"><span class="pre">all_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exceptions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.all_on" title="Permalink to this definition"></a></dt>
+<dd><p>Turns all components on automatically, except for Antenna Deployer.
+Calls power_on for every key in self.devices except for those in exceptions parameter
+:param exceptions: components to not turn on, default is [“Antenna Deployer, IMU”]
+:type exceptions: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.check_lower_threshold">
+<span class="sig-name descname"><span class="pre">check_lower_threshold</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.check_lower_threshold" title="Permalink to this definition"></a></dt>
+<dd><p>Checks upper battery threshold for switching modes
+Syncs voltage to integrated charge if necessary
+:return: whether switch is required
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.check_upper_threshold">
+<span class="sig-name descname"><span class="pre">check_upper_threshold</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.check_upper_threshold" title="Permalink to this definition"></a></dt>
+<dd><p>Checks upper battery threshold for switching modes
+Syncs voltage to integrated charge if necessary
+:return: whether switch is required
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.clear_logs">
+<span class="sig-name descname"><span class="pre">clear_logs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.clear_logs" title="Permalink to this definition"></a></dt>
+<dd><p>WARNING: CLEARS ALL LOGGED DATA, ONLY USE FOR TESTING/DEBUG</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.dump">
+<span class="sig-name descname"><span class="pre">dump</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.dump" title="Permalink to this definition"></a></dt>
+<dd><p>Dump values of all state fields into state_field_log and readable log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.enter_eclipse">
+<span class="sig-name descname"><span class="pre">enter_eclipse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.enter_eclipse" title="Permalink to this definition"></a></dt>
+<dd><p>Update LAST_ECLIPSE_ENTRY and log new data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.enter_sunlight">
+<span class="sig-name descname"><span class="pre">enter_sunlight</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.enter_sunlight" title="Permalink to this definition"></a></dt>
+<dd><p>Update LAST_DAYLIGHT_ENTRY and log new data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#lib.registry.Vars" title="lib.registry.Vars"><span class="pre">lib.registry.Vars</span></a></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.load" title="Permalink to this definition"></a></dt>
+<dd><p>Load sfr fields from log
+:return: loaded fields
+:rtype: :class: ‘lib.registry.Vars’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.lock_device_off">
+<span class="sig-name descname"><span class="pre">lock_device_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.lock_device_off" title="Permalink to this definition"></a></dt>
+<dd><p>Takes care of logic for locking off devices
+:param component: name of device to lock off
+:type component: str
+:param force: if true, this will overwrite any previous locks on this device
+:type force: bool
+:return: whether the device was able to be locked off
+(example: false if force == False and it was previously in LOCKED_ON_DEVICES)
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.lock_device_on">
+<span class="sig-name descname"><span class="pre">lock_device_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.lock_device_on" title="Permalink to this definition"></a></dt>
+<dd><p>Takes care of logic for locking on devices
+:param component: name of device to lock on
+:type component: str
+:param force: if true, this will overwrite any previous locks on this device
+:type force: bool
+:return: whether the device was able to be locked on</p>
+<blockquote>
+<div><p>(only false if force == False and it was previously in LOCKED_OFF_DEVICES)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.log_iridium">
+<span class="sig-name descname"><span class="pre">log_iridium</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.log_iridium" title="Permalink to this definition"></a></dt>
+<dd><p>Logs iridium data
+:param location: current geolocation
+:type location: tuple
+:param signal: iridium signal strength
+:type signal: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.power_off">
+<span class="sig-name descname"><span class="pre">power_off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.power_off" title="Permalink to this definition"></a></dt>
+<dd><p>Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
+:param component: component to turn off
+:type component: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.power_on">
+<span class="sig-name descname"><span class="pre">power_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.power_on" title="Permalink to this definition"></a></dt>
+<dd><p>Turns on component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
+:param component: component to turn on
+:type component: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.reboot">
+<span class="sig-name descname"><span class="pre">reboot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.reboot" title="Permalink to this definition"></a></dt>
+<dd><p>Powers a given component on and off again
+:param component: component to reboot
+:type component: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.recent_gen">
+<span class="sig-name descname"><span class="pre">recent_gen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.recent_gen" title="Permalink to this definition"></a></dt>
+<dd><p>Returns list of input power from all bcrs
+:return: [bcr1, bcr2, bcr3]
+:rtype: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.recent_power">
+<span class="sig-name descname"><span class="pre">recent_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.recent_power" title="Permalink to this definition"></a></dt>
+<dd><p>Returns list of buspower and power draws for all pdms
+:return: [buspower, 0x01, 0x02… 0x0A]
+:rtype: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.reset" title="Permalink to this definition"></a></dt>
+<dd><p>Resets state field registry vars log</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.set_primary_radio">
+<span class="sig-name descname"><span class="pre">set_primary_radio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_radio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turn_off_old</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.set_primary_radio" title="Permalink to this definition"></a></dt>
+<dd><p>Takes care of switching sfr PRIMARY_RADIO field:
+instantiates primary radio if necessary, kills the previous radio if requested
+:param new_radio: string name of new radio (i.e. “APRS” or “Iridium”)
+:type new_radio: str
+:param turn_off_old: whether or not to turn off the old radio if it is being switched
+:type turn_off_old: bool
+:return: Whether primary radio was switched</p>
+<blockquote>
+<div><p>True if the primary radio could be set as specified (or it already was that one).
+False only if it is locked off, or it’s APRS and antenna not deployed</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.sleep">
+<span class="sig-name descname"><span class="pre">sleep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.sleep" title="Permalink to this definition"></a></dt>
+<dd><p>Use this when you need to time.sleep for longer than 4 minutes, to prevent EPS reset
+Runs in increments of 60 seconds
+:param t: number of seconds to sleep
+:type t: int</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.sun_detected">
+<span class="sig-name descname"><span class="pre">sun_detected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.sun_detected" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if sun is detected (JANK IMPLEMENTATION BECAUSE WE DON’T HAVE SUN SENSORS, VERY UNRELIABLE)
+:return: whether sun is detected
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.switch_mode">
+<span class="sig-name descname"><span class="pre">switch_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MainControlLoop.Mode.mode.Mode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.switch_mode" title="Permalink to this definition"></a></dt>
+<dd><p>Switches current mode if new mode is possible based on locked devices, returns whether mode was switched
+:param mode: mode object to switch to
+:type mode: Mode
+:return: whether the mode switch was executed
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.StateFieldRegistry.unlock_device">
+<span class="sig-name descname"><span class="pre">unlock_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#lib.registry.StateFieldRegistry.unlock_device" title="Permalink to this definition"></a></dt>
+<dd><p>Unlocks device
+:param device: name of device to unlock
+:type device: str
+:return: True if something had to be changed, False if it was not previously locked
+:rtype: bool</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lib.registry.Vars">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lib.registry.</span></span><span class="sig-name descname"><span class="pre">Vars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.registry.Vars" title="Permalink to this definition"></a></dt>
+<dd><p>Loggable fields of sfr</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.Vars.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sfr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.registry.Vars.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>All variables which are logged and loaded
+NOTE: PLEASE UPDATE TO_DICT IF YOU ADD AN SFR VARS FIELD
+:param sfr: sfr object
+:type sfr: :class: ‘MainControlLoop.lib.registry.StateFieldRegistry’</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lib.registry.Vars.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#lib.registry.Vars.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.Vars.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.registry.Vars.encode" title="Permalink to this definition"></a></dt>
+<dd><p>Specifically for transmission of all sfr fields
+:return: encoded values of vars
+:rtype: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.registry.Vars.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#lib.registry.Vars.to_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Converts vars to dictionary with encoded values
+Encoded values must be integers or floats!!!
+:return: dictionary with encoded values
+:rtype: dict</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

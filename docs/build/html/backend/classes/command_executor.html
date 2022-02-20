@@ -50,6 +50,9 @@
 </ul>
 </li>
 </ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sfr.html">StateFieldRegistry</a></li>
+</ul>
 
         </div>
       </div>
@@ -195,6 +198,12 @@ Transmits all sfr fields as str</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.GPR">
+<span class="sig-name descname"><span class="pre">GPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.GPR" title="Permalink to this definition"></a></dt>
+<dd><p>Transmits primary radio</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.GPW">
 <span class="sig-name descname"><span class="pre">GPW</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.GPW" title="Permalink to this definition"></a></dt>
 <dd><p>Transmit total power draw of satellite</p>
@@ -245,13 +254,14 @@ Transmits all sfr fields as str</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.ICE">
 <span class="sig-name descname"><span class="pre">ICE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.ICE" title="Permalink to this definition"></a></dt>
-<dd><p>Runs exec on string</p>
+<dd><p>Remote code execution
+Runs exec on string</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.IGO">
-<span class="sig-name descname"><span class="pre">IGO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.IGO" title="Permalink to this definition"></a></dt>
-<dd><p>Exits remote code execution and attempts to restart MCL</p>
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.ICT">
+<span class="sig-name descname"><span class="pre">ICT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.ICT" title="Permalink to this definition"></a></dt>
+<dd><p>Clears transmission queue, only to be used in an emergency</p>
 </dd></dl>
 
 <dl class="py method">
@@ -269,7 +279,7 @@ Transmits all sfr fields as str</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.ITM">
 <span class="sig-name descname"><span class="pre">ITM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.ITM" title="Permalink to this definition"></a></dt>
-<dd><p>Transmits an OK code</p>
+<dd><p>Transmits No-op acknowledgement</p>
 </dd></dl>
 
 <dl class="py method">
@@ -309,6 +319,25 @@ Transmits all sfr fields as str</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.SDT">
+<span class="sig-name descname"><span class="pre">SDT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.SDT" title="Permalink to this definition"></a></dt>
+<dd><p>Set detumble threshold for antenna deployment
+This function is kinda pointless</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.SFA">
+<span class="sig-name descname"><span class="pre">SFA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.SFA" title="Permalink to this definition"></a></dt>
+<dd><p>Adds component to failed components list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.SFR">
+<span class="sig-name descname"><span class="pre">SFR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.SFR" title="Permalink to this definition"></a></dt>
+<dd><p>Removes component to failed components list</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.SLV">
 <span class="sig-name descname"><span class="pre">SLV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.SLV" title="Permalink to this definition"></a></dt>
 <dd><p>Set lower threshold for mode switch</p>
@@ -327,26 +356,21 @@ Transmits all sfr fields as str</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.ULG">
-<span class="sig-name descname"><span class="pre">ULG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.ULG" title="Permalink to this definition"></a></dt>
-<dd><p>Transmit full rssi data logs</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.USM">
 <span class="sig-name descname"><span class="pre">USM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#lib.command_executor.CommandExecutor.USM" title="Permalink to this definition"></a></dt>
 <dd><p>Transmits down summary statistics about our mission
 Transmits:
 1. Time since mission start
 2. Time since last satellite startup
-3. Total power consumed over mission
-4. Total power generated over mission
+3. Total energy consumed over mission
+4. Total energy generated over mission
 5. Total amount of data transmitted
 6. Orbital decay (seconds of period lost over mission duration)
 7. Total number of iridium commands received
 8. Total number of aprs commands received
 9. Total number of iridium signal strength measurements taken
-10. Total number of power consumption/generation measurements</p>
+10. Total number of power consumption measurements
+11. Total number of power generation measurements</p>
 </dd></dl>
 
 <dl class="py method">
@@ -375,8 +399,15 @@ Transmits:
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.switch_mode">
+<span class="sig-name descname"><span class="pre">switch_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.switch_mode" title="Permalink to this definition"></a></dt>
+<dd><p>Switches current mode to given mode, raises exception if mode switch fails
+:param mode: mode to switch to</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.transmit">
-<span class="sig-name descname"><span class="pre">transmit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.transmit" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">transmit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Drivers.transmission_packet.TransmissionPacket</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.transmit" title="Permalink to this definition"></a></dt>
 <dd><p>Transmit a message over primary radio
 :param packet: (TransmissionPacket) packet of received transmission
 :param data: (list) of data, or a single length list of error message
@@ -392,6 +423,12 @@ Do not append data to packet
 Do not split packet
 :param packet: (TransmissionPacket) packet
 :return: (bool) transmission successful</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lib.command_executor.CommandExecutor.transmit_queue">
+<span class="sig-name descname"><span class="pre">transmit_queue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lib.command_executor.CommandExecutor.transmit_queue" title="Permalink to this definition"></a></dt>
+<dd><p>Attempt to transmit entire transmission queue</p>
 </dd></dl>
 
 </dd></dl>

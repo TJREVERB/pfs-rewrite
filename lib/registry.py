@@ -473,8 +473,8 @@ class StateFieldRegistry:
         :param turn_off_old: whether or not to turn off the old radio if it is being switched
         :type turn_off_old: bool
         :return: Whether primary radio was switched
-            True if the primary radio could be set as specified (or it already was that one).
-            False only if it is locked off, or it's APRS and antenna not deployed
+        True if the primary radio could be set as specified (or it already was that one).
+        False only if it is locked off, or it's APRS and antenna not deployed
         :rtype: bool
         """
         # If this is not a different radio or the new radio is locked off, don't run further
@@ -501,7 +501,7 @@ class StateFieldRegistry:
         :param force: if true, this will overwrite any previous locks on this device
         :type force: bool
         :return: whether the device was able to be locked on
-            (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
+        (only false if force == False and it was previously in LOCKED_OFF_DEVICES)
         :rtype: bool
         """
         if component in self.vars.LOCKED_ON_DEVICES:
@@ -524,7 +524,7 @@ class StateFieldRegistry:
         :param force: if true, this will overwrite any previous locks on this device
         :type force: bool
         :return: whether the device was able to be locked off
-            (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
+        (example: false if force == False and it was previously in LOCKED_ON_DEVICES)
         :rtype: bool
         """
         # won't allow both radios to be locked off
