@@ -158,16 +158,23 @@ class APRS(Device):
             f.write(str(1))
         time.sleep(5)
 
+    @staticmethod
     @wrap_errors(APRSError)
-    def split_packet(self, packet: TransmissionPacket) -> list:
+    def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
         """
+        if len(packet.return_data) == 0:
+            # Special case to avoid losing packets with zero data
+            return [packet]
+
         result = []
         if packet.numerical:
             data = packet.return_data
         else:
             data = packet.return_data[0]
+            if len(data) == 0:
+                return [packet]
 
         result.append(packet)
         lastindex = 0
