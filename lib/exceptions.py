@@ -1,3 +1,4 @@
+import functools
 class CustomException(Exception):
     def __init__(self, exception: Exception = None, details: str = None):
         self.exception = exception
@@ -15,63 +16,67 @@ class CustomException(Exception):
 
 class AntennaError(CustomException):
     def __repr__(self):
-        return "AntennaError: " + repr(super().__repr__())
+        return "AntennaError: " + super().__repr__()
 
 
 class APRSError(CustomException):
     def __repr__(self):
-        return "APRSError: " + repr(super().__repr__())
+        return "APRSError: " + super().__repr__()
 
 
-class IridiumError(CustomException):
+class IridiumError(CustomException): 
     def __repr__(self):
-        return "IridiumError: " + repr(super().__repr__())
+        return "IridiumError: " + super().__repr__()
 
 
-class EPSError(CustomException):
+class SignalStrengthException(CustomException): 
     def __repr__(self):
-        return "EPSError: " + repr(super().__repr__())
+        return "SignalStrengthException: " + super().__repr__()
 
-
-class IMUError(CustomException):
+class EPSError(CustomException): 
     def __repr__(self):
-        return "IMUError: " + repr(super().__repr__())
+        return "EPSError: " + super().__repr__()
 
 
-class BatteryError(CustomException):
+class IMUError(CustomException): 
     def __repr__(self):
-        return "BatteryError: " + repr(super().__repr__())
+        return "IMUError: " + super().__repr__()
+
+
+class BatteryError(CustomException): 
+    def __repr__(self):
+        return "BatteryError: " + super().__repr__()
 
 
 class CommandExecutionException(CustomException):
-    def __init__(self, details: str, exception: Exception = None):
+    def __init__(self, details, exception: Exception = None):
         super().__init__(exception, details)
-
+    
     def __repr__(self):
-        return "CommandExecutionException: " + repr(super().__repr__())
+        return "CommandExecutionException: " + super().__repr__()
 
 
 class InvalidCommandException(CustomException):
     def __init__(self, details, exception: Exception = None):
         super().__init__(exception, details)
-
+    
     def __repr__(self):
-        return "InvalidCommandException: " + repr(super().__repr__())
+        return "InvalidCommandException: " + super().__repr__()
 
 
-class NoSignalException(CustomException):
+class NoSignalException(CustomException): 
     def __repr__(self):
-        return "NoSignalException: " + repr(super().__repr__())
+        return "NoSignalException: " + super().__repr__()
 
 
 class HighPowerDrawError(CustomException):
     def __repr__(self):
-        return "HighPowerDrawError: " + repr(super().__repr__())
+        return "HighPowerDrawError: " + super().__repr__()
 
 
-class LogicalError(CustomException):
+class LogicalError(CustomException): 
     def __repr__(self):
-        return "LogicalError: " + repr(super().__repr__())
+        return "LogicalError: " + super().__repr__()
 
 
 def wrap_errors(exception: callable) -> callable:
@@ -87,7 +92,7 @@ def wrap_errors(exception: callable) -> callable:
         :param func: function to wrap
         :return: (callable) decorated function
         """
-
+        @functools.wraps(func)
         def wrapper(*args, **kwargs) -> callable:
             """
             Attempt to run function

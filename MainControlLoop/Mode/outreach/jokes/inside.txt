@@ -1,4 +1,0 @@
-Dictionary Comprehensions.
-Nikhil's one-liners.
-An f string a day, keeps the java mains away
-.toString()
