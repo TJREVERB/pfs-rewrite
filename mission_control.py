@@ -118,6 +118,7 @@ class MissionControl:
         :rtype: bool
         """
         try:
+            print("Attempting troubleshoot")
             self.error_dict[type(e)](e)  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
@@ -216,11 +217,14 @@ class MissionControl:
         Switches off IMU if troubleshooting fails because this is a noncritical component
         """
         self.sfr.vars.FAILURES.append("IMU")
+        print("Rebooting IMU")
         self.sfr.reboot("IMU")
         try:
+            print("Checking if IMU is functional")
             self.sfr.devices["IMU"].functional()
             self.sfr.vars.FAILURES.remove("IMU")
         except IMUError:
+            print("Locking IMU off, proceeding with MCL")
             result = self.sfr.lock_device_off("IMU")
             if result:
                 unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")
