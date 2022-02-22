@@ -72,6 +72,7 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
+                    print("Caught exception (printed from mission_control line 75)")
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         self.testing_mode(e)  # Debug
                         # self.error_handle(e)  # Handle error, uncomment when done testing low level things
@@ -93,8 +94,9 @@ class MissionControl:
             print(f"Currently in {type(self.sfr.MODE).__name__}")
             print("State field registry fields:")
             print(self.sfr.vars.to_dict())
+            self.sfr.clear_logs()
         except Exception:
-            print("Error in sfr init, unable to print mode and sfr fields")
+            print("Error in sfr init, unable to clear logs")
         print("Exception: " + repr(e))
         print("Traceback:\n" + get_traceback())
         try:
