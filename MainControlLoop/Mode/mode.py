@@ -24,7 +24,7 @@ class Mode:
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         # TODO: replace 10 with appropriate time when done testing
         self.iridium_clock = Clock(10)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(2700)  # Heartbeat every 45 minutes
+        self.heartbeat_clock = Clock(900)  # Heartbeat every 15 minutes
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -83,6 +83,20 @@ class Mode:
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
+    @wrap_errors(NoSignalException) 
+    def heartbeat(self) -> bool:
+        """
+        Sends a heartbeat depending on the clock time
+        Currently the timer is once an orbit
+        :return: whether the function ran
+        :rtype: bool
+        """
+        
+        print("Adding heartbeat to que...") 
+        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+        self.heartbeat_clock.update_time()
+        return True
+
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
         """
@@ -100,9 +114,6 @@ class Mode:
         print("Iridium signal strength: ", signal)
         if signal < 1:
             return False
-
-        print("Transmitting heartbeat...")
-        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
 
         startlen = len(self.sfr.vars.command_buffer)
         self.sfr.devices["Iridium"].next_msg()  # Read from iridium

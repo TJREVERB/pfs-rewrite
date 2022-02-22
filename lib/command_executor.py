@@ -1,5 +1,7 @@
 import os
 import time
+
+from cv2 import add
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
@@ -53,6 +55,7 @@ class CommandExecutor:
             "SFR": self.SFR,
             "USM": self.USM,
             "ITM": self.ITM,
+            "IHB": self.IHB,
             "IPC": self.IPC,
             "IRB": self.IRB,
             "ICT": self.ICT,
@@ -123,7 +126,8 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list = None, string=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, 
+    string: bool = False, add_to_queue: bool = True):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -136,14 +140,14 @@ class CommandExecutor:
         if data is not None:
             packet.return_data = data
         if packet.outreach:  # If this is an outreach packet (UNUSED)
-            if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
+            if self.sfr.devices["APRS"] is None and add_to_queue:  # If APRS is off, append to queue
                 self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
                 return False
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
-        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
@@ -151,7 +155,7 @@ class CommandExecutor:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
             except NoSignalException:
                 print("No Iridium connectivity, appending to buffer...")
-                self.sfr.vars.transmit_buffer.append(p)
+                if add_to_queue: self.sfr.vars.transmit_buffer.append(p)
                 return False
         return True
 
@@ -656,6 +660,14 @@ class CommandExecutor:
         self.transmit(packet, result := [])
         return result
 
+    @wrap_errors(CommandExecutionException)
+    def IHB(self, packet: TransmissionPacket) -> list:
+        """
+        Sends heartbeat signal with vbat data
+        """
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()], add_to_queue = False)
+        return result
+    
     @wrap_errors(CommandExecutionException)
     def IPC(self,
             packet: TransmissionPacket) -> list:
