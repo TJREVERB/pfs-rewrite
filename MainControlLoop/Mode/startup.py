@@ -55,17 +55,21 @@ class Startup(Mode):
         :rtype: bool
         """
         if self.sfr.vars.ANTENNA_DEPLOYED:  # If the antenna has already been deployed, do nothing
+            print("Antenna already deployed")
             return False
         # If aprs and antenna deployer are locked off, do nothing
-        if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
-                "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+        if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES and \
+                "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
+            print("APRS and Antenna deployer locked off")
             return False
         # If not enough time has passed to deploy the antenna, do nothing
         elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+            print("Time not elapsed")
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
         if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
             if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
+                print("currently tumbling")
                 return False  # Do nothing
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")
@@ -80,7 +84,7 @@ class Startup(Mode):
             # better to use nonfunctional radio than send power to a loadless aprs
             self.sfr.power_off("Antenna Deployer")
             self.sfr.set_primary_radio("Iridium", True)
-            self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.vars.LOCKED_OFF_DEVICES.update({"Antenna Deployer", "APRS"})
             self.sfr.vars.FAILURES.append("Antenna Deployer")
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
@@ -99,7 +103,8 @@ class Startup(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            self.sfr.sleep(5400)  # sleep for one full orbit
+            print("Sleeping")
+            self.sfr.sleep(5400)  # sleep for one full orbit 
             self.start()  # Run start again to turn on devices
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
@@ -123,14 +128,14 @@ class Startup(Mode):
         """
         super().suggested_mode()
         if not self.sfr.vars.CONTACT_ESTABLISHED:
+            print("Contact not established")
             return self  # If contact hasn't been established, stay in startup
         elif ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
               "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES) and not self.sfr.vars.ANTENNA_DEPLOYED:
+            print("Antenna still can be deployed")
             return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
         else:  # If we can switch out of this mode
             final_mode = self.sfr.modes_list["Science"] if "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES \
                 else self.sfr.modes_list["Outreach"]  # End up in Science if Iridium is unlocked, otherwise Outreach
-            if self.sfr.check_lower_threshold():  # Charging if we can switch but are low on power
-                return self.sfr.modes_list["Charging"](self.sfr, final_mode)
-            else:  # Science if we can switch and have enough power
-                return final_mode(self.sfr)
+            # Leave to charging to make sure we have enough power for the next mode
+            return self.sfr.modes_list["Charging"](self.sfr, final_mode)

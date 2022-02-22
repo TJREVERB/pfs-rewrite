@@ -1,11 +1,12 @@
 import chess
 import chess.engine
 import random
+from stockfish import Stockfish
 
 
 class ChessGame:
     """
-    Backend AI for chess
+    Chess Game Object
     """
     def __init__(self, sfr, game_id):
         """
@@ -34,17 +35,13 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
-    def get_best_move(self) -> chess.Move:
-        """
-        Get best move by using Stockfish
-        :return: best move
-        :rtype: :class: 'chess.Move'
-        """
-        print(self.board)
-        engine = chess.engine.SimpleEngine.popen_uci(r'MainControlLoop/Mode/outreach/chess/stockfish2')
-        result = engine.play(self.board, chess.engine.Limit(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME))
-        engine.quit()
-        return result.move
+    def get_best_move(self):
+        stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe',
+                              parameters={"Minimum Thinking Time": 5})
+        stockfish.set_fen_position(self.board.fen())
+        move = stockfish.get_best_move_time(self.sfr.vars.OUTREACH_MAX_CALCULATION_TIME)
+        move = self.board.parse_san(move)
+        return move
 
     def push(self, move: chess.Move):
         """

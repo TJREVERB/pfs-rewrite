@@ -1,4 +1,3 @@
-import datetime
 import os
 import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
@@ -86,8 +85,8 @@ class CommandExecutor:
         """
         print("Executing Command: " + packet.descriptor)
         to_log = {
-            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
+            "ts1": int(t) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
             "arg": ":".join([str(s) for s in packet.args]),
@@ -124,7 +123,7 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None, string=False):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
@@ -139,12 +138,14 @@ class CommandExecutor:
         if packet.outreach:  # If this is an outreach packet (UNUSED)
             if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
                 self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
+                return False
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
         if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+            return False
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
@@ -665,7 +666,7 @@ class CommandExecutor:
         self.sfr.all_off(override_default_exceptions=True)
         time.sleep(.5)
         if not packet.simulate:
-            exit(0)  # Exit script, eps will reset after 16 minutes without ping
+            self.sfr.crash()  # Exit script, eps will reset after 16 minutes without ping
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -691,13 +692,24 @@ class CommandExecutor:
         Runs exec on string
         """
         print(packet.args[0])
-        result = []
-        string = False
-        print(packet.args[0])
-        exec(str(packet.args[0]))  # Set result and string inside the exec string if return data is needed
-        print(result, string)
-        self.transmit(packet, result, string)
-        return result
+        sfr = self.sfr
+
+        class JankExec:
+            """
+            Class that allows exec to consistently access sfr, AND local variables (result, string)
+            https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
+            """
+            def __init__(self, execstr):
+                self.sfr = sfr
+                self.result = []
+                self.string = False
+                exec(f"{execstr}") 
+                # Set self.result and self.string inside the exec string if return data is needed
+        
+        ex = JankExec(packet.args[0])
+        print(ex.result, ex.string)
+        self.transmit(packet, ex.result, ex.string)
+        return ex.result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):

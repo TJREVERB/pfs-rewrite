@@ -1,6 +1,8 @@
 from Drivers.transmission_packet import UnsolicitedString
 from MainControlLoop.Mode.outreach.chess.chess_game import ChessGame
 from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import time
@@ -18,7 +20,8 @@ class Outreach(Mode):
         """
         super().__init__(sfr)
         self.sfr = sfr
-        self.game_queue = []  # string format = game;board_string;game_id
+        self.string_game_queue = []  # string format = game;board_string;game_id
+        self.object_game_queue = []
         # games are "TicTacToe", "Chess"
 
     def __str__(self) -> str:
@@ -44,43 +47,61 @@ class Outreach(Mode):
         :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
         """
         super().suggested_mode()
-        if self.sfr.vars.BATTERY_CAPACITY_INT < self.sfr.vars.LOWER_THRESHOLD:
+        if self.sfr.check_lower_threshold():
             return self.sfr.modes_list["Charging"](self.sfr, self)
         else:
             return self
 
-    def decode_game_queue(self) -> list:
+    def decode_game_queue(self):
         """
         Turns encoded strings in game_queue, returns the list of game objects.
         Clears game_queue.
         :return: list of game objects
         :rtype: list
         """
-        game_objects = []
-        for encoded_string in self.game_queue:
-            encoded_list = encoded_string.split(";")
-            game, board_string, game_id = encoded_list[0], encoded_list[1], encoded_list[2]
+        for encoded_string in self.string_game_queue:
+            game, board_string, game_id = encoded_string.split(";")
 
             if game == "TicTacToe":
                 obj = TicTacToeGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
             elif game == "Chess":
                 obj = ChessGame(self.sfr, game_id)
                 obj.set_game(board_string)
-                game_objects.append(obj)
+                self.object_game_queue.append(obj)
 
-        return game_objects
+            elif game == "Ultimate":
+                obj = UltimateTicTacToeGame(self.sfr, game_id)
+                obj.set_game(board_string)
+                self.object_game_queue.append(obj)
+
+            elif game == "Jokes":
+                obj = JokesGame(self.sfr, game_id)
+                obj.set_game(board_string)
+                self.object_game_queue.append(obj)
 
     def simulate_games(self) -> None:  # debug
         """
         Debug only
         """
-        for _ in range(1):
-            obj = ChessGame(self.sfr, 1)
-            game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
-            self.game_queue.append(game)
+        for _ in range(10):
+            game_int = random.randint(0, 3)
+            if game_int == 0:
+                obj = UltimateTicTacToeGame(self.sfr, str(5))
+                game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            elif game_int == 1:
+                obj = ChessGame(self.sfr, str(5))
+                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
+                #1rbqk1nr/p2pb1p1/np3p1p/2p1p3/P1P3P1/1Q1BPP1P/1P1P4/RNB1K1NR b KQk - 1 9
+            elif game_int == 2:
+                obj = TicTacToeGame(self.sfr, str(5))
+                game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            else:
+                obj = JokesGame(self.sfr, str(5))
+                game = f"Jokes;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
+            self.string_game_queue.append(game)
 
     def execute_cycle(self) -> None:
         """
@@ -89,17 +110,18 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-        self.simulate_games()
-        game_queue = self.decode_game_queue()
+        self.simulate_games()  # TODO: DEBUG
+        self.decode_game_queue()
         time_started = time.time()
-        while len(game_queue) > 0:
-            game = game_queue.pop()
+        while len(self.object_game_queue) > 0:
+            game = self.object_game_queue.pop()
+            print(game)
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
-            # self.transmit_string(str(game))
-            if time.time() - 60 > time_started:  # limit compute time per cycle
-                break
+            # self.transmit_string(str(game))  # TODO: CHANGE WHEN NOT DEBUGGING
+            #if time.time() - 60 > time_started:  # limit compute time per cycle
+                #break
 
     def transmit_string(self, message: str):
         """

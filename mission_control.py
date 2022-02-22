@@ -72,6 +72,7 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
+                    print("Caught exception (printed from mission_control line 75)")
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         self.testing_mode(e)  # Debug
                         # self.error_handle(e)  # Handle error, uncomment when done testing low level things
@@ -93,8 +94,9 @@ class MissionControl:
             print(f"Currently in {type(self.sfr.MODE).__name__}")
             print("State field registry fields:")
             print(self.sfr.vars.to_dict())
+            self.sfr.clear_logs()
         except Exception:
-            print("Error in sfr init, unable to print mode and sfr fields")
+            print("Error in sfr init, unable to clear logs")
         print("Exception: " + repr(e))
         print("Traceback:\n" + get_traceback())
         try:
@@ -131,9 +133,8 @@ class MissionControl:
         self.sfr.all_off()
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
-            if not self.sfr.set_primary_radio("Iridium", True):
+            if not self.sfr.set_primary_radio("Iridium", True):  # also sets primary if possible
                 raise IridiumError()  # If primary radio switch failed, don't run further
-            self.sfr.set_primary_radio("Iridium", True)
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
             self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
@@ -146,7 +147,7 @@ class MissionControl:
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
             except APRSError:  # If aprs fails
                 print("L :(")
-                exit()  # PFS team took an L
+                self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
 
@@ -207,7 +208,7 @@ class MissionControl:
         Attempt to troubleshoot EPS by waiting for watchdog reset
         Exiting ensures the python files don't get corrupted during reset
         """
-        exit()
+        self.sfr.crash()
 
     def imu_troubleshoot(self):
         """
@@ -232,7 +233,7 @@ class MissionControl:
         Attempt to troubleshoot battery by waiting for watchdog reset
         Exiting ensures the python files don't get corrupted during reset
         """
-        exit()
+        self.sfr.crash()
 
     def antenna_troubleshoot(self):
         """
@@ -254,7 +255,7 @@ class MissionControl:
         Attempt to troubleshoot unusual power draw by waiting for watchdog reset
         Exiting ensures the python files don't get corrupted during reset
         """
-        exit()
+        self.sfr.crash()
 
 
 if __name__ == "__main__":

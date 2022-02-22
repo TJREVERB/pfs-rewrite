@@ -81,7 +81,6 @@ def wrap_errors(exception: callable) -> callable:
     :param exception: exception to wrap errors with
     :return: (callable) decorator
     """
-
     def decorator(func: callable) -> callable:
         """
         Dynamically generate a decorator depending on argument
