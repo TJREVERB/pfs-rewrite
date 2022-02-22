@@ -130,7 +130,7 @@ class MissionControl:
         :type e: Exception
         """
         self.sfr.vars.ENABLE_SAFE_MODE = True
-        self.sfr.all_off()
+        self.sfr.all_off(safe=True)
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
             if not self.sfr.set_primary_radio("Iridium", True):  # also sets primary if possible
