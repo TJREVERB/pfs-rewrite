@@ -556,3 +556,10 @@ class StateFieldRegistry:
             self.vars.LOCKED_OFF_DEVICES.remove(device)
             return True
         return False
+
+    def crash(self):
+        """
+        Safely crash the satellite to wait for eps reboot
+        """
+        self.all_off(override_default_exceptions=True)
+        exit()
