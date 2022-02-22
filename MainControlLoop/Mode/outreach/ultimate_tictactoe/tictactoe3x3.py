@@ -49,9 +49,9 @@ class TicTacToe:
         row = row % 3
         string = ""
         for col in range(3):
-            if self.human_board >> row * 3 + col:  # if human piece
+            if (self.human_board >> row * 3 + col) & 1:  # if human piece
                 string += 'x'
-            elif self.ai_board >> row * 3 + col:  # if ai piece
+            elif (self.ai_board >> row * 3 + col) & 1:  # if ai piece
                 string += 'o'
             else:  # if no piece
                 string += '.'

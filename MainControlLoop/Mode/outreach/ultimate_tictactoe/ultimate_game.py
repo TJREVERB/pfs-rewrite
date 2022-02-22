@@ -19,7 +19,10 @@ class UltimateTicTacToeGame:
         """
         self.sfr = sfr
         self.game_id = game_id
-        self.board = [TicTacToe(True).set_game("---------") for _ in range(9)]  # must call set_game
+        self.board = []  # must call set_game
+        for i in range(9):
+            self.board.append(TicTacToe(True))
+            self.board[i].set_game("---------")
         self.previous_move = None
         self.is_ai_turn = True
 
@@ -83,12 +86,12 @@ class UltimateTicTacToeGame:
         :rtype: list
         """
         if self.previous_move is None:  # If this is the first move
-            return [(1 << i // 9) + (1 << i % 9) for i in range(81)]  # Return all possible moves
+            return [(1 << 9 + i // 9) + (1 << i % 9) for i in range(81)]  # Return all possible moves
         # Set 3x3 board index to last move within inner board
         section_index = int(np.log2(self.previous_move & ~(~0 << 9)))
         if self.board[section_index].check_winner() == -1:  # If the board we were sent to is incomplete
             # Return all legal moves + first 9 bits saying we're on this board
-            return [(1 << section_index) + i for i in self.board[section_index].get_valid_moves()]
+            return [(1 << section_index + 9) + i for i in self.board[section_index].get_valid_moves()]
         else:  # If the board we were sent to is already complete
             move_list = []  # Initialize empty list of possible moves
             for idx, board in enumerate(self.board):  # Iterate over all boards
@@ -131,7 +134,7 @@ class UltimateTicTacToeGame:
         human_board, ai_board = 0, 0  # Initialize bitboards
         game_complete = True  # Initialize as true because it's easier to check if incomplete than complete
         for i in range(9):  # Iterate over boards
-            if winner := self.board[i].check_winner() == 0:  # If the human won this board
+            if (winner := self.board[i].check_winner()) == 0:  # If the human won this board
                 human_board += 1 << i  # Toggle this bit in human_board
             elif winner == 2:  # If the ai won this board
                 ai_board += 1 << i  # Toggle this bit in the ai_board
@@ -191,33 +194,32 @@ if __name__ == "__main__":
     print(ai_move)
     e.push(ai_move)
     e.print_board()
-    sec = input("Input section: ")
-    row = input("Input row: ")
-    col = input("Input col: ")
-    e.print_board()
-    while e.check_winner() == (0, 0):
-        e.push(list(map(int, [sec, row, col])))
+    sec = int(input("Input section: "))
+    row = int(input("Input row: "))
+    col = int(input("Input col: "))
+    move = (1 << 9 + sec) + (1 << 3 * row + col)
+    while e.check_winner() == -1:
+        e.push(move)
         e.print_board()
         ai_move = e.get_best_move()
         e.push(ai_move)
         print(ai_move)
         e.print_board()
         while True:
-            print("Section: " + str(e.get_valid_moves()[0][0]))
-            print(e.get_valid_moves())
             sec = int(input("Input section: "))
             row = int(input("Input row: "))
             col = int(input("Input col: "))
-            if [sec, row, col] in e.get_valid_moves():
+            move = (1 << 9 + sec) + (1 << (3 * row) + col)
+            if move in e.get_valid_moves():
                 break
             else:
                 print("INVALID MOVE")
     e.print_board()
-    if e.check_winner() == (1, 0):
+    if (winner := e.check_winner()) == 0:
         print("HUMAN WON")
-    elif e.check_winner() == (0, 1):
+    elif winner == 2:
         print("AI WON L")
-    else:
+    elif winner == 1:
         print("DRAW")
 
 # e = UltimateTicTacToeGame(5, 5)

@@ -32,7 +32,6 @@ class MCTSSearch:
     def traverse(self, node):
         while not len(node.children) == 0:
             node = self.best_uct(node)
-
         if len(node.board_state.get_valid_moves()) == 0:
             return node
         else:
