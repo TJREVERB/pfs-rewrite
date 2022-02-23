@@ -194,6 +194,7 @@ class IMU(Device):
 
     @wrap_errors(IMUError)
     def functional(self):
+        raise IMUError()
         chip_id = self._read_register(IMU._ID_REGISTER)
         if chip_id != IMU._CHIP_ID:
             raise IMUError(details="bad chip id (%x != %x)" % (chip_id, IMU._CHIP_ID))
@@ -887,6 +888,7 @@ class IMU(Device):
         Returns tumble taken from gyro and magnetometer, in degrees/s
         :return: (tuple) nested tuple, x,y,z values for gyro and yz rot, xz rot, and xy rot for magnetometer
         """
+        raise IMUError()
         interval = .5  # Time interval for magnetometer readings
 
         temp = np.array(self.gyro)
