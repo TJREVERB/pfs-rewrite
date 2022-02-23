@@ -595,7 +595,7 @@ class Iridium(Device):
         :param command: (str) Command to write
         :return: (bool) if the serial write worked
         """
-        #print(command)
+        print(command)
         self.serial.write((command + "\r\n").encode("utf-8"))
         return True
 
@@ -614,5 +614,5 @@ class Iridium(Device):
             if next_byte == bytes():
                 break
             output += next_byte
-        #print(output)
+        print(output)
         return output.decode("utf-8")
