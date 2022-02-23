@@ -73,6 +73,7 @@ class MissionControl:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     print("Caught exception (printed from mission_control line 75)")
+                    print(get_traceback())
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         # self.testing_mode(e)  # Debug
                         self.error_handle(e)  # Handle error, uncomment when done testing low level things
