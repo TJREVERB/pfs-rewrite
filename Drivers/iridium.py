@@ -336,7 +336,7 @@ class Iridium(Device):
         return (decoded, args)
 
     @staticmethod
-    @wrap_errors(IridiumError)
+    @wrap_errors(LogicalError)
     def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits

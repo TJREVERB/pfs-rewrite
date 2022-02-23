@@ -490,7 +490,7 @@ class StateFieldRegistry:
         if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
             return False
         if turn_off_old:
-            self.power_off(self.vars.PRIMARY_RADIO)
+            self.power_off(self.vars.PRIMARY_RADIO, safe=True)
         # Switch radio
         self.vars.PRIMARY_RADIO = new_radio
         self.power_on(new_radio)
