@@ -73,7 +73,6 @@ class MissionControl:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     print("Caught exception (printed from mission_control line 75)")
-                    print(get_traceback())
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         # self.testing_mode(e)  # Debug
                         self.error_handle(e)  # Handle error, uncomment when done testing low level things
@@ -120,6 +119,7 @@ class MissionControl:
         """
         try:
             print("Attempting troubleshoot")
+            print(self.error_dict[type(e)])
             self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
