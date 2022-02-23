@@ -94,12 +94,12 @@ class APRS(Device):
         return True
 
     @wrap_errors(APRSError)
-    def enable_digi(self):  # TODO: Test these
+    def enable_digi(self): 
         """
         Enables Hardware Digipeating
         """
         self.enter_firmware_menu()
-        self.change_setting("BANK", "0")
+        self.change_setting("BANK", "0") #TODO: Update to not rely on bank switching
         time.sleep(0.1)
         self.exit_firmware_menu()
         return True
@@ -111,7 +111,7 @@ class APRS(Device):
         This should also be run after initialization to set the default bank to 0
         """
         self.enter_firmware_menu()
-        self.change_setting("BANK", "1")
+        self.change_setting("BANK", "1") #TODO: Update to not rely on bank switching
         time.sleep(0.1)
         self.exit_firmware_menu()
         return True
@@ -153,7 +153,7 @@ class APRS(Device):
         """
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
-        time.sleep(15)
+        time.sleep(5)
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)
