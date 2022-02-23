@@ -60,6 +60,9 @@ class MissionControl:
         """
         try:
             self.mcl.start()  # initialize everything for mcl run
+            self.sfr.vars.ANTENNA_DEPLOYED = True
+            self.sfr.set_primary_radio("APRS")
+            self.sfr.devices["APRS"].functional()
         except Exception as e:
             self.testing_mode(e)
         while True:  # Run forever
