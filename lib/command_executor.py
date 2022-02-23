@@ -1,7 +1,7 @@
 import os
 import time
 
-from cv2 import add
+#from cv2 import add
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
