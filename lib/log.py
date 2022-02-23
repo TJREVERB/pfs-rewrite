@@ -241,6 +241,8 @@ class Logger:
         """
         Logs IMU data
         """
+        if self.sfr.devices["IMU"] is None:
+            return
         tbl = [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]]
         self.sfr.logs["imu"].write({
             "ts0": (t := time.time()) // 100000 * 100000, "ts1": int(t % 100000),
