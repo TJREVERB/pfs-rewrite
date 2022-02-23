@@ -147,14 +147,14 @@ class MissionControl:
                 raise IridiumError()  # If primary radio switch failed, don't run further
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
-            self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
+            self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
         except IridiumError:  # If iridium fails
             try:  # Try to set up for aprs
                 # Try to switch primary radio, returns False if APRS is locked off or antenna is not deployed
                 if not self.sfr.set_primary_radio("APRS", True):
                     raise APRSError()  # If primary radio switch failed, don't run further
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
-                self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
+                self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
                 print("L :(")
                 self.sfr.crash()  # PFS team took an L
