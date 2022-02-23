@@ -157,7 +157,8 @@ class CommandExecutor:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
             except NoSignalException:
                 print("No Iridium connectivity, appending to buffer...")
-                if add_to_queue: self.sfr.vars.transmit_buffer.append(p)
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
                 return False
         return True
 
