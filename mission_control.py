@@ -64,7 +64,12 @@ class MissionControl:
             self.sfr.set_primary_radio("APRS")
             self.sfr.devices["APRS"].functional()
         except Exception as e:
-            self.testing_mode(e)
+            # self.testing_mode(e)
+            print("Caught exception (printed from mission_control line 75)")
+            print(get_traceback())
+            if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                # self.testing_mode(e)  # Debug
+                self.error_handle(e)  # Handle error, uncomment when done testing low level things
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
