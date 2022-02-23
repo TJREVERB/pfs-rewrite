@@ -74,8 +74,8 @@ class MissionControl:
                 except Exception as e:  # If a problem happens
                     print("Caught exception (printed from mission_control line 75)")
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                        self.testing_mode(e)  # Debug
-                        # self.error_handle(e)  # Handle error, uncomment when done testing low level things
+                        # self.testing_mode(e)  # Debug
+                        self.error_handle(e)  # Handle error, uncomment when done testing low level things
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
             # If any packet has been in the queue for too long and APRS is not locked off, switch primary radio
             if any([i.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT for i in self.sfr.vars.transmit_buffer]):
@@ -118,6 +118,8 @@ class MissionControl:
         :rtype: bool
         """
         try:
+            print("Attempting troubleshoot")
+            print(self.error_dict[type(e)])
             self.error_dict[type(e)](e)  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
@@ -130,7 +132,7 @@ class MissionControl:
         :type e: Exception
         """
         self.sfr.vars.ENABLE_SAFE_MODE = True
-        self.sfr.all_off()
+        self.sfr.all_off(safe=True)
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
             if not self.sfr.set_primary_radio("Iridium", True):  # also sets primary if possible
@@ -216,11 +218,14 @@ class MissionControl:
         Switches off IMU if troubleshooting fails because this is a noncritical component
         """
         self.sfr.vars.FAILURES.append("IMU")
+        print("Rebooting IMU")
         self.sfr.reboot("IMU")
         try:
+            print("Checking if IMU is functional")
             self.sfr.devices["IMU"].functional()
             self.sfr.vars.FAILURES.remove("IMU")
         except IMUError:
+            print("Locking IMU off, proceeding with MCL")
             result = self.sfr.lock_device_off("IMU")
             if result:
                 unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")

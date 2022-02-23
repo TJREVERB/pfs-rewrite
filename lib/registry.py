@@ -405,18 +405,23 @@ class StateFieldRegistry:
         self.devices[component] = self.component_to_class[component](self)
 
     @wrap_errors(LogicalError)
-    def power_off(self, component: str) -> None:
+    def power_off(self, component: str, safe: bool = False) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: component to turn off
         :type component: str
+        :param safe: whether to ignore errors in terminating device
+        :type safe: bool
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return
         if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
             return
-
-        self.devices[component].terminate()
+        try:
+            self.devices[component].terminate()
+        except Exception:
+            if not safe:
+                raise
         self.devices[component] = None  # removes from dict
         self.eps.commands["Pin Off"](component)  # turns off component
         for i in self.component_to_class[component].SERIAL_CONVERTERS:
@@ -449,19 +454,20 @@ class StateFieldRegistry:
                 self.power_on(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def all_off(self, exceptions=None, override_default_exceptions=False, safe=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls power_off for every key in self.devices. Except for those in exceptions parameter
         :param exceptions: (list) components to not turn off, default is ["Antenna Deployer, IMU"]
         :param override_default_exceptions: (bool) whether or not to use default exceptions
-        :return: None
+        :param safe: whether to ignore errors when terminating each device
+        :type safe: bool
         """
         exceptions = (exceptions or []) + (["Antenna Deployer", "IMU"] if not override_default_exceptions else [])
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.power_off(key)  # turn off device and serial converter if applicable
+                self.power_off(key, safe=safe)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def set_primary_radio(self, new_radio: str, turn_off_old=False) -> bool:
