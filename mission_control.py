@@ -120,7 +120,7 @@ class MissionControl:
         try:
             print("Attempting troubleshoot")
             print(self.error_dict[type(e)])
-            self.error_dict[type(e)](e)  # tries to troubleshoot, raises exception if error not in dict
+            self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
             return False
