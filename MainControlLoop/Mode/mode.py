@@ -167,9 +167,13 @@ class Mode:
         for device in filter(lambda i: i not in self.sfr.vars.LOCKED_OFF_DEVICES, self.sfr.devices.keys()):
             if self.sfr.devices[device] is None:
                 self.sfr.power_on(device)
+                if device == "Iridium": 
+                    self.sfr.devices[device].SBD_STATUS()
                 self.sfr.devices[device].functional()
                 self.sfr.power_off(device)
             else:
+                if device == "Iridium": 
+                    self.sfr.devices[device].SBD_STATUS()
                 self.sfr.devices[device].functional()
         return True
 
