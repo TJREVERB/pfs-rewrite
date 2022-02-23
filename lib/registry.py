@@ -234,6 +234,9 @@ class StateFieldRegistry:
         :return: whether switch is required
         :rtype: bool
         """
+
+        return True  # DEBUG!!!
+
         print(f"Checking lower threshold, vbat "
               f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
