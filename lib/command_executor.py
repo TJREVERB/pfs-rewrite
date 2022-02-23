@@ -476,7 +476,6 @@ class CommandExecutor:
         """
         self.transmit(packet, result := self.sfr.analytics.historical_consumption(int(packet.args[0]))  # Read logs
                       .to_numpy()  # Convert dataframe to numpy array
-                      .flatten()  # Convert shape to 1d
                       .tolist())  # Convert numpy array to list
         return result
 

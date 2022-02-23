@@ -220,7 +220,7 @@ class Logger:
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         :type pwr: list
         """
-        print("Power: ", int(t := time.time()), buspower, pwr := [round(i, 3) for i in pwr])
+        print("Power: ", int(t := time.time()), buspower := round(buspower, 3), pwr := [round(i, 3) for i in pwr])
         self.sfr.logs["power"].write({
             "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
             "buspower": buspower,
