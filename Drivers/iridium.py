@@ -385,6 +385,7 @@ class Iridium(Device):
         """
         print("Transmitting " + str(packet))
         stat = self.SBD_STATUS()
+        print(self.process(stat, "SBDS"))
         ls = self.process(stat, "SBDS").split(", ")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
             if not discardmtbuf:
