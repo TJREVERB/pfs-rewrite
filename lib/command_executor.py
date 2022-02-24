@@ -5,7 +5,7 @@ import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
+from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
 
 
 class CommandExecutor:
@@ -160,6 +160,12 @@ class CommandExecutor:
                 if add_to_queue:
                     self.sfr.vars.transmit_buffer.append(p)
                 return False
+            except IridiumError:
+                # we want to add the packet to the transmission buffer before raising to handle in mission_control
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
+                raise
+
         return True
 
     @wrap_errors(LogicalError)
