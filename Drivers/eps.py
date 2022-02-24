@@ -197,7 +197,6 @@ class EPS(Device):
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        raise EPSError()
         #try:
         self.bus.write_i2c_block_data(self.addr, register, data)
         time.sleep(.05)

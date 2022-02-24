@@ -79,6 +79,7 @@ class MissionControl:
                 print("=================================================== ~ MCL ITERATION ~ "
                       "===================================================")
                 try:
+                    self.sfr.devices["EPS"].functional()
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     print("Caught exception")
