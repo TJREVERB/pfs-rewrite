@@ -185,7 +185,6 @@ class EPS(Device):
 
     @wrap_errors(EPSError)
     def functional(self):
-        raise EPSError()
         return self.commands["Reset Watchdog"]()
 
     @wrap_errors(EPSError)

@@ -67,6 +67,9 @@ class Battery(Device):
             "HBAT4": lambda: wrap_errors(BatteryError)(int)(self.telemetry_request([0xE3, 0xCF], 1 / 512))
         }
 
+    def functional(self):
+        raise BatteryError()
+
     @wrap_errors(BatteryError)
     def request(self, register, data, length) -> bytes:
         """
