@@ -52,12 +52,7 @@ class MissionControl:
             }
             self.transmission_queue_clock = Clock(10)
         except Exception as e:
-            # self.testing_mode(e)  # TODO: change this for real pfs
-            print("Caught exception")
-            print(get_traceback())
-            if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                # self.testing_mode(e)  # Debug
-                self.error_handle(e)  # Handle error, uncomment when done testing low level things
+            self.testing_mode(e)  # TODO: change this for real pfs
 
     def main(self):
         """
@@ -66,11 +61,7 @@ class MissionControl:
         try:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
-            print("Caught exception")
-            print(get_traceback())
-            if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                # self.testing_mode(e)  # Debug
-                self.error_handle(e)  # Handle error, uncomment when done testing low level things
+            self.testing_mode(e)
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
@@ -81,8 +72,7 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
-                    print("Caught exception")
-                    print(get_traceback())
+                    print("Caught exception (printed from mission_control line 75)")
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         # self.testing_mode(e)  # Debug
                         self.error_handle(e)  # Handle error, uncomment when done testing low level things
@@ -129,6 +119,7 @@ class MissionControl:
         """
         try:
             print("Attempting troubleshoot")
+            print(self.error_dict[type(e)])
             self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
@@ -141,7 +132,7 @@ class MissionControl:
         :type e: Exception
         """
         self.sfr.vars.ENABLE_SAFE_MODE = True
-        self.sfr.all_off(safe=True, exceptions=["IMU"], override_default_exceptions=True)
+        self.sfr.all_off(safe=True)
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
             if not self.sfr.set_primary_radio("Iridium"):  # also sets primary if possible
@@ -150,16 +141,15 @@ class MissionControl:
             # Notify ground that we're in safe mode with iridium primary radio
             self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
         except IridiumError:  # If iridium fails
-            print(get_traceback())
             try:  # Try to set up for aprs
                 # Try to switch primary radio, returns False if APRS is locked off or antenna is not deployed
-                if not self.sfr.set_primary_radio("APRS", True):
+                if not self.sfr.set_primary_radio("APRS", turn_off_old=True):
                     raise APRSError()  # If primary radio switch failed, don't run further
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
                 print("L :(")
-                self.testing_mode(e)
+                self.testing_mode(e)  # DEBUG
                 self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
