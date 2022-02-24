@@ -52,7 +52,12 @@ class MissionControl:
             }
             self.transmission_queue_clock = Clock(10)
         except Exception as e:
-            self.testing_mode(e)  # TODO: change this for real pfs
+            # self.testing_mode(e)  # TODO: change this for real pfs
+            print("Caught exception")
+            print(get_traceback())
+            if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                # self.testing_mode(e)  # Debug
+                self.error_handle(e)  # Handle error, uncomment when done testing low level things
 
     def main(self):
         """
