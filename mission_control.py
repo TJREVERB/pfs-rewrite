@@ -135,7 +135,7 @@ class MissionControl:
         self.sfr.all_off(safe=True)
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
-            if not self.sfr.set_primary_radio("Iridium", True):  # also sets primary if possible
+            if not self.sfr.set_primary_radio("Iridium"):  # also sets primary if possible
                 raise IridiumError()  # If primary radio switch failed, don't run further
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
