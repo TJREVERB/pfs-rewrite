@@ -160,7 +160,7 @@ class CommandExecutor:
                 if add_to_queue:
                     self.sfr.vars.transmit_buffer.append(p)
                 return False
-            except IridiumError:
+            except Exception:
                 # we want to add the packet to the transmission buffer before raising to handle in mission_control
                 if add_to_queue:
                     self.sfr.vars.transmit_buffer.append(p)
