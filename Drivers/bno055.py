@@ -909,6 +909,8 @@ class IMU(Device):
     def is_tumbling(self) -> bool:
         """Checks if sat is tumbling. If is tumbling returns True, else returns False"""
         df = self.sfr.logs["imu"].read().tail(5)
+        if df.shape[0] == 0:
+            return True  # Return that we are tumbling if we don't have enough data to say otherwise
         x_tumble_values = df["xgyro"].values.tolist()
         y_tumble_values = df["ygyro"].values.tolist()
         x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
