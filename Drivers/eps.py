@@ -185,6 +185,7 @@ class EPS(Device):
 
     @wrap_errors(EPSError)
     def functional(self):
+        raise EPSError()
         return self.commands["Reset Watchdog"]()
 
     @wrap_errors(EPSError)
@@ -196,6 +197,7 @@ class EPS(Device):
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
+        raise EPSError()
         #try:
         self.bus.write_i2c_block_data(self.addr, register, data)
         time.sleep(.05)

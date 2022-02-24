@@ -60,12 +60,8 @@ class MissionControl:
         """
         try:
             self.mcl.start()  # initialize everything for mcl run
-            self.sfr.vars.ANTENNA_DEPLOYED = True
-            self.sfr.set_primary_radio("APRS")
-            self.sfr.devices["APRS"].functional()
         except Exception as e:
-            # self.testing_mode(e)
-            print("Caught exception (printed from mission_control line 75)")
+            print("Caught exception")
             print(get_traceback())
             if not self.troubleshoot(e):  # If built-in troubleshooting fails
                 # self.testing_mode(e)  # Debug
@@ -80,7 +76,7 @@ class MissionControl:
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
-                    print("Caught exception (printed from mission_control line 75)")
+                    print("Caught exception")
                     print(get_traceback())
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         # self.testing_mode(e)  # Debug
