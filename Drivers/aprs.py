@@ -202,6 +202,7 @@ class APRS(Device):
         :param packet: (TransmissionPacket) packet to transmit
         :return: (bool) success
         """
+        raise APRSError()
         self.sfr.logs["transmission"].write({
             "ts0": (t := time.time()) // 100000,
             "ts1": int(t % 100000),
