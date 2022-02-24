@@ -115,6 +115,7 @@ class AntennaDeployer(Device):
         """
         :return: (bool) i2c file opened by SMBus
         """
+        raise AntennaError()
         try:
             raw_bytes = self.read(AntennaDeployerCommand.GET_TEMP)
         except Exception as e:
@@ -122,11 +123,10 @@ class AntennaDeployer(Device):
             raise AntennaError("Bad Connection")
         #raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
         raw_count = raw_bytes
-        v = raw_count * 3300 / 1023 # mV
+        v = raw_count * 3300 / 1023  # mV
         if v > 2616 or v < 769:
             raise AntennaError("Bad data readout")
         return True
-
 
     @wrap_errors(AntennaError)
     def reset(self):
@@ -155,6 +155,7 @@ class AntennaDeployer(Device):
 
     @wrap_errors(AntennaError)
     def deploy(self) -> bool:
+        raise AntennaError()
         self.enable()
         self.write(AntennaDeployerCommand.AUTO_DEPLOY, 0x0A)
         time.sleep(40) # Wait for deployment to finish

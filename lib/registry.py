@@ -413,7 +413,6 @@ class StateFieldRegistry:
         :param safe: whether to ignore errors in terminating device
         :type safe: bool
         """
-        breakpoint()
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return
         if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
@@ -484,6 +483,7 @@ class StateFieldRegistry:
             False only if it is locked off, or it's APRS and antenna not deployed
         :rtype: bool
         """
+        breakpoint()
         if new_radio == self.vars.PRIMARY_RADIO:  # If this is already primary radio, don't run further
             return True
         # If this is not a different radio or the new radio is locked off, don't run further
