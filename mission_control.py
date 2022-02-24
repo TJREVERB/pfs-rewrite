@@ -139,6 +139,7 @@ class MissionControl:
                 raise IridiumError()  # If primary radio switch failed, don't run further
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
+            self.sfr.reboot("Iridium")
             self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
         except IridiumError:  # If iridium fails
             try:  # Try to set up for aprs
