@@ -119,7 +119,7 @@ class MissionControl:
         """
         try:
             print("Attempting troubleshoot")
-            print(self.error_dict[type(e)])
+            print(type(e))
             self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
@@ -137,6 +137,7 @@ class MissionControl:
             # Try to switch primary radio, returns False if Iridium is locked off
             if not self.sfr.set_primary_radio("Iridium"):  # also sets primary if possible
                 raise IridiumError()  # If primary radio switch failed, don't run further
+            print("Iridium Set as Primary Radio")
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
             self.sfr.reboot("Iridium")
@@ -146,6 +147,7 @@ class MissionControl:
                 # Try to switch primary radio, returns False if APRS is locked off or antenna is not deployed
                 if not self.sfr.set_primary_radio("APRS", turn_off_old=True):
                     raise APRSError()  # If primary radio switch failed, don't run further
+                print("APRS Set as Primary Radio")
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
