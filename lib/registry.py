@@ -413,6 +413,7 @@ class StateFieldRegistry:
         :param safe: whether to ignore errors in terminating device
         :type safe: bool
         """
+        breakpoint()
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return
         if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
