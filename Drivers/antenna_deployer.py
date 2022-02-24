@@ -115,7 +115,7 @@ class AntennaDeployer(Device):
         """
         :return: (bool) i2c file opened by SMBus
         """
-        raise AntennaError()
+        #raise AntennaError()  # DEBUG
         try:
             raw_bytes = self.read(AntennaDeployerCommand.GET_TEMP)
         except Exception as e:
