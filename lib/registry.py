@@ -483,17 +483,21 @@ class StateFieldRegistry:
             False only if it is locked off, or it's APRS and antenna not deployed
         :rtype: bool
         """
+        if new_radio == self.vars.PRIMARY_RADIO:  # If this is already primary radio, don't run further
+            self.power_on(new_radio)
+            return True
         # If this is not a different radio or the new radio is locked off, don't run further
-        if new_radio == self.vars.PRIMARY_RADIO or new_radio in self.vars.LOCKED_OFF_DEVICES:
+        if new_radio in self.vars.LOCKED_OFF_DEVICES:
             return False
         # don't switch to APRS as primary if the antenna hasn't deployed
         if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
             return False
         if turn_off_old:
-            self.power_off(self.vars.PRIMARY_RADIO)
+            self.power_off(self.vars.PRIMARY_RADIO, safe=True)
         # Switch radio
         self.vars.PRIMARY_RADIO = new_radio
         self.power_on(new_radio)
+
         # transmit update to groundstation
         self.command_executor.transmit(UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}"))
         return True

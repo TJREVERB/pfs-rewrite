@@ -120,7 +120,7 @@ class MissionControl:
         try:
             print("Attempting troubleshoot")
             print(self.error_dict[type(e)])
-            self.error_dict[type(e)](e)  # tries to troubleshoot, raises exception if error not in dict
+            self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
             return False
@@ -135,20 +135,22 @@ class MissionControl:
         self.sfr.all_off(safe=True)
         try:  # Try to set up for iridium first
             # Try to switch primary radio, returns False if Iridium is locked off
-            if not self.sfr.set_primary_radio("Iridium", True):  # also sets primary if possible
+            if not self.sfr.set_primary_radio("Iridium"):  # also sets primary if possible
                 raise IridiumError()  # If primary radio switch failed, don't run further
             self.sfr.devices["Iridium"].functional()  # Test if iridium is functional
             # Notify ground that we're in safe mode with iridium primary radio
-            self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: Iridium primary radio"))
+            self.sfr.reboot("Iridium")
+            self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
         except IridiumError:  # If iridium fails
             try:  # Try to set up for aprs
                 # Try to switch primary radio, returns False if APRS is locked off or antenna is not deployed
-                if not self.sfr.set_primary_radio("APRS", True):
+                if not self.sfr.set_primary_radio("APRS", turn_off_old=True):
                     raise APRSError()  # If primary radio switch failed, don't run further
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
-                self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
+                self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
                 print("L :(")
+                self.testing_mode(e)  # DEBUG
                 self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR

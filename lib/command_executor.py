@@ -1,11 +1,11 @@
 import os
 import time
 
-#from cv2 import add
+# from cv2 import add
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
+from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
 
 
 class CommandExecutor:
@@ -126,13 +126,14 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list = None, 
-    string: bool = False, add_to_queue: bool = True):
+    def transmit(self, packet: TransmissionPacket, data: list = None,
+                 string: bool = False, add_to_queue: bool = True):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param string: (bool) whether transmission is a string message
+        :param add_to_queue: (bool) whether to append message to queue
         :return: (bool) transmission successful
         """
         if string:
@@ -147,7 +148,8 @@ class CommandExecutor:
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
-        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
+        if self.sfr.devices[
+            self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
@@ -155,8 +157,15 @@ class CommandExecutor:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
             except NoSignalException:
                 print("No Iridium connectivity, appending to buffer...")
-                if add_to_queue: self.sfr.vars.transmit_buffer.append(p)
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
                 return False
+            except IridiumError:
+                # we want to add the packet to the transmission buffer before raising to handle in mission_control
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
+                raise
+
         return True
 
     @wrap_errors(LogicalError)
@@ -664,9 +673,9 @@ class CommandExecutor:
         """
         Sends heartbeat signal with vbat data
         """
-        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()], add_to_queue = False)
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()], add_to_queue=False)
         return result
-    
+
     @wrap_errors(CommandExecutionException)
     def IPC(self,
             packet: TransmissionPacket) -> list:
@@ -710,13 +719,14 @@ class CommandExecutor:
             Class that allows exec to consistently access sfr, AND local variables (result, string)
             https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
             """
+
             def __init__(self, execstr):
                 self.sfr = sfr
                 self.result = []
                 self.string = False
-                exec(f"{execstr}") 
+                exec(f"{execstr}")
                 # Set self.result and self.string inside the exec string if return data is needed
-        
+
         ex = JankExec(packet.args[0])
         print(ex.result, ex.string)
         self.transmit(packet, ex.result, ex.string)

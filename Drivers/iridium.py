@@ -336,7 +336,7 @@ class Iridium(Device):
         return (decoded, args)
 
     @staticmethod
-    @wrap_errors(IridiumError)
+    @wrap_errors(LogicalError)
     def split_packet(packet: TransmissionPacket) -> list:
         """
         Splits the packet into a list of packets which abide by size limits
@@ -385,7 +385,7 @@ class Iridium(Device):
         """
         print("Transmitting " + str(packet))
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(",")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
             if not discardmtbuf:
                 self.check_buffer()
@@ -466,7 +466,7 @@ class Iridium(Device):
         Checks buffer for existing messages
         """
         stat = self.SBD_STATUS()
-        ls = self.process(stat, "SBDS").split(", ")
+        ls = self.process(stat, "SBDS").split(",")
         if int(ls[2]) == 1:  # Save MT to sfr
             try:
                 self.SBD_RB()
@@ -595,7 +595,6 @@ class Iridium(Device):
         :param command: (str) Command to write
         :return: (bool) if the serial write worked
         """
-        #print(command)
         self.serial.write((command + "\r\n").encode("utf-8"))
         return True
 
@@ -614,5 +613,4 @@ class Iridium(Device):
             if next_byte == bytes():
                 break
             output += next_byte
-        #print(output)
         return output.decode("utf-8")
