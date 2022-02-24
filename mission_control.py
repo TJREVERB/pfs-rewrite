@@ -202,6 +202,7 @@ class MissionControl:
         Raises error if troubleshooting fails
         """
         print(get_traceback())  # TODO: DEBUG
+        print("-- Rebooting Iridium")  # TODO: Debug
         self.sfr.vars.FAILURES.append("Iridium")
         self.sfr.reboot("Iridium")
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
