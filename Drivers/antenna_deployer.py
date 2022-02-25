@@ -81,6 +81,7 @@ class AntennaDeployer(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.bus = SMBus(self.BUS_NUMBER)
+        self.addr = self.PRIMARY_ADDRESS
         self.check_deployment()
 
     @wrap_errors(AntennaError)
@@ -93,7 +94,12 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        self.bus.write_byte_data(self.PRIMARY_ADDRESS, command.value, parameter)
+        try:
+            self.bus.write_byte_data(self.addr, command.value, parameter)
+        except OSError as e:
+            print(e)
+            self.addr = self.SECONDARY_ADDRESS
+            self.bus.write_byte_data(self.addr, command.value, parameter)
         return True
 
     @wrap_errors(AntennaError)
@@ -105,10 +111,15 @@ class AntennaDeployer(Device):
         """
         if type(command) != AntennaDeployerCommand:
             raise LogicalError(details="Not an AntennaDeployerCommand!")
-        #self.bus.write_byte(self.PRIMARY_ADDRESS, command)
+        #self.bus.write_byte(self.addr, command)
         #time.sleep(0.5)
-        #return self.bus.read_i2c_block_data(self.PRIMARY_ADDRESS, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
-        return self.bus.read_word_data(self.PRIMARY_ADDRESS, command)
+        #return self.bus.read_i2c_block_data(self.addr, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
+        try:
+            return self.bus.read_word_data(self.addr, command)
+        except OSError as e:
+            print(e)
+            self.addr = self.SECONDARY_ADDRESS
+            return self.bus.read_word_data(self.addr, command)
 
     @wrap_errors(AntennaError)
     def functional(self):
