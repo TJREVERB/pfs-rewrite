@@ -3,6 +3,7 @@ from enum import Enum, IntEnum
 from smbus2 import SMBus, i2c_msg
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
+import RPi.GPIO as GPIO
 
 
 class AntennaDeployerCommand(IntEnum):
@@ -82,6 +83,9 @@ class AntennaDeployer(Device):
         super().__init__(sfr)
         self.bus = SMBus(self.BUS_NUMBER)
         self.addr = self.PRIMARY_ADDRESS
+        self.channels = [26, 19, 13, 6]
+        for i in self.channels:
+            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP)
         self.check_deployment()
 
     @wrap_errors(AntennaError)
@@ -173,9 +177,9 @@ class AntennaDeployer(Device):
 
     @wrap_errors(AntennaError)
     def check_deployment(self):
-        raw = self.read(AntennaDeployerCommand.GET_STATUS)
-        #twobyte = (raw[0] << 8) | raw[1] 
-        twobyte = raw
+        #raw = self.read(AntennaDeployerCommand.GET_STATUS)
+        #twobyte = raw
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
-        self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
+        #self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed
+        self.sfr.vars.ANTENNA_DEPLOYED = (sum([GPIO.input(i) for i in self.channels]) <= 1)
