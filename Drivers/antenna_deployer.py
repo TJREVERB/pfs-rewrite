@@ -83,7 +83,7 @@ class AntennaDeployer(Device):
         super().__init__(sfr)
         self.bus = SMBus(self.BUS_NUMBER)
         self.addr = self.PRIMARY_ADDRESS
-        self.channels = [26, 19, 13, 6]
+        self.channels = [26, 13, 6, 5]
         for i in self.channels:
             GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP)
         self.check_deployment()
