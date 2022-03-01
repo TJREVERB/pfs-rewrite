@@ -107,39 +107,16 @@ class AntennaDeployer(Device):
         return True
 
     @wrap_errors(AntennaError)
-    def read(self, command: AntennaDeployerCommand) -> bytes:
-        """
-        Wrapper for SMBus to read from AntennaDeployer
-        :param command: (AntennaDeployerCommand) The antenna deployer command to run
-        :return: (ctypes.LP_c_char, bool) buffer, success
-        """
-        if type(command) != AntennaDeployerCommand:
-            raise LogicalError(details="Not an AntennaDeployerCommand!")
-        #self.bus.write_byte(self.addr, command)
-        #time.sleep(0.5)
-        #return self.bus.read_i2c_block_data(self.addr, 0, self.EXPECTED_BYTES[command]) #TODO: DEBUG THIS. Antenna deployer is only returning 255, 255
-        try:
-            return self.bus.read_word_data(self.addr, command)
-        except OSError as e:
-            print(e)
-            self.addr = self.SECONDARY_ADDRESS
-            return self.bus.read_word_data(self.addr, command)
-
-    @wrap_errors(AntennaError)
     def functional(self):
         """
         :return: (bool) i2c file opened by SMBus
         """
         try:
-            raw_bytes = self.read(AntennaDeployerCommand.GET_TEMP)
+            self.write(AntennaDeployerCommand.GET_TEMP, 0)
         except Exception as e:
             print(e)
             raise AntennaError("Bad Connection")
-        #raw_count = (raw_bytes[0] << 8) | raw_bytes[1]
-        raw_count = raw_bytes
-        v = raw_count * 3300 / 1023 # mV
-        if v > 2616 or v < 769:
-            raise AntennaError("Bad data readout")
+
         return True
 
 
