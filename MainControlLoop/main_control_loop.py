@@ -39,17 +39,18 @@ class MainControlLoop:
         Executes command buffers and logs data.
         """
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
-        print(f"Transmit buffer looks like this: {self.sfr.vars.transmit_buffer}")
-        # TODO: DELETE THIS AFTER TESTING ICT
+        print(f"Transmit buffer looks like this: {self.sfr.vars.transmit_buffer}") # TODO: DELETE THIS AFTER TESTING ICT
         # Change modes while there isn't a mode lock or there is low battery
+        print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
+        self.sfr.command_executor.execute_buffers()  # Execute commands
+
         if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold():
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING
                 if not self.sfr.switch_mode(new_mode):
+                    self.sfr.MODE.start()  # restarts the current mode to turn devices back on
                     print(f"Switch failed because of locked components! Staying in {self.sfr.MODE}")
 
         # print(self.sfr.devices)
-        print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
-        self.sfr.command_executor.execute_buffers()  # Execute commands
         self.sfr.logger.log()  # Logs data
