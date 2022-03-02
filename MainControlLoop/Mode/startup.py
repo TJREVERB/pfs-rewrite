@@ -36,6 +36,7 @@ class Startup(Mode):
         return "Startup"
 
     @wrap_errors(LogicalError)
+
     def start(self) -> bool:
         """
         Starts with only Iridium in order to establish contact
