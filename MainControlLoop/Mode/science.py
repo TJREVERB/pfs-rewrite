@@ -58,14 +58,13 @@ class Science(Mode):
         :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
         """
         super().suggested_mode()
-        if self.sfr.check_lower_threshold():  # If we're on low battery
+        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
+            return self.sfr.modes_list["Science"](self.sfr)  # TODO: remove this after testing
+            # return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
+        elif self.sfr.check_lower_threshold():  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"]) # TODO: remove this after testing is done
-            # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach
-        elif self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
-            return self.sfr.modes_list["Science"](self.sfr)  # TODO: remove this after testing
-            # return self.sfr.modes_list["Outreach"](self.sfr)  # Suggest outreach (we'll go to charging when necessary)
+            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
