@@ -1,10 +1,9 @@
 import time
 from enum import Enum, IntEnum
-from smbus2 import SMBus, i2c_msg
+from smbus2 import SMBus
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
 import RPi.GPIO as GPIO
-
 
 class AntennaDeployerCommand(IntEnum):
     SYSTEM_RESET = 0xAA
@@ -39,53 +38,17 @@ class AntennaDeployerCommand(IntEnum):
     GET_UPTIME_3 = 0xB6
     GET_UPTIME_4 = 0xB7
 
-
 class AntennaDeployer(Device):
-    BUS_NUMBER = 1
     PRIMARY_ADDRESS = 0x31
     SECONDARY_ADDRESS = 0x32
-    EXPECTED_BYTES = {
-        AntennaDeployerCommand.SYSTEM_RESET: 0,
-        AntennaDeployerCommand.WATCHDOG_RESET: 0,
-
-        AntennaDeployerCommand.ARM_ANTS: 0,
-        AntennaDeployerCommand.DISARM_ANTS: 0,
-
-        AntennaDeployerCommand.DEPLOY_1: 0,
-        AntennaDeployerCommand.DEPLOY_2: 0,
-        AntennaDeployerCommand.DEPLOY_3: 0,
-        AntennaDeployerCommand.DEPLOY_4: 0,
-
-        AntennaDeployerCommand.AUTO_DEPLOY: 0,
-        AntennaDeployerCommand.CANCEL_DEPLOY: 0,
-
-        AntennaDeployerCommand.DEPLOY_1_OVERRIDE: 0,
-        AntennaDeployerCommand.DEPLOY_2_OVERRIDE: 0,
-        AntennaDeployerCommand.DEPLOY_3_OVERRIDE: 0,
-        AntennaDeployerCommand.DEPLOY_4_OVERRIDE: 0,
-
-        AntennaDeployerCommand.GET_TEMP: 2,
-        AntennaDeployerCommand.GET_STATUS: 2,
-
-        AntennaDeployerCommand.GET_COUNT_1: 1,
-        AntennaDeployerCommand.GET_COUNT_2: 1,
-        AntennaDeployerCommand.GET_COUNT_3: 1,
-        AntennaDeployerCommand.GET_COUNT_4: 1,
-
-        AntennaDeployerCommand.GET_UPTIME_1: 2,
-        AntennaDeployerCommand.GET_UPTIME_2: 2,
-        AntennaDeployerCommand.GET_UPTIME_3: 2,
-        AntennaDeployerCommand.GET_UPTIME_4: 2,
-    }
-
     @wrap_errors(AntennaError)
     def __init__(self, sfr):
         super().__init__(sfr)
-        self.bus = SMBus(self.BUS_NUMBER)
+        self.bus = SMBus(1)
         self.addr = self.PRIMARY_ADDRESS
         self.channels = [26, 13, 6, 5]
         for i in self.channels:
-            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+            GPIO.setup(i, GPIO.IN)
         self.check_deployment()
 
     @wrap_errors(AntennaError)
@@ -115,7 +78,7 @@ class AntennaDeployer(Device):
             self.write(AntennaDeployerCommand.GET_TEMP, 0)
         except Exception as e:
             print(e)
-            raise AntennaError("Bad Connection")
+            raise AntennaError(details = "Bad Connection")
 
         return True
 
@@ -159,4 +122,8 @@ class AntennaDeployer(Device):
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
         #self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed
-        self.sfr.vars.ANTENNA_DEPLOYED = (sum([GPIO.input(i) for i in self.channels]) <= 1)
+        if self.sfr.devices["Antenna Deployer"] is None:
+            raise AntennaError(details = "Antenna not powered on")
+        result = sum([GPIO.input(i) for i in self.channels])
+        self.sfr.vars.ANTENNA_DEPLOYED = (result <= 1)
+        return result
