@@ -1,5 +1,5 @@
 import time
-from enum import Enum, IntEnum
+from enum import IntEnum
 from smbus2 import SMBus
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device

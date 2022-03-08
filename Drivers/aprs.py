@@ -271,8 +271,8 @@ class APRS(Device):
         for loop in range(50):
             try:
                 next_byte = self.serial.read(size=1)
-            except:
-                return output
+            except Exception:
+                return output.decode('utf-8')
             if next_byte == bytes():
                 break
             output += next_byte  # append next_byte to output

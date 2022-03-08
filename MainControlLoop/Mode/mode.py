@@ -23,6 +23,7 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
+        self.heartbeat_clock = Clock(5*60)  # heart beat every "wait seconds
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -124,7 +125,7 @@ class Mode:
         :return: whether the function ran
         :rtype: bool
         """
-        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+        self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

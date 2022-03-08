@@ -474,7 +474,7 @@ class Iridium(Device):
                         raise IridiumError(details="Serial Timeout")
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
-                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
+                self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), str(ls[3])))
             except Exception as e:
                 self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))
                 # Append garbled message indicator and msn, args set to exception string to debug

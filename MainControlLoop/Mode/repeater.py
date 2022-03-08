@@ -13,12 +13,13 @@ class Repeater(Mode):
         return "Repeater"
 
     @wrap_errors(LogicalError)
-    def start(self) -> None:
+    def start(self) -> bool:
         """
         Runs initial setup for a mode. Turns on and off devices for a specific mode.
         """
-        return super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
         self.sfr.devices["APRS"].enable_digi()
+        return super().start([self.sfr.vars.PRIMARY_RADIO, "APRS"])
+
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

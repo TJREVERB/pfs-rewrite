@@ -103,7 +103,7 @@ class Battery(Device):
         :return: (float) telemetry value
         """
         result = []
-        for i in range(3): #avg filter
+        for i in range(3):  # avg filter
             raw = self.request(0x10, tle, 2)
             result.append((raw[0] << 8 | raw[1]) * multiplier)
         return sum(result)/len(result)

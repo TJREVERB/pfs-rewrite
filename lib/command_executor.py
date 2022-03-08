@@ -3,7 +3,7 @@ import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
+from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
 
 
 class CommandExecutor:
@@ -170,7 +170,7 @@ class CommandExecutor:
         Attempt to transmit entire transmission queue
         """
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
+            if not self.transmit_from_buffer(self.sfr.vars.transmit_buffer[0]):
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
                 break
@@ -188,7 +188,7 @@ class CommandExecutor:
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
-        except NoSignalException as e:
+        except NoSignalException:
             return False
 
     @wrap_errors(LogicalError)

@@ -61,16 +61,17 @@ class Battery(Device):
             # 1 = heater on, 0 = heater off
             "HBAT4": lambda: 0
         }
-    
-    def volt_time_charge(time):
-        hours = time/3600
+
+    @staticmethod
+    def volt_time_charge(t):
+        hours = t/3600
         
         hours = hours % 148
-        if hours >= 0 and hours < 70.09:
-            return (6.2 + (hours/4.5)**.2)
-        if hours >= 70.09 and hours < 74:
+        if 0 <= hours < 70.09:
+            return 6.2 + (hours / 4.5) ** .2
+        if 70.09 <= hours < 74:
             return (1/6)*((hours/4.5) - 15)**3 + 7.9
-        if hours >= 74 and hours < 77.91:
+        if 74 <= hours < 77.91:
             return (1/6)*((-1*hours/4.5) + 161/9)**3 + 7.9
-        if hours >= 77.91 and hours < 148:
+        if 77.91 <= hours < 148:
             return 6.2 + (-1*hours/4.5 + 148/4.5)**.2

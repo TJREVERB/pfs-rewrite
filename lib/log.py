@@ -22,6 +22,7 @@ class Log:
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.sub.clear()
 
+    @staticmethod
     @wrap_errors(LogicalError)
     def access_wrap(func: callable) -> callable:
         """
@@ -34,7 +35,7 @@ class Log:
         def wrapped(self, *args, **kwargs):
             try:
                 return func(self, *args, **kwargs)
-            except Exception as e:
+            except Exception:
                 self.sub.clear()
                 return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
         return wrapped

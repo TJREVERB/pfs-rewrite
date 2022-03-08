@@ -512,7 +512,7 @@ class IMU(Device):
         """
         if self.mode not in [0x00, 0x02, 0x03, 0x06]:
             return self._acceleration
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -527,7 +527,7 @@ class IMU(Device):
         """
         if self.mode not in [0x00, 0x01, 0x03, 0x05, 0x08]:
             return self._magnetic
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -542,7 +542,7 @@ class IMU(Device):
         """
         if self.mode not in [0x00, 0x01, 0x02, 0x04, 0x09, 0x0A]:
             return self._gyro
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -557,7 +557,7 @@ class IMU(Device):
         """
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
             return self._euler
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -572,7 +572,7 @@ class IMU(Device):
         """
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
             return self._quaternion
-        return (None, None, None, None)
+        return None, None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -587,7 +587,7 @@ class IMU(Device):
         """
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
             return self._linear_acceleration
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -602,7 +602,7 @@ class IMU(Device):
         """
         if self.mode in [0x08, 0x09, 0x0A, 0x0B, 0x0C]:
             return self._gravity
-        return (None, None, None)
+        return None, None, None
 
     @property
     @wrap_errors(IMUError)
@@ -844,7 +844,7 @@ class IMU(Device):
         y_sign = (sign_config >> 1) & 0x01
         z_sign = sign_config & 0x01
         # Return the results as a tuple of all 3 values.
-        return (x, y, z, x_sign, y_sign, z_sign)
+        return x, y, z, x_sign, y_sign, z_sign
 
     @axis_remap.setter
     @wrap_errors(IMUError)
