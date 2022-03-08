@@ -4,9 +4,8 @@ from MainControlLoop.Mode.outreach.tictactoe.tictactoe_game import TicTacToeGame
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
 from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 from MainControlLoop.Mode.mode import Mode
-import random
-import time
 from lib.exceptions import wrap_errors, LogicalError
+import time
 
 
 class Outreach(Mode):
@@ -90,28 +89,6 @@ class Outreach(Mode):
                 self.object_game_queue.append(obj)
 
     @wrap_errors(LogicalError)
-    def simulate_games(self) -> None:  # debug
-        """
-        Debug only
-        """
-        for _ in range(10):
-            game_int = random.randint(0, 3)
-            if game_int == 0:
-                obj = UltimateTicTacToeGame(self.sfr, str(5))
-                game = f"Ultimate;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-            elif game_int == 1:
-                obj = ChessGame(self.sfr, str(5))
-                game = f"Chess;{obj.random_fen()};{str(random.randint(1000000000, 9999999999))}"
-                #1rbqk1nr/p2pb1p1/np3p1p/2p1p3/P1P3P1/1Q1BPP1P/1P1P4/RNB1K1NR b KQk - 1 9
-            elif game_int == 2:
-                obj = TicTacToeGame(self.sfr, str(5))
-                game = f"TicTacToe;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-            else:
-                obj = JokesGame(self.sfr, str(5))
-                game = f"Jokes;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
-            self.string_game_queue.append(game)
-
-    @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         """
         Execute a single cycle of Outreach mode
@@ -119,7 +96,6 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-        self.simulate_games()  # TODO: DEBUG
         self.decode_game_queue()
         time_started = time.time()
         while len(self.object_game_queue) > 0:
@@ -128,7 +104,7 @@ class Outreach(Mode):
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
-            # self.transmit_string(str(game))  # TODO: CHANGE WHEN NOT DEBUGGING
+            self.transmit_string(str(game))
             if time.time() - 60 > time_started:  # limit compute time per cycle
                 break
 

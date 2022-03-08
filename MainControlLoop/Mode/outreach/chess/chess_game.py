@@ -1,6 +1,5 @@
 import chess
 import chess.engine
-import random
 from stockfish import Stockfish
 from lib.exceptions import wrap_errors, LogicalError
 
@@ -58,20 +57,4 @@ class ChessGame:
         """
         self.board.push(move)
 
-    @wrap_errors(LogicalError)
-    def random_fen(self):  # simulation only
-        """
-        DEBUG ONLY
-        Generate a random move and return new board state
-        """
-        while True:
-            board = chess.Board()
-            for _ in range(random.randint(10, 20)):
-                move = list(board.legal_moves)[random.randint(0, len(list(board.legal_moves))-1)]
-                board.push(move)
-                if chess.Board.outcome(board) is not None:
-                    break
-            if chess.Board.outcome(board) is not None:
-                continue
-            else:
-                return board.fen()
+

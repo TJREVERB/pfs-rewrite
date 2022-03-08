@@ -41,15 +41,3 @@ class JokesGame:
     @wrap_errors(LogicalError)
     def push(self, move):  # so that it works with outreach.py
         pass
-
-    @wrap_errors(LogicalError)
-    def random(self):
-        rand = random.randint(0, 3)
-        if rand == 0:
-            return "Joke"
-        elif rand == 1:
-            return "Pickup"
-        elif rand == 2:
-            return "Inside"
-        elif rand == 3:
-            return "Random"

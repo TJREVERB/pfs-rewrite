@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-import random
 from lib.exceptions import wrap_errors, LogicalError
 
 
@@ -34,25 +33,6 @@ class TicTacToe:
             else:
                 encoded_string += "-"
         return f"{encoded_string}"
-
-    @wrap_errors(LogicalError)
-    def board_string(self, row):  # for testing, human only
-        row = row % 3
-        string = ""
-        human_list = np.reshape(self.human_board, (9,))
-        ai_list = -1 * np.reshape(self.ai_board, (9,))
-
-        combined_list = list(map(int, (human_list + ai_list).tolist()))
-        for col in range(3):
-            string += " "
-            if combined_list[row*3 + col] == 1:  # if human piece
-                string += 'x'
-            elif combined_list[row*3 + col] == -1:
-                string += 'o'
-            else:
-                string += '.'
-            string += " |"
-        return string
 
     @wrap_errors(LogicalError)
     def set_game(self, board_string: str):
@@ -140,16 +120,3 @@ class TicTacToe:
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
-    @wrap_errors(LogicalError)
-    def random(self):
-        while True:
-            board = TicTacToe(True)
-            for r in range(3):
-                for c in range(3):
-                    rand = random.randint(0, 2)
-                    if rand == 0:
-                        board.human_board[r, c] = 1.0
-                    else:
-                        board.ai_board[r, c] = 1.0
-            if board.check_winner() == (1, 1):
-                return str(board)

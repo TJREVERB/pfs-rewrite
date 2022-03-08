@@ -2,8 +2,8 @@ import time
 from math import sqrt
 import numpy as np
 import random
-from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
 import copy
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
 from lib.exceptions import wrap_errors, LogicalError
 
 
