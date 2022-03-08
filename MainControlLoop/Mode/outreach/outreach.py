@@ -65,28 +65,34 @@ class Outreach(Mode):
         :return: list of game objects
         :rtype: list
         """
-        for encoded_string in self.string_game_queue:
-            game, board_string, game_id = encoded_string.split(";")
+        try:
+            for encoded_string in self.string_game_queue:
+                game, board_string, game_id = encoded_string.split(";")
 
-            if game == "TicTacToe":
-                obj = TicTacToeGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+                if game == "TicTacToe":
+                    obj = TicTacToeGame(self.sfr, game_id)
+                    obj.set_game(board_string)
+                    self.object_game_queue.append(obj)
 
-            elif game == "Chess":
-                obj = ChessGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+                elif game == "Chess":
+                    obj = ChessGame(self.sfr, game_id)
+                    obj.set_game(board_string)
+                    self.object_game_queue.append(obj)
 
-            elif game == "Ultimate":
-                obj = UltimateTicTacToeGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+                elif game == "Ultimate":
+                    obj = UltimateTicTacToeGame(self.sfr, game_id)
+                    obj.set_game(board_string)
+                    self.object_game_queue.append(obj)
 
-            elif game == "Jokes":
-                obj = JokesGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+                elif game == "Jokes":
+                    obj = JokesGame(self.sfr, game_id)
+                    obj.set_game(board_string)
+                    self.object_game_queue.append(obj)
+        except LogicalError as e:
+            default_board_string = "error splitting package"
+            self.transmit_string(f"AI ERROR! board string: "
+                                 f"{board_string if str(board_string) in locals() else default_board_string}"
+                                 f", Error is: {e}")
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
@@ -100,9 +106,11 @@ class Outreach(Mode):
         time_started = time.time()
         while len(self.object_game_queue) > 0:
             game = self.object_game_queue.pop()
-            print(game)
-            ai_move = game.get_best_move()
-            game.push(ai_move)
+            try:
+                ai_move = game.get_best_move()
+                game.push(ai_move)
+            except LogicalError as e:
+                self.transmit_string(f"AI ERROR: {str(game)}, Error is: {e}")
             self.transmit_string(str(game))
             if time.time() - 60 > time_started:  # limit compute time per cycle
                 break
