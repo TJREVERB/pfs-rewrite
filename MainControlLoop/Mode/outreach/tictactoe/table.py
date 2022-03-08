@@ -1,3 +1,7 @@
+from lib.exceptions import wrap_errors, LogicalError
+
+
+@wrap_errors(LogicalError)
 def get_table():
     table = {
         "---------a": [

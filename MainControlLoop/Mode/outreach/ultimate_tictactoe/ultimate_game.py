@@ -3,9 +3,11 @@ from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MC
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTacToe
 import random
 import copy
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class UltimateTicTacToeGame:
+    @wrap_errors(LogicalError)
     def __init__(self, sfr, game_id):
         self.sfr = sfr
         self.game_id = game_id
@@ -15,6 +17,7 @@ class UltimateTicTacToeGame:
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
 
+    @wrap_errors(LogicalError)
     def __str__(self):
         """
         board is encoded as the nine 3x3 tictactoe boards, flattened then run through 3x3 string encoder
@@ -41,6 +44,7 @@ class UltimateTicTacToeGame:
 
         return f"Ultimate;{board_string};{self.game_id}"
 
+    @wrap_errors(LogicalError)
     def print_board(self):  # testing, prints board for human
         string = ""
         for row in range(9):
@@ -60,6 +64,7 @@ class UltimateTicTacToeGame:
                 string += "\n\n"
         print(string)
 
+    @wrap_errors(LogicalError)
     def set_game(self, board_string):
         encoded_list = board_string.split(",")
         self.board = [TicTacToe(self.is_ai_turn).set_game(board) for board in encoded_list[:9]]
@@ -71,6 +76,7 @@ class UltimateTicTacToeGame:
         else:
             self.is_ai_turn = False
 
+    @wrap_errors(LogicalError)
     def get_valid_moves(self):
         """
         Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
@@ -104,6 +110,7 @@ class UltimateTicTacToeGame:
                     move_list.extend(legal_moves)
         return move_list
 
+    @wrap_errors(LogicalError)
     def push(self, location: list):
         """
         Moves represented as [x, y, z], x: 3x3 board, y: x row on 3x3 board, z: y row on 3x3 board
@@ -114,6 +121,7 @@ class UltimateTicTacToeGame:
                 board.switch_turn()
         self.previous_move = location
 
+    @wrap_errors(LogicalError)
     def push_move_to_copy(self, location: list):
         """
         pushes a move to new game object
@@ -124,9 +132,11 @@ class UltimateTicTacToeGame:
         game.push(location)
         return game
 
+    @wrap_errors(LogicalError)
     def deepcopy(self):
         return copy.deepcopy(self)
 
+    @wrap_errors(LogicalError)
     def check_winner(self):
         def _check(human_bitboard, ai_bitboard):
             for binary in self.winning_combinations:
@@ -152,6 +162,7 @@ class UltimateTicTacToeGame:
         else:
             return check_result
 
+    @wrap_errors(LogicalError)
     def get_bitboard(self, array: np.array) -> int:
         new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
@@ -159,10 +170,12 @@ class UltimateTicTacToeGame:
         bitboard = int("".join(new_list), 2)
         return bitboard
 
+    @wrap_errors(LogicalError)
     def get_best_move(self):
         search = MCTSSearch(self.sfr, self)
         return search.get_best_move()
 
+    @wrap_errors(LogicalError)
     def random(self):
         while True:
             board = UltimateTicTacToeGame(self.sfr, self.game_id)
@@ -176,6 +189,7 @@ class UltimateTicTacToeGame:
             else:
                 return str(board).split(";")[1]
 
+    @wrap_errors(LogicalError)
     def generate_random_draw(self):
         board = UltimateTicTacToeGame(self.sfr, 5)
         string = TicTacToe(True).random()

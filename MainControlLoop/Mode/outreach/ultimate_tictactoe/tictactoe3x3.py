@@ -1,9 +1,11 @@
 import numpy as np
 import copy
 import random
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class TicTacToe:
+    @wrap_errors(LogicalError)
     def __init__(self, is_ai_turn):
         self.is_ai_turn = is_ai_turn
         self.human_board = np.zeros((3, 3))  # X
@@ -11,6 +13,7 @@ class TicTacToe:
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
 
+    @wrap_errors(LogicalError)
     def __str__(self):  # returns encoded board
         """
         Encoding: flattened array turned into string, with x as human and o as ai.
@@ -32,6 +35,7 @@ class TicTacToe:
                 encoded_string += "-"
         return f"{encoded_string}"
 
+    @wrap_errors(LogicalError)
     def board_string(self, row):  # for testing, human only
         row = row % 3
         string = ""
@@ -50,6 +54,7 @@ class TicTacToe:
             string += " |"
         return string
 
+    @wrap_errors(LogicalError)
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
         human_board = np.zeros((9,))
@@ -63,6 +68,7 @@ class TicTacToe:
         self.ai_board = ai_board.reshape((3, 3))
         return self
 
+    @wrap_errors(LogicalError)
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
         ai_bitboard = self.get_bitboard(self.ai_board)
@@ -75,12 +81,14 @@ class TicTacToe:
             return 1, 1
         return 0, 0
 
+    @wrap_errors(LogicalError)
     def switch_turn(self):
         if self.is_ai_turn:
             self.is_ai_turn = False
         else:
             self.is_ai_turn = True
 
+    @wrap_errors(LogicalError)
     def is_valid_move(self, location: list) -> bool:
         x, y = location[0], location[1]
         if type(x) != int or type(y) != int:
@@ -92,6 +100,7 @@ class TicTacToe:
         else:
             return False
 
+    @wrap_errors(LogicalError)
     def get_valid_moves(self) -> list:
         """
         returns all valid moves as list of lists
@@ -102,6 +111,7 @@ class TicTacToe:
         valid_moves = [possible_moves[i] for i in range(9) if legal_move_distribution[i] is True]
         return valid_moves
 
+    @wrap_errors(LogicalError)
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
         location = list(map(int, location))
         x, y = location[0], location[1]
@@ -111,12 +121,14 @@ class TicTacToe:
             self.human_board[x][y] = 1.0
         self.switch_turn()
 
+    @wrap_errors(LogicalError)
     def push_move_to_copy(self, location: list):
         """returns new game object with pushed move"""
         new_board = copy.deepcopy(self)
         new_board.push(location)
         return new_board
 
+    @wrap_errors(LogicalError)
     def get_bitboard(self, array: np.array) -> int:
         new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
@@ -124,9 +136,11 @@ class TicTacToe:
         bitboard = int("".join(new_list), 2)
         return bitboard
 
+    @wrap_errors(LogicalError)
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
+    @wrap_errors(LogicalError)
     def random(self):
         while True:
             board = TicTacToe(True)
