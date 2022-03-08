@@ -1,9 +1,12 @@
 import numpy as np
-import time
 import copy
+import random
+from MainControlLoop.Mode.outreach.tictactoe.table import get_table
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class TicTacToeGame:
+    @wrap_errors(LogicalError)
     def __init__(self, sfr, game_id):
         self.sfr = sfr
         self.game_id = game_id
@@ -13,6 +16,7 @@ class TicTacToeGame:
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
 
+    @wrap_errors(LogicalError)
     def __str__(self):  # returns encoded board
         """
         Encoding: flattened array turned into string, with x as human and o as ai.
@@ -30,22 +34,20 @@ class TicTacToeGame:
         encoded_string = ""
         human_board = self.human_board.reshape((9,))
         ai_board = self.ai_board.reshape((9,))
-        for c in human_board:
-            if c == 0:
-                encoded_string += "-"
+        for i in range(9):
+            if int(human_board[i]) == 1:
+                encoded_string += "x"
+            elif int(ai_board[i]) == 1:
+                encoded_string += "o"
             else:
-                encoded_string += c.lower()
-        for c in ai_board:
-            if c == 0:
                 encoded_string += "-"
-            else:
-                encoded_string += c.lower()
         if self.is_ai_turn:
             encoded_string += "a"
         else:
             encoded_string += "h"
         return f"TicTacToe;{encoded_string};{self.game_id}"
 
+    @wrap_errors(LogicalError)
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
         human_board = np.zeros((9,))
@@ -57,51 +59,22 @@ class TicTacToeGame:
                 ai_board[i] = 1.0
         self.human_board = human_board.reshape((3, 3))
         self.ai_board = ai_board.reshape((3, 3))
+        if board_string[9] == "h":
+            self.is_ai_turn = False
+        else:
+            self.is_ai_turn = True
         #  always be ai turn
 
+    @wrap_errors(LogicalError)
     def get_best_move(self):
-        possible_moves = self.get_valid_moves()
-        best = -10000
-        best_move = []
-        time_started = time.time()
-        for move in possible_moves:
-            if time.time() - 10 >= time_started:
-                break
-            score = self.minimax(self.push_move_to_copy(move), -10000, 10000)
-            if score > best:
-                best_move = move
-                best = score
-        return best_move
+        table = get_table()
+        game_string = str(self).split(';')[1]
+        if game_string in table:  # always should be in table
+            return list(table[game_string])
+        else:  # TODO: figure out what happens
+            raise RuntimeError
 
-    def minimax(self, board, alpha, beta):
-        state = board.check_winner()
-        if state == (1, 0):
-            return -10
-        elif state == (0, 1):
-            return 10
-        elif state == (1, 1):
-            return 0
-        if board.is_ai_turn:
-            best_max = -10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_max = max(best_max, score)
-                alpha = max(alpha, score)
-                if beta <= alpha:
-                    break
-            return best_max
-        else:
-            best_min = 10000
-            possible_moves = board.get_valid_moves()
-            for move in possible_moves:
-                score = board.minimax(board.push_move_to_copy(move), alpha, beta)
-                best_min = min(best_min, score)
-                beta = min(beta, score)
-                if beta <= alpha:
-                    break
-            return best_min
-
+    @wrap_errors(LogicalError)
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
         ai_bitboard = self.get_bitboard(self.ai_board)
@@ -114,61 +87,56 @@ class TicTacToeGame:
             return 1, 1
         return 0, 0
 
+    @wrap_errors(LogicalError)
     def switch_turn(self):
-        if self.is_ai_turn:
-            self.is_ai_turn = False
-        else:
-            self.is_ai_turn = True
+        self.is_ai_turn = not self.is_ai_turn
 
-    def is_valid_move(self, location: list) -> bool:
-        x, y = location[0], location[1]
-        if type(x) != int or type(y) != int:
-            return False
+    @wrap_errors(LogicalError)
+    def is_valid_move(self, location: [int, int]) -> bool:
+        idx = tuple(location)
+        x, y = idx
         if x > 2 or x < 0 or y > 2 or y < 0:
             return False
-        if self.human_board[x][y] == 0 and self.ai_board[x][y] == 0:
+        if self.human_board[idx] == 0 and self.ai_board[idx] == 0:
             return True
         else:
             return False
 
+    @wrap_errors(LogicalError)
     def get_valid_moves(self) -> list:
         """
         returns all valid moves as list of lists
         """
+        return [[x, y] for y in range(3) for x in range(3) if self.is_valid_move([x, y])]
 
-        possible_moves = [[x, y] for y in range(3) for x in range(3)]
-        possible_moves = list(map(self.is_valid_move, possible_moves))
-        valid_moves = [move for move in possible_moves if move is not None]
-        return valid_moves
-
+    @wrap_errors(LogicalError)
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
-        location = list(map(int, location))
-        x, y = location[0], location[1]
+        idx = (int(location[0]), int(location[1]))
         if self.is_ai_turn:
-            self.ai_board[x][y] = 1.0
+            self.ai_board[idx] = 1.0
         else:
-            self.human_board[x][y] = 1.0
+            self.human_board[idx] = 1.0
         self.switch_turn()
 
+    @wrap_errors(LogicalError)
     def push_move_to_copy(self, location: list):
         """returns new game object with pushed move"""
         new_board = self.deepcopy()
         new_board.push(location)
         return new_board
 
+    @wrap_errors(LogicalError)
     def get_bitboard(self, array: np.array) -> int:
-        new_list = np.reshape(array, (3 ** 2,)).tolist()
+        new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
         new_list = list(map(str, new_list))
         bitboard = int("".join(new_list), 2)
         return bitboard
 
+    @wrap_errors(LogicalError)
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
+    @wrap_errors(LogicalError)
     def deepcopy(self):
-        new_object = TicTacToeGame(self.sfr, self.game_id)
-        new_object.is_ai_turn = self.is_ai_turn
-        new_object.human_board = self.human_board.copy()
-        new_object.ai_board = self.ai_board.copy()
-        return new_object
+        return copy.deepcopy(self)

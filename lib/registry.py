@@ -45,7 +45,7 @@ class Vars:
         self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
-        self.OUTREACH_MAX_CALCULATION_TIME = 0.1  # max calculation time for minimax calculations in outreach (seconds)
+        self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
         self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
         self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
@@ -400,18 +400,23 @@ class StateFieldRegistry:
         self.devices[component] = self.component_to_class[component](self)
 
     @wrap_errors(LogicalError)
-    def power_off(self, component: str) -> None:
+    def power_off(self, component: str, safe: bool = False) -> None:
         """
         Turns off component, updates sfr.devices, and updates sfr.serial_converters if applicable to component.
         :param component: component to turn off
         :type component: str
+        :param safe: whether to ignore errors in terminating device
+        :type safe: bool
         """
         if self.devices[component] is None:  # if component is off, stop method from running further.
             return
         if component in self.vars.LOCKED_ON_DEVICES:  # if component is locked on, stop method from running further
             return
-
-        self.devices[component].terminate()
+        try:
+            self.devices[component].terminate()
+        except Exception:
+            if not safe:
+                raise
         self.devices[component] = None  # removes from dict
         self.eps.commands["Pin Off"](component)  # turns off component
         for i in self.component_to_class[component].SERIAL_CONVERTERS:
@@ -444,19 +449,20 @@ class StateFieldRegistry:
                 self.power_on(key)  # turn on device and serial converter if applicable
 
     @wrap_errors(LogicalError)
-    def all_off(self, exceptions=None, override_default_exceptions=False) -> None:
+    def all_off(self, exceptions=None, override_default_exceptions=False, safe=False) -> None:
         """
         Turns all components off automatically, except for Antenna Deployer.
         Calls power_off for every key in self.devices. Except for those in exceptions parameter
         :param exceptions: (list) components to not turn off, default is ["Antenna Deployer, IMU"]
         :param override_default_exceptions: (bool) whether or not to use default exceptions
-        :return: None
+        :param safe: whether to ignore errors when terminating each device
+        :type safe: bool
         """
         exceptions = (exceptions or []) + (["Antenna Deployer", "IMU"] if not override_default_exceptions else [])
 
         for key in self.devices:
             if self.devices[key] and key not in exceptions:  # if device  is on and not in exceptions
-                self.power_off(key)  # turn off device and serial converter if applicable
+                self.power_off(key, safe=safe)  # turn off device and serial converter if applicable
 
     @wrap_errors(LogicalError)
     def set_primary_radio(self, new_radio: str, turn_off_old=False) -> bool:
@@ -472,17 +478,21 @@ class StateFieldRegistry:
             False only if it is locked off, or it's APRS and antenna not deployed
         :rtype: bool
         """
+        if new_radio == self.vars.PRIMARY_RADIO:  # If this is already primary radio, don't run further
+            self.power_on(new_radio)
+            return True
         # If this is not a different radio or the new radio is locked off, don't run further
-        if new_radio == self.vars.PRIMARY_RADIO or new_radio in self.vars.LOCKED_OFF_DEVICES:
+        if new_radio in self.vars.LOCKED_OFF_DEVICES:
             return False
         # don't switch to APRS as primary if the antenna hasn't deployed
         if new_radio == "APRS" and not self.vars.ANTENNA_DEPLOYED:
             return False
         if turn_off_old:
-            self.power_off(self.vars.PRIMARY_RADIO)
+            self.power_off(self.vars.PRIMARY_RADIO, safe=True)
         # Switch radio
         self.vars.PRIMARY_RADIO = new_radio
         self.power_on(new_radio)
+
         # transmit update to groundstation
         self.command_executor.transmit(UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}"))
         return True
@@ -551,3 +561,10 @@ class StateFieldRegistry:
             self.vars.LOCKED_OFF_DEVICES.remove(device)
             return True
         return False
+
+    def crash(self):
+        """
+        Safely crash the satellite to wait for eps reboot
+        """
+        self.all_off(override_default_exceptions=True)
+        exit()

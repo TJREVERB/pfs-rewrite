@@ -92,13 +92,26 @@ class APRS(Device):
         return True
 
     @wrap_errors(APRSError)
-    def enable_digi(self):  # TODO: Test these
+    def enable_digi(self): 
         """
         Enables Hardware Digipeating
         """
         self.enter_firmware_menu()
-        self.change_setting("BANK", "0")
-        time.sleep(0.1)
+        self.change_setting("TXFREQ", "145.825")
+        time.sleep(0.2)
+        self.change_setting("RXFREQ", "145.825")
+        time.sleep(0.2)
+        self.change_setting("ALIAS1", "APRSAT")
+        time.sleep(0.2)
+        self.change_setting("ALIAS2", "ARISS")
+        time.sleep(0.2)
+        self.change_setting("ALIAS3", "WIDE")
+        time.sleep(0.2)
+        self.change_setting("PATH1", "ARISS")
+        time.sleep(0.2)
+        self.change_setting("PATH2", "WIDE2-1")
+        time.sleep(0.2) 
+        self.change_setting("HIPWR", "1")
         self.exit_firmware_menu()
         return True
 
@@ -109,8 +122,21 @@ class APRS(Device):
         This should also be run after initialization to set the default bank to 0
         """
         self.enter_firmware_menu()
-        self.change_setting("BANK", "1")
-        time.sleep(0.1)
+        self.change_setting("TXFREQ", "145.825")
+        time.sleep(0.2)
+        self.change_setting("RXFREQ", "145.825")
+        time.sleep(0.2)
+        self.change_setting("ALIAS1", "TEMP")
+        time.sleep(0.2)
+        self.change_setting("ALIAS2", "none")
+        time.sleep(0.2)
+        self.change_setting("ALIAS3", "none")
+        time.sleep(0.2)
+        self.change_setting("PATH1", "ARISS")
+        time.sleep(0.2)
+        self.change_setting("PATH2", "WIDE2-1")
+        time.sleep(0.2) 
+        self.change_setting("HIPWR", "1")
         self.exit_firmware_menu()
         return True
 
@@ -151,7 +177,7 @@ class APRS(Device):
         """
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
-        time.sleep(15)
+        time.sleep(5)
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)

@@ -1,10 +1,9 @@
-import datetime
 import os
 import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
+from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
 
 
 class CommandExecutor:
@@ -54,6 +53,7 @@ class CommandExecutor:
             "SFR": self.SFR,
             "USM": self.USM,
             "ITM": self.ITM,
+            "IHB": self.IHB,
             "IPC": self.IPC,
             "IRB": self.IRB,
             "ICT": self.ICT,
@@ -85,8 +85,8 @@ class CommandExecutor:
         :param registry: command registry to use
         """
         to_log = {
-            "ts0": (t := datetime.datetime.utcnow()).timestamp() // 100000 * 100000,  # first 5 digits
-            "ts1": int(t.timestamp()) % 100000,  # last 5 digits
+            "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
+            "ts1": int(t) % 100000,  # last 5 digits
             "radio": self.sfr.vars.PRIMARY_RADIO,
             "command": packet.descriptor,
             "arg": ":".join([str(s) for s in packet.args]),
@@ -123,12 +123,14 @@ class CommandExecutor:
         self.sfr.vars.outreach_buffer = []
 
     @wrap_errors(LogicalError)
-    def transmit(self, packet: TransmissionPacket, data: list, string=False):
+    def transmit(self, packet: TransmissionPacket, data: list = None,
+                 string: bool = False, add_to_queue: bool = True):
         """
         Transmit a message over primary radio
         :param packet: (TransmissionPacket) packet of received transmission
         :param data: (list) of data, or a single length list of error message
         :param string: (bool) whether transmission is a string message
+        :param add_to_queue: (bool) whether to append message to queue
         :return: (bool) transmission successful
         """
         if string:
@@ -136,20 +138,30 @@ class CommandExecutor:
         if data is not None:
             packet.return_data = data
         if packet.outreach:  # If this is an outreach packet (UNUSED)
-            if self.sfr.devices["APRS"] is None:  # If APRS is off, append to queue
+            if self.sfr.devices["APRS"] is None and add_to_queue:  # If APRS is off, append to queue
                 self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
+                return False
             for p in self.sfr.devices["APRS"].split_packet(packet):
                 self.sfr.devices["APRS"].transmit(p)
             return True
         # Otherwise, split the packet and transmit components
-        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:  # If primary radio is off, append to queue
+        if self.sfr.devices[
+            self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+            return False
         for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
             except NoSignalException:
-                self.sfr.vars.transmit_buffer.append(p)
-                return False
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
+                    return False
+            except Exception:
+                # we want to add the packet to the transmission buffer before raising to handle in mission_control
+                if add_to_queue:
+                    self.sfr.vars.transmit_buffer.append(p)
+                raise
+
         return True
 
     @wrap_errors(LogicalError)
@@ -464,7 +476,6 @@ class CommandExecutor:
         """
         self.transmit(packet, result := self.sfr.analytics.historical_consumption(int(packet.args[0]))  # Read logs
                       .to_numpy()  # Convert dataframe to numpy array
-                      .flatten()  # Convert shape to 1d
                       .tolist())  # Convert numpy array to list
         return result
 
@@ -649,6 +660,14 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def IHB(self, packet: TransmissionPacket) -> list:
+        """
+        Sends heartbeat signal with vbat data
+        """
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()], add_to_queue=False)
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def IPC(self,
             packet: TransmissionPacket) -> list:
         """
@@ -658,7 +677,7 @@ class CommandExecutor:
         self.sfr.all_off(override_default_exceptions=True)
         time.sleep(.5)
         if not packet.simulate:
-            exit(0)  # Exit script, eps will reset after 16 minutes without ping
+            self.sfr.crash()  # Exit script, eps will reset after 16 minutes without ping
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -683,11 +702,24 @@ class CommandExecutor:
         Remote code execution
         Runs exec on string
         """
-        result = []
-        string = False
-        exec(str(packet.args[0]))  # Set result and string inside the exec string if return data is needed
-        self.transmit(packet, result, string)
-        return result
+        sfr = self.sfr
+
+        class JankExec:
+            """
+            Class that allows exec to consistently access sfr, AND local variables (result, string)
+            https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
+            """
+
+            def __init__(self, execstr):
+                self.sfr = sfr
+                self.result = []
+                self.string = False
+                exec(f"{execstr}")
+                # Set self.result and self.string inside the exec string if return data is needed
+
+        ex = JankExec(packet.args[0])
+        self.transmit(packet, ex.result, ex.string)
+        return ex.result
 
     @wrap_errors(CommandExecutionException)
     def IAK(self, packet: TransmissionPacket):

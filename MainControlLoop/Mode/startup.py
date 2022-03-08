@@ -78,7 +78,7 @@ class Startup(Mode):
             # better to use nonfunctional radio than send power to a loadless aprs
             self.sfr.power_off("Antenna Deployer")
             self.sfr.set_primary_radio("Iridium", True)
-            self.sfr.vars.LOCKED_OFF_DEVICES += ["Antenna Deployer", "APRS"]
+            self.sfr.vars.LOCKED_OFF_DEVICES.update({"Antenna Deployer", "APRS"})
             self.sfr.vars.FAILURES.append("Antenna Deployer")
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
@@ -126,7 +126,5 @@ class Startup(Mode):
         else:  # If we can switch out of this mode
             final_mode = self.sfr.modes_list["Science"] if "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES \
                 else self.sfr.modes_list["Outreach"]  # End up in Science if Iridium is unlocked, otherwise Outreach
-            if self.sfr.check_lower_threshold():  # Charging if we can switch but are low on power
-                return self.sfr.modes_list["Charging"](self.sfr, final_mode)
-            else:  # Science if we can switch and have enough power
-                return final_mode(self.sfr)
+            # Leave to charging to make sure we have enough power for the next mode
+            return self.sfr.modes_list["Charging"](self.sfr, final_mode)
