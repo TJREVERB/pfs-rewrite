@@ -6,6 +6,7 @@ from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 from MainControlLoop.Mode.mode import Mode
 import random
 import time
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class Outreach(Mode):
@@ -13,6 +14,8 @@ class Outreach(Mode):
     This mode interfaces with a web server on the ground, allowing anyone around the world to play games with REVERB
     Currently available games: chess, jokes, tictactoe, ultimate tictactoe
     """
+
+    @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
         :param sfr: sfr object
@@ -24,6 +27,7 @@ class Outreach(Mode):
         self.object_game_queue = []
         # games are "TicTacToe", "Chess"
 
+    @wrap_errors(LogicalError)
     def __str__(self) -> str:
         """
         Returns 'Outreach'
@@ -32,6 +36,7 @@ class Outreach(Mode):
         """
         return "Outreach"
 
+    @wrap_errors(LogicalError)
     def start(self) -> bool:
         """
         Enables only primary radio for communication with ground
@@ -39,6 +44,7 @@ class Outreach(Mode):
         """
         return super().start([self.sfr.vars.PRIMARY_RADIO])
 
+    @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         """
         If battery is low, suggest Charging -> Outreach
@@ -52,6 +58,7 @@ class Outreach(Mode):
         else:
             return self
 
+    @wrap_errors(LogicalError)
     def decode_game_queue(self):
         """
         Turns encoded strings in game_queue, returns the list of game objects.
@@ -82,6 +89,7 @@ class Outreach(Mode):
                 obj.set_game(board_string)
                 self.object_game_queue.append(obj)
 
+    @wrap_errors(LogicalError)
     def simulate_games(self) -> None:  # debug
         """
         Debug only
@@ -103,6 +111,7 @@ class Outreach(Mode):
                 game = f"Jokes;{obj.random()};{str(random.randint(1000000000, 9999999999))}"
             self.string_game_queue.append(game)
 
+    @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
         """
         Execute a single cycle of Outreach mode
@@ -120,9 +129,10 @@ class Outreach(Mode):
             print(f"AIMOVE: {ai_move}")
             game.push(ai_move)
             # self.transmit_string(str(game))  # TODO: CHANGE WHEN NOT DEBUGGING
-            #if time.time() - 60 > time_started:  # limit compute time per cycle
-                #break
+            if time.time() - 60 > time_started:  # limit compute time per cycle
+                break
 
+    @wrap_errors(LogicalError)
     def transmit_string(self, message: str):
         """
         Transmit a string message to ground
@@ -132,6 +142,7 @@ class Outreach(Mode):
         packet = UnsolicitedString(return_data=[message])
         self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
 
+    @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:
         """
         Make one final move on all games in buffer and transmit results
