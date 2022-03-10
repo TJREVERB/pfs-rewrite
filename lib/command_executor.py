@@ -326,6 +326,7 @@ class CommandExecutor:
         :param force_queue: whether to force this packet into queue
         :type force_queue: bool
         """
+        packet.descriptor = "GPL"
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power()),
