@@ -21,7 +21,6 @@ class Charging(Mode):
         self.mode = mode
         # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
         self.iridium_clock = Clock(10)  # Poll iridium every 5 minutes to allow for charging
-        self.heartbeat_clock = Clock(5400)  # Heartbeat once per orbit
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             """

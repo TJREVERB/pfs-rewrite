@@ -1,6 +1,7 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
 from Drivers.transmission_packet import UnsolicitedData
+from lib.clock import Clock
 
 
 class Recovery(Mode):
@@ -27,6 +28,7 @@ class Recovery(Mode):
             print("Transmitting proof of life...")
             self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         self.heartbeat = pol_ping  # Redefine heartbeat function to ping proof of life instead of heartbeat
+        self.heartbeat_clock = Clock(120)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
