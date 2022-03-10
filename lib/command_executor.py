@@ -60,8 +60,9 @@ class CommandExecutor:
             "IRB": self.IRB,
             "ICT": self.ICT,
             "ICE": self.ICE,
-            "IAK": self.IAK
-            # TODO: Add gamer mode commands once done with dev
+            "IAK": self.IAK,
+            "ZMV": self.ZMV,
+            "MGA": self.MGA
         }
 
         # TODO: IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
