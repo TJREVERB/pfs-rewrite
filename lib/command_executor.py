@@ -758,16 +758,16 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        if str(self.sfr.MODE) != "Gamer":
-            raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
+        if str(self.sfr.MODE) != "Outreach":
+            raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
     def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in gamer mode")
-        if not self.sfr.switch_mode("Gamer"):
+        if str(self.sfr.MODE) == "Outreach":
+            raise CommandExecutionException("Already in outreach mode")
+        if not self.sfr.switch_mode("Outreach"):
             raise CommandExecutionException("Mode switch failed due to locked devices!")
         self.transmit(packet, result := [])
         return result
