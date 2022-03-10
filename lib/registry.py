@@ -185,7 +185,8 @@ class StateFieldRegistry:
             "Science": Science,
             "Outreach": Outreach,
             "Repeater": Repeater,
-            "Recovery": Recovery
+            "Recovery": Recovery,
+            "Mode": Mode,
         }
 
         self.component_to_class = {  # returns class from component name

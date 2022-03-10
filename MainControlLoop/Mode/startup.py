@@ -2,7 +2,6 @@ import time
 from MainControlLoop.Mode.mode import Mode
 from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 from lib.exceptions import wrap_errors, LogicalError
-from lib.clock import Clock
 
 
 class Startup(Mode):
@@ -24,7 +23,15 @@ class Startup(Mode):
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
         super().__init__(sfr)
-        self.beacon = Clock(120)
+
+        def pol_ping():
+            """
+            Transmit proof of life every 2 minutes if contact hasn't already been established
+            Function gets redefined to normal Mode heartbeats by command_executor in the command to establish contact
+            """
+            print("Transmitting proof of life...")
+            self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+        self.heartbeat = pol_ping  # Redefine heartbeat function to ping proof of life instead of heartbeat
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -57,8 +64,8 @@ class Startup(Mode):
         if self.sfr.vars.ANTENNA_DEPLOYED:  # If the antenna has already been deployed, do nothing
             return False
         # If aprs and antenna deployer are locked off, do nothing
-        if "APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and \
-                "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+        if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES and \
+                "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
             return False
         # If not enough time has passed to deploy the antenna, do nothing
         elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
@@ -101,10 +108,6 @@ class Startup(Mode):
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
         self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
-        if self.beacon.time_elapsed():
-            if not self.sfr.vars.CONTACT_ESTABLISHED:  # Attempt to establish contact every 2 minutes
-                self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
-            self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:

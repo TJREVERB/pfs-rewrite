@@ -23,7 +23,7 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(5*60)  # heart beat every "wait seconds
+        self.heartbeat_clock = Clock(5*60)  # Heartbeat every 2 minutes (not appended to queue)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -77,8 +77,8 @@ class Mode:
             except NoSignalException:
                 pass
             self.iridium_clock.update_time()  # Update last iteration
-        if self.heartbeat_clock.time_elapsed():  # If enough time has passed
-            self.heartbeat()  # Transmit heartbeat ping
+        if self.heartbeat_clock.time_elapsed():  # Heartbeat pings
+            self.heartbeat()
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
 
@@ -121,7 +121,7 @@ class Mode:
     @wrap_errors(LogicalError)
     def heartbeat(self) -> None:
         """
-        Transmits proof of life
+        Transmits proof of life if enough time has elapsed
         :return: whether the function ran
         :rtype: bool
         """
