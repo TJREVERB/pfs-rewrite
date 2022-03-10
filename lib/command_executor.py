@@ -60,8 +60,8 @@ class CommandExecutor:
             "IRB": self.IRB,
             "ICT": self.ICT,
             "ICE": self.ICE,
-            "IAK": self.IAK
-            # TODO: Add gamer mode commands once done with dev
+            "IAK": self.IAK,
+            "ZMV": self.ZMV
         }
 
         # TODO: IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -757,17 +757,10 @@ class CommandExecutor:
         self.sfr.MODE.heartbeat = m.heartbeat
         return result
 
-    def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
+    def ZMV(self, packet: TransmissionPacket):
         if str(self.sfr.MODE) != "Outreach":
             raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
-    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Outreach":
-            raise CommandExecutionException("Already in outreach mode")
-        if not self.sfr.switch_mode("Outreach"):
-            raise CommandExecutionException("Mode switch failed due to locked devices!")
-        self.transmit(packet, result := [])
-        return result
