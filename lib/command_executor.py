@@ -137,30 +137,25 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        if packet.outreach:  # If this is an outreach packet (UNUSED)
-            if self.sfr.devices["APRS"] is None and add_to_queue:  # If APRS is off, append to queue
-                self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
-                return False
-            for p in self.sfr.devices["APRS"].split_packet(packet):
-                self.sfr.devices["APRS"].transmit(p)
-            return True
         # Otherwise, split the packet and transmit components
         if self.sfr.devices[
             self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
-        for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
+        packets = self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet)
+        while len(packets) > 0:
             try:
-                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-            except NoSignalException:
-                if add_to_queue:
-                    self.sfr.vars.transmit_buffer.append(p)
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packets[0])  # Attempt to transmit first element
+            except NoSignalException:  # If there's no connectivity, append remaining packets to buffer
+                if add_to_queue:  # Only append if we're allowed to do so
+                    self.sfr.vars.transmit_buffer += packets
                 return False
-            except Exception:
+            except Exception:  # If we encounter another problem
                 # we want to add the packet to the transmission buffer before raising to handle in mission_control
                 if add_to_queue:
-                    self.sfr.vars.transmit_buffer.append(p)
+                    self.sfr.vars.transmit_buffer.append(packets)
                 raise
+            packets.pop(0)  # Remove first element in queue if no problems were encountered
         return True
 
     @wrap_errors(LogicalError)
