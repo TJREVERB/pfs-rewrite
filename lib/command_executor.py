@@ -688,19 +688,19 @@ class CommandExecutor:
         joke = jokes_object.get_joke()
 
         self.transmit(packet, result := [
-            int(startdif / 100000) * 100000,
-            int(startdif % 100000),
-            int(laststartdif / 100000) * 100000,
-            int(laststartdif % 100000),
-            self.sfr.analytics.total_energy_consumed(),
-            self.sfr.analytics.total_energy_generated(),
-            self.sfr.analytics.total_data_transmitted(),
-            self.sfr.analytics.orbital_decay(),
-            (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
-            (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
-            self.sfr.logs["iridium"].read().shape[0],
-            self.sfr.logs["power"].read().shape[0],
-            self.sfr.logs["solar"].read().shape[0],
+            str(int(startdif / 100000) * 100000),
+            str(int(startdif % 100000)),
+            str(int(laststartdif / 100000) * 100000),
+            str(int(laststartdif % 100000)),
+            str(self.sfr.analytics.total_energy_consumed()),
+            str(self.sfr.analytics.total_energy_generated()),
+            str(self.sfr.analytics.total_data_transmitted()),
+            str(self.sfr.analytics.orbital_decay()),
+            str((df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0]),
+            str((df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0]),
+            str(self.sfr.logs["iridium"].read().shape[0]),
+            str(self.sfr.logs["power"].read().shape[0]),
+            str(self.sfr.logs["solar"].read().shape[0]),
             "TJ REVERB's joke of the day: " + str(joke)
         ])
 
