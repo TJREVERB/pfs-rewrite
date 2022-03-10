@@ -64,7 +64,7 @@ class CommandExecutor:
             # TODO: Add gamer mode commands once done with dev
         }
 
-        # IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
+        # TODO: IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
         self.secondary_registry = {  # Secondary command registry for APRS, in outreach mode
             # Reads and transmits battery voltage
             "GVT": self.GVT,
@@ -140,32 +140,26 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        if packet.outreach:  # If this is an outreach packet (UNUSED)
-            if self.sfr.devices["APRS"] is None and add_to_queue:  # If APRS is off, append to queue
-                self.sfr.vars.transmit_buffer += APRS.split_packet(packet)  # Split packet and extend
-                return False
-            for p in self.sfr.devices["APRS"].split_packet(packet):
-                self.sfr.devices["APRS"].transmit(p)
-            return True
         # Otherwise, split the packet and transmit components
         if self.sfr.devices[
             self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
-        for p in self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet):
+        packets = self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet)
+        while len(packets) > 0:
             try:
-                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(p)
-            except NoSignalException:
+                self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packets[0])  # Attempt to transmit first element
+            except NoSignalException:  # If there's no connectivity, append remaining packets to buffer
                 print("No Iridium connectivity, appending to buffer...")
-                if add_to_queue:
-                    self.sfr.vars.transmit_buffer.append(p)
+                if add_to_queue:  # Only append if we're allowed to do so
+                    self.sfr.vars.transmit_buffer += packets
                 return False
-            except Exception:
+            except Exception:  # If we encounter another problem
                 # we want to add the packet to the transmission buffer before raising to handle in mission_control
                 if add_to_queue:
-                    self.sfr.vars.transmit_buffer.append(p)
+                    self.sfr.vars.transmit_buffer += packets
                 raise
-
+            packets.pop(0)  # Remove first element in queue if no problems were encountered
         return True
 
     @wrap_errors(LogicalError)
@@ -175,12 +169,12 @@ class CommandExecutor:
         """
         print("Attempting to transmit queue")
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):
+            if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):  # Attempt to transmit
                 print("Signal strength lost!")
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
-                break
-            self.sfr.vars.transmit_buffer.pop(0)
+                break  # If transmission has failed, exit loop
+            self.sfr.vars.transmit_buffer.pop(0)  # Remove this packet from queue
             print(f"Transmitted {p}")
 
     @wrap_errors(LogicalError)
@@ -323,15 +317,24 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def GPL(self, packet: TransmissionPacket) -> list:
+    def GPL(self, packet: TransmissionPacket, force_queue=False) -> list:
         """
-        Transmit proof of life
+        Transmit proof of life (appends only once to queue unless force_queue is true, then always appends)
+        Max one proof of life ping in transmit buffer unless force_queue is used
+        :param packet: packet to transmit
+        :type packet: TransmissionPacket
+        :param force_queue: whether to force this packet into queue
+        :type force_queue: bool
         """
+        packet.descriptor = "GPL"
         self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"](),
                                          sum(self.sfr.recent_gen()),
                                          sum(self.sfr.recent_power()),
                                          self.sfr.devices["Iridium"].check_signal_passive()
-                                         if self.sfr.devices["Iridium"] is not None else 0])
+                                         if self.sfr.devices["Iridium"] is not None else 0],
+                      # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
+                      append_to_queue=
+                      force_queue or not any([i.descriptor == "GPL" for i in self.sfr.vars.transmit_buffer]))
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -669,11 +672,19 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
         """
-        Sends heartbeat signal with vbat data
+        Sends heartbeat signal with vbat data, appends only once to queue unless force_queue is True
+        :param packet: packet to transmit
+        :type packet: TransmissionPacket
+        :param force_queue: optional parameter to add this ping to queue
+        :type force_queue: bool
         """
-        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()], add_to_queue=False)
+        packet.descriptor = "IHB"  # Manually set descriptor to make appending only once to queue work no matter what
+        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()],
+                      # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
+                      add_to_queue=
+                      force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -736,22 +747,27 @@ class CommandExecutor:
     def IAK(self, packet: TransmissionPacket):
         """
         Acknowledges attempt to establish contact
+        Changes beacon function to heartbeat function in mode
         """
         self.sfr.vars.CONTACT_ESTABLISHED = True
         self.transmit(packet, result := [])
+        # Redefine heartbeat clock and function to default mode heartbeat
+        # Beacons heartbeat instead of proof of life
+        self.sfr.MODE.heartbeat_clock = (m := self.sfr.modes_list["Mode"](self.sfr)).heartbeat_clock
+        self.sfr.MODE.heartbeat = m.heartbeat
         return result
 
     def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        if str(self.sfr.MODE) != "Gamer":
-            raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
+        if str(self.sfr.MODE) != "Outreach":
+            raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
     def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in gamer mode")
-        if not self.sfr.switch_mode("Gamer"):
+        if str(self.sfr.MODE) == "Outreach":
+            raise CommandExecutionException("Already in outreach mode")
+        if not self.sfr.switch_mode("Outreach"):
             raise CommandExecutionException("Mode switch failed due to locked devices!")
         self.transmit(packet, result := [])
         return result
