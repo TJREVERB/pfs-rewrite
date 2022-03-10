@@ -722,8 +722,10 @@ class CommandExecutor:
         """
         Remote code execution
         Runs exec on string
+        First argument is password
+        Second argument is command
         """
-        print(packet.args[0])
+        print(packet.args[1])
         sfr = self.sfr
 
         class JankExec:
@@ -739,7 +741,15 @@ class CommandExecutor:
                 exec(f"{execstr}")
                 # Set self.result and self.string inside the exec string if return data is needed
 
-        ex = JankExec(packet.args[0])
+        credentials = open('credentials.txt', 'r')
+        password = credentials.read()
+        credentials.close()
+
+        if packet.args[0] != password:
+            self.transmit(packet, result := ["password incorrect, no code executed"], string = True)
+            return "password incorrect, no code executed"
+
+        ex = JankExec(packet.args[1])
         print(ex.result, ex.string)
         self.transmit(packet, ex.result, ex.string)
         return ex.result
