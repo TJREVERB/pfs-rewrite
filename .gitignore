@@ -18,5 +18,8 @@ config_custom.yml
 # ADCS TLE backup file
 backup_tle.txt
 
+# Password for Remote Code Execution
+lib/credentials.txt
+
 # All data
 lib/data/*
