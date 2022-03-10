@@ -6,7 +6,7 @@ from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
-
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
@@ -672,19 +672,41 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False, string=True) -> list:
         """
-        Sends heartbeat signal with vbat data, appends only once to queue unless force_queue is True
+        Sends heartbeat signal with summary of data, appends only once to queue unless force_queue is True
         :param packet: packet to transmit
         :type packet: TransmissionPacket
         :param force_queue: optional parameter to add this ping to queue
         :type force_queue: bool
         """
-        packet.descriptor = "IHB"  # Manually set descriptor to make appending only once to queue work no matter what
-        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()],
-                      # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      add_to_queue=
-                      force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
+        startdif = time.time() - self.sfr.vars.START_TIME
+        laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
+
+        jokes_object = JokesGame(self.sfr, -1)
+        jokes_object.set_game("Random")
+        joke = jokes_object.get_joke()
+
+        self.transmit(packet, result := [
+            int(startdif / 100000) * 100000,
+            int(startdif % 100000),
+            int(laststartdif / 100000) * 100000,
+            int(laststartdif % 100000),
+            self.sfr.analytics.total_energy_consumed(),
+            self.sfr.analytics.total_energy_generated(),
+            self.sfr.analytics.total_data_transmitted(),
+            self.sfr.analytics.orbital_decay(),
+            (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
+            (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
+            self.sfr.logs["iridium"].read().shape[0],
+            self.sfr.logs["power"].read().shape[0],
+            self.sfr.logs["solar"].read().shape[0],
+            "TJ REVERB's joke of the day: " + str(joke)
+        ])
+
+        
+
+        
         return result
 
     @wrap_errors(CommandExecutionException)

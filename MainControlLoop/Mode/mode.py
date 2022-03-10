@@ -126,7 +126,7 @@ class Mode:
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
+        self.sfr.command_executor.USM(UnsolicitedData("USM"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
