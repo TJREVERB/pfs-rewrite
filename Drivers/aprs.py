@@ -111,6 +111,8 @@ class APRS(Device):
         time.sleep(0.2)
         self.change_setting("PATH1", "ARISS")
         time.sleep(0.2)
+        self.change_setting("PATH2", "WIDE2-1")
+        time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
         self.exit_firmware_menu()
         return True
@@ -134,6 +136,8 @@ class APRS(Device):
         time.sleep(0.2)
         self.change_setting("PATH1", "ARISS")
         time.sleep(0.2)
+        self.change_setting("PATH2", "WIDE2-1")
+        time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
         self.exit_firmware_menu()
         return True
