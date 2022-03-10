@@ -24,7 +24,7 @@ class Mode:
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         # TODO: replace 10 with appropriate time when done testing
         self.iridium_clock = Clock(10)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(900)  # Heartbeat every 15 minutes
+        self.heartbeat_clock = Clock(120)  # Heartbeat every 2 minutes (not appended to queue)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -78,24 +78,10 @@ class Mode:
             except NoSignalException:
                 print("Signal Lost")
             self.iridium_clock.update_time()  # Update last iteration
-        if self.heartbeat_clock.time_elapsed():  # If enough time has passed
-            self.heartbeat()  # Transmit heartbeat ping
+        if self.heartbeat_clock.time_elapsed:  # Heartbeat pings
+            self.heartbeat()
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
-
-    @wrap_errors(NoSignalException) 
-    def heartbeat(self) -> bool:
-        """
-        Sends a heartbeat depending on the clock time
-        Currently the timer is once an orbit
-        :return: whether the function ran
-        :rtype: bool
-        """
-        
-        print("Adding heartbeat to que...") 
-        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
-        self.heartbeat_clock.update_time()
-        return True
 
     @wrap_errors(LogicalError)
     def poll_iridium(self) -> bool:
@@ -135,12 +121,12 @@ class Mode:
     @wrap_errors(LogicalError)
     def heartbeat(self) -> None:
         """
-        Transmits proof of life
+        Transmits proof of life if enough time has elapsed
         :return: whether the function ran
         :rtype: bool
         """
         print("Transmitting heartbeat...")
-        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+        self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:

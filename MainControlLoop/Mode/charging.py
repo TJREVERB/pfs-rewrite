@@ -20,22 +20,27 @@ class Charging(Mode):
         super().__init__(sfr)
         self.mode = mode
         # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
-        self.iridium_clock = Clock(10)  # Change Iridium poll interval to allow for charging
+        self.iridium_clock = Clock(10)  # Poll iridium every 5 minutes to allow for charging
         self.heartbeat_clock = Clock(5400)  # Heartbeat once per orbit
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
+            """
+            Redefines poll_iridium function in Mode by decorating superclass method
+            Powers Iridium on while polling and switches off when not in use
+            """
             self.sfr.power_on("Iridium")
-            self.sfr.devices["Iridium"].check_signal_active()
-            result = super(Charging, self).poll_iridium()
+            self.sfr.devices["Iridium"].check_signal_active()  # Updates passive signal strength for superclass method
+            result = super(Charging, self).poll_iridium()  # Call superclass method
             self.sfr.power_off("Iridium")
             return result
         self.poll_iridium = charging_poll  # Cursed decoration of superclass method
 
         def charging_heartbeat() -> None:  # Switch primary radio off when not pinging heartbeat
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
+            # Automatically adds POL once to queue, transmits when we poll iridium and find signal if impossible now
             super(Charging, self).heartbeat()
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
-        self.heartbeat = charging_heartbeat  # Cursed decoration of superclass method
+        self.heartbeat = charging_heartbeat  # Redefine heartbeat function to allow charging
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -61,7 +66,7 @@ class Charging(Mode):
     def poll_aprs(self) -> None:
         """
         Poll the APRS once per orbit
-        Transmits heartbeat pint and reads messages
+        Transmits heartbeat ping and reads messages
         """
         self.sfr.power_on("APRS")
         print("Transmitting heartbeat...")

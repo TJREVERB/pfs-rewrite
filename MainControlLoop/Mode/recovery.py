@@ -1,6 +1,5 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
-from lib.clock import Clock
 from Drivers.transmission_packet import UnsolicitedData
 
 
@@ -11,7 +10,6 @@ class Recovery(Mode):
     Or that the antenna/aprs are locked off (so deployment in Startup is impossible)
     Runs a full systems check and reestablishes contact with ground
     """
-    BEACON_WAIT_TIME = 120  # 2 minutes
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -20,7 +18,15 @@ class Recovery(Mode):
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
         """
         super().__init__(sfr)
-        self.beacon = Clock(self.BEACON_WAIT_TIME)
+
+        def pol_ping():
+            """
+            Transmit proof of life every 2 minutes if contact hasn't already been established
+            Function gets redefined to normal Mode heartbeats by command_executor in the command to establish contact
+            """
+            print("Transmitting proof of life...")
+            self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
+        self.heartbeat = pol_ping  # Redefine heartbeat function to ping proof of life instead of heartbeat
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -50,14 +56,11 @@ class Recovery(Mode):
         If enough time has passed, beacon a proof of life ping to ground to establish contact
         If we're low on battery, sleep for an orbit before continuing
         """
+        super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
-        if self.beacon.time_elapsed():  # Attempt to establish contact with ground
-            print("Transmitting proof of life...")
-            self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
-            self.beacon.update_time()
 
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
