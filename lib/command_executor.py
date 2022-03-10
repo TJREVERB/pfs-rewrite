@@ -741,9 +741,8 @@ class CommandExecutor:
                 exec(f"{execstr}")
                 # Set self.result and self.string inside the exec string if return data is needed
 
-        credentials = open('credentials.txt', 'r')
-        password = credentials.read()
-        credentials.close()
+        with open('credentials.txt', 'r') as f:
+            password = f.read()
 
         if packet.args[0] != password:
             self.transmit(packet, result := ["password incorrect, no code executed"], string = True)
