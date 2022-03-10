@@ -153,7 +153,7 @@ class CommandExecutor:
             except Exception:  # If we encounter another problem
                 # we want to add the packet to the transmission buffer before raising to handle in mission_control
                 if add_to_queue:
-                    self.sfr.vars.transmit_buffer.append(packets)
+                    self.sfr.vars.transmit_buffer += packets
                 raise
             packets.pop(0)  # Remove first element in queue if no problems were encountered
         return True
