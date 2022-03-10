@@ -78,7 +78,7 @@ class Mode:
             except NoSignalException:
                 print("Signal Lost")
             self.iridium_clock.update_time()  # Update last iteration
-        if self.heartbeat_clock.time_elapsed:  # Heartbeat pings
+        if self.heartbeat_clock.time_elapsed():  # Heartbeat pings
             self.heartbeat()
             self.heartbeat_clock.update_time()
         self.read_aprs()  # Read from APRS every cycle
