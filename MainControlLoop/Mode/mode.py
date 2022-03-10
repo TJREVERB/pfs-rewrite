@@ -122,8 +122,6 @@ class Mode:
     def heartbeat(self) -> None:
         """
         Transmits proof of life if enough time has elapsed
-        :return: whether the function ran
-        :rtype: bool
         """
         print("Transmitting heartbeat...")
         self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
