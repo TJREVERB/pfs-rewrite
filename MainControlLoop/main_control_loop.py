@@ -44,7 +44,7 @@ class MainControlLoop:
         print(f"Commands {[p.descriptor for p in self.sfr.vars.command_buffer]}")
         self.sfr.command_executor.execute_buffers()  # Execute commands
 
-        if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold():
+        if (self.sfr.LOCKED_MODE is None) or self.sfr.check_lower_threshold():
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}")
                 # self.sfr.switch_mode(new_mode)  # TODO: UNCOMMENT AFTER TESTING

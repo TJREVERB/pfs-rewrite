@@ -250,8 +250,9 @@ class CommandExecutor:
         """
         Enable Mode Lock
         """
-        self.sfr.vars.MODE_LOCK = True
-        self.transmit(packet, result := [])
+        mode_str = self.sfr.modes_list[list(self.sfr.modes_list.keys())[int(packet.args[0])]]
+        result = self.sfr.lock_mode(mode_str)
+        self.transmit(packet, result)
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -259,7 +260,7 @@ class CommandExecutor:
         """
         Disable mode lock
         """
-        self.sfr.vars.MODE_LOCK = False
+        self.sfr.unlock_mode()
         self.transmit(packet, result := [])
         return result
 

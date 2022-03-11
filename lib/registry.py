@@ -46,7 +46,6 @@ class Vars:
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
-        self.MODE_LOCK = False  # Whether to lock mode switches
         self.LOCKED_ON_DEVICES = set()  # set of string names of devices locked in the on state
         self.LOCKED_OFF_DEVICES = set()  # set of string names of devices locked in the off state
         self.CONTACT_ESTABLISHED = False
@@ -85,7 +84,6 @@ class Vars:
             "SIGNAL_STRENGTH_MEAN": self.SIGNAL_STRENGTH_MEAN,
             "SIGNAL_STRENGTH_VARIABILITY": self.SIGNAL_STRENGTH_VARIABILITY,
             "OUTREACH_MAX_CALCULATION_TIME": self.OUTREACH_MAX_CALCULATION_TIME,
-            "MODE_LOCK": int(self.MODE_LOCK),
             "LOCKED_ON_DEVICES": sum([1 << index for index in range(len(StateFieldRegistry.COMPONENTS))
                                       if StateFieldRegistry.COMPONENTS[index] in self.LOCKED_ON_DEVICES]),
             # binary sequence where each bit corresponds to a device (1 = locked on, 0 = not locked on)
@@ -167,6 +165,7 @@ class StateFieldRegistry:
         self.analytics = Analytics(self)
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
+        self.LOCKED_MODE = None  # which mode is locked into, or None if not locked into a mode
         self.MODE = None
 
         self.devices = {
@@ -502,6 +501,33 @@ class StateFieldRegistry:
         # transmit update to groundstation
         self.command_executor.transmit(UnsolicitedString(return_data=f"Switched to {self.vars.PRIMARY_RADIO}"))
         return True
+
+    @wrap_errors(LogicalError)
+    def lock_mode(self, mode_str: str):
+        """
+        Handles locking modes, returns False if necessary devices are off, passes Outreach as next mode if locked into
+        charging
+        :param mode_str: String name of mode to switch into
+        :type mode_str: str
+        :return: whether the devices for the mode are able to be turned on (not in LOCKED_OFF_DEVICES)
+        :rtype: bool
+        """
+        mode_type = self.modes_list[mode_str]
+        if mode_str == "Charging":
+            new_mode = mode_type(self, "Outreach")
+        else:
+            new_mode = mode_type()
+        result = self.switch_mode(self, new_mode)
+        if result is True:
+            self.LOCKED_MODE = mode_str
+        return result
+
+    @wrap_errors(LogicalError)
+    def unlock_mode(self):
+        """
+        Unlocks the mode
+        """
+        self.LOCKED_MODE = None
 
     @wrap_errors(LogicalError)
     def lock_device_on(self, component: str, force=False) -> bool:
