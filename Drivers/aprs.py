@@ -263,6 +263,7 @@ class APRS(Device):
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
+        print(message)
         self.serial.write((message + "\x0d").encode("utf-8"))
         self.serial.flush()
         return True
@@ -278,6 +279,7 @@ class APRS(Device):
             try:
                 next_byte = self.serial.read(size=1)
             except:
+                print(output)
                 return output
             if next_byte == bytes():
                 break
