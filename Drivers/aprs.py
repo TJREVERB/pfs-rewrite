@@ -43,7 +43,7 @@ class APRS(Device):
             self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(1)
+            time.sleep(5)
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts += 1
@@ -59,7 +59,7 @@ class APRS(Device):
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(3)
+            time.sleep(5)
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts += 1
