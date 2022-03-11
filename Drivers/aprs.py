@@ -37,6 +37,7 @@ class APRS(Device):
         :return: (bool) whether entering menu was successful
         """
         serinput = ""
+        print("entering firmware")
         attempts = 0
         while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts > 2:
             self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
@@ -47,6 +48,7 @@ class APRS(Device):
             print(serinput)
             attempts += 1
         if attempts > 2:
+            print("Failed")
             raise APRSError()
 
         serinput = ""
@@ -62,6 +64,7 @@ class APRS(Device):
             print(serinput)
             attempts += 1
         if attempts > 2:
+            print("Failed2")
             raise APRSError()
         return True
 
