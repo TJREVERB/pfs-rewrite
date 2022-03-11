@@ -262,16 +262,6 @@ class APRS(Device):
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        output = bytes()  # create an output variable
-        for loop in range(50):
-            try:
-                next_byte = self.serial.read(size=1)
-            except:
-                print(output)
-                return output
-            if next_byte == bytes():
-                break
-            output += next_byte  # append next_byte to output
-            # stop reading if it reaches a newline
+        output = self.serial.read(300)
         print(output.decode("utf-8"))
         return output.decode('utf-8')
