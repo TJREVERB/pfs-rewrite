@@ -17,6 +17,10 @@ class APRS(Device):
     @wrap_errors(APRSError)
     def __init__(self, state_field_registry):
         super().__init__(state_field_registry)
+        try:
+            self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
+        except:
+            self.clear_data_lines()
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
@@ -177,7 +181,7 @@ class APRS(Device):
         """
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
-        time.sleep(5)
+        time.sleep(10)
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)
