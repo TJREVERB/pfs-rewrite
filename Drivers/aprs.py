@@ -99,6 +99,7 @@ class APRS(Device):
         Enables Hardware Digipeating
         """
         self.enter_firmware_menu()
+        time.sleep(1)
         self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("RXFREQ", "145.825")
@@ -114,6 +115,7 @@ class APRS(Device):
         self.change_setting("PATH2", "WIDE2-1")
         time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
+        time.sleep(1)
         self.exit_firmware_menu()
         return True
 
@@ -124,6 +126,7 @@ class APRS(Device):
         This should also be run after initialization to set the default bank to 0
         """
         self.enter_firmware_menu()
+        time.sleep(1)
         self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("RXFREQ", "145.825")
@@ -139,6 +142,7 @@ class APRS(Device):
         self.change_setting("PATH2", "WIDE2-1")
         time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
+        time.sleep(1)
         self.exit_firmware_menu()
         return True
 
