@@ -39,7 +39,7 @@ class APRS(Device):
         serinput = ""
         print("entering firmware")
         attempts = 0
-        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts <= 2:
+        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts <= 4:
             self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x0d".encode("utf-8"))
@@ -51,13 +51,13 @@ class APRS(Device):
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts += 1
-        if attempts > 2:
+        if attempts > 4:
             print("Failed")
             raise APRSError()
 
         serinput = ""
         attempts = 0
-        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 and attempts <= 2:
+        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 and attempts <= 4:
             self.serial.write("\x1b".encode("utf-8"))
             time.sleep(.2)
             self.serial.write("\x1b".encode("utf-8"))
@@ -67,7 +67,7 @@ class APRS(Device):
             serinput += str(self.serial.read(100))
             print(serinput)
             attempts += 1
-        if attempts > 2:
+        if attempts > 4:
             print("Failed2")
             raise APRSError()
         return True
