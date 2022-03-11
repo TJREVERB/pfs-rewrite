@@ -168,6 +168,7 @@ class APRS(Device):
         """
         self.serial.write((setting + " " + str(value) + "\x0d").encode("utf-8"))
         result = self.serial.read(100).decode("utf-8")
+        print(result)
         if result.find("COMMAND NOT FOUND") != -1:
             raise LogicalError(details="No such setting")
         if result.find("is") == -1 and result.find("was") == -1:
