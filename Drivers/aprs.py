@@ -36,40 +36,23 @@ class APRS(Device):
         Enter APRS firmware menu
         :return: (bool) whether entering menu was successful
         """
-        serinput = ""
         print("entering firmware")
-        attempts = 0
-        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts <= 4:
-            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(.5)
-            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(3)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts += 1
-        if attempts > 4:
+        self.write("\x1b\x1b\x1b")
+        time.sleep(.5)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(.5)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(.5)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(.5)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(3)
+        serinput = str(self.serial.read(500))
+        print(serinput)
+        if serinput.find("Byonics MTT4B Alpha") == -1:
             print("Failed")
             raise APRSError()
-
-        serinput = ""
-        attempts = 0
-        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 and attempts <= 4:
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(3)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts += 1
-        if attempts > 4:
-            print("Failed2")
-            raise APRSError()
+            
         return True
 
     @wrap_errors(APRSError)
@@ -273,7 +256,6 @@ class APRS(Device):
         """
         print(message)
         self.serial.write((message + "\x0d").encode("utf-8"))
-        self.serial.flush()
         return True
 
     @wrap_errors(APRSError)
