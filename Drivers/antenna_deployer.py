@@ -5,6 +5,7 @@ from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
 import RPi.GPIO as GPIO
 
+
 class AntennaDeployerCommand(IntEnum):
     SYSTEM_RESET = 0xAA
     WATCHDOG_RESET = 0xCC
