@@ -38,20 +38,20 @@ class APRS(Device):
         """
         print("entering firmware")
         self.write("\x1b\x1b\x1b")
-        time.sleep(1)
+        time.sleep(.5)
         self.write("\x1b\x1b\x1b")
-        time.sleep(1)
+        time.sleep(.5)
         self.write("\x1b\x1b\x1b")
-        time.sleep(1)
+        time.sleep(.5)
         self.write("\x1b\x1b\x1b")
-        time.sleep(1)
+        time.sleep(.5)
         self.write("\x1b\x1b\x1b")
-        time.sleep(5)
-        serinput = str(self.serial.read(500))
+        time.sleep(3)
+        serinput = str(self.serial.read(300))
         print(serinput)
         if serinput.find("Byonics MTT4B Alpha") == -1:
             print("Failed")
-            raise APRSError()
+            raise APRSError(details="Failed to enter firmware menu")
             
         return True
 
@@ -61,13 +61,11 @@ class APRS(Device):
         Exit APRS firmware menu
         :return: whether exit was successful
         """
-        self.serial.write("QUIT".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
+        self.write("QUIT")
         time.sleep(.5)
         result = str(self.serial.read(100))
         if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
-            raise APRSError()
+            raise APRSError(details="Failed to exit firmware")
         return True
 
     @wrap_errors(APRSError)
@@ -144,8 +142,8 @@ class APRS(Device):
         :param setting: firmware setting to request
         :return: (str) text that APRS returns
         """
-        self.serial.write((setting + "\x0d").encode("utf-8"))
-        return self.serial.read(50).decode("utf-8")
+        self.write(setting)
+        return self.read()
 
     @wrap_errors(APRSError)
     def change_setting(self, setting, value) -> bool:
@@ -156,8 +154,8 @@ class APRS(Device):
         :param value: value to change setting to
         :return: (bool) whether process worked
         """
-        self.serial.write((setting + " " + str(value) + "\x0d").encode("utf-8"))
-        result = self.serial.read(100).decode("utf-8")
+        self.write(setting + " " + str(value))
+        result = self.read()
         print(result)
         if result.find("COMMAND NOT FOUND") != -1:
             raise LogicalError(details="No such setting")
@@ -275,7 +273,5 @@ class APRS(Device):
                 break
             output += next_byte  # append next_byte to output
             # stop reading if it reaches a newline
-            if next_byte == '\n'.encode('utf-8'):
-                break
         print(output.decode("utf-8"))
         return output.decode('utf-8')
