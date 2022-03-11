@@ -160,7 +160,12 @@ class APRS(Device):
         if result.find("COMMAND NOT FOUND") != -1:
             raise LogicalError(details="No such setting")
         if result.find("is") == -1 and result.find("was") == -1:
-            raise APRSError(details="Failed to change setting")
+            self.write(setting + " " + str(value))
+            result = self.read()
+            if result.find("COMMAND NOT FOUND") != -1:
+                raise LogicalError(details="No such setting")
+            if result.find("is") == -1 and result.find("was") == -1:
+                raise APRSError(details="Failed to change setting")
         return True
 
     @wrap_errors(LogicalError)
