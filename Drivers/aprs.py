@@ -92,9 +92,9 @@ class APRS(Device):
         """
         self.enter_firmware_menu()
         time.sleep(1)
-        #self.change_setting("TXFREQ", "145.825")
+        self.change_setting("TXFREQ", "144.39") #TODO: 145.825
         time.sleep(0.2)
-        #self.change_setting("RXFREQ", "145.825")
+        self.change_setting("RXFREQ", "144.39")
         time.sleep(0.2)
         self.change_setting("ALIAS1", "APRSAT")
         time.sleep(0.2)
@@ -119,9 +119,9 @@ class APRS(Device):
         """
         self.enter_firmware_menu()
         time.sleep(1)
-        #self.change_setting("TXFREQ", "145.825")
+        self.change_setting("TXFREQ", "144.39") #TODO: 145.825
         time.sleep(0.2)
-        #self.change_setting("RXFREQ", "145.825")
+        self.change_setting("RXFREQ", "144.39")
         time.sleep(0.2)
         self.change_setting("ALIAS1", "TEMP")
         time.sleep(0.2)
