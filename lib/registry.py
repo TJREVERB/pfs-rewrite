@@ -42,7 +42,7 @@ class Vars:
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
         self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE (* .8)
-        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+        self.PRIMARY_RADIO = "APRS"  # Primary radio to use for communications  #TODO: DEBUG, CHANGE
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
