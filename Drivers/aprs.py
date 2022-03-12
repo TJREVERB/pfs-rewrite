@@ -245,11 +245,15 @@ class APRS(Device):
         Reads in any messages, process, and add to queue
         """
         msg = self.read()
+        print(msg)
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
+            print("TJ message received")
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
+            print(processed)
             if processed[0] in self.sfr.command_executor.primary_registry.keys():
                 self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            print("Outreach message received")
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             if processed[0] in self.sfr.command_executor.secondary_registry.keys():
                 self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
