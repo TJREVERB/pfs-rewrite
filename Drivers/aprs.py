@@ -92,9 +92,9 @@ class APRS(Device):
         """
         self.enter_firmware_menu()
         time.sleep(1)
-        self.change_setting("TXFREQ", "145.825")
+        #self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
-        self.change_setting("RXFREQ", "145.825")
+        #self.change_setting("RXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("ALIAS1", "APRSAT")
         time.sleep(0.2)
@@ -119,9 +119,9 @@ class APRS(Device):
         """
         self.enter_firmware_menu()
         time.sleep(1)
-        self.change_setting("TXFREQ", "145.825")
+        #self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
-        self.change_setting("RXFREQ", "145.825")
+        #self.change_setting("RXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("ALIAS1", "TEMP")
         time.sleep(0.2)
@@ -266,7 +266,11 @@ class APRS(Device):
         :return: (bool) whether or not the write worked
         """
         print(message)
-        self.serial.write((message + "\x0d").encode("utf-8"))
+        for i in list(message):
+            self.serial.write(message[i].encode("utf-8"))
+            time.sleep(.05)
+        self.serial.write("\x0d".encode("utf-8"))
+        #self.serial.write((message + "\x0d").encode("utf-8"))
         return True
 
     @wrap_errors(APRSError)
