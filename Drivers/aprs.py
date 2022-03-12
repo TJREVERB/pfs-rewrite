@@ -9,7 +9,7 @@ import copy
 class APRS(Device):
     TRANSMISSION_ENERGY = 4.8  # Energy used per transmission, in J
     SERIAL_CONVERTERS = ["USB-UART"]
-    PORT = '/dev/serial0'
+    PORT = '/dev/ttyACM0'
     DEVICE_PATH = '/sys/devices/platform/soc/20980000.usb/buspower'
     BAUDRATE = 19200
     MAX_DATASIZE = 100
@@ -17,6 +17,10 @@ class APRS(Device):
     @wrap_errors(APRSError)
     def __init__(self, state_field_registry):
         super().__init__(state_field_registry)
+        try:
+            self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
+        except:
+            self.clear_data_lines()
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
@@ -36,33 +40,23 @@ class APRS(Device):
         Enter APRS firmware menu
         :return: (bool) whether entering menu was successful
         """
-        serinput = ""
-        attempts = 0
-        while serinput.find("Press ESC 3 times to enter TT4 Options Menu") == -1 and attempts > 2:
-            self.serial.write("\x1b\x1b\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x0d".encode("utf-8"))
-            time.sleep(1)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts += 1
-        if attempts > 2:
-            raise APRSError()
-
-        serinput = ""
-        attempts = 0
-        while serinput.find("Byonics MTT4B Alpha v0.73 (1284)") == -1 and attempts > 2:
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(.2)
-            self.serial.write("\x1b".encode("utf-8"))
-            time.sleep(3)
-            serinput += str(self.serial.read(100))
-            print(serinput)
-            attempts += 1
-        if attempts > 2:
-            raise APRSError()
+        print("entering firmware")
+        self.write("\x1b\x1b\x1b")
+        time.sleep(1)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(1)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(1)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(1)
+        self.write("\x1b\x1b\x1b")
+        time.sleep(3)
+        serinput = str(self.serial.read(300))
+        print(serinput)
+        if serinput.find("Byonics MTT4B Alpha") == -1:
+            print("Failed")
+            raise APRSError(details="Failed to enter firmware menu")
+            
         return True
 
     @wrap_errors(APRSError)
@@ -71,13 +65,11 @@ class APRS(Device):
         Exit APRS firmware menu
         :return: whether exit was successful
         """
-        self.serial.write("QUIT".encode("utf-8"))
-        time.sleep(.2)
-        self.serial.write("\x0d".encode("utf-8"))
+        self.write("QUIT")
         time.sleep(.5)
         result = str(self.serial.read(100))
         if result.find("Press ESC 3 times to enter TT4 Options Menu") == -1:
-            raise APRSError()
+            raise APRSError(details="Failed to exit firmware")
         return True
 
     @wrap_errors(APRSError)
@@ -99,6 +91,7 @@ class APRS(Device):
         Enables Hardware Digipeating
         """
         self.enter_firmware_menu()
+        time.sleep(1)
         self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("RXFREQ", "145.825")
@@ -114,6 +107,7 @@ class APRS(Device):
         self.change_setting("PATH2", "WIDE2-1")
         time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
+        time.sleep(1)
         self.exit_firmware_menu()
         return True
 
@@ -124,6 +118,7 @@ class APRS(Device):
         This should also be run after initialization to set the default bank to 0
         """
         self.enter_firmware_menu()
+        time.sleep(1)
         self.change_setting("TXFREQ", "145.825")
         time.sleep(0.2)
         self.change_setting("RXFREQ", "145.825")
@@ -139,6 +134,7 @@ class APRS(Device):
         self.change_setting("PATH2", "WIDE2-1")
         time.sleep(0.2) 
         self.change_setting("HIPWR", "1")
+        time.sleep(1)
         self.exit_firmware_menu()
         return True
 
@@ -150,8 +146,8 @@ class APRS(Device):
         :param setting: firmware setting to request
         :return: (str) text that APRS returns
         """
-        self.serial.write((setting + "\x0d").encode("utf-8"))
-        return self.serial.read(50).decode("utf-8")
+        self.write(setting)
+        return self.read()
 
     @wrap_errors(APRSError)
     def change_setting(self, setting, value) -> bool:
@@ -162,12 +158,18 @@ class APRS(Device):
         :param value: value to change setting to
         :return: (bool) whether process worked
         """
-        self.serial.write((setting + " " + str(value) + "\x0d").encode("utf-8"))
-        result = self.serial.read(100).decode("utf-8")
+        self.write(setting + " " + str(value))
+        result = self.read()
+        print(result)
         if result.find("COMMAND NOT FOUND") != -1:
             raise LogicalError(details="No such setting")
         if result.find("is") == -1 and result.find("was") == -1:
-            raise APRSError(details="Failed to change setting")
+            self.write(setting + " " + str(value))
+            result = self.read()
+            if result.find("COMMAND NOT FOUND") != -1:
+                raise LogicalError(details="No such setting")
+            if result.find("is") == -1 and result.find("was") == -1:
+                raise APRSError(details="Failed to change setting")
         return True
 
     @wrap_errors(LogicalError)
@@ -179,7 +181,7 @@ class APRS(Device):
         """
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(0))
-        time.sleep(5)
+        time.sleep(10)
         with open(self.DEVICE_PATH, "w") as f:
             f.write(str(1))
         time.sleep(5)
@@ -243,11 +245,15 @@ class APRS(Device):
         Reads in any messages, process, and add to queue
         """
         msg = self.read()
+        print(msg)
         if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
+            print("TJ message received")
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
+            print(processed)
             if processed[0] in self.sfr.command_executor.primary_registry.keys():
                 self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
         elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+            print("Outreach message received")
             processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
             if processed[0] in self.sfr.command_executor.secondary_registry.keys():
                 self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
@@ -259,8 +265,8 @@ class APRS(Device):
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
+        print(message)
         self.serial.write((message + "\x0d").encode("utf-8"))
-        self.serial.flush()
         return True
 
     @wrap_errors(APRSError)
@@ -269,17 +275,6 @@ class APRS(Device):
         Reads in as many available bytes as it can if timeout permits (terminating at a \n).
         :return: (str) message read ("" if no message read)
         """
-        output = bytes()  # create an output variable
-        for loop in range(50):
-            try:
-                next_byte = self.serial.read(size=1)
-            except:
-                return output
-            if next_byte == bytes():
-                break
-            output += next_byte  # append next_byte to output
-            # stop reading if it reaches a newline
-            if next_byte == '\n'.encode('utf-8'):
-                break
+        output = self.serial.read(300)
         print(output.decode("utf-8"))
         return output.decode('utf-8')

@@ -1,9 +1,10 @@
 import time
-from enum import Enum, IntEnum
+from enum import IntEnum
 from smbus2 import SMBus
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
 import RPi.GPIO as GPIO
+
 
 class AntennaDeployerCommand(IntEnum):
     SYSTEM_RESET = 0xAA
@@ -48,7 +49,7 @@ class AntennaDeployer(Device):
         self.addr = self.PRIMARY_ADDRESS
         self.channels = [26, 13, 6, 5]
         for i in self.channels:
-            GPIO.setup(i, GPIO.IN)
+            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP) #TODO: This is set up for stress test, but must be changed for flight
         self.check_deployment()
 
     @wrap_errors(AntennaError)
