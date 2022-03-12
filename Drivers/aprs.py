@@ -267,7 +267,7 @@ class APRS(Device):
         """
         print(message)
         for i in list(message):
-            self.serial.write(message[i].encode("utf-8"))
+            self.serial.write(i.encode("utf-8"))
             time.sleep(.05)
         self.serial.write("\x0d".encode("utf-8"))
         #self.serial.write((message + "\x0d").encode("utf-8"))
