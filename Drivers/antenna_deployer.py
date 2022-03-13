@@ -124,8 +124,6 @@ class AntennaDeployer(Device):
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
         #self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed
-        if self.sfr.devices["Antenna Deployer"] is None:
-            raise AntennaError(details = "Antenna not powered on")
         result = sum([GPIO.input(i) for i in self.channels])
         self.sfr.vars.ANTENNA_DEPLOYED = (result <= 1)
         return result
