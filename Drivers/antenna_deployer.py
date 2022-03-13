@@ -48,6 +48,7 @@ class AntennaDeployer(Device):
         self.bus = SMBus(1)
         self.addr = self.PRIMARY_ADDRESS
         self.channels = [26, 13, 6, 5]
+        GPIO.setmode(GPIO.BCM)
         for i in self.channels:
             GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP) #TODO: This is set up for stress test, but must be changed for flight
         self.check_deployment()
