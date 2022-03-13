@@ -24,6 +24,7 @@ class CommandExecutor:
             "DLN": self.DLN,
             "DLF": self.DLF,
             "DDF": self.DDF,
+            "GCM": self.GCM,
             "GCR": self.GCR,
             "GVT": self.GVT,
             "GPL": self.GPL,
@@ -286,6 +287,14 @@ class CommandExecutor:
         if not self.sfr.unlock_device(self.sfr.COMPONENTS[dcode]):
             raise CommandExecutionException("Device not locked")
         self.transmit(packet, result := [dcode])
+        return result
+
+    @wrap_errors(CommandExecutionException)
+    def GCM(self, packet: TransmissionPacket) -> list:
+        """
+        Transmits current mode as string
+        """
+        self.transmit(packet, result := [str(self.sfr.MODE)], string=True)
         return result
 
     @wrap_errors(CommandExecutionException)
