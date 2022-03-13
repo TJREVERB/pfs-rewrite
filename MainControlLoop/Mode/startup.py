@@ -83,6 +83,7 @@ class Startup(Mode):
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
+        print("EEEEE")
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
         print("Antenna deployment attempted")
         self.sfr.sleep(30)
