@@ -66,7 +66,6 @@ class AntennaDeployer(Device):
         try:
             self.bus.write_byte_data(self.addr, command.value, parameter)
         except OSError as e:
-            print(e)
             self.addr = self.SECONDARY_ADDRESS
             self.bus.write_byte_data(self.addr, command.value, parameter)
         return True
