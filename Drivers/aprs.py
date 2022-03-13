@@ -164,12 +164,18 @@ class APRS(Device):
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
                 print(processed)
                 if processed[0] in self.sfr.command_executor.primary_registry.keys():
-                    self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+                    if len(processed) > 2:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+                    else:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1])))
             elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
                 print("Outreach message received")
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
                 if processed[0] in self.sfr.command_executor.secondary_registry.keys():
-                    self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+                    if len(processed) > 2:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+                    else:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1]), outreach=True))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:
