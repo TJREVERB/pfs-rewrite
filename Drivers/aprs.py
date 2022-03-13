@@ -119,7 +119,7 @@ class APRS(Device):
         result.append(packet)
         lastindex = 0
         for i in range(len(data)):
-            pckt = copy.deepcopy(result[-1])
+            pckt = copy.deepcopy(packet)
             if packet.numerical:
                 pckt.return_data = data[lastindex:i]
             else:
@@ -130,7 +130,6 @@ class APRS(Device):
             else:
                 lastindex = i
                 pckt = copy.deepcopy(packet)
-                pckt.return_data = [data[i]]
                 pckt.index = len(result)
                 result.append(pckt)
         return result
