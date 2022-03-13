@@ -81,9 +81,8 @@ class Startup(Mode):
                 print("currently tumbling")
                 return False  # Do nothing
         # Enable power to antenna deployer
-        time.sleep(5)
         self.sfr.power_on("Antenna Deployer")
-        time.sleep(10)
+        time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
         print("Antenna deployment attempted")
         self.sfr.sleep(30)
