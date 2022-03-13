@@ -322,7 +322,7 @@ class CommandExecutor:
                                          self.sfr.devices["Iridium"].check_signal_passive()
                                          if self.sfr.devices["Iridium"] is not None else 0],
                       # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      append_to_queue=
+                      add_to_queue=
                       force_queue or not any([i.descriptor == "GPL" for i in self.sfr.vars.transmit_buffer]))
         return result
 
