@@ -114,7 +114,7 @@ class AntennaDeployer(Device):
     def deploy(self) -> bool:
         self.enable()
         self.write(AntennaDeployerCommand.AUTO_DEPLOY, 0x0A)
-        time.sleep(40) # Wait for deployment to finish
+        time.sleep(40)  # Wait for deployment to finish
         return True
 
     @wrap_errors(AntennaError)
