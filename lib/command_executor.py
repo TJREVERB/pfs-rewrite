@@ -19,7 +19,6 @@ class CommandExecutor:
             "MCH": self.MCH,
             "MSC": self.MSC,
             "MOU": self.MOU,
-            "MRP": self.MRP,
             "MLK": self.MLK,
             "MDF": self.MDF,
             "DLN": self.DLN,
@@ -232,16 +231,6 @@ class CommandExecutor:
         if str(self.sfr.MODE) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
         self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Outreach"](self.sfr))])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def MRP(self, packet: TransmissionPacket) -> list:
-        """
-        Switches current mode to Repeater mode
-        """
-        if str(self.sfr.MODE) == "Repeater":
-            raise CommandExecutionException("Already in Repeater")
-        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Repeater"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
