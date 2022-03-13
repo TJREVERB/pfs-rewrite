@@ -7,7 +7,6 @@ from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach.outreach import Outreach
-from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
@@ -184,7 +183,6 @@ class StateFieldRegistry:
             "Charging": Charging,
             "Science": Science,
             "Outreach": Outreach,
-            "Repeater": Repeater,
             "Recovery": Recovery,
             "Mode": Mode,
         }

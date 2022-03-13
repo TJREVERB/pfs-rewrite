@@ -62,9 +62,6 @@ The goal of this rewrite is to increase the simplicity, readability, and concise
    3. The **ping** method pings ground with Iridium, logging geolocation data and signal strength.
    4. The **transmit_results** method transmits logged results using the **command_executor**.
    5. **execute_cycle** iterates through the required amount of pings and then transmits results.
-9. **repeater.py** extends the Mode class and is the mode responsible for activating APRS digipeating.
-   1. The **start** method powers on the APRS radio and uses the **StateFieldRegistry**'s APRS object to enable digipeating
-   2. **suggested_mode** returns Charging if low battery, else Outreach. (seems like a problem)
 10. **recovery.py** extends the Mode class and is the mode responsible for fixing problems with the satellite mid-flight.
       1. **execute_cycle** attempts to run a **systems_check** from **mode.py** and attempts to contact ground
          1. **systems_check** goes through all unlocked devices and attempts to power it on.

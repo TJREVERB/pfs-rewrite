@@ -24,7 +24,6 @@ class APRS(Device):
         self.serial = Serial(port=self.PORT, baudrate=self.BAUDRATE, timeout=1)  # connect serial
         while not self.serial.is_open:
             time.sleep(0.5)
-        self.disable_digi()
 
     @wrap_errors(APRSError)
     def terminate(self):
@@ -85,93 +84,6 @@ class APRS(Device):
         self.exit_firmware_menu()
         return True
 
-    @wrap_errors(APRSError)
-    def enable_digi(self): 
-        """
-        Enables Hardware Digipeating
-        """
-        self.enter_firmware_menu()
-        time.sleep(1)
-        self.change_setting("TXFREQ", "144.39") #TODO: 145.825
-        time.sleep(0.2)
-        self.change_setting("RXFREQ", "144.39")
-        time.sleep(0.2)
-        self.change_setting("ALIAS1", "APRSAT")
-        time.sleep(0.2)
-        self.change_setting("ALIAS2", "ARISS")
-        time.sleep(0.2)
-        self.change_setting("ALIAS3", "WIDE")
-        time.sleep(0.2)
-        self.change_setting("PATH1", "ARISS")
-        time.sleep(0.2)
-        self.change_setting("PATH2", "WIDE2-1")
-        time.sleep(0.2) 
-        self.change_setting("HIPWR", "1")
-        time.sleep(1)
-        self.exit_firmware_menu()
-        return True
-
-    @wrap_errors(APRSError)
-    def disable_digi(self):
-        """
-        Disables Hardware Digipeating
-        This should also be run after initialization to set the default bank to 0
-        """
-        self.enter_firmware_menu()
-        time.sleep(1)
-        self.change_setting("TXFREQ", "144.39") #TODO: 145.825
-        time.sleep(0.2)
-        self.change_setting("RXFREQ", "144.39")
-        time.sleep(0.2)
-        self.change_setting("ALIAS1", "TEMP")
-        time.sleep(0.2)
-        self.change_setting("ALIAS2", "none")
-        time.sleep(0.2)
-        self.change_setting("ALIAS3", "none")
-        time.sleep(0.2)
-        self.change_setting("PATH1", "ARISS")
-        time.sleep(0.2)
-        self.change_setting("PATH2", "WIDE2-1")
-        time.sleep(0.2) 
-        self.change_setting("HIPWR", "1")
-        time.sleep(1)
-        self.exit_firmware_menu()
-        return True
-
-    @wrap_errors(APRSError)
-    def request_setting(self, setting) -> str:
-        """
-        Requests and returns value of given firmware setting. 
-        Assumes firmware menu has already been entered successfully. Does not exit firmware menu afterwards
-        :param setting: firmware setting to request
-        :return: (str) text that APRS returns
-        """
-        self.write(setting)
-        return self.read()
-
-    @wrap_errors(APRSError)
-    def change_setting(self, setting, value) -> bool:
-        """
-        Changes value of given setting
-        Assumes firmware menu has already been entered successfully. Does not exit firmware menu afterwards
-        :param setting: setting to change
-        :param value: value to change setting to
-        :return: (bool) whether process worked
-        """
-        self.write(setting + " " + str(value))
-        result = self.read()
-        print(result)
-        if result.find("COMMAND NOT FOUND") != -1:
-            raise LogicalError(details="No such setting")
-        if result.find("is") == -1 and result.find("was") == -1:
-            self.write(setting + " " + str(value))
-            result = self.read()
-            if result.find("COMMAND NOT FOUND") != -1:
-                raise LogicalError(details="No such setting")
-            if result.find("is") == -1 and result.find("was") == -1:
-                raise APRSError(details="Failed to change setting")
-        return True
-
     @wrap_errors(LogicalError)
     def clear_data_lines(self) -> None:
         """
@@ -207,7 +119,7 @@ class APRS(Device):
         result.append(packet)
         lastindex = 0
         for i in range(len(data)):
-            pckt = copy.deepcopy(result[-1])
+            pckt = copy.deepcopy(packet)
             if packet.numerical:
                 pckt.return_data = data[lastindex:i]
             else:
@@ -218,7 +130,6 @@ class APRS(Device):
             else:
                 lastindex = i
                 pckt = copy.deepcopy(packet)
-                pckt.return_data = [data[i]]
                 pckt.index = len(result)
                 result.append(pckt)
         return result
@@ -244,19 +155,26 @@ class APRS(Device):
         """
         Reads in any messages, process, and add to queue
         """
-        msg = self.read()
-        print(msg)
-        if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
-            print("TJ message received")
-            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            print(processed)
-            if processed[0] in self.sfr.command_executor.primary_registry.keys():
-                self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
-        elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
-            print("Outreach message received")
-            processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-            if processed[0] in self.sfr.command_executor.secondary_registry.keys():
-                self.sfr.vars.outreach_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+        msgs = self.read().split("\r\n")
+        print(msgs)
+        for msg in msgs:
+            if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
+                print("TJ message received")
+                processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
+                print(processed)
+                if processed[0] in self.sfr.command_executor.primary_registry.keys():
+                    if len(processed) > 2:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
+                    else:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1])))
+            elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
+                print("Outreach message received")
+                processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
+                if processed[0] in self.sfr.command_executor.secondary_registry.keys():
+                    if len(processed) > 2:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1]), outreach=True))
+                    else:
+                        self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1]), outreach=True))
 
     @wrap_errors(APRSError)
     def write(self, message: str) -> bool:
