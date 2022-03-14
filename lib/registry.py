@@ -1,6 +1,6 @@
 import time
 from Drivers.eps import EPS
-from Drivers.battery-emulator import Battery
+from Drivers.battery_emulator import Battery
 from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
