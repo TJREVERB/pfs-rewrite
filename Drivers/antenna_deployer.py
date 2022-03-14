@@ -50,8 +50,9 @@ class AntennaDeployer(Device):
         self.bus = SMBus(1)
         self.addr = self.PRIMARY_ADDRESS
         self.channels = [26, 13, 6, 5]
+        GPIO.setmode(GPIO.BCM)
         for i in self.channels:
-            GPIO.setup(i, GPIO.IN)
+            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP) #TODO: This is set up for stress test, but must be changed for flight
         self.check_deployment()
 
     @wrap_errors(AntennaError)
@@ -67,7 +68,6 @@ class AntennaDeployer(Device):
         try:
             self.bus.write_byte_data(self.addr, command.value, parameter)
         except OSError as e:
-            print(e)
             self.addr = self.SECONDARY_ADDRESS
             self.bus.write_byte_data(self.addr, command.value, parameter)
         return True
@@ -114,14 +114,12 @@ class AntennaDeployer(Device):
     def deploy(self) -> bool:
         self.enable()
         self.write(AntennaDeployerCommand.AUTO_DEPLOY, 0x0A)
-        time.sleep(40) # Wait for deployment to finish
+        time.sleep(40)  # Wait for deployment to finish
         return True
 
     @wrap_errors(AntennaError)
     def check_deployment(self):
         # Minimum 3 antennas deployed
-        if self.sfr.devices["Antenna Deployer"] is None:
-            raise AntennaError(details = "Antenna not powered on")
         result = sum([GPIO.input(i) for i in self.channels])
         self.sfr.vars.ANTENNA_DEPLOYED = (result <= 1)
         return result

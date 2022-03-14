@@ -1,13 +1,12 @@
 import time
 from Drivers.eps import EPS
-from Drivers.battery import Battery
+from Drivers.battery_emulator import Battery  # TODO: DEBUG, CHANGE
 from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach.outreach import Outreach
-from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
@@ -184,7 +183,6 @@ class StateFieldRegistry:
             "Charging": Charging,
             "Science": Science,
             "Outreach": Outreach,
-            "Repeater": Repeater,
             "Recovery": Recovery,
             "Mode": Mode,
         }

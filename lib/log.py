@@ -267,7 +267,7 @@ class Logger:
         delta = (power := self.sfr.battery.charging_power()) * \
                 (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(power) > 10: # 10W
+        if abs(power) > 1000: # 10W
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):

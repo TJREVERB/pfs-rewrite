@@ -3,8 +3,8 @@ import time
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
-from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException
-
+from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
@@ -17,12 +17,12 @@ class CommandExecutor:
             "MCH": self.MCH,
             "MSC": self.MSC,
             "MOU": self.MOU,
-            "MRP": self.MRP,
             "MLK": self.MLK,
             "MDF": self.MDF,
             "DLN": self.DLN,
             "DLF": self.DLF,
             "DDF": self.DDF,
+            "GCM": self.GCM,
             "GCR": self.GCR,
             "GVT": self.GVT,
             "GPL": self.GPL,
@@ -58,8 +58,8 @@ class CommandExecutor:
             "IRB": self.IRB,
             "ICT": self.ICT,
             "ICE": self.ICE,
-            "IAK": self.IAK
-            # TODO: Add gamer mode commands once done with dev
+            "IAK": self.IAK,
+            "ZMV": self.ZMV
         }
 
         # TODO: IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -227,16 +227,6 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def MRP(self, packet: TransmissionPacket) -> list:
-        """
-        Switches current mode to Repeater mode
-        """
-        if str(self.sfr.MODE) == "Repeater":
-            raise CommandExecutionException("Already in Repeater")
-        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Repeater"](self.sfr))])
-        return result
-
-    @wrap_errors(CommandExecutionException)
     def MLK(self, packet: TransmissionPacket) -> list:
         """
         Enable Mode Lock
@@ -292,6 +282,14 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def GCM(self, packet: TransmissionPacket) -> list:
+        """
+        Transmits current mode as string
+        """
+        self.transmit(packet, result := [str(self.sfr.MODE)], string=True)
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def GCR(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last command run
@@ -325,7 +323,7 @@ class CommandExecutor:
                                          self.sfr.devices["Iridium"].check_signal_passive()
                                          if self.sfr.devices["Iridium"] is not None else 0],
                       # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      append_to_queue=
+                      add_to_queue=
                       force_queue or not any([i.descriptor == "GPL" for i in self.sfr.vars.transmit_buffer]))
         return result
 
@@ -663,19 +661,41 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False, string=True) -> list:
         """
-        Sends heartbeat signal with vbat data, appends only once to queue unless force_queue is True
+        Sends heartbeat signal with summary of data, appends only once to queue unless force_queue is True
         :param packet: packet to transmit
         :type packet: TransmissionPacket
         :param force_queue: optional parameter to add this ping to queue
         :type force_queue: bool
         """
-        packet.descriptor = "IHB"  # Manually set descriptor to make appending only once to queue work no matter what
-        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()],
-                      # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      add_to_queue=
-                      force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
+        startdif = time.time() - self.sfr.vars.START_TIME
+        laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
+
+        jokes_object = JokesGame(self.sfr, -1)
+        jokes_object.set_game("Random")
+        joke = jokes_object.get_joke()
+
+        self.transmit(packet, result := [
+            str(int(startdif / 100000) * 100000),
+            str(int(startdif % 100000)),
+            str(int(laststartdif / 100000) * 100000),
+            str(int(laststartdif % 100000)),
+            str(self.sfr.analytics.total_energy_consumed()),
+            str(self.sfr.analytics.total_energy_generated()),
+            str(self.sfr.analytics.total_data_transmitted()),
+            str(self.sfr.analytics.orbital_decay()),
+            str((df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0]),
+            str((df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0]),
+            str(self.sfr.logs["iridium"].read().shape[0]),
+            str(self.sfr.logs["power"].read().shape[0]),
+            str(self.sfr.logs["solar"].read().shape[0]),
+            "TJ REVERB's joke of the day: " + str(joke)
+        ])
+
+        
+
+        
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -746,17 +766,10 @@ class CommandExecutor:
         self.sfr.MODE.heartbeat = m.heartbeat
         return result
 
-    def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
-        if str(self.sfr.MODE) != "Gamer":
-            raise CommandExecutionException("Cannot use gamer mode function if not in gamer mode")
+    def ZMV(self, packet: TransmissionPacket):
+        if str(self.sfr.MODE) != "Outreach":
+            raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
-    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Gamer":
-            raise CommandExecutionException("Already in gamer mode")
-        if not self.sfr.switch_mode("Gamer"):
-            raise CommandExecutionException("Mode switch failed due to locked devices!")
-        self.transmit(packet, result := [])
-        return result
