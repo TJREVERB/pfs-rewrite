@@ -1,4 +1,4 @@
-from time import time
+import time
 from lib.exceptions import wrap_errors, BatteryError
 from Drivers.device import Device
 
