@@ -63,8 +63,7 @@ class Battery(Device):
         }
     
     def volt_time_charge(self):
-        time = time.perf_counter()
-        hours = time/3600
+        hours = time.perf_counter()/3600
         
         hours = hours % 148
         if hours >= 0 and hours < 70.09:
