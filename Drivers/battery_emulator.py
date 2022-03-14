@@ -63,7 +63,7 @@ class Battery(Device):
         }
     
     def volt_time_charge(self):
-        hours = time.perf_counter()/3600
+        hours = (time.perf_counter())/3600
         
         hours = hours % 148
         if hours >= 0 and hours < 70.09:
@@ -78,3 +78,14 @@ class Battery(Device):
         if hours >= 77.91 and hours < 148:
             ibat = -1000
             return 6.2 + (-1*hours/4.5 + 148/4.5)**.2
+
+    def charging_power(self) -> float:
+        """
+        Returns total power going into the battery or out of
+        :return: (float) power in watts, if positive, battery is charging, if negative, battery is discharging
+        """
+        pwr = self.telemetry["VBAT"]() * self.telemetry["IBAT"]() / 1000
+        if self.telemetry["IDIRBAT"]() != 0:
+            pwr *= -1
+        print(f"Charging Power: {pwr}")
+        return pwr
