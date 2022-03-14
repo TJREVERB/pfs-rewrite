@@ -66,10 +66,10 @@ class MissionControl:
                 self.error_handle(e)  # Handle error
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
-                print("safe mode iteration")
+                print("safe mode iteration", file=open("pfs-output.txt", "a"))
                 self.safe_mode()
             else:
-                print("=================================================== ~ MCL ITERATION ~ ===================================================")
+                print("=================================================== ~ MCL ITERATION ~ ===================================================", file=open("pfs-output.txt", "a"))
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
@@ -120,7 +120,7 @@ class MissionControl:
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE: APRS primary radio"))
             except APRSError:  # If aprs fails
-                print("L :(")
+                print("L :(", file=open("pfs-output.txt", "a"))
                 self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
@@ -153,7 +153,7 @@ class MissionControl:
         if self.sfr.check_lower_threshold():  # if battery is low
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
-            print("Sleeping 5400, mission control 156")
+            print("Sleeping 5400, mission control 156", file=open("pfs-output.txt", "a"))
             self.sfr.sleep(5400)  # charge for one orbit
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 

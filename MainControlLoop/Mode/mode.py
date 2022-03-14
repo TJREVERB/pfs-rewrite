@@ -96,7 +96,7 @@ class Mode:
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
-        print("Iridium signal strength: ", signal)
+        print("Iridium signal strength: ", signal, file=open("pfs-output.txt", "a"))
         if signal < 1:
             return False
 

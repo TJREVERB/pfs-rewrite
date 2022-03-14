@@ -25,7 +25,7 @@ class Recovery(Mode):
             Transmit proof of life every 2 minutes if contact hasn't already been established
             Function gets redefined to normal Mode heartbeats by command_executor in the command to establish contact
             """
-            print("Transmitting proof of life...")
+            print("Transmitting proof of life...", file=open("pfs-output.txt", "a"))
             self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         self.heartbeat = pol_ping  # Redefine heartbeat function to ping proof of life instead of heartbeat
         self.heartbeat_clock = Clock(120)
@@ -61,7 +61,7 @@ class Recovery(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            print("Sleeping 5400, recovery 64")
+            print("Sleeping 5400, recovery 64", file=open("pfs-output.txt", "a"))
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
 
