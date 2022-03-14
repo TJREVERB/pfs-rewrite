@@ -66,19 +66,19 @@ class Battery(Device):
     def volt_time_charge(self):
         hours = (time.perf_counter())/3600
         
-        hours = hours % 148
-        if hours >= 0 and hours < 70.09:
-            ibat = 1000
-            return (6.2 + (hours/4.5)**.2)
-        if hours >= 70.09 and hours < 74:
-            ibat = 1000
-            return (1/6)*((hours/4.5) - 15)**3 + 7.9
-        if hours >= 74 and hours < 77.91:
-            ibat = -1000
-            return (1/6)*((-1*hours/4.5) + 161/9)**3 + 7.9
-        if hours >= 77.91 and hours < 148:
-            ibat = -1000
-            return 6.2 + (-1*hours/4.5 + 148/4.5)**.2
+        hours = hours % (148/74)
+        if hours >= 0 and hours < 70.09/74:
+            ibat = 5333
+            return (6.2 + (74*hours/4.5)**.2)
+        if hours >= 70.09/74 and hours < 74/74:
+            ibat = 5333
+            return (1/6)*((74*hours/4.5) - 15)**3 + 7.9
+        if hours >= 74/74 and hours < 77.91/74:
+            ibat = -5333
+            return (1/6)*((-1*74*hours/4.5) + 161/9 )**3 + 7.9
+        if hours >= 77.91/74 and hours < 148/74:
+            ibat = -5333
+            return 6.2 + (-1*74*hours/4.5 + 148/4.5 )**.2
 
     def charging_power(self) -> float:
         """
