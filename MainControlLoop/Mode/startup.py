@@ -105,6 +105,7 @@ class Startup(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
+            print("Sleeping 5400, startup 108")
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()  # Run start again to turn on devices
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)

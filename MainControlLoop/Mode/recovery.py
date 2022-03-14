@@ -61,6 +61,7 @@ class Recovery(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
+            print("Sleeping 5400, recovery 64")
             self.sfr.sleep(5400)  # sleep for one full orbit
             self.start()
 

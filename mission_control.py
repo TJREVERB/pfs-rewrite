@@ -66,8 +66,10 @@ class MissionControl:
                 self.error_handle(e)  # Handle error
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
+                print("safe mode iteration")
                 self.safe_mode()
             else:
+                print("=================================================== ~ MCL ITERATION ~ ===================================================")
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
@@ -151,6 +153,7 @@ class MissionControl:
         if self.sfr.check_lower_threshold():  # if battery is low
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
+            print("Sleeping 5400, mission control 156")
             self.sfr.sleep(5400)  # charge for one orbit
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 
