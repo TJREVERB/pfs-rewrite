@@ -1,6 +1,7 @@
-import time
+from time import time
 from lib.exceptions import wrap_errors, BatteryError
 from Drivers.device import Device
+
 
 class Battery(Device):
     """
