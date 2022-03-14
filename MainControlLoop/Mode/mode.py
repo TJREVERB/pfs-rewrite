@@ -123,12 +123,7 @@ class Mode:
         """
         Transmits proof of life if enough time has elapsed
         """
-<<<<<<< HEAD
         self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
-=======
-        print("Transmitting heartbeat...")
-        self.sfr.command_executor.USM(UnsolicitedData("USM"))
->>>>>>> master
 
     @wrap_errors(LogicalError)
     def read_aprs(self) -> bool:
