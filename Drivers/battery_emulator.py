@@ -39,7 +39,7 @@ class Battery(Device):
             # Set Heater Controller Status
         }
         self.telemetry = {
-            "VBAT": lambda: self.volt_time_charge(time.perf_counter()),
+            "VBAT": self.volt_time_charge,
             "IBAT": lambda: abs(self.ibat),  # RETURNS IN MILLIAMPS
             # 1 = discharging, 0 = charging
             "IDIRBAT": lambda: int(self.ibat < 0),
@@ -62,15 +62,20 @@ class Battery(Device):
             "HBAT4": lambda: 0
         }
     
-    def volt_time_charge(time):
+    def volt_time_charge(self):
+        time = time.perf_counter()
         hours = time/3600
         
         hours = hours % 148
         if hours >= 0 and hours < 70.09:
+            ibat = 1000
             return (6.2 + (hours/4.5)**.2)
         if hours >= 70.09 and hours < 74:
+            ibat = 1000
             return (1/6)*((hours/4.5) - 15)**3 + 7.9
         if hours >= 74 and hours < 77.91:
+            ibat = -1000
             return (1/6)*((-1*hours/4.5) + 161/9)**3 + 7.9
         if hours >= 77.91 and hours < 148:
+            ibat = -1000
             return 6.2 + (-1*hours/4.5 + 148/4.5)**.2
