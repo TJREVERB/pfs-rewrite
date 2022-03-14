@@ -12,7 +12,7 @@ class Battery(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.vbat = 8.25
-        self.ibat = 1000
+        self.ibat = 5333
     
         self.commands = {
             # Board info commands: Basic board info
@@ -68,16 +68,16 @@ class Battery(Device):
         
         hours = hours % (148/74)
         if hours >= 0 and hours < 70.09/74:
-            ibat = 5333
+            self.ibat = 5333
             return (6.2 + (74*hours/4.5)**.2)
         if hours >= 70.09/74 and hours < 74/74:
-            ibat = 5333
+            self.ibat = 5333
             return (1/6)*((74*hours/4.5) - 15)**3 + 7.9
         if hours >= 74/74 and hours < 77.91/74:
-            ibat = -5333
+            self.ibat = -5333
             return (1/6)*((-1*74*hours/4.5) + 161/9 )**3 + 7.9
         if hours >= 77.91/74 and hours < 148/74:
-            ibat = -5333
+            self.ibat = -5333
             return 6.2 + (-1*74*hours/4.5 + 148/4.5 )**.2
 
     def charging_power(self) -> float:
