@@ -133,6 +133,7 @@ class CommandExecutor:
         :param add_to_queue: (bool) whether to append message to queue
         :return: (bool) transmission successful
         """
+        print(packet, file=open("pfs-output.txt", "a"))
         if string:
             packet.numerical = False
         if data is not None:
