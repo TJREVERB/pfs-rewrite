@@ -2,6 +2,7 @@ import time
 from lib.exceptions import wrap_errors, BatteryError
 from Drivers.device import Device
 
+
 class Battery(Device):
     """
     Emulates Battery charge cycling without having to charge cycle the battery.
