@@ -62,7 +62,7 @@ class Battery(Device):
             "HBAT4": lambda: 0
         }
     
-    def volt_time_charge(time):
+    def volt_time_charge(self, time):
         hours = time/3600
         
         hours = hours % 148
