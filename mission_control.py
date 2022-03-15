@@ -154,7 +154,7 @@ class MissionControl:
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             print("Sleeping 5400, mission control 156", file=open("pfs-output.txt", "a"))
-            self.sfr.sleep(5400)  # charge for one orbit
+            self.sfr.sleep(120)  # charge for one orbit TODO REPLACE WITH 5400
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 
     def aprs_troubleshoot(self):
