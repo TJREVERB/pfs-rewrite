@@ -65,6 +65,7 @@ class Outreach(Mode):
         :return: list of game objects
         :rtype: list
         """
+        board_string = "None"
         try:
             for encoded_string in self.string_game_queue:
                 game, board_string, game_id = encoded_string.split(";")
