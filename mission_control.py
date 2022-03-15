@@ -52,7 +52,8 @@ class MissionControl:
             }
             self.transmission_queue_clock = Clock(10)
         except Exception as e:
-            self.testing_mode(e)  # TODO: change this for real pfs
+            if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                self.error_handle(e)  # Handle error
 
     def main(self):
         """
@@ -73,10 +74,8 @@ class MissionControl:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     print("Caught exception (printed from mission_control line 75)")
-                    self.testing_mode(e)
-                    #if not self.troubleshoot(e):  # If built-in troubleshooting fails
-                    #    self.testing_mode(e)  # TODO: Debug
-                        #self.error_handle(e)  # Handle error, uncomment when done testing low level things
+                    if not self.troubleshoot(e):  # If built-in troubleshooting fails
+                        self.error_handle(e)  # Handle error, uncomment when done testing low level things
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
             # If any packet has been in the queue for too long and APRS is not locked off, switch primary radio
             if any([i.get_packet_age() > self.sfr.vars.PACKET_AGE_LIMIT for i in self.sfr.vars.transmit_buffer]):

@@ -19,8 +19,7 @@ class Charging(Mode):
         """
         super().__init__(sfr)
         self.mode = mode
-        # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
-        self.iridium_clock = Clock(10)  # Poll iridium every 5 minutes to allow for charging
+        self.iridium_clock = Clock(60*5)  # Poll iridium every 5 minutes to allow for charging
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             """

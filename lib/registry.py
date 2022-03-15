@@ -40,8 +40,8 @@ class Vars:
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE (* .8)
-        self.PRIMARY_RADIO = "APRS"  # Primary radio to use for communications  # TODO: DEBUG VALUE
+        self.UPPER_THRESHOLD = 133732.8 * .8
+        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications  # TODO: DEBUG VALUE
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
@@ -58,7 +58,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
-        self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
+        self.PACKET_AGE_LIMIT = 3600*24*7
         self.DETUMBLE_THRESHOLD = 10
 
     @wrap_errors(LogicalError)
@@ -137,7 +137,7 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to 8.0
+    VOLT_UPPER_THRESHOLD = 8.0
     VOLT_LOWER_THRESHOLD = 7.3  
 
     @wrap_errors(LogicalError)
@@ -252,7 +252,6 @@ class StateFieldRegistry:
         :rtype: :class: 'lib.registry.Vars'
         """
         defaults = Vars(self)
-        return defaults  # TODO: DEBUG
         if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
             return defaults  # Return defaults
         if fields.to_dict().keys() != defaults.to_dict().keys():  # If the log is the wrong version

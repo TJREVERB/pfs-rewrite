@@ -14,8 +14,8 @@ class Startup(Mode):
     Deploys antenna after maximum threshold regardless of tumble status
     Establishes contact with ground
     """
-    ANTENNA_WAIT_TIME = 5  # TODO: CHANGE 30 MINUTES TO ACTUALLY BE 30 MINUTES :) 1800 seconds
-    ANTENNA_MAXIMUM_THRESHOLD = 5400  # TODO: CHANGE ARBITRARY VALUE
+    ANTENNA_WAIT_TIME = 45*60
+    ANTENNA_MAXIMUM_THRESHOLD = 60*60*24
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -113,7 +113,7 @@ class Startup(Mode):
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
             print("Sleeping")
-            self.sfr.sleep(20)  # sleep for one full orbit   TODO: DEBUG CONSTANT
+            self.sfr.sleep(120)  # sleep for one full orbit   TODO: DEBUG CONSTANT
             self.start()  # Run start again to turn on devices
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
