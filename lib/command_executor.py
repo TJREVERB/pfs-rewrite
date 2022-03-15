@@ -662,12 +662,15 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
         """
         Sends heartbeat signal with summary of data, appends only once to queue unless force_queue is True
         :param packet: packet to transmit
         :type packet: TransmissionPacket
+        :param force_queue: whether to force this packet into the queue
+        :type force_queue: bool
         """
+        packet.descriptor = "IHB"  # Manually set the descriptor so we can check if this packet has already been added
         startdif = time.time() - self.sfr.vars.START_TIME
         laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
 
@@ -685,11 +688,7 @@ class CommandExecutor:
             self.sfr.logs["iridium"].read().shape[0],
             self.sfr.logs["power"].read().shape[0],
             self.sfr.logs["solar"].read().shape[0]
-        ], add_to_queue = False)
-
-        
-
-        
+        ], add_to_queue=force_queue or "IHB" not in [i.descriptor for i in self.sfr.vars.transmit_buffer])
         return result
 
     @wrap_errors(CommandExecutionException)
