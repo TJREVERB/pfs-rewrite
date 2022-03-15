@@ -112,8 +112,8 @@ class Startup(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
-            print("Sleeping",file = open("pfs-output.txt", "a"))
-            self.sfr.sleep(120)  # sleep for one full orbit   TODO: DEBUG CONSTANT
+            print("Sleeping (startup)",file = open("pfs-output.txt", "a"))
+            self.sfr.sleep(120)  # sleep for one full orbit   TODO: 5400
             self.start()  # Run start again to turn on devices
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
