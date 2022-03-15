@@ -6,6 +6,7 @@ from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
 from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 
+
 class CommandExecutor:
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -138,11 +139,11 @@ class CommandExecutor:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        # Otherwise, split the packet and transmit components
-        if self.sfr.devices[
-            self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
+        # If primary radio is off, append to queue
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:
             self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
+        # Split the packet and transmit components
         packets = self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet)
         while len(packets) > 0:
             try:
@@ -765,4 +766,3 @@ class CommandExecutor:
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
-
