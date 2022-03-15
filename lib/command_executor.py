@@ -701,10 +701,6 @@ class CommandExecutor:
             str(self.sfr.logs["solar"].read().shape[0]),
             "TJ REVERB's joke of the day: " + str(joke)
         ])
-
-        
-
-        
         return result
 
     @wrap_errors(CommandExecutionException)
