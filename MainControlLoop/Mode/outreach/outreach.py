@@ -122,8 +122,8 @@ class Outreach(Mode):
         :param message: message to transmit (usually a game representation)
         :type message: str
         """
-        packet = UnsolicitedString(return_data=[message])
-        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        packet = UnsolicitedString(return_data=message)
+        self.sfr.command_executor.transmit(packet)
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:

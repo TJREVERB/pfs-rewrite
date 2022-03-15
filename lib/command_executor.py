@@ -102,7 +102,7 @@ class CommandExecutor:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
-            self.transmit(packet, [repr(e)], True)
+            self.transmit(packet, [repr(e)], string=True)
             to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else repr(e.details))
         finally:
             self.sfr.logs["command"].write(to_log)
