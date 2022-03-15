@@ -182,7 +182,7 @@ class MissionControl:
         if self.sfr.check_lower_threshold():  # if battery is low
             print("cry", file = open("pfs-output.txt", "a"))
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
-            self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)'
+            self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(120)  # charge for one orbit TODO: 5400
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 
