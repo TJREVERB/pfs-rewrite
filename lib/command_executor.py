@@ -688,7 +688,7 @@ class CommandExecutor:
             self.sfr.logs["iridium"].read().shape[0],
             self.sfr.logs["power"].read().shape[0],
             self.sfr.logs["solar"].read().shape[0]
-        ], add_to_queue=force_queue or any(i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer))
+        ], add_to_queue=force_queue or all(i.descriptor != "IHB" for i in self.sfr.vars.transmit_buffer))
         return result
 
     @wrap_errors(CommandExecutionException)
