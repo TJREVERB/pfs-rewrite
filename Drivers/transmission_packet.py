@@ -28,7 +28,7 @@ class TransmissionPacket:
         return (datetime.datetime.utcnow() - self.timestamp).total_seconds()
 
 
-class FullPacket(TransmissionPacket): # Use this for anything that responds to a command sent from ground. If an error message is to be returned, set numerical to False
+class FullPacket(TransmissionPacket):  # Use this for anything that responds to a command sent from ground. If an error message is to be returned, set numerical to False
     @wrap_errors(LogicalError)
     def __init__(self, descriptor: str, args: list, msn: int, simulate=False, outreach=False):
         super().__init__(True, True)
@@ -40,14 +40,14 @@ class FullPacket(TransmissionPacket): # Use this for anything that responds to a
 
     @wrap_errors(LogicalError)
     def __str__(self):
-        if self.response and not self.numerical: # String in response to a received command, will still contain descriptor for clarity's sake
+        if self.response and not self.numerical:  # String in response to a received command, will still contain descriptor for clarity's sake
             return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-\
                 {self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}:{self.msn}:{self.return_data[0]}:"
         return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-\
             {self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}:{self.msn}:{':'.join([f'{float(s):.5}' for s in self.return_data])}:"
 
 
-class UnsolicitedData(TransmissionPacket): # Use this for unsolicited data returns, such as with Science mode and POL beaconing
+class UnsolicitedData(TransmissionPacket):  # Use this for unsolicited data returns, such as with Science mode and POL beaconing
     @wrap_errors(LogicalError)
     def __init__(self, descriptor: str, return_data = None, args = None, simulate = False, outreach = False): # Return data is optional
         super().__init__(False, True)
