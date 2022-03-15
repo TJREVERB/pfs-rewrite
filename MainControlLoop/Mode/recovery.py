@@ -62,7 +62,7 @@ class Recovery(Mode):
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sfr.all_off()  # turn everything off
             print("Sleeping 5400, recovery 64", file=open("pfs-output.txt", "a"))
-            self.sfr.sleep(5400)  # sleep for one full orbit
+            self.sfr.sleep(120)  # sleep for one full orbit TODO: REPLACE WITH 5400
             self.start()
 
     @wrap_errors(LogicalError)
