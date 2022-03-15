@@ -90,9 +90,8 @@ class Outreach(Mode):
                     obj.set_game(board_string)
                     self.object_game_queue.append(obj)
         except LogicalError as e:
-            default_board_string = "error splitting package"
             self.transmit_string(f"AI ERROR! board string: "
-                                 f"{board_string if str(board_string) in locals() else default_board_string}"
+                                 f"{board_string}"
                                  f", Error is: {e}")
 
     @wrap_errors(LogicalError)
