@@ -69,11 +69,11 @@ class MissionControl:
                 self.safe_mode()
             else:
                 print("=================================================== ~ MCL ITERATION ~ "
-                      "===================================================")
+                      "===================================================", file = open("pfs-output.txt", "a"))
                 try:
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
-                    print("Caught exception (printed from mission_control line 75)")
+                    print("Caught exception (printed from mission_control line 75)", file = open("pfs-output.txt", "a"))
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         self.error_handle(e)  # Handle error, uncomment when done testing low level things
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
@@ -89,24 +89,24 @@ class MissionControl:
         Print current mode, values of sfr, exception's repr
         Then cleanly exit
         """
-        print("ERROR!!!")
+        print("ERROR!!!", file = open("pfs-output.txt", "a"))
         try:
-            print(f"Currently in {type(self.sfr.MODE).__name__}")
-            print("State field registry fields:")
-            print(self.sfr.vars.to_dict())
+            print(f"Currently in {type(self.sfr.MODE).__name__}", file = open("pfs-output.txt", "a"))
+            print("State field registry fields:", file = open("pfs-output.txt", "a"))
+            print(self.sfr.vars.to_dict(), file = open("pfs-output.txt", "a"))
             self.sfr.clear_logs()
         except Exception:
-            print("Error in sfr init, unable to clear logs")
-        print("Exception: " + repr(e))
-        print("Traceback:\n" + get_traceback())
+            print("Error in sfr init, unable to clear logs", file = open("pfs-output.txt", "a"))
+        print("Exception: " + repr(e), file = open("pfs-output.txt", "a"))
+        print("Traceback:\n" + get_traceback(), file = open("pfs-output.txt", "a"))
         try:
             self.sfr.all_off()
         except Exception:
-            print("PDM power cycle failed! Manually power cycle before next testing run")
+            print("PDM power cycle failed! Manually power cycle before next testing run", file = open("pfs-output.txt", "a"))
         try:
             self.sfr.clear_logs()
         except Exception:
-            print("Log clearing failed! Consider manually clearing logs before next run")
+            print("Log clearing failed! Consider manually clearing logs before next run", file = open("pfs-output.txt", "a"))
         exit(1)
 
     def troubleshoot(self, e: Exception) -> bool:
@@ -118,8 +118,8 @@ class MissionControl:
         :rtype: bool
         """
         try:
-            print("Attempting troubleshoot")
-            print(self.error_dict[type(e)])
+            print("Attempting troubleshoot", file = open("pfs-output.txt", "a"))
+            print(self.error_dict[type(e)], file = open("pfs-output.txt", "a"))
             self.error_dict[type(e)]()  # tries to troubleshoot, raises exception if error not in dict
             return True
         except Exception:  # If .functional doesn't solve the problem, raises an error
@@ -149,7 +149,7 @@ class MissionControl:
                 self.sfr.devices["APRS"].functional()  # Test if APRS is functional
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
-                print("L :(")
+                print("L :(", file = open("pfs-output.txt", "a"))
                 self.testing_mode(e)  # DEBUG
                 self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
@@ -180,7 +180,7 @@ class MissionControl:
                 self.transmission_queue_clock.update_time()
 
         if self.sfr.check_lower_threshold():  # if battery is low
-            print("cry")
+            print("cry", file = open("pfs-output.txt", "a"))
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(5400)  # charge for one orbit
@@ -201,8 +201,8 @@ class MissionControl:
         Attempt to troubleshoot Iridium
         Raises error if troubleshooting fails
         """
-        print(get_traceback())  # TODO: DEBUG
-        print("-- Rebooting Iridium")  # TODO: Debug
+        print(get_traceback(), file = open("pfs-output.txt", "a"))  # TODO: DEBUG
+        print("-- Rebooting Iridium", file = open("pfs-output.txt", "a"))  # TODO: Debug
         self.sfr.vars.FAILURES.append("Iridium")
         self.sfr.reboot("Iridium")
         self.sfr.devices["Iridium"].functional()  # Raises error if fails
@@ -221,14 +221,14 @@ class MissionControl:
         Switches off IMU if troubleshooting fails because this is a noncritical component
         """
         self.sfr.vars.FAILURES.append("IMU")
-        print("Rebooting IMU")
+        print("Rebooting IMU", file = open("pfs-output.txt", "a"))
         self.sfr.reboot("IMU")
         try:
-            print("Checking if IMU is functional")
+            print("Checking if IMU is functional", file = open("pfs-output.txt", "a"))
             self.sfr.devices["IMU"].functional()
             self.sfr.vars.FAILURES.remove("IMU")
         except IMUError:
-            print("Locking IMU off, proceeding with MCL")
+            print("Locking IMU off, proceeding with MCL", file = open("pfs-output.txt", "a"))
             result = self.sfr.lock_device_off("IMU")
             if result:
                 unsolicited_packet = UnsolicitedString("IMU failure: locked off IMU")

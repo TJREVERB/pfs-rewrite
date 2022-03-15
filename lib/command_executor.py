@@ -86,7 +86,7 @@ class CommandExecutor:
         :param packet: packet for received command
         :param registry: command registry to use
         """
-        print("Executing Command: " + packet.descriptor)
+        print("Executing Command: " + packet.descriptor, file = open("pfs-output.txt", "a"))
         to_log = {
             "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
             "ts1": int(t) % 100000,  # last 5 digits
@@ -150,7 +150,7 @@ class CommandExecutor:
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packets[0])  # Attempt to transmit first element
             except NoSignalException:  # If there's no connectivity, append remaining packets to buffer
-                print("No Iridium connectivity, appending to buffer...")
+                print("No Iridium connectivity, appending to buffer...", file = open("pfs-output.txt", "a"))
                 if add_to_queue:  # Only append if we're allowed to do so
                     self.sfr.vars.transmit_buffer += packets
                 return False
@@ -167,15 +167,15 @@ class CommandExecutor:
         """
         Attempt to transmit entire transmission queue
         """
-        print("Attempting to transmit queue")
+        print("Attempting to transmit queue", file = open("pfs-output.txt", "a"))
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
             if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):  # Attempt to transmit
-                print("Signal strength lost!")
+                print("Signal strength lost!", file = open("pfs-output.txt", "a"))
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
                 break  # If transmission has failed, exit loop
             self.sfr.vars.transmit_buffer.pop(0)  # Remove this packet from queue
-            print(f"Transmitted {p}")
+            print(f"Transmitted {p}", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
@@ -190,7 +190,7 @@ class CommandExecutor:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
         except NoSignalException as e:
-            print("No Iridium connectivity, aborting transmit")
+            print("No Iridium connectivity, aborting transmit", file = open("pfs-output.txt", "a"))
             return False
 
     @wrap_errors(LogicalError)
@@ -407,7 +407,7 @@ class CommandExecutor:
         """
         Transmit signal strength mean and variability
         """
-        print("Attempting to transmit science results")
+        print("Attempting to transmit science results", file = open("pfs-output.txt", "a"))
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_MEAN,
                                          self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
@@ -734,7 +734,7 @@ class CommandExecutor:
         Remote code execution
         Runs exec on string
         """
-        print(packet.args[0])
+        print(packet.args[0], file = open("pfs-output.txt", "a"))
         sfr = self.sfr
 
         class JankExec:
@@ -751,7 +751,7 @@ class CommandExecutor:
                 # Set self.result and self.string inside the exec string if return data is needed
 
         ex = JankExec(packet.args[0])
-        print(ex.result, ex.string)
+        print(ex.result, ex.string, file = open("pfs-output.txt", "a"))
         self.transmit(packet, ex.result, ex.string)
         return ex.result
 

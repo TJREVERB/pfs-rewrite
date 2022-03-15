@@ -75,7 +75,7 @@ class Mode:
             try:
                 self.poll_iridium()  # Poll Iridium
             except NoSignalException:
-                print("Signal Lost")
+                print("Signal Lost", file = open("pfs-output.txt", "a"))
             self.iridium_clock.update_time()  # Update last iteration
         if self.heartbeat_clock.time_elapsed():  # Heartbeat pings
             self.heartbeat()
@@ -96,7 +96,7 @@ class Mode:
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
-        print("Iridium signal strength: ", signal)
+        print("Iridium signal strength: ", signal, file = open("pfs-output.txt", "a"))
         if signal < 1:
             return False
 
@@ -110,7 +110,7 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-            print("Updating time")
+            print("Updating time", file = open("pfs-output.txt", "a"))
             os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
@@ -122,7 +122,7 @@ class Mode:
         """
         Transmits proof of life if enough time has elapsed
         """
-        print("Transmitting heartbeat...")
+        print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
         self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
 
     @wrap_errors(LogicalError)

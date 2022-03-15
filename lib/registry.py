@@ -217,7 +217,7 @@ class StateFieldRegistry:
         :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
-            print("Syncing volt to charge (upper)")
+            print("Syncing volt to charge (upper)", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -234,9 +234,9 @@ class StateFieldRegistry:
         :rtype: bool
         """
         print(f"Checking lower threshold, vbat "
-              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
+              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}", file = open("pfs-output.txt", "a"))
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
-            print("Syncing volt to charge")
+            print("Syncing volt to charge", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -359,7 +359,7 @@ class StateFieldRegistry:
         """
         for i in self.logs.keys():
             self.logs[i].clear()
-        print("Logs cleared")
+        print("Logs cleared", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
     def reset(self) -> None:

@@ -102,7 +102,7 @@ class Outreach(Mode):
             game = self.object_game_queue.pop()
             print(game)
             ai_move = game.get_best_move()
-            print(f"AIMOVE: {ai_move}")
+            print(f"AIMOVE: {ai_move}", file = open("pfs-output.txt", "a"))
             game.push(ai_move)
             self.transmit_string(str(game))
             if time.time() - 60 > time_started:  # limit compute time per cycle

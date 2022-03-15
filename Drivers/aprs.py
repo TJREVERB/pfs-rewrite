@@ -39,7 +39,7 @@ class APRS(Device):
         Enter APRS firmware menu
         :return: (bool) whether entering menu was successful
         """
-        print("entering firmware")
+        print("entering firmware", file = open("pfs-output.txt", "a"))
         self.write("\x1b\x1b\x1b")
         time.sleep(1)
         self.write("\x1b\x1b\x1b")
@@ -51,9 +51,8 @@ class APRS(Device):
         self.write("\x1b\x1b\x1b")
         time.sleep(3)
         serinput = str(self.serial.read(300))
-        print(serinput)
         if serinput.find("Byonics MTT4B Alpha") == -1:
-            print("Failed")
+            print("Failed", file = open("pfs-output.txt", "a"))
             raise APRSError(details="Failed to enter firmware menu")
             
         return True
@@ -156,19 +155,18 @@ class APRS(Device):
         Reads in any messages, process, and add to queue
         """
         msgs = self.read().split("\r\n")
-        print(msgs)
         for msg in msgs:
             if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
-                print("TJ message received")
+                print("TJ message received", file = open("pfs-output.txt", "a"))
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-                print(processed)
+                print(processed, file = open("pfs-output.txt", "a"))
                 if processed[0] in self.sfr.command_executor.primary_registry.keys():
                     if len(processed) > 2:
                         self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
                     else:
                         self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1])))
             elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
-                print("Outreach message received")
+                print("Outreach message received", file = open("pfs-output.txt", "a"))
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
                 if processed[0] in self.sfr.command_executor.secondary_registry.keys():
                     if len(processed) > 2:
@@ -183,7 +181,6 @@ class APRS(Device):
         :param message: (str) message to write
         :return: (bool) whether or not the write worked
         """
-        print(message)
         for i in list(message):
             self.serial.write(i.encode("utf-8"))
             time.sleep(.05)
@@ -198,5 +195,4 @@ class APRS(Device):
         :return: (str) message read ("" if no message read)
         """
         output = self.serial.read(300)
-        print(output.decode("utf-8"))
         return output.decode('utf-8')

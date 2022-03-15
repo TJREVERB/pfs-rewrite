@@ -67,7 +67,7 @@ class Charging(Mode):
         Transmits heartbeat ping and reads messages
         """
         self.sfr.power_on("APRS")
-        print("Transmitting heartbeat...")
+        print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
         self.read_aprs()
         self.sfr.power_off("APRS")
