@@ -184,6 +184,7 @@ class MissionControl:
             self.sfr.command_executor.transmit(UnsolicitedString("Sat low battery, sleeping for 5400 seconds :("))
             self.sfr.power_off(self.sfr.vars.PRIMARY_RADIO)
             self.sfr.sleep(120)  # charge for one orbit TODO: 5400
+            self.sfr.vars.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
             self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
 
     def aprs_troubleshoot(self):

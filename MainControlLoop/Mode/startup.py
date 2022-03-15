@@ -114,6 +114,7 @@ class Startup(Mode):
             self.sfr.all_off()  # turn everything off
             print("Sleeping (startup)",file = open("pfs-output.txt", "a"))
             self.sfr.sleep(120)  # sleep for one full orbit   TODO: 5400
+            self.sfr.vars.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
             self.start()  # Run start again to turn on devices
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
