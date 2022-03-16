@@ -12,7 +12,7 @@ class Battery(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.vbat = 8.25
-        self.ibat = 144
+        self.ibat = 2736
     
         self.commands = {
             # Board info commands: Basic board info
@@ -64,21 +64,21 @@ class Battery(Device):
         }
     
     def volt_time_charge(self):
-        hours = (time.perf_counter())/3600
+        hours = (time.perf_counter())/3600 + 2
         
-        hours = hours % (148/2)
-        if hours >= 0 and hours < 70.09/2:
-            self.ibat = 144
-            return (6.2 + (2*hours/4.5)**.2)
-        if hours >= 70.09/2 and hours < 74/2:
-            self.ibat = 144
-            return (1/6)*((2*hours/4.5) - 15)**3 + 7.9
-        if hours >= 74/2 and hours < 77.91/2:
-            self.ibat = -144
-            return (1/6)*((-1*2*hours/4.5) + 161/9 )**3 + 7.9
-        if hours >= 77.91/2 and hours < 148/2:
-            self.ibat = -144
-            return 6.2 + (-1*2*hours/4.5 + 148/4.5 )**.2
+        hours = hours % (4)
+        if hours >= 0 and hours < 70.09/37:
+            self.ibat = 2736
+            return (6.2 + (37*hours/4.5)**.2)
+        if hours >= 70.09/37 and hours < 74/37:
+            self.ibat = 2736
+            return (1/6)*((37*hours/4.5) - 15)**3 + 7.9
+        if hours >= 74/37 and hours < 77.91/37:
+            self.ibat = -2736
+            return (1/6)*((-1*37*hours/4.5) + 161/9 )**3 + 7.9
+        if hours >= 77.91/37 and hours < 148/37:
+            self.ibat = -2736
+            return 6.2 + (-1*37*hours/4.5 + 148/4.5 )**.2
 
     def charging_power(self) -> float:
         """
