@@ -546,6 +546,11 @@ class StateFieldRegistry:
                 return False
             self.vars.LOCKED_ON_DEVICES.remove(component)  # Otherwise remove from LOCKED_ON_DEVICES
         # at this point, we know this is a legal action
+        if component == "APRS" or component == "Iridium":
+            new_radio = "APRS" if component == "Iridium" else "APRS"
+            if new_radio in self.vars.LOCKED_OFF_DEVICES:
+                self.unlock_device(new_radio)
+            self.set_primary_radio(new_radio)
         self.vars.LOCKED_OFF_DEVICES.add(component)  # Add device to locked devices
         self.power_off(component)  # Power off device
         return True
