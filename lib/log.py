@@ -207,7 +207,6 @@ class Logger:
             "imu": (Clock(10), self.log_imu),
             "power": (Clock(30), self.log_power_full),
             "integrate": (Clock(0), self.integrate_charge),
-            "orbits": (Clock(60), self.update_orbits),
         }
 
     @wrap_errors(LogicalError)
@@ -246,10 +245,9 @@ class Logger:
         if self.sfr.devices["IMU"] is None:
             return
         print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]], file = open("pfs-output.txt", "a"))
-        self.sfr.logs["imu"].write({
-            "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
-            "xgyro": tbl[0], "ygyro": tbl[1], "zgyro": tbl[2],
-        })
+        if len(self.sfr.imulog) > 10: # Keep the length low
+            self.sfr.imulog.pop(0)
+        self.sfr.imulog.append(tbl)
 
     def log_power_full(self) -> None:
         """
@@ -279,17 +277,6 @@ class Logger:
         else:
             # Add delta * time to BATTERY_CAPACITY_INT
             self.sfr.vars.BATTERY_CAPACITY_INT += delta
-
-    @wrap_errors(LogicalError)
-    def update_orbits(self) -> None:
-        """
-        Update orbits log when sun is detected
-        """
-        if (sun := self.sfr.sun_detected()) and self.sfr.vars.LAST_DAYLIGHT_ENTRY < self.sfr.vars.LAST_ECLIPSE_ENTRY:
-            self.sfr.enter_sunlight()
-        elif not sun and self.sfr.vars.LAST_DAYLIGHT_ENTRY > self.sfr.vars.LAST_ECLIPSE_ENTRY:
-            self.sfr.enter_eclipse()
-        self.sfr.vars.ORBITAL_PERIOD = self.sfr.analytics.calc_orbital_period()
 
     @wrap_errors(LogicalError)
     def log(self) -> None:
