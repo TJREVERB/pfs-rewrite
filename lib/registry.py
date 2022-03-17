@@ -148,7 +148,6 @@ class StateFieldRegistry:
         """
         self.logs = {
             "sfr": PKLLog("./lib/data/state_field_log.pkl"),
-            "sfr_readable": JSONLog("./lib/data/state_field_log.json"),
             "power": CSVLog("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": CSVLog("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
             "voltage_energy": NonWritableCSV("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
@@ -269,7 +268,6 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log and readable log
         """
         self.logs["sfr"].write(self.vars)
-        self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:
