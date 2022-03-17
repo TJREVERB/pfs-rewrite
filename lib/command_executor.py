@@ -71,7 +71,6 @@ class CommandExecutor:
             "GSV": self.GSV,
             "GSG": self.GSG,
             "GTB": self.GTB,
-            "GOP": self.GOP,
             "GCS": self.GCS,
             "USM": self.USM,
             "ITM": self.ITM
