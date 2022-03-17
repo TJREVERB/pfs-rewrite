@@ -148,7 +148,6 @@ class StateFieldRegistry:
         """
         self.logs = {
             "sfr": PKLLog("./lib/data/state_field_log.pkl"),
-            "sfr_readable": JSONLog("./lib/data/state_field_log.json"),
             "power": CSVLog("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": CSVLog("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
             "voltage_energy": NonWritableCSV("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
@@ -252,7 +251,12 @@ class StateFieldRegistry:
         :rtype: :class: 'lib.registry.Vars'
         """
         defaults = Vars(self)
-        if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
+        try:
+            fields = self.logs["sfr"].read()
+        except Exception as e: # This is bad dumb code but it is bad dumb code that probably works
+            print(e)
+            return defaults
+        if not fields:  # If log doesn't exist
             return defaults  # Return defaults
         if fields.to_dict().keys() != defaults.to_dict().keys():  # If the log is the wrong version
             return defaults  # Return defaults
@@ -264,7 +268,6 @@ class StateFieldRegistry:
         Dump values of all state fields into state_field_log and readable log
         """
         self.logs["sfr"].write(self.vars)
-        self.logs["sfr_readable"].write(self.vars.to_dict())
 
     @wrap_errors(LogicalError)
     def enter_sunlight(self) -> None:

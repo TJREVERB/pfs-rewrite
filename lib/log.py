@@ -38,7 +38,7 @@ class Log:
                 print(f"Error in handling log of type {type(self.sub).__name__}: {e}", file = open("pfs-output.txt", "a"))
                 print("Assuming corruption, attempting to proceed by clearing log", file = open("pfs-output.txt", "a"))
                 self.sub.clear()
-                return func(*args, **kwargs)  # Attempt to run function again, raises error if still fails
+                return func(self, *args, **kwargs)  # Attempt to run function again, raises error if still fails
         return wrapped
 
     @wrap_errors(LogicalError)
