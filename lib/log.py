@@ -22,6 +22,7 @@ class Log:
         if not os.path.exists(self.path):  # If log doesn't exist on filesystem, create it
             self.sub.clear()
 
+    @staticmethod
     @wrap_errors(LogicalError)
     def access_wrap(func: callable) -> callable:
         """
