@@ -39,9 +39,11 @@ class AntennaDeployerCommand(IntEnum):
     GET_UPTIME_3 = 0xB6
     GET_UPTIME_4 = 0xB7
 
+
 class AntennaDeployer(Device):
     PRIMARY_ADDRESS = 0x31
     SECONDARY_ADDRESS = 0x32
+
     @wrap_errors(AntennaError)
     def __init__(self, sfr):
         super().__init__(sfr)
