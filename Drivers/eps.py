@@ -8,8 +8,7 @@ class EPS(Device):
     """
     Class for EPS
     """
-    
-    # ARBITRARY VALUE!!!
+
     COMPONENTS = {
         "APRS": [0x04],
         "Iridium": [0x03],
@@ -196,12 +195,9 @@ class EPS(Device):
         :param length: number of bytes to read
         :return: (byte) response from EPS
         """
-        #try:
         self.bus.write_i2c_block_data(self.addr, register, data)
         time.sleep(.05)
         result = self.bus.read_i2c_block_data(self.addr, 0, length)
-        #except:
-        #    return False
         time.sleep(.2)
         return result
 
@@ -215,7 +211,7 @@ class EPS(Device):
         """
         try:
             result = self.bus.write_i2c_block_data(self.addr, register, data)
-        except:
+        except Exception:
             return False
         time.sleep(.2)
         return result

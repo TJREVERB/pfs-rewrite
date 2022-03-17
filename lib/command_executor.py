@@ -1,12 +1,11 @@
 import os
 import time
-
-# from cv2 import add
 from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
 from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
+
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
@@ -105,7 +104,7 @@ class CommandExecutor:
             result = registry[packet.descriptor](packet)  # EXECUTES THE COMMAND
             to_log["result"] = ":".join([str(s) for s in result])
         except CommandExecutionException as e:
-            self.transmit(packet, [repr(e)], True)
+            self.transmit(packet, [repr(e)], string=True)
             to_log["result"] = "ERR:" + (type(e.exception).__name__ if e.exception is not None else repr(e.details))
         finally:
             self.sfr.logs["command"].write(to_log)
@@ -136,15 +135,17 @@ class CommandExecutor:
         :param add_to_queue: (bool) whether to append message to queue
         :return: (bool) transmission successful
         """
+        print(packet, file=open("pfs-output.txt", "a"))
         if string:
             packet.numerical = False
         if data is not None:
             packet.return_data = data
-        # Otherwise, split the packet and transmit components
-        if self.sfr.devices[
-            self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:  # If primary radio is off, append to queue
-            self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+        # If primary radio is off, append to queue
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:
+            if add_to_queue:
+                self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
+        # Split the packet and transmit components
         packets = self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet)
         while len(packets) > 0:
             try:
@@ -169,7 +170,7 @@ class CommandExecutor:
         """
         print("Attempting to transmit queue", file = open("pfs-output.txt", "a"))
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
-            if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):  # Attempt to transmit
+            if not self.transmit_from_buffer(self.sfr.vars.transmit_buffer[0]):  # Attempt to transmit
                 print("Signal strength lost!", file = open("pfs-output.txt", "a"))
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
@@ -189,7 +190,7 @@ class CommandExecutor:
         try:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
-        except NoSignalException as e:
+        except NoSignalException:
             print("No Iridium connectivity, aborting transmit", file = open("pfs-output.txt", "a"))
             return False
 
@@ -331,8 +332,7 @@ class CommandExecutor:
                                          self.sfr.devices["Iridium"].check_signal_passive()
                                          if self.sfr.devices["Iridium"] is not None else 0],
                       # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      add_to_queue=
-                      force_queue or not any([i.descriptor == "GPL" for i in self.sfr.vars.transmit_buffer]))
+                      add_to_queue=force_queue or all(i.descriptor != "GPL" for i in self.sfr.vars.transmit_buffer))
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -670,14 +670,15 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket, force_queue=False, string=True) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
         """
         Sends heartbeat signal with summary of data, appends only once to queue unless force_queue is True
         :param packet: packet to transmit
         :type packet: TransmissionPacket
-        :param force_queue: optional parameter to add this ping to queue
+        :param force_queue: whether to force this packet into the queue
         :type force_queue: bool
         """
+        packet.descriptor = "IHB"  # Manually set the descriptor so we can check if this packet has already been added
         startdif = time.time() - self.sfr.vars.START_TIME
         laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
 
@@ -695,7 +696,7 @@ class CommandExecutor:
             self.sfr.logs["iridium"].read().shape[0],
             self.sfr.logs["power"].read().shape[0],
             self.sfr.logs["solar"].read().shape[0]
-        ], add_to_queue=force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
+        ], add_to_queue=force_queue or all(i.descriptor != "IHB" for i in self.sfr.vars.transmit_buffer))
         # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
         return result
 
@@ -775,4 +776,3 @@ class CommandExecutor:
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
-
