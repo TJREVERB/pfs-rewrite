@@ -35,9 +35,6 @@ class Vars:
         # Integral estimate of remaining battery capacity
         self.BATTERY_CAPACITY_INT = sfr.analytics.volt_to_charge(sfr.battery.telemetry["VBAT"]())
         self.FAILURES = []
-        self.LAST_DAYLIGHT_ENTRY = time.time() - 45 * 60 if (sun := sfr.sun_detected()) else time.time()
-        self.LAST_ECLIPSE_ENTRY = time.time() if sun else time.time() - 45 * 60
-        self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
         self.UPPER_THRESHOLD = 133732.8 * .8
@@ -73,11 +70,6 @@ class Vars:
             "ANTENNA_DEPLOYED": int(self.ANTENNA_DEPLOYED),
             "BATTERY_CAPACITY_INT": self.BATTERY_CAPACITY_INT,
             "FAILURES": sum([1 << StateFieldRegistry.COMPONENTS.index(i) for i in self.FAILURES]),
-            "LAST_DAYLIGHT_ENTRY_0": int(self.LAST_DAYLIGHT_ENTRY / 100000) * 100000,
-            "LAST_DAYLIGHT_ENTRY_1": int(self.LAST_DAYLIGHT_ENTRY % 100000),
-            "LAST_ECLIPSE_ENTRY_0": int(self.LAST_ECLIPSE_ENTRY / 100000) * 100000,
-            "LAST_ECLIPSE_ENTRY_1": int(self.LAST_ECLIPSE_ENTRY % 100000),
-            "ORBITAL_PERIOD": self.ORBITAL_PERIOD,
             "LOWER_THRESHOLD": self.LOWER_THRESHOLD,
             "UPPER_THRESHOLD": self.UPPER_THRESHOLD,
             "PRIMARY_RADIO": StateFieldRegistry.COMPONENTS.index(self.PRIMARY_RADIO),
@@ -151,10 +143,8 @@ class StateFieldRegistry:
             "power": CSVLog("./lib/data/pwr_draw_log.csv", ["ts0", "ts1", "buspower"] + self.PDMS),
             "solar": CSVLog("./lib/data/solar_generation_log.csv", ["ts0", "ts1"] + self.PANELS),
             "voltage_energy": NonWritableCSV("./lib/data/volt-energy-map.csv", ["voltage", "energy"]),
-            "orbits": CSVLog("./lib/data/orbit_log.csv", ["ts0", "ts1", "phase"]),
             "iridium": CSVLog("./lib/data/iridium_data.csv",
                               ["ts0", "ts1", "latitude", "longitude", "altitude", "signal"]),
-            "imu": CSVLog("./lib/data/imu_data.csv", ["ts0", "ts1", "xgyro", "ygyro", "zgyro"]),
             "command": CSVLog("./lib/data/command_log.csv",
                               ["ts0", "ts1", "radio", "command", "arg", "registry", "msn", "result"]),
             "transmission": CSVLog("./lib/data/transmission_log.csv", ["ts0", "ts1", "radio", "size"]),
@@ -166,6 +156,8 @@ class StateFieldRegistry:
         self.command_executor = CommandExecutor(self)
         self.logger = Logger(self)
         self.MODE = None
+
+        self.imulog = []
 
         self.devices = {
             "Iridium": None,
@@ -270,30 +262,6 @@ class StateFieldRegistry:
         self.logs["sfr"].write(self.vars)
 
     @wrap_errors(LogicalError)
-    def enter_sunlight(self) -> None:
-        """
-        Update LAST_DAYLIGHT_ENTRY and log new data
-        """
-        self.vars.LAST_DAYLIGHT_ENTRY = time.time()
-        self.logs["orbits"].write({  # Append data to log
-            "ts0": self.vars.LAST_DAYLIGHT_ENTRY // 100000 * 100000,
-            "ts1": int(self.vars.LAST_DAYLIGHT_ENTRY % 100000),
-            "phase": "daylight",
-        })
-
-    @wrap_errors(LogicalError)
-    def enter_eclipse(self) -> None:
-        """
-        Update LAST_ECLIPSE_ENTRY and log new data
-        """
-        self.vars.LAST_ECLIPSE_ENTRY = time.time()
-        self.logs["orbits"].write({  # Append data to log
-            "ts0": self.vars.LAST_ECLIPSE_ENTRY // 100000 * 100000,
-            "ts1": int(self.vars.LAST_ECLIPSE_ENTRY % 100000),
-            "phase": "eclipse",
-        })
-
-    @wrap_errors(LogicalError)
     def log_iridium(self, location: tuple, signal: int) -> None:
         """
         Logs iridium data
@@ -334,26 +302,6 @@ class StateFieldRegistry:
             return self.eps.raw_solar_gen()
         # Get last row, exclude timestamp columns
         return df[self.PANELS].iloc[-1].tolist()
-
-    @wrap_errors(LogicalError)
-    def sun_detected(self) -> bool:
-        """
-        Checks if sun is detected (JANK IMPLEMENTATION BECAUSE WE DON'T HAVE SUN SENSORS, VERY UNRELIABLE)
-        :return: whether sun is detected
-        :rtype: bool
-        """
-        solar = sum(self.eps.raw_solar_gen())
-        if solar > self.eps.SUN_DETECTION_THRESHOLD:  # Threshold of 1W
-            return True
-        # If EPS is at end of charge mode, MPPT will be disabled, making solar power an inaccurate representation of
-        # actual sunlight
-        if self.battery.telemetry["VBAT"]() > self.eps.V_EOC:
-            pcharge = self.battery.charging_power()
-            # If the battery is charging, or is discharging at a rate below an acceptable threshold (i.e.,
-            # the satellite is in a power hungry mode)
-            if pcharge > (-1 * self.eps.total_power(2)[0]):
-                return True
-        return False
 
     @wrap_errors(LogicalError)
     def clear_logs(self) -> None:

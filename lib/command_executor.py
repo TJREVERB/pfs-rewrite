@@ -30,7 +30,6 @@ class CommandExecutor:
             "GCD": self.GCD,
             "GPW": self.GPW,
             "GPR": self.GPR,
-            "GOP": self.GOP,
             "GCS": self.GCS,
             "GID": self.GID,
             "GSM": self.GSM,
@@ -350,12 +349,10 @@ class CommandExecutor:
         Transmits:
         1. Average power draw over last 50 data points
         2. Average solar panel generation over last 50 datapoints while in sunlight
-        3. Orbital period
-        4. Amount of one orbit which we spend in sunlight
-        5. Iridium signal strength mean (default -1 if science mode incomplete)
-        6. Iridium signal strength variability (default -1 if science mode incomplete)
-        7. Current battery charge
-        8. Current tumble
+        3. Iridium signal strength mean (default -1 if science mode incomplete)
+        4. Iridium signal strength variability (default -1 if science mode incomplete)
+        5. Current battery charge
+        6. Current tumble
         """
         if self.sfr.devices["IMU"] is None:
             tumble = ((0, 0, 0), (0, 0, 0))
@@ -367,8 +364,6 @@ class CommandExecutor:
         self.transmit(packet, result := [
             hist_consumption.mean() if hist_consumption.shape[0] > 0 else 0,  # Average power consumption
             hist_generation.mean() if hist_generation.shape[0] > 0 else 0,  # Average solar panel generation
-            self.sfr.vars.ORBITAL_PERIOD,
-            self.sfr.analytics.sunlight_ratio(50),  # Sunlight ratio over last 50 orbits
             self.sfr.vars.SIGNAL_STRENGTH_MEAN,
             self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY,
             self.sfr.vars.BATTERY_CAPACITY_INT,
@@ -383,14 +378,6 @@ class CommandExecutor:
         Transmit total power draw of satellite
         """
         self.transmit(packet, result := [sum(self.sfr.recent_power())])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def GOP(self, packet: TransmissionPacket) -> list:
-        """
-        Transmits current orbital period
-        """
-        self.transmit(packet, result := [self.sfr.vars.ORBITAL_PERIOD], False)
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -517,11 +504,7 @@ class CommandExecutor:
         """
         Transmits last n IMU tumble datapoints
         """
-        self.transmit(packet, result := self.sfr.logs["imu"].read()  # Read logs
-                      .tail(int(packet.args[0]))  # Last n rows
-                      .to_numpy()  # Convert to numpy array
-                      .flatten()  # Convert to 1d array
-                      .tolist())  # Convert to python list for transmission
+        self.transmit(packet, result := self.sfr.imulog[-1*int(packet.args[0])])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -652,7 +635,6 @@ class CommandExecutor:
             self.sfr.analytics.total_energy_consumed(),
             self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
-            self.sfr.analytics.orbital_decay(),
             (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
             (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
             self.sfr.logs["iridium"].read().shape[0],
@@ -690,7 +672,6 @@ class CommandExecutor:
             self.sfr.analytics.total_energy_consumed(),
             self.sfr.analytics.total_energy_generated(),
             self.sfr.analytics.total_data_transmitted(),
-            self.sfr.analytics.orbital_decay(),
             (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
             (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
             self.sfr.logs["iridium"].read().shape[0],

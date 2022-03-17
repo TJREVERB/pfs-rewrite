@@ -908,13 +908,14 @@ class IMU(Device):
     @wrap_errors(IMUError)
     def is_tumbling(self) -> bool:
         """Checks if sat is tumbling. If is tumbling returns True, else returns False"""
-        df = self.sfr.logs["imu"].read().tail(5)
-        if df.shape[0] == 0:
+        df = self.sfr.imulog[-5:]
+        if len(df) < 4:
             return True  # Return that we are tumbling if we don't have enough data to say otherwise
-        x_tumble_values = df["xgyro"].values.tolist()
-        y_tumble_values = df["ygyro"].values.tolist()
+        x_tumble_values = [row[0] for row in df]
+        y_tumble_values = [row[1] for row in df]
         x_tumble_avg = sum(x_tumble_values)/len(x_tumble_values)
         y_tumble_avg = sum(y_tumble_values)/len(y_tumble_values)
+
         return x_tumble_avg**2 + y_tumble_avg**2 > self.sfr.vars.DETUMBLE_THRESHOLD**2
 
 
