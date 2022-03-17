@@ -141,8 +141,9 @@ class CommandExecutor:
         if data is not None:
             packet.return_data = data
         # If primary radio is off, append to queue
-        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None and add_to_queue:
-            self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
+        if self.sfr.devices[self.sfr.vars.PRIMARY_RADIO] is None:
+            if add_to_queue:
+                self.sfr.vars.transmit_buffer += Iridium.split_packet(packet)  # Split packet and extend
             return False
         # Split the packet and transmit components
         packets = self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].split_packet(packet)
