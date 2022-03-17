@@ -38,8 +38,8 @@ class MissionControl:
         Attempts to initialize everything
         If an error happens, testing mode is triggered
         """
+        self.sfr = StateFieldRegistry()
         try:
-            self.sfr = StateFieldRegistry()
             self.mcl = MainControlLoop(self.sfr)
             self.error_dict = {
                 APRSError: self.aprs_troubleshoot,
