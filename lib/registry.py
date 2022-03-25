@@ -245,7 +245,7 @@ class StateFieldRegistry:
         defaults = Vars(self)
         try:
             fields = self.logs["sfr"].read()
-        except Exception as e: # This is bad dumb code but it is bad dumb code that probably works
+        except Exception as e:  # This is bad dumb code but it is bad dumb code that probably works
             print(e)
             return defaults
         if not fields:  # If log doesn't exist
