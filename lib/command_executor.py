@@ -173,7 +173,7 @@ class CommandExecutor:
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
                 break  # If transmission has failed, exit loop
-            self.sfr.vars.transmit_buffer.pop(0)  # Remove this packet from queue
+            p = self.sfr.vars.transmit_buffer.pop(0)  # Remove this packet from queue
             print(f"Transmitted {p}", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
