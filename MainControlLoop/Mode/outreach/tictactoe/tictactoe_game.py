@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-import random
 from MainControlLoop.Mode.outreach.tictactoe.table import get_table
 from lib.exceptions import wrap_errors, LogicalError
 

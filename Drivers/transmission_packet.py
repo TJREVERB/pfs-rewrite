@@ -65,6 +65,7 @@ class UnsolicitedData(TransmissionPacket):  # Use this for unsolicited data retu
         return f"{(self.response << 1) | self.numerical}:{self.index}:{self.timestamp.day}-{self.timestamp.hour}-{self.timestamp.minute}:{self.descriptor}\
             :{':'.join([f'{float(s):.5}' for s in self.return_data])}:"  # Basically the same as FullPacket but without MSN
 
+
 class UnsolicitedString(TransmissionPacket): # Use this for unsolicited string messages like error and mode switch notifications, or GAMER MODE UPDATES
     @wrap_errors(LogicalError)
     def __init__(self, return_data = None, simulate = False, outreach = False):
