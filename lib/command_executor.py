@@ -681,8 +681,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IPC(self,
-            packet: TransmissionPacket) -> list:
+    def IPC(self, packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
