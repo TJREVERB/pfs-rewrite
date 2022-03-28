@@ -49,7 +49,7 @@ class Vars:
         self.ENABLE_SAFE_MODE = False
         self.transmit_buffer = []
         self.command_buffer = []
-        self.outreach_buffer = []
+        self.outreach_buffer = []  # stored games that were received when on in outreach, executed when in outreach
         self.START_TIME = time.time()
         self.LAST_COMMAND_RUN = time.time()
         self.LAST_MODE_SWITCH = time.time()

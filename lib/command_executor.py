@@ -118,10 +118,6 @@ class CommandExecutor:
             self.execute(command_packet, self.primary_registry)
         self.sfr.vars.command_buffer = []
 
-        for command_packet in self.sfr.vars.outreach_buffer:
-            self.execute(command_packet, self.secondary_registry)
-        self.sfr.vars.outreach_buffer = []
-
     @wrap_errors(LogicalError)
     def transmit(self, packet: TransmissionPacket, data: list = None,
                  string: bool = False, add_to_queue: bool = True):
@@ -681,8 +677,7 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IPC(self,
-            packet: TransmissionPacket) -> list:
+    def IPC(self, packet: TransmissionPacket) -> list:
         """
         Power cycle satellite
         """
@@ -752,7 +747,8 @@ class CommandExecutor:
 
     def ZMV(self, packet: TransmissionPacket):
         if str(self.sfr.MODE) != "Outreach":
-            raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
-        self.sfr.MODE.game_queue.append(packet.args[0])
+            self.sfr.vars.outreach_buffer.append(packet.args[0])
+        else:
+            self.sfr.MODE.string_game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result

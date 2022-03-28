@@ -1,7 +1,6 @@
 import numpy as np
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.mcts_search import MCTSSearch
 from MainControlLoop.Mode.outreach.ultimate_tictactoe.tictactoe3x3 import TicTacToe
-import random
 import copy
 from lib.exceptions import wrap_errors, LogicalError
 
