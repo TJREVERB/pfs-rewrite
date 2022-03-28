@@ -41,6 +41,8 @@ class Outreach(Mode):
         Enables only primary radio for communication with ground
         Returns False if we're not supposed to be in this mode due to locked devices
         """
+        self.string_game_queue.extend(self.sfr.vars.outreach_buffer)
+        self.sfr.vars.outreach_buffer.clear()
         return super().start([self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
