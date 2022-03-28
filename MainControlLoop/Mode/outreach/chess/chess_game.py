@@ -1,13 +1,15 @@
 import chess
 import chess.engine
-import random
 from stockfish import Stockfish
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class ChessGame:
     """
     Chess Game Object
     """
+
+    @wrap_errors(LogicalError)
     def __init__(self, sfr, game_id):
         """
         :param sfr: sfr object
@@ -19,6 +21,7 @@ class ChessGame:
         self.game_id = game_id
         self.board = chess.Board()
 
+    @wrap_errors(LogicalError)
     def __str__(self) -> str:
         """
         Return a transmittable string representation of the current board state and game id
@@ -27,6 +30,7 @@ class ChessGame:
         """
         return f"Chess;{self.board.fen()};{self.game_id}"
 
+    @wrap_errors(LogicalError)
     def set_game(self, fen: str):
         """
         Set the state of a game based on a given board representation
@@ -35,6 +39,7 @@ class ChessGame:
         """
         self.board.set_fen(fen)
 
+    @wrap_errors(LogicalError)
     def get_best_move(self):
         stockfish = Stockfish(path='MainControlLoop/Mode/outreach/chess/stockfish_exe',
                               parameters={"Minimum Thinking Time": 5})
@@ -43,6 +48,7 @@ class ChessGame:
         move = self.board.parse_san(move)
         return move
 
+    @wrap_errors(LogicalError)
     def push(self, move: chess.Move):
         """
         Update board with a move
@@ -51,19 +57,4 @@ class ChessGame:
         """
         self.board.push(move)
 
-    def random_fen(self):  # simulation only
-        """
-        DEBUG ONLY
-        Generate a random move and return new board state
-        """
-        while True:
-            board = chess.Board()
-            for _ in range(random.randint(10, 20)):
-                move = list(board.legal_moves)[random.randint(0, len(list(board.legal_moves))-1)]
-                board.push(move)
-                if chess.Board.outcome(board) is not None:
-                    break
-            if chess.Board.outcome(board) is not None:
-                continue
-            else:
-                return board.fen()
+

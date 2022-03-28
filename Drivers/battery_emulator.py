@@ -2,6 +2,7 @@ import time
 from lib.exceptions import wrap_errors, BatteryError
 from Drivers.device import Device
 
+
 class Battery(Device):
     """
     Emulates Battery charge cycling without having to charge cycle the battery.
@@ -11,7 +12,7 @@ class Battery(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.vbat = 8.25
-        self.ibat = 1000
+        self.ibat = 2736
     
         self.commands = {
             # Board info commands: Basic board info
@@ -39,7 +40,7 @@ class Battery(Device):
             # Set Heater Controller Status
         }
         self.telemetry = {
-            "VBAT": lambda: self.volt_time_charge(time.perf_counter()),
+            "VBAT": self.volt_time_charge,
             "IBAT": lambda: abs(self.ibat),  # RETURNS IN MILLIAMPS
             # 1 = discharging, 0 = charging
             "IDIRBAT": lambda: int(self.ibat < 0),
@@ -62,15 +63,30 @@ class Battery(Device):
             "HBAT4": lambda: 0
         }
     
-    def volt_time_charge(time):
-        hours = time/3600
+    def volt_time_charge(self):
+        hours = (time.perf_counter())/3600 + 2
         
-        hours = hours % 148
-        if hours >= 0 and hours < 70.09:
-            return (6.2 + (hours/4.5)**.2)
-        if hours >= 70.09 and hours < 74:
-            return (1/6)*((hours/4.5) - 15)**3 + 7.9
-        if hours >= 74 and hours < 77.91:
-            return (1/6)*((-1*hours/4.5) + 161/9)**3 + 7.9
-        if hours >= 77.91 and hours < 148:
-            return 6.2 + (-1*hours/4.5 + 148/4.5)**.2
+        hours = hours % (4)
+        if hours >= 0 and hours < 70.09/37:
+            self.ibat = 2736
+            return (6.2 + (37*hours/4.5)**.2)
+        if hours >= 70.09/37 and hours < 74/37:
+            self.ibat = 2736
+            return (1/6)*((37*hours/4.5) - 15)**3 + 7.9
+        if hours >= 74/37 and hours < 77.91/37:
+            self.ibat = -2736
+            return (1/6)*((-1*37*hours/4.5) + 161/9 )**3 + 7.9
+        if hours >= 77.91/37 and hours < 148/37:
+            self.ibat = -2736
+            return 6.2 + (-1*37*hours/4.5 + 148/4.5 )**.2
+
+    def charging_power(self) -> float:
+        """
+        Returns total power going into the battery or out of
+        :return: (float) power in watts, if positive, battery is charging, if negative, battery is discharging
+        """
+        pwr = self.telemetry["VBAT"]() * self.telemetry["IBAT"]() / 1000
+        if self.telemetry["IDIRBAT"]() != 0:
+            pwr *= -1
+        print(f"Charging Power: {pwr}", file = open("pfs-output.txt", "a"))
+        return pwr

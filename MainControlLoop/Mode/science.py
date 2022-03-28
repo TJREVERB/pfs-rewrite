@@ -12,7 +12,7 @@ class Science(Mode):
     Battery charges at a low rate while in this mode
     """
     # number of pings to do to complete orbit
-    NUMBER_OF_REQUIRED_PINGS = 5  # TODO: UPDATE TO 90
+    NUMBER_OF_REQUIRED_PINGS = 90
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -23,7 +23,7 @@ class Science(Mode):
         """
 
         super().__init__(sfr)
-        self.ping_clock = Clock(5)  # TODO: MAKE 60
+        self.ping_clock = Clock(60)
         if len(df := self.sfr.logs["iridium"].read()) >= self.NUMBER_OF_REQUIRED_PINGS:
             self.sfr.logs["iridium"].clear()
             self.pings_performed = 0
@@ -59,8 +59,7 @@ class Science(Mode):
         """
         super().suggested_mode()
         if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
-            return self.sfr.modes_list["Science"](self.sfr)  # TODO: remove this after testing
-            # return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
+            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
         elif self.sfr.check_lower_threshold():  # If we're on low battery
             return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
@@ -74,8 +73,8 @@ class Science(Mode):
         :return: whether function ran and pinged iridium
         :rtype: bool
         """
-        print("Executing science mode ping")  # TODO: remove this after testing
-        print("Recording signal strength ping " + str(self.pings_performed + 1) + "...")
+        print("Executing science mode ping", file = open("pfs-output.txt", "a"))  # TODO: remove this after testing
+        print("Recording signal strength ping " + str(self.pings_performed + 1) + "...", file = open("pfs-output.txt", "a"))
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
         except NoSignalException:  # Log 0,0,0 geolocation, 0 signal strength
@@ -91,11 +90,11 @@ class Science(Mode):
         :return: whether function ran and transmitted results of signal strength variability
         :rtype: bool
         """
-        print("Transmitting results...")
+        print("Transmitting results...", file = open("pfs-output.txt", "a"))
         self.sfr.vars.SIGNAL_STRENGTH_MEAN = self.sfr.analytics.signal_strength_mean()
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
-        print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN)
-        print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY)
+        print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN, file = open("pfs-output.txt", "a"))
+        print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY, file = open("pfs-output.txt", "a"))
         # Transmit signal strength variability
         self.sfr.command_executor.ASV(UnsolicitedData("ASV", args = [self.NUMBER_OF_REQUIRED_PINGS]))
         return True

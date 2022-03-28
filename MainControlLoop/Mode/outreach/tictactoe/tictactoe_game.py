@@ -1,13 +1,12 @@
 import numpy as np
-import time
 import copy
 import random
 from MainControlLoop.Mode.outreach.tictactoe.table import get_table
-import json
-import pickle
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class TicTacToeGame:
+    @wrap_errors(LogicalError)
     def __init__(self, sfr, game_id):
         self.sfr = sfr
         self.game_id = game_id
@@ -17,6 +16,7 @@ class TicTacToeGame:
         self.winning_combinations = [0x1C0, 0x38, 0x7, 0x124, 0x92, 0x49, 0x111, 0x54]
         self.draw_combination = 0x1FF
 
+    @wrap_errors(LogicalError)
     def __str__(self):  # returns encoded board
         """
         Encoding: flattened array turned into string, with x as human and o as ai.
@@ -47,6 +47,7 @@ class TicTacToeGame:
             encoded_string += "h"
         return f"TicTacToe;{encoded_string};{self.game_id}"
 
+    @wrap_errors(LogicalError)
     def set_game(self, board_string: str):
         """Sets board to proper board according to string"""
         human_board = np.zeros((9,))
@@ -64,6 +65,7 @@ class TicTacToeGame:
             self.is_ai_turn = True
         #  always be ai turn
 
+    @wrap_errors(LogicalError)
     def get_best_move(self):
         table = get_table()
         game_string = str(self).split(';')[1]
@@ -72,6 +74,7 @@ class TicTacToeGame:
         else:  # TODO: figure out what happens
             raise RuntimeError
 
+    @wrap_errors(LogicalError)
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
         human_bitboard = self.get_bitboard(self.human_board)
         ai_bitboard = self.get_bitboard(self.ai_board)
@@ -84,9 +87,11 @@ class TicTacToeGame:
             return 1, 1
         return 0, 0
 
+    @wrap_errors(LogicalError)
     def switch_turn(self):
         self.is_ai_turn = not self.is_ai_turn
 
+    @wrap_errors(LogicalError)
     def is_valid_move(self, location: [int, int]) -> bool:
         idx = tuple(location)
         x, y = idx
@@ -97,12 +102,14 @@ class TicTacToeGame:
         else:
             return False
 
+    @wrap_errors(LogicalError)
     def get_valid_moves(self) -> list:
         """
         returns all valid moves as list of lists
         """
         return [[x, y] for y in range(3) for x in range(3) if self.is_valid_move([x, y])]
 
+    @wrap_errors(LogicalError)
     def push(self, location: list) -> None:  # Takes coords as [row, column] i.e. [x, y]
         idx = (int(location[0]), int(location[1]))
         if self.is_ai_turn:
@@ -111,12 +118,14 @@ class TicTacToeGame:
             self.human_board[idx] = 1.0
         self.switch_turn()
 
+    @wrap_errors(LogicalError)
     def push_move_to_copy(self, location: list):
         """returns new game object with pushed move"""
         new_board = self.deepcopy()
         new_board.push(location)
         return new_board
 
+    @wrap_errors(LogicalError)
     def get_bitboard(self, array: np.array) -> int:
         new_list = list(np.reshape(array, (9,)))
         new_list = map(int, new_list)
@@ -124,53 +133,10 @@ class TicTacToeGame:
         bitboard = int("".join(new_list), 2)
         return bitboard
 
+    @wrap_errors(LogicalError)
     def get_board_array(self) -> np.array:  # human piece = 1, ai = -1
         return np.add(self.human_board, self.ai_board * -1)
 
+    @wrap_errors(LogicalError)
     def deepcopy(self):
         return copy.deepcopy(self)
-
-    def random(self):
-        while True:
-            board = TicTacToeGame(self.sfr, self.game_id)
-            for _ in range(random.randint(0, 9)):
-                move = list(board.get_valid_moves())[random.randint(0, len(list(board.get_valid_moves())) - 1)]
-                board.push(move)
-                if not board.check_winner() == (0, 0):
-                    break
-            if not board.check_winner() == (0, 0):
-                continue
-            else:
-                return str(board).split(";")[1]
-
-
-"""class SFR:
-    def __init__(self):
-        self.MINIMAX_TIMEOUT = 10
-game = TicTacToeGame(SFR())
-while True:
-    if game.check_winner() == (1, 0):
-        print(game)
-        print("Human Wins")
-        break
-    elif game.check_winner() == (0, 1):
-        print(game)
-        print("AI Wins")
-        break
-    elif game.check_winner() == (1, 1):
-        print(game)
-        print("Draw")
-        break
-    if game.is_ai_turn:
-        move = game.get_best_move()
-        game.push(move)
-    else:
-        while True:
-            x = int(input("Move Row "))
-            y = int(input("Move Col "))
-            try:
-                game.push([x, y])
-                break
-            except InvalidMoveError:
-                pass
-    print(game)"""

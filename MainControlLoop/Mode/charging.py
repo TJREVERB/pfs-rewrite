@@ -19,9 +19,7 @@ class Charging(Mode):
         """
         super().__init__(sfr)
         self.mode = mode
-        # TODO: CHANGE TO 5 MINUTES TO ALLOW FOR CHARGING
-        self.iridium_clock = Clock(10)  # Poll iridium every 5 minutes to allow for charging
-        self.heartbeat_clock = Clock(5400)  # Heartbeat once per orbit
+        self.iridium_clock = Clock(60*5)  # Poll iridium every 5 minutes to allow for charging
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             """
@@ -69,7 +67,7 @@ class Charging(Mode):
         Transmits heartbeat ping and reads messages
         """
         self.sfr.power_on("APRS")
-        print("Transmitting heartbeat...")
+        print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
         self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
         self.read_aprs()
         self.sfr.power_off("APRS")

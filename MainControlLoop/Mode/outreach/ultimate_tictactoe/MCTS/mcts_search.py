@@ -2,18 +2,20 @@ import time
 from math import sqrt
 import numpy as np
 import random
-from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
-#from MainControlLoop.Mode.outreach.ultimate_tictactoe.ultimate_game import UltimateTicTacToeGame
 import copy
+from MainControlLoop.Mode.outreach.ultimate_tictactoe.MCTS.node import Node
+from lib.exceptions import wrap_errors, LogicalError
 
 
 class MCTSSearch:
+    @wrap_errors(LogicalError)
     def __init__(self, sfr, initial_state):
         self.sfr = sfr
         self.root = Node(initial_state, None)
 
         self.start_time = time.time()
 
+    @wrap_errors(LogicalError)
     def resources_left(self):
         if self.root.times_visited > 400:
             return False
@@ -22,6 +24,7 @@ class MCTSSearch:
         else:
             return True
 
+    @wrap_errors(LogicalError)
     def get_best_move(self):
         while self.resources_left():
             leaf = self.traverse(self.root)
@@ -30,6 +33,7 @@ class MCTSSearch:
 
         return self.best_child_move(self.root)
 
+    @wrap_errors(LogicalError)
     def traverse(self, node):
         while not len(node.children) == 0:
             node = self.best_uct(node)
@@ -41,6 +45,7 @@ class MCTSSearch:
                              for move in node.board_state.get_valid_moves()]
             return random.choice(node.children)
 
+    @wrap_errors(LogicalError)
     def rollout(self, node):
         board_state = copy.deepcopy(node.board_state)
         while True:
@@ -56,6 +61,7 @@ class MCTSSearch:
         }
         return outcomes[board_state.check_winner()]
 
+    @wrap_errors(LogicalError)
     def backpropogate(self, leaf, simulation_result):
         node = leaf
         while node is not None:
@@ -63,6 +69,7 @@ class MCTSSearch:
             node.times_visited += 1
             node = node.parent
 
+    @wrap_errors(LogicalError)
     def best_uct(self, node):
         def _uct(child_node):
             return (child_node.value/child_node.times_visited) \
@@ -71,6 +78,7 @@ class MCTSSearch:
         children_list = list(map(_uct, node.children))
         return node.children[children_list.index(max(children_list))]
 
+    @wrap_errors(LogicalError)
     def best_child_move(self, node):
         def _get_visits(child_node):
             return child_node.times_visited

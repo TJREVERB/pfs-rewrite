@@ -1,9 +1,10 @@
 import time
-from enum import Enum, IntEnum
+from enum import IntEnum
 from smbus2 import SMBus
 from lib.exceptions import wrap_errors, AntennaError, LogicalError
 from Drivers.device import Device
 import RPi.GPIO as GPIO
+
 
 class AntennaDeployerCommand(IntEnum):
     SYSTEM_RESET = 0xAA
@@ -47,8 +48,9 @@ class AntennaDeployer(Device):
         self.bus = SMBus(1)
         self.addr = self.PRIMARY_ADDRESS
         self.channels = [26, 13, 6, 5]
+        GPIO.setmode(GPIO.BCM)
         for i in self.channels:
-            GPIO.setup(i, GPIO.IN)
+            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_UP) #TODO: This is set up for stress test, but must be changed for flight
         self.check_deployment()
 
     @wrap_errors(AntennaError)
@@ -64,7 +66,6 @@ class AntennaDeployer(Device):
         try:
             self.bus.write_byte_data(self.addr, command.value, parameter)
         except OSError as e:
-            print(e)
             self.addr = self.SECONDARY_ADDRESS
             self.bus.write_byte_data(self.addr, command.value, parameter)
         return True
@@ -77,7 +78,7 @@ class AntennaDeployer(Device):
         try:
             self.write(AntennaDeployerCommand.GET_TEMP, 0)
         except Exception as e:
-            print(e)
+            print(e, file = open("pfs-output.txt", "a"))
             raise AntennaError(details = "Bad Connection")
 
         return True
@@ -112,7 +113,7 @@ class AntennaDeployer(Device):
     def deploy(self) -> bool:
         self.enable()
         self.write(AntennaDeployerCommand.AUTO_DEPLOY, 0x0A)
-        time.sleep(40) # Wait for deployment to finish
+        time.sleep(40)  # Wait for deployment to finish
         return True
 
     @wrap_errors(AntennaError)
@@ -122,8 +123,6 @@ class AntennaDeployer(Device):
         # bit position 3, 7, 11, 15 are antenna states 4, 3, 2, 1 respectively. 0 means deployed, 1 means not
         #self.sfr.vars.ANTENNA_DEPLOYED = ((twobyte >> 3 & 1) + (twobyte >> 7 & 1) + (twobyte >> 11 & 1) + (twobyte >> 15 & 1)) <= 1 
         # Minimum 3 antennas deployed
-        if self.sfr.devices["Antenna Deployer"] is None:
-            raise AntennaError(details = "Antenna not powered on")
         result = sum([GPIO.input(i) for i in self.channels])
         self.sfr.vars.ANTENNA_DEPLOYED = (result <= 1)
         return result

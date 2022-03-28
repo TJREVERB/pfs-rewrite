@@ -1,13 +1,12 @@
 import time
 from Drivers.eps import EPS
-from Drivers.battery import Battery
+from Drivers.battery_emulator import Battery  # TODO: DEBUG, CHANGE
 from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.science import Science
 from MainControlLoop.Mode.outreach.outreach import Outreach
-from MainControlLoop.Mode.repeater import Repeater
 from MainControlLoop.Mode.recovery import Recovery
 from lib.analytics import Analytics
 from lib.command_executor import CommandExecutor
@@ -41,8 +40,8 @@ class Vars:
         self.ORBITAL_PERIOD = sfr.analytics.calc_orbital_period()
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
-        self.UPPER_THRESHOLD = 133732.8 * 50  # TODO: USE REAL VALUE (* .8)
-        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
+        self.UPPER_THRESHOLD = 133732.8 * .8
+        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications  # TODO: DEBUG VALUE
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
@@ -59,7 +58,7 @@ class Vars:
         self.LAST_MODE_SWITCH = time.time()
         self.LAST_STARTUP = time.time()
         self.LAST_IRIDIUM_RECEIVED = time.time()
-        self.PACKET_AGE_LIMIT = 999999  # TODO: USE REAL VALUE
+        self.PACKET_AGE_LIMIT = 3600*24*7
         self.DETUMBLE_THRESHOLD = 10
 
     @wrap_errors(LogicalError)
@@ -138,7 +137,7 @@ class StateFieldRegistry:
     UNSUCCESSFUL_RECEIVE_TIME_CUTOFF = 60 * 60 * 24 * 7  # if no message is received on iridium for this
     # amount of time, it will switch primary radio to APRS
     # Volt backup thresholds, further on than the capacity thresholds
-    VOLT_UPPER_THRESHOLD = 9.0  # TODO: update this value to 8.0
+    VOLT_UPPER_THRESHOLD = 8.0
     VOLT_LOWER_THRESHOLD = 7.3  
 
     @wrap_errors(LogicalError)
@@ -184,7 +183,6 @@ class StateFieldRegistry:
             "Charging": Charging,
             "Science": Science,
             "Outreach": Outreach,
-            "Repeater": Repeater,
             "Recovery": Recovery,
             "Mode": Mode,
         }
@@ -219,7 +217,7 @@ class StateFieldRegistry:
         :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
-            print("Syncing volt to charge (upper)")
+            print("Syncing volt to charge (upper)", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -236,9 +234,9 @@ class StateFieldRegistry:
         :rtype: bool
         """
         print(f"Checking lower threshold, vbat "
-              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}")
+              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}", file = open("pfs-output.txt", "a"))
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
-            print("Syncing volt to charge")
+            print("Syncing volt to charge", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -254,7 +252,6 @@ class StateFieldRegistry:
         :rtype: :class: 'lib.registry.Vars'
         """
         defaults = Vars(self)
-        return defaults  # TODO: DEBUG
         if not (fields := self.logs["sfr"].read()):  # If log doesn't exist
             return defaults  # Return defaults
         if fields.to_dict().keys() != defaults.to_dict().keys():  # If the log is the wrong version
@@ -362,7 +359,7 @@ class StateFieldRegistry:
         """
         for i in self.logs.keys():
             self.logs[i].clear()
-        print("Logs cleared")
+        print("Logs cleared", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
     def reset(self) -> None:

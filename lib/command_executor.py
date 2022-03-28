@@ -6,7 +6,7 @@ from Drivers.transmission_packet import TransmissionPacket, FullPacket
 from Drivers.aprs import APRS
 from Drivers.iridium import Iridium
 from lib.exceptions import wrap_errors, LogicalError, CommandExecutionException, NoSignalException, IridiumError
-
+from MainControlLoop.Mode.outreach.jokes.jokes_game import JokesGame
 
 class CommandExecutor:
     @wrap_errors(LogicalError)
@@ -19,12 +19,12 @@ class CommandExecutor:
             "MCH": self.MCH,
             "MSC": self.MSC,
             "MOU": self.MOU,
-            "MRP": self.MRP,
             "MLK": self.MLK,
             "MDF": self.MDF,
             "DLN": self.DLN,
             "DLF": self.DLF,
             "DDF": self.DDF,
+            "GCM": self.GCM,
             "GCR": self.GCR,
             "GVT": self.GVT,
             "GPL": self.GPL,
@@ -61,8 +61,7 @@ class CommandExecutor:
             "ICT": self.ICT,
             "ICE": self.ICE,
             "IAK": self.IAK,
-            "ZMV": self.ZMV,
-            "MGA": self.MGA
+            "ZMV": self.ZMV
         }
 
         # TODO: IMPLEMENT FULLY: Currently based off of Alan's guess of what we need
@@ -87,7 +86,7 @@ class CommandExecutor:
         :param packet: packet for received command
         :param registry: command registry to use
         """
-        print("Executing Command: " + packet.descriptor)
+        print("Executing Command: " + packet.descriptor, file = open("pfs-output.txt", "a"))
         to_log = {
             "ts0": (t := time.time()) // 100000 * 100000,  # first 5 digits
             "ts1": int(t) % 100000,  # last 5 digits
@@ -151,7 +150,7 @@ class CommandExecutor:
             try:
                 self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packets[0])  # Attempt to transmit first element
             except NoSignalException:  # If there's no connectivity, append remaining packets to buffer
-                print("No Iridium connectivity, appending to buffer...")
+                print("No Iridium connectivity, appending to buffer...", file = open("pfs-output.txt", "a"))
                 if add_to_queue:  # Only append if we're allowed to do so
                     self.sfr.vars.transmit_buffer += packets
                 return False
@@ -168,15 +167,15 @@ class CommandExecutor:
         """
         Attempt to transmit entire transmission queue
         """
-        print("Attempting to transmit queue")
+        print("Attempting to transmit queue", file = open("pfs-output.txt", "a"))
         while len(self.sfr.vars.transmit_buffer) > 0:  # attempt to transmit buffer
             if not self.transmit_from_buffer(p := self.sfr.vars.transmit_buffer[0]):  # Attempt to transmit
-                print("Signal strength lost!")
+                print("Signal strength lost!", file = open("pfs-output.txt", "a"))
                 # note: function will still return true if we lose signal midway, messages will be transmitted next
                 # execute cycle
                 break  # If transmission has failed, exit loop
             self.sfr.vars.transmit_buffer.pop(0)  # Remove this packet from queue
-            print(f"Transmitted {p}")
+            print(f"Transmitted {p}", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
     def transmit_from_buffer(self, packet: TransmissionPacket):
@@ -191,7 +190,7 @@ class CommandExecutor:
             self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
             return True
         except NoSignalException as e:
-            print("No Iridium connectivity, aborting transmit")
+            print("No Iridium connectivity, aborting transmit", file = open("pfs-output.txt", "a"))
             return False
 
     @wrap_errors(LogicalError)
@@ -233,16 +232,6 @@ class CommandExecutor:
         if str(self.sfr.MODE) == "Outreach":
             raise CommandExecutionException("Already in Outreach")
         self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Outreach"](self.sfr))])
-        return result
-
-    @wrap_errors(CommandExecutionException)
-    def MRP(self, packet: TransmissionPacket) -> list:
-        """
-        Switches current mode to Repeater mode
-        """
-        if str(self.sfr.MODE) == "Repeater":
-            raise CommandExecutionException("Already in Repeater")
-        self.transmit(packet, result := [self.switch_mode(self.sfr.modes_list["Repeater"](self.sfr))])
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -301,6 +290,14 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
+    def GCM(self, packet: TransmissionPacket) -> list:
+        """
+        Transmits current mode as string
+        """
+        self.transmit(packet, result := [str(self.sfr.MODE)], string=True)
+        return result
+
+    @wrap_errors(CommandExecutionException)
     def GCR(self, packet: TransmissionPacket) -> list:
         """
         Transmits time since last command run
@@ -334,7 +331,7 @@ class CommandExecutor:
                                          self.sfr.devices["Iridium"].check_signal_passive()
                                          if self.sfr.devices["Iridium"] is not None else 0],
                       # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      append_to_queue=
+                      add_to_queue=
                       force_queue or not any([i.descriptor == "GPL" for i in self.sfr.vars.transmit_buffer]))
         return result
 
@@ -410,7 +407,7 @@ class CommandExecutor:
         """
         Transmit signal strength mean and variability
         """
-        print("Attempting to transmit science results")
+        print("Attempting to transmit science results", file = open("pfs-output.txt", "a"))
         self.transmit(packet, result := [self.sfr.vars.SIGNAL_STRENGTH_MEAN,
                                          self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY])
         return result
@@ -673,19 +670,33 @@ class CommandExecutor:
         return result
 
     @wrap_errors(CommandExecutionException)
-    def IHB(self, packet: TransmissionPacket, force_queue=False) -> list:
+    def IHB(self, packet: TransmissionPacket, force_queue=False, string=True) -> list:
         """
-        Sends heartbeat signal with vbat data, appends only once to queue unless force_queue is True
+        Sends heartbeat signal with summary of data, appends only once to queue unless force_queue is True
         :param packet: packet to transmit
         :type packet: TransmissionPacket
         :param force_queue: optional parameter to add this ping to queue
         :type force_queue: bool
         """
-        packet.descriptor = "IHB"  # Manually set descriptor to make appending only once to queue work no matter what
-        self.transmit(packet, result := [self.sfr.battery.telemetry["VBAT"]()],
-                      # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
-                      add_to_queue=
-                      force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
+        startdif = time.time() - self.sfr.vars.START_TIME
+        laststartdif = time.time() - self.sfr.vars.LAST_STARTUP
+
+        self.transmit(packet, result := [
+            int(startdif / 100000) * 100000,
+            int(startdif % 100000),
+            int(laststartdif / 100000) * 100000,
+            int(laststartdif % 100000),
+            self.sfr.analytics.total_energy_consumed(),
+            self.sfr.analytics.total_energy_generated(),
+            self.sfr.analytics.total_data_transmitted(),
+            self.sfr.analytics.orbital_decay(),
+            (df := self.sfr.logs["command"].read())[df["radio"] == "Iridium"].shape[0],
+            (df := self.sfr.logs["command"].read())[df["radio"] == "APRS"].shape[0],
+            self.sfr.logs["iridium"].read().shape[0],
+            self.sfr.logs["power"].read().shape[0],
+            self.sfr.logs["solar"].read().shape[0]
+        ], add_to_queue=force_queue or not any([i.descriptor == "IHB" for i in self.sfr.vars.transmit_buffer]))
+        # Append to queue either if force_queue is true or if no other GPL ping has been added to queue
         return result
 
     @wrap_errors(CommandExecutionException)
@@ -725,7 +736,7 @@ class CommandExecutor:
         First argument is password
         Second argument is command
         """
-        print(packet.args[1])
+        print(packet.args[1], file = open("pfs-output.txt", "a"))
         sfr = self.sfr
 
         class JankExec:
@@ -767,17 +778,10 @@ class CommandExecutor:
         self.sfr.MODE.heartbeat = m.heartbeat
         return result
 
-    def ZMV(self, packet: TransmissionPacket):  # PROTO , not put in registry
+    def ZMV(self, packet: TransmissionPacket):
         if str(self.sfr.MODE) != "Outreach":
             raise CommandExecutionException("Cannot use outreach mode function if not in outreach mode")
         self.sfr.MODE.game_queue.append(packet.args[0])
         self.transmit(packet, result := [])
         return result
 
-    def MGA(self, packet: TransmissionPacket):  # PROTO, not put in registry
-        if str(self.sfr.MODE) == "Outreach":
-            raise CommandExecutionException("Already in outreach mode")
-        if not self.sfr.switch_mode("Outreach"):
-            raise CommandExecutionException("Mode switch failed due to locked devices!")
-        self.transmit(packet, result := [])
-        return result
