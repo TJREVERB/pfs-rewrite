@@ -29,6 +29,8 @@ class MainControlLoop:
         self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
             "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in \
             self.sfr.vars.LOCKED_OFF_DEVICES else Startup(self.sfr)
+        self.sfr.MODE = Outreach(self.sfr)  # DEBUG
+        self.sfr.vars.CONTACT_ESTABLISHED = True  # DEBUG
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
