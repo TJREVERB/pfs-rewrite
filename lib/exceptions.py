@@ -1,3 +1,5 @@
+from mission_control import get_traceback
+
 class CustomException(Exception):
     def __init__(self, exception: Exception = None, details: str = None):
         self.exception = exception
@@ -6,7 +8,7 @@ class CustomException(Exception):
     def __repr__(self):
         if self.exception is not None:
             if self.details is not None:
-                return repr(self.exception) + ": " + self.details
+                return repr(self.exception) + ": " + self.details + "\nTraceback:\n" + get_traceback()
             return repr(self.exception)
         elif self.details is not None:
             return self.details

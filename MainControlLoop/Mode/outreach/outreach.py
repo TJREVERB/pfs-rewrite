@@ -22,8 +22,6 @@ class Outreach(Mode):
         """
         super().__init__(sfr)
         self.sfr = sfr
-        self.string_game_queue = []  # string format = game;board_string;game_id
-        self.object_game_queue = []
         # games are "TicTacToe", "Chess"
 
     @wrap_errors(LogicalError)
@@ -41,8 +39,6 @@ class Outreach(Mode):
         Enables only primary radio for communication with ground
         Returns False if we're not supposed to be in this mode due to locked devices
         """
-        self.string_game_queue.extend(self.sfr.vars.outreach_buffer)
-        self.sfr.vars.outreach_buffer.clear()
         return super().start([self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
@@ -60,35 +56,30 @@ class Outreach(Mode):
             return self
 
     @wrap_errors(LogicalError)
-    def decode_game_queue(self):
+    def decode_game_queue(self) -> object:
         """
-        Turns encoded strings in game_queue, returns the list of game objects.
-        Clears game_queue.
+        Turns game string at front of queue into object that returns
         :return: list of game objects
         :rtype: list
         """
-        for encoded_string in self.string_game_queue:
-            game, board_string, game_id = encoded_string.split(";")
+        encoded_string = self.sfr.vars.outreach_buffer.pop(0)
+        game, board_string, game_id = encoded_string.split(";")
+        if game == "TicTacToe":
+            obj = TicTacToeGame(self.sfr, game_id)
+            obj.set_game(board_string)
 
-            if game == "TicTacToe":
-                obj = TicTacToeGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+        elif game == "Chess":
+            obj = ChessGame(self.sfr, game_id)
+            obj.set_game(board_string)
 
-            elif game == "Chess":
-                obj = ChessGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+        elif game == "Ultimate":
+            obj = UltimateTicTacToeGame(self.sfr, game_id)
+            obj.set_game(board_string)
 
-            elif game == "Ultimate":
-                obj = UltimateTicTacToeGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
-
-            elif game == "Jokes":
-                obj = JokesGame(self.sfr, game_id)
-                obj.set_game(board_string)
-                self.object_game_queue.append(obj)
+        else:  # game == "Jokes"
+            obj = JokesGame(self.sfr, game_id)
+            obj.set_game(board_string)
+        return obj
 
     @wrap_errors(LogicalError)
     def execute_cycle(self) -> None:
@@ -98,10 +89,10 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-        self.decode_game_queue()
+
         time_started = time.time()
-        while len(self.object_game_queue) > 0:
-            game = self.object_game_queue.pop()
+        while len(self.sfr.vars.outreach_buffer) > 0:
+            game = self.decode_game_queue()
             print(game)
             ai_move = game.get_best_move()
             print(f"AIMOVE: {ai_move}", file = open("pfs-output.txt", "a"))
