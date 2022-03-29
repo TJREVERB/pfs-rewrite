@@ -62,7 +62,7 @@ class MissionControl:
         try:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
-            self.testing_mode(e)
+            self.testing_mode(e)  # DEBUG
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration")
