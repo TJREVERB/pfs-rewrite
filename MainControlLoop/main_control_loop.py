@@ -6,6 +6,7 @@ from MainControlLoop.Mode.recovery import Recovery
 from MainControlLoop.Mode.startup import Startup
 from MainControlLoop.Mode.charging import Charging
 from MainControlLoop.Mode.outreach.outreach import Outreach
+from Drivers.transmission_packet import UnsolicitedString
 
 
 class MainControlLoop:
@@ -46,6 +47,7 @@ class MainControlLoop:
         if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold():
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}", file=open("pfs-output.txt", "a"))
+                self.sfr.command_executor.transmit(UnsolicitedString(return_data=[f"Switching modes, {self.sfr.MODE} to {new_mode}"]))
                 self.sfr.switch_mode(new_mode)
                 if not self.sfr.switch_mode(new_mode):
                     self.sfr.MODE.start()  # restarts the current mode to turn devices back on

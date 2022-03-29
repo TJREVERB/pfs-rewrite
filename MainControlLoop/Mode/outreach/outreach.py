@@ -118,7 +118,7 @@ class Outreach(Mode):
         :type message: str
         """
         packet = UnsolicitedString(return_data=[message])
-        self.sfr.devices[self.sfr.vars.PRIMARY_RADIO].transmit(packet)
+        self.sfr.command_executor.transmit(packet)
 
     @wrap_errors(LogicalError)
     def terminate_mode(self) -> None:

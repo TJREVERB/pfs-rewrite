@@ -152,7 +152,7 @@ class MissionControl:
                 print("L :(", file = open("pfs-output.txt", "a"))
                 self.testing_mode(e)  # DEBUG
                 self.sfr.crash()  # PFS team took an L
-        self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
+        self.sfr.command_executor.transmit(UnsolicitedString(f"{repr(e)} Traceback: \n{get_traceback()}"))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
 
     def safe_mode(self):
