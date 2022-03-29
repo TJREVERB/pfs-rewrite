@@ -29,6 +29,7 @@ class MainControlLoop:
         self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
             "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in \
             self.sfr.vars.LOCKED_OFF_DEVICES else Startup(self.sfr)
+        e  #DEBUG
         self.sfr.MODE = Outreach(self.sfr)  # DEBUG
         self.sfr.vars.CONTACT_ESTABLISHED = True  # DEBUG
         self.sfr.MODE.start()
@@ -49,7 +50,7 @@ class MainControlLoop:
         if not self.sfr.vars.MODE_LOCK or self.sfr.check_lower_threshold():
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}", file=open("pfs-output.txt", "a"))
-                self.sfr.command_executor.transmit(UnsolicitedString(return_data=[f"Switching modes, {self.sfr.MODE} to {new_mode}"]))
+                self.sfr.command_executor.transmit(UnsolicitedString(return_data=f"Switching modes, {self.sfr.MODE} to {new_mode}"))
                 self.sfr.switch_mode(new_mode)
                 if not self.sfr.switch_mode(new_mode):
                     self.sfr.MODE.start()  # restarts the current mode to turn devices back on

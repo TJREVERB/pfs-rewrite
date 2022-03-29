@@ -117,7 +117,7 @@ class Outreach(Mode):
         :param message: message to transmit (usually a game representation)
         :type message: str
         """
-        packet = UnsolicitedString(return_data=[message])
+        packet = UnsolicitedString(return_data=message)
         self.sfr.command_executor.transmit(packet)
 
     @wrap_errors(LogicalError)
