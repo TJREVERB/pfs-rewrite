@@ -29,7 +29,7 @@ class CustomException(Exception):
     def __repr__(self):
         if self.exception is not None:
             if self.details is not None:
-                return repr(self.exception) + ": " + self.details + "\nTraceback:\n" + get_traceback()
+                return repr(self.exception) + ": " + self.details
             return repr(self.exception)
         elif self.details is not None:
             return self.details
@@ -38,32 +38,32 @@ class CustomException(Exception):
 
 class AntennaError(CustomException):
     def __repr__(self):
-        return "AntennaError: " + repr(super().__repr__())
+        return "AntennaError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class APRSError(CustomException):
     def __repr__(self):
-        return "APRSError: " + repr(super().__repr__())
+        return "APRSError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class IridiumError(CustomException):
     def __repr__(self):
-        return "IridiumError: " + repr(super().__repr__())
+        return "IridiumError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class EPSError(CustomException):
     def __repr__(self):
-        return "EPSError: " + repr(super().__repr__())
+        return "EPSError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class IMUError(CustomException):
     def __repr__(self):
-        return "IMUError: " + repr(super().__repr__())
+        return "IMUError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class BatteryError(CustomException):
     def __repr__(self):
-        return "BatteryError: " + repr(super().__repr__())
+        return "BatteryError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class CommandExecutionException(CustomException):
@@ -71,7 +71,7 @@ class CommandExecutionException(CustomException):
         super().__init__(exception, details)
 
     def __repr__(self):
-        return "CommandExecutionException: " + repr(super().__repr__())
+        return "CommandExecutionException: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class InvalidCommandException(CustomException):
@@ -79,22 +79,22 @@ class InvalidCommandException(CustomException):
         super().__init__(exception, details)
 
     def __repr__(self):
-        return "InvalidCommandException: " + repr(super().__repr__())
+        return "InvalidCommandException: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class NoSignalException(CustomException):
     def __repr__(self):
-        return "NoSignalException: " + repr(super().__repr__())
+        return "NoSignalException: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class HighPowerDrawError(CustomException):
     def __repr__(self):
-        return "HighPowerDrawError: " + repr(super().__repr__())
+        return "HighPowerDrawError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 class LogicalError(CustomException):
     def __repr__(self):
-        return "LogicalError: " + repr(super().__repr__())
+        return "LogicalError: " + repr(super().__repr__()) + "\nTraceback:\n" + get_traceback()
 
 
 def wrap_errors(exception: callable) -> callable:
