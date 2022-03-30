@@ -22,7 +22,6 @@ class Outreach(Mode):
         """
         super().__init__(sfr)
         self.sfr = sfr
-        # games are "TicTacToe", "Chess"
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -56,11 +55,9 @@ class Outreach(Mode):
             return self
 
     @wrap_errors(LogicalError)
-    def decode_game_queue(self) -> object:
+    def decode_game_queue(self):
         """
         Turns game string at front of queue into object that returns
-        :return: list of game objects
-        :rtype: list
         """
         encoded_string = self.sfr.vars.outreach_buffer.pop(0)
         game, board_string, game_id = encoded_string.split(";")
@@ -89,7 +86,7 @@ class Outreach(Mode):
         For each game in the queue, get best AI move and transmit updated game
         Computing time for executing queue
         """
-
+        super().execute_cycle()
         time_started = time.time()
         while len(self.sfr.vars.outreach_buffer) > 0:
             game = self.decode_game_queue()
@@ -111,9 +108,3 @@ class Outreach(Mode):
         packet = UnsolicitedString(return_data=message)
         self.sfr.command_executor.transmit(packet)
 
-    @wrap_errors(LogicalError)
-    def terminate_mode(self) -> None:
-        """
-        Make one final move on all games in buffer and transmit results
-        """
-        self.execute_cycle()  # finish all games in buffer
