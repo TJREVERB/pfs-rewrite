@@ -50,6 +50,7 @@ class MissionControl:
                 print("=================================================== ~ MCL ITERATION ~ "
                       "===================================================", file = open("pfs-output.txt", "a"))
                 try:
+                    e
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
                     print("Caught exception (printed from mission_control line 75) ", e, file = open("pfs-output.txt", "a"))
