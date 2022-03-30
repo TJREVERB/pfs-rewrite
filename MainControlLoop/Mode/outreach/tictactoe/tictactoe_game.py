@@ -2,6 +2,7 @@ import numpy as np
 import copy
 from MainControlLoop.Mode.outreach.tictactoe.table import get_table
 from lib.exceptions import wrap_errors, LogicalError
+from Drivers.transmission_packet import UnsolicitedString
 
 
 class TicTacToeGame:
@@ -70,8 +71,9 @@ class TicTacToeGame:
         game_string = str(self).split(';')[1]
         if game_string in table:  # always should be in table
             return list(table[game_string])
-        else:  # TODO: figure out what happens
-            raise RuntimeError
+        else:  # not in table ??!! invalid board state
+            self.sfr.command_executor.transmit(UnsolicitedString(return_data=f"Invalid Board State: {str(game_string)}"))
+            return None
 
     @wrap_errors(LogicalError)
     def check_winner(self) -> tuple:  # (x_status, o_status) 0 = no winner, 1 = won, (1, 1) if draw
