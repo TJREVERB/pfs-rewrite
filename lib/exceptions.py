@@ -94,7 +94,7 @@ class HighPowerDrawError(CustomException):
 
 class LogicalError(CustomException):
     def __repr__(self):
-        return "LogicalError: " + repr(super().__repr__())
+        return "LogicalError: " + repr(super().__repr__()) + get_traceback()
 
 
 def wrap_errors(exception: callable) -> callable:
