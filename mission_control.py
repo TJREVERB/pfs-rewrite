@@ -53,7 +53,7 @@ class MissionControl:
                     e
                     self.mcl.iterate()  # Run a single iteration of MCL
                 except Exception as e:  # If a problem happens
-                    print("Caught exception (printed from mission_control line 75) ", e, file = open("pfs-output.txt", "a"))
+                    print("Caught exception (printed from mission_control line 75) ", repr(e), file = open("pfs-output.txt", "a"))
                     if not self.troubleshoot(e):  # If built-in troubleshooting fails
                         self.error_handle(e)  # Handle error, uncomment when done testing low level things
                     # Move on with MCL if troubleshooting solved problem (no additional exception)
