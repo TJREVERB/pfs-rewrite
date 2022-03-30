@@ -746,9 +746,6 @@ class CommandExecutor:
         return result
 
     def ZMV(self, packet: TransmissionPacket):
-        if str(self.sfr.MODE) != "Outreach":
-            self.sfr.vars.outreach_buffer.append(packet.args[0])
-        else:
-            self.sfr.MODE.string_game_queue.append(packet.args[0])
+        self.sfr.vars.outreach_buffer.append(packet.args[0])
         self.transmit(packet, result := [])
         return result

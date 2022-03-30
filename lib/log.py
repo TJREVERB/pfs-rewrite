@@ -47,18 +47,21 @@ class Log:
         """
         IMPLEMENTED IN SUBCLASSES
         """
+        pass
 
     @wrap_errors(LogicalError)
     def write(self, data):
         """
         IMPLEMENTED IN SUBCLASSES
         """
+        pass
 
     @wrap_errors(LogicalError)
     def read(self):
         """
         IMPLEMENTED IN SUBCLASSES
         """
+        pass
 
 
 class JSONLog(Log):
