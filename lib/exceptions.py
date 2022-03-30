@@ -32,7 +32,7 @@ class CustomException(Exception):
                 return repr(self.exception) + ": " + self.details + "\nTraceback:\n" + get_traceback()
             return repr(self.exception)
         elif self.details is not None:
-            return self.details
+            return self.details + "\nTraceback:\n" + get_traceback()
         return ""
 
 
