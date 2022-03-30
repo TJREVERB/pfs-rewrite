@@ -22,7 +22,6 @@ class Outreach(Mode):
         """
         super().__init__(sfr)
         self.sfr = sfr
-        # games are "TicTacToe", "Chess"
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -109,9 +108,3 @@ class Outreach(Mode):
         packet = UnsolicitedString(return_data=message)
         self.sfr.command_executor.transmit(packet)
 
-    @wrap_errors(LogicalError)
-    def terminate_mode(self) -> None:
-        """
-        Make one final move on all games in buffer and transmit results
-        """
-        self.execute_cycle()  # finish all games in buffer
