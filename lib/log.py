@@ -134,8 +134,11 @@ class CSVLog(Log):
         """
         self.headers = headers
         super().__init__(path, self)
-        if pd.read_csv(self.path).columns.tolist() != self.headers:
-            self.clear()  # Clear log if columns don't match up (out of date log)
+        try:
+            if pd.read_csv(self.path).columns.tolist() != self.headers:
+                self.clear()  # Clear log if columns don't match up (out of date log)
+        except:  # Clear log if there was any other problem with reading it
+            self.clear()
         
     @wrap_errors(LogicalError)
     def clear(self):
