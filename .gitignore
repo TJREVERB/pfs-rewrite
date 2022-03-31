@@ -20,3 +20,6 @@ backup_tle.txt
 
 # All data
 lib/data/*
+MainControlLoop/Mode/outreach/tictactoe/table.json
+MainControlLoop/Mode/outreach/tictactoe/build.py
+MainControlLoop/Mode/outreach/tictactoe/simulate.py

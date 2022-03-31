@@ -92,6 +92,8 @@ class Outreach(Mode):
             game = self.decode_game_queue()
             print(game)
             ai_move = game.get_best_move()
+            if ai_move is None:  # if invalid board_string
+                continue
             print(f"AIMOVE: {ai_move}", file = open("pfs-output.txt", "a"))
             game.push(ai_move)
             self.transmit_string(str(game))
