@@ -439,7 +439,9 @@ class Iridium(Device):
         time.sleep(1)  # 1 second to respond
         if self.read().find("READY") == -1:
             raise IridiumError(details="Serial Timeout")
-        self.serial.write(message)
+        for m in message:
+            self.serial.write(m)
+            time.sleep(.05)
         time.sleep(1)  # 1 second to respond
         result = ""
         t = time.perf_counter()
