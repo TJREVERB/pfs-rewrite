@@ -14,7 +14,7 @@ class Mode:
     """
     MIN_SIGNAL_STRENGTH = 1
     # initialization: does not turn on devices, initializes instance variables
-    
+
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """

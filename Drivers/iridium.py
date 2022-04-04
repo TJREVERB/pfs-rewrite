@@ -147,8 +147,11 @@ class Iridium(Device):
 
     @wrap_errors(IridiumError)
     def terminate(self):
-        self.check_buffer()
-        self.SHUTDOWN()
+        try:
+            self.check_buffer()
+            self.SHUTDOWN()
+        except:  # serial doesn't work
+            pass
         self.serial.close()
 
     @wrap_errors(LogicalError)
