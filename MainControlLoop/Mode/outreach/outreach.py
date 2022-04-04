@@ -38,8 +38,10 @@ class Outreach(Mode):
         Enables only primary radio for communication with ground
         Returns False if we're not supposed to be in this mode due to locked devices
         """
-        return super().start([self.sfr.vars.PRIMARY_RADIO])
-
+        e = super().start([self.sfr.vars.PRIMARY_RADIO])
+        self.transmit_string("Ultimate;---------,---------,---------,---------,----x-o--,---------,---------,---------,---------,4,2,0,a;tjreverb")
+        return e
+    
     @wrap_errors(LogicalError)
     def suggested_mode(self) -> Mode:
         """
