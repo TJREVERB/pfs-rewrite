@@ -12,7 +12,9 @@ class Mode:
     All the modes extend this mode. Some functions are placeholders in :class: 'Mode' and
     only serve as a framework of what functions to include for development of the child classes.
     """
+    MIN_SIGNAL_STRENGTH = 1
     # initialization: does not turn on devices, initializes instance variables
+
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
         """
@@ -97,7 +99,7 @@ class Mode:
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
         print("Iridium signal strength: ", signal, file = open("pfs-output.txt", "a"))
-        if signal < 1:
+        if signal < Mode.MIN_SIGNAL_STRENGTH:
             return False
 
         startlen = len(self.sfr.vars.command_buffer)
