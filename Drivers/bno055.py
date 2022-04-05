@@ -909,7 +909,6 @@ class IMU(Device):
     def is_tumbling(self) -> bool:
         """Checks if sat is tumbling. If is tumbling returns True, else returns False"""
         df = self.sfr.imulog[-5:]
-        raise IMUError()  # TODO: DEBUG
         if len(df) < 4:
             return True  # Return that we are tumbling if we don't have enough data to say otherwise
         x_tumble_values = [row[0] for row in df]
