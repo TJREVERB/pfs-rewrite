@@ -25,7 +25,7 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(60*5)  # Heartbeat every hr (not appended to queue)  TODO: DEBUG CONSTANT
+        self.heartbeat_clock = Clock(60*10)  # Heartbeat every hr (not appended to queue)  TODO: DEBUG CONSTANT
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
