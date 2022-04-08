@@ -170,7 +170,7 @@ class Iridium(Device):
         result = self.request("AT", 1)  # Give Iridium one second to respond
         if result.find("OK") != -1:
             return True
-        raise IridiumError()
+        raise IridiumError(details="Serial test failed")
 
     @wrap_errors(IridiumError)
     def functional(self):
@@ -578,6 +578,8 @@ class Iridium(Device):
         :param timeout: maximum time to wait for a response
         :return: (str) Response from Iridium
         """
+        if not self.serial.is_open:
+            self.serial.open()
         self.serial.flush()
         self.write(command)
         result = ""
