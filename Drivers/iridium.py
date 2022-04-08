@@ -578,6 +578,8 @@ class Iridium(Device):
         :param timeout: maximum time to wait for a response
         :return: (str) Response from Iridium
         """
+        if not self.serial.is_open:
+            self.serial.open()
         self.serial.flush()
         self.write(command)
         result = ""
