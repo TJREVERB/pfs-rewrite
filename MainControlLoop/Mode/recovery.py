@@ -81,8 +81,8 @@ class Recovery(Mode):
             return self  # Stay in recovery
         # If Science mode incomplete and Iridium isn't locked off, suggest Science
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1 and "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES:
-            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Science (SUGGESTED MODE)"))
+            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Science (SUGGESTED MODE)"))  # TODO
             return self.sfr.modes_list["Science"](self.sfr)
         else:  # If Science mode complete or Iridium is locked off, suggest Outreach
-            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Outreach (SUGGESTED MODE)"))
+            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Outreach (SUGGESTED MODE)"))  # TODO
             return self.sfr.modes_list["Outreach"](self.sfr)
