@@ -13,7 +13,6 @@ class MainControlLoop:
     @wrap_errors(LogicalError)
     def __init__(self, sfr: StateFieldRegistry):
         self.sfr = sfr
-        self.e = False  # TODO: REMOVE
 
     @wrap_errors(LogicalError)
     def start(self):
@@ -30,6 +29,7 @@ class MainControlLoop:
         self.sfr.MODE = Recovery(self.sfr) if self.sfr.vars.ANTENNA_DEPLOYED or \
             "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES or "Antenna Deployer" in \
             self.sfr.vars.LOCKED_OFF_DEVICES else Startup(self.sfr)
+        self.sfr.MODE = Recovery(self.sfr)
         self.sfr.MODE.start()
 
     @wrap_errors(LogicalError)
@@ -38,9 +38,6 @@ class MainControlLoop:
         Iterates mode and checks if the mode should change if there isn't a mode lock and there isn't low power.
         Executes command buffers and logs data.
         """
-        if self.e == False:
-            self.e = True
-            raise RuntimeError
         self.sfr.MODE.execute_cycle()  # Execute single cycle of mode
         print(f"Transmit buffer looks like this: {[str(i) for i in self.sfr.vars.transmit_buffer]}",
               file=open("pfs-output.txt", "a"))  # TODO: DELETE THIS AFTER TESTING ICT
