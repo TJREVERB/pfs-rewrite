@@ -1,6 +1,6 @@
 from MainControlLoop.Mode.mode import Mode
 from lib.exceptions import wrap_errors, LogicalError
-from Drivers.transmission_packet import UnsolicitedData
+from Drivers.transmission_packet import UnsolicitedData, UnsolicitedString
 from lib.clock import Clock
 
 
@@ -49,6 +49,7 @@ class Recovery(Mode):
         super().systems_check()  # Run only once, throws error if there's a problem with one of the devices
         if result := super().start([self.sfr.vars.PRIMARY_RADIO]):
             self.sfr.vars.CONTACT_ESTABLISHED = False
+        self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery mode START"))
         return result
 
     @wrap_errors(LogicalError)
@@ -80,6 +81,8 @@ class Recovery(Mode):
             return self  # Stay in recovery
         # If Science mode incomplete and Iridium isn't locked off, suggest Science
         elif self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY == -1 and "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES:
+            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Science (SUGGESTED MODE)"))
             return self.sfr.modes_list["Science"](self.sfr)
         else:  # If Science mode complete or Iridium is locked off, suggest Outreach
+            self.sfr.command_executor.transmit(UnsolicitedString(return_data="Recovery to Outreach (SUGGESTED MODE)"))
             return self.sfr.modes_list["Outreach"](self.sfr)
