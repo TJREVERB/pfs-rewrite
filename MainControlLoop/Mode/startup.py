@@ -140,7 +140,4 @@ class Startup(Mode):
             print("Antenna still can be deployed", file = open("pfs-output.txt", "a"))
             return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
         else:  # If we can switch out of this mode
-            final_mode = self.sfr.modes_list["Science"] if "Iridium" not in self.sfr.vars.LOCKED_OFF_DEVICES \
-                else self.sfr.modes_list["Outreach"]  # End up in Science if Iridium is unlocked, otherwise Outreach
-            # Leave to charging to make sure we have enough power for the next mode
-            return self.sfr.modes_list["Charging"](self.sfr, final_mode)
+            return self.sfr.modes_list["Charging"](self.sfr)  # go to charging

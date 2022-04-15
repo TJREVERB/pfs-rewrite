@@ -10,7 +10,7 @@ class Charging(Mode):
     Only the primary radio is on
     """
     @wrap_errors(LogicalError)
-    def __init__(self, sfr, mode: type):
+    def __init__(self, sfr):
         """
         :param sfr: sfr object
         :type sfr: :class: 'lib.registry.StateFieldRegistry'
@@ -18,7 +18,6 @@ class Charging(Mode):
         :type mode: type
         """
         super().__init__(sfr)
-        self.mode = mode
         self.iridium_clock = Clock(60)  # Poll iridium every 5 minutes to allow for charging, TODO: DEBUG CONSTANT
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
@@ -61,14 +60,14 @@ class Charging(Mode):
         return super().start([self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
-    def poll_aprs(self) -> None:
+    def poll_aprs(self) -> None:  #TODO not called anywhere???!!!
         """
         Poll the APRS once per orbit
         Transmits heartbeat ping and reads messages
         """
         self.sfr.power_on("APRS")
         print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
-        self.sfr.command_executor.GPL(UnsolicitedData("GPL"))  # Transmit heartbeat immediately
+        self.sfr.command_executor.IHB(UnsolicitedData("IHB"))  # Transmit heartbeat immediately
         self.read_aprs()
         self.sfr.power_off("APRS")
 
@@ -82,5 +81,5 @@ class Charging(Mode):
         """
         super().suggested_mode()
         if self.sfr.check_upper_threshold():
-            return self.mode(self.sfr)
+            return self.sfr.modes_list["Charging"](self.sfr)
         return self

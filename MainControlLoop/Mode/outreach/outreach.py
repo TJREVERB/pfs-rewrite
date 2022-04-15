@@ -50,7 +50,7 @@ class Outreach(Mode):
         """
         super().suggested_mode()
         if self.sfr.check_lower_threshold():
-            return self.sfr.modes_list["Charging"](self.sfr, type(self))
+            return self.sfr.modes_list["Charging"](self.sfr)
         else:
             return self
 

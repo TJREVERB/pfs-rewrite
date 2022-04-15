@@ -11,8 +11,6 @@ class Science(Mode):
     Transmits results to ground when complete
     Battery charges at a low rate while in this mode
     """
-    # number of pings to do to complete orbit
-    NUMBER_OF_REQUIRED_PINGS = 1  # actual value = 90 TODO: DEBUG CONSTANT
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -24,11 +22,6 @@ class Science(Mode):
 
         super().__init__(sfr)
         self.ping_clock = Clock(60)
-        if len(df := self.sfr.logs["iridium"].read()) >= self.NUMBER_OF_REQUIRED_PINGS:
-            self.sfr.logs["iridium"].clear()
-            self.pings_performed = 0
-        else:
-            self.pings_performed = len(df)
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -58,12 +51,14 @@ class Science(Mode):
         :rtype: :class: 'MainControlLoop.Mode.mode.Mode'
         """
         super().suggested_mode()
-        if self.pings_performed >= self.NUMBER_OF_REQUIRED_PINGS:  # If we've finished getting our data
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
-        elif self.sfr.check_lower_threshold():  # If we're on low battery
-            return self.sfr.modes_list["Charging"](self.sfr, type(self))  # Suggest charging
+        if self.sfr.check_lower_threshold():  # If we're on low battery
+            if len(self.sfr.logs["iridium"].read()) > 0:  # if log isn't empty
+                self.transmit_results()
+            return self.sfr.modes_list["Charging"](self.sfr)  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
-            return self.sfr.modes_list["Charging"](self.sfr, self.sfr.modes_list["Outreach"])
+            if len(self.sfr.logs["iridium"].read()) > 0:  # if log isn't empty
+                self.transmit_results()
+            return self.sfr.modes_list["Charging"](self.sfr)
         return self  # Otherwise, stay in science
 
     @wrap_errors(LogicalError)
@@ -74,13 +69,13 @@ class Science(Mode):
         :rtype: bool
         """
         print("Executing science mode ping", file = open("pfs-output.txt", "a"))  # TODO: remove this after testing
-        print("Recording signal strength ping " + str(self.pings_performed + 1) + "...", file = open("pfs-output.txt", "a"))
+        if self.sfr.devices["iridium"] is None:  # if iridium is off
+            return False
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
         except NoSignalException:  # Log 0,0,0 geolocation, 0 signal strength
             geolocation = (0, 0, 0)
         self.sfr.log_iridium(geolocation, self.sfr.devices["Iridium"].check_signal_active())
-        self.pings_performed += 1
         return True
 
     @wrap_errors(LogicalError)
@@ -96,7 +91,8 @@ class Science(Mode):
         print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN, file = open("pfs-output.txt", "a"))
         print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY, file = open("pfs-output.txt", "a"))
         # Transmit signal strength variability
-        self.sfr.command_executor.ASV(UnsolicitedData("ASV", args = [self.NUMBER_OF_REQUIRED_PINGS]))
+        self.sfr.command_executor.ASV(UnsolicitedData("ASV", args=[len(self.sfr.logs["iridium"].read())]))
+        self.sfr.logs["iridium"].clear()  # once data is transmitted, clear log
         return True
 
     @wrap_errors(LogicalError)
@@ -108,8 +104,7 @@ class Science(Mode):
         """
         super().execute_cycle()
         # If enough time has passed and we haven't performed enough pings
-        if self.ping_clock.time_elapsed() and self.pings_performed < self.NUMBER_OF_REQUIRED_PINGS:
+        if self.ping_clock.time_elapsed():
             self.ping()  # Execute ping function
             self.ping_clock.update_time()
-            if self.pings_performed == self.NUMBER_OF_REQUIRED_PINGS:  # If this was the final ping
-                self.transmit_results()  # Transmit results
+
