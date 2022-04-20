@@ -41,7 +41,8 @@ class MissionControl:
         try:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
-            self.testing_mode(e)  # DEBUG
+            self.safe_mode()
+            #self.testing_mode(e)  # DEBUG
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
                 print("safe mode iteration", file = open("pfs-output.txt", "a"))
@@ -129,7 +130,7 @@ class MissionControl:
                 self.sfr.command_executor.transmit(UnsolicitedString("SAFE MODE ENTERED"))
             except APRSError:  # If aprs fails
                 print("L :(", file = open("pfs-output.txt", "a"))
-                self.testing_mode(e)  # DEBUG
+                #self.testing_mode(e)  # DEBUG
                 self.sfr.crash()  # PFS team took an L
         self.sfr.command_executor.transmit(UnsolicitedString(repr(e)))  # Transmit down error
         self.sfr.command_executor.GCS(UnsolicitedData("GCS"))  # transmits down the encoded SFR
