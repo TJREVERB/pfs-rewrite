@@ -1,9 +1,0 @@
-ts0,ts1,radio,command,arg,registry,msn,result
-1648100000.0,58933,Iridium,GCR,,Primary,428,600000:99381
-1647400000.0,59854,Iridium,ZMV,Chess;rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b - - 0 1;tjreverb,Primary,433,ERR:'Cannot use outreach mode function if not in outreach mode'
-1647400000.0,59857,Iridium,ZMV,Chess;rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b - - 1 1;tjreverb2,Primary,434,ERR:'Cannot use outreach mode function if not in outreach mode'
-1647400000.0,59861,Iridium,ITM,,Primary,435,
-1647400000.0,59865,Iridium,ZMV,Chess;rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b - d3 0 1;Anchart,Primary,436,ERR:'Cannot use outreach mode function if not in outreach mode'
-1647400000.0,59869,Iridium,ZMV,Chess;rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b - e3 0 1;Anchart,Primary,437,ERR:'Cannot use outreach mode function if not in outreach mode'
-1647400000.0,60281,Iridium,GSG,,Primary,438,12.434999999999999
-1647400000.0,60401,Iridium,ZMV,Chess;rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b - a3 0 1;tjreverb,Primary,439,ERR:'Cannot use outreach mode function if not in outreach mode'
