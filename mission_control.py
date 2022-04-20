@@ -45,7 +45,7 @@ class MissionControl:
             #self.testing_mode(e)  # DEBUG
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
-                print("safe mode iteration")
+                print("safe mode iteration", file = open("pfs-output.txt", "a"))
                 self.safe_mode()
             else:
                 print("=================================================== ~ MCL ITERATION ~ "
