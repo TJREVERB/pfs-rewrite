@@ -134,7 +134,7 @@ class Startup(Mode):
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sleep()  # Sleep for a full orbit
-            self.start()  # Start devices again
+            super().start(["Iridium"])  # Start devices again
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
         self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
