@@ -45,6 +45,28 @@ class Startup(Mode):
         return "Startup"
 
     @wrap_errors(LogicalError)
+    def sleep(self) -> None:
+        """
+        Powers off all devices and sleeps for a full orbit to allow us to charge a little
+        """
+        self.sfr.all_off()  # turn everything off
+        print("Sleeping (startup)", file=open("pfs-output.txt", "a"))
+        # Transmit message
+        self.sfr.command_executor.transmit(UnsolicitedString(return_data="Sleeping (startup)..."))
+        self.sfr.sleep(120)  # sleep for one full orbit #TODO: 5400
+
+    @wrap_errors(LogicalError)
+    def wake(self) -> None:
+        """
+        Starts all necessary devices for recovery mode and transmits that we've woken up
+        """
+        self.sfr.vars.BATTERY_CAPACITY_INT = self.sfr.analytics.volt_to_charge(self.sfr.battery.telemetry["VBAT"]())
+        super().systems_check()  # Run only once, throws error if there's a problem with one of the devices
+        super().start(["Iridium"])  # Power on primary radio
+        # Transmit message
+        self.sfr.command_executor.transmit(UnsolicitedString(return_data="Waking (startup)..."))
+
+    @wrap_errors(LogicalError)
     def start(self) -> bool:
         """
         Starts with only Iridium in order to establish contact
@@ -111,11 +133,8 @@ class Startup(Mode):
         """
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
-            self.sfr.all_off()  # turn everything off
-            print("Sleeping (startup)",file = open("pfs-output.txt", "a"))
-            self.sfr.sleep(120)  # sleep for one full orbit   TODO: 5400
-            self.sfr.vars.BATTERY_CAPACITY_INT = self.sfr.analytics.volt_to_charge(self.sfr.battery.telemetry["VBAT"]())
-            self.start()  # Run start again to turn on devices
+            self.sleep()  # Sleep for a full orbit
+            self.start()  # Start devices again
         # Make sure primary radio is on (may change in mission control if Iridium packets don't transmit)
         self.sfr.power_on(self.sfr.vars.PRIMARY_RADIO)
         self.deploy_antenna()  # Attempt to deploy antenna (checks conditions required for deployment)
