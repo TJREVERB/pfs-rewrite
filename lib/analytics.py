@@ -36,10 +36,10 @@ class Analytics:
                      .shape[0]  # Get length of result
                      - 1)  # Length - 1 is last index
         # Linearize function near target voltage
-        line = line_eq((df["voltage"][max_index],  # x: voltage at row immediately greater than target
-                        df["energy"][max_index]),  # y: energy at row immediately greater than target
-                       (df["voltage"][max_index + 1],  # x: voltage at row immediately less than target
-                        df["energy"][max_index + 1]))  # y: energy at row immediately less than target
+        line = line_eq((df["voltage"].iloc[max_index],  # x: voltage at row immediately greater than target
+                        df["energy"].iloc[max_index]),  # y: energy at row immediately greater than target
+                       (df["voltage"].iloc[max_index + 1],  # x: voltage at row immediately less than target
+                        df["energy"].iloc[max_index + 1]))  # y: energy at row immediately less than target
         return line(voltage)  # Calculate energy at target voltage
 
     @wrap_errors(LogicalError)
