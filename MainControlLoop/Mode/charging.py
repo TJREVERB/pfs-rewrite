@@ -81,5 +81,5 @@ class Charging(Mode):
         """
         super().suggested_mode()
         if self.sfr.check_upper_threshold():
-            return self.sfr.modes_list["Charging"](self.sfr)
+            return self.sfr.modes_list["Science"](self.sfr)
         return self
