@@ -69,7 +69,7 @@ class Science(Mode):
         :rtype: bool
         """
         print("Executing science mode ping", file = open("pfs-output.txt", "a"))  # TODO: remove this after testing
-        if self.sfr.devices["iridium"] is None:  # if iridium is off
+        if self.sfr.devices["Iridium"] is None:  # if iridium is off
             return False
         try:  # Log Iridium data
             geolocation = self.sfr.devices["Iridium"].processed_geolocation()
