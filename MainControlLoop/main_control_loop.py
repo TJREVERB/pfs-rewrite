@@ -48,8 +48,8 @@ class MainControlLoop:
             if not isinstance(self.sfr.MODE, type(new_mode := self.sfr.MODE.suggested_mode())):
                 print(f"Debug Print: switching modes, {self.sfr.MODE} to {new_mode}", file=open("pfs-output.txt", "a"))
                 self.sfr.command_executor.transmit(UnsolicitedString(return_data=f"Switching modes, {self.sfr.MODE} to {new_mode}"))
-                self.sfr.switch_mode(new_mode)
-                if not self.sfr.switch_mode(new_mode):
+                was_mode_switch_successful = self.sfr.switch_mode(new_mode)
+                if not was_mode_switch_successful:
                     self.sfr.MODE.start()  # restarts the current mode to turn devices back on
                     self.sfr.command_executor.transmit(
                         UnsolicitedString(return_data=f"Switch failed because of locked components! Staying in {self.sfr.MODE}"))

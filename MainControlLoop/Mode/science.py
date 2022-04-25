@@ -52,12 +52,8 @@ class Science(Mode):
         """
         super().suggested_mode()
         if self.sfr.check_lower_threshold():  # If we're on low battery
-            if len(self.sfr.logs["iridium"].read()) > 0:  # if log isn't empty
-                self.transmit_results()
             return self.sfr.modes_list["Charging"](self.sfr)  # Suggest charging
         elif self.sfr.devices["Iridium"] is None:  # If Iridium is off
-            if len(self.sfr.logs["iridium"].read()) > 0:  # if log isn't empty
-                self.transmit_results()
             return self.sfr.modes_list["Charging"](self.sfr)
         return self  # Otherwise, stay in science
 
@@ -108,3 +104,6 @@ class Science(Mode):
             self.ping()  # Execute ping function
             self.ping_clock.update_time()
 
+    def terminate_mode(self) -> None:
+        if len(self.sfr.logs["iridium"].read()) > 0:  # if log isn't empty
+            self.transmit_results()
