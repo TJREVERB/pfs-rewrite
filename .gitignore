@@ -23,3 +23,4 @@ lib/data/*
 MainControlLoop/Mode/outreach/tictactoe/table.json
 MainControlLoop/Mode/outreach/tictactoe/build.py
 MainControlLoop/Mode/outreach/tictactoe/simulate.py
+pfs-output.txt
