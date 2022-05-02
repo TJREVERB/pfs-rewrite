@@ -125,6 +125,8 @@ class PKLLog(Log):
         Read and return entire log
         :return: object stored in log
         """
+        if not os.path.exists(self.path):
+            return None
         with open(self.path, "rb") as f:
             return pickle.load(f)
 
