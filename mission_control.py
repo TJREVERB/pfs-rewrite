@@ -42,6 +42,7 @@ class MissionControl:
             self.mcl.start()  # initialize everything for mcl run
         except Exception as e:
             self.safe_mode()
+            print("===============ERROR IN MCL START==============")
             #self.testing_mode(e)  # DEBUG
         while True:  # Run forever
             if self.sfr.vars.ENABLE_SAFE_MODE:
