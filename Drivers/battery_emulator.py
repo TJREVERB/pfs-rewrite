@@ -11,7 +11,7 @@ class Battery(Device):
     def __init__(self, sfr):
         super().__init__(sfr)
         self.vbat = 8.25
-        self.ibat = 2736
+        self.ibat = 10944
     
         self.commands = {
             # Board info commands: Basic board info
@@ -65,19 +65,19 @@ class Battery(Device):
     def volt_time_charge(self):
         hours = (time.perf_counter())/3600 + 2
         
-        hours = hours % (4)
-        if hours >= 0 and hours < 70.09/37:
-            self.ibat = 2736
-            return (6.2 + (37*hours/4.5)**.2)
-        if hours >= 70.09/37 and hours < 74/37:
-            self.ibat = 2736
-            return (1/6)*((37*hours/4.5) - 15)**3 + 7.9
-        if hours >= 74/37 and hours < 77.91/37:
-            self.ibat = -2736
-            return (1/6)*((-1*37*hours/4.5) + 161/9 )**3 + 7.9
-        if hours >= 77.91/37 and hours < 148/37:
-            self.ibat = -2736
-            return 6.2 + (-1*37*hours/4.5 + 148/4.5 )**.2
+        hours = hours % (1)
+        if hours >= 0 and hours < 70.09/148:
+            self.ibat = 10944
+            return (6.2 + (148*hours/4.5)**.2)
+        if hours >= 70.09/148 and hours < 74/148:
+            self.ibat = 10944
+            return (1/6)*((148*hours/4.5) - 15)**3 + 7.9
+        if hours >= 74/148 and hours < 77.91/148:
+            self.ibat = -10944
+            return (1/6)*((-1*148*hours/4.5) + 161/9 )**3 + 7.9
+        if hours >= 77.91/148 and hours < 148/148:
+            self.ibat = -10944
+            return 6.2 + (-1*148*hours/4.5 + 148/4.5 )**.2
 
     def charging_power(self) -> float:
         """
@@ -87,5 +87,5 @@ class Battery(Device):
         pwr = self.telemetry["VBAT"]() * self.telemetry["IBAT"]() / 1000
         if self.telemetry["IDIRBAT"]() != 0:
             pwr *= -1
-        print(f"Charging Power: {pwr}", file = open("pfs-output.txt", "a"))
+        print(f"Charging Power: {pwr} VBAT: {self.telemetry["VBAT"]()}", file = open("pfs-output.txt", "a"))
         return pwr
