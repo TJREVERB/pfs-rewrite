@@ -87,5 +87,5 @@ class Battery(Device):
         pwr = self.telemetry["VBAT"]() * self.telemetry["IBAT"]() / 1000
         if self.telemetry["IDIRBAT"]() != 0:
             pwr *= -1
-        print(f"Charging Power: {pwr} VBAT: {self.telemetry["VBAT"]()}", file = open("pfs-output.txt", "a"))
+        print(f"Charging Power: {pwr} VBAT: {self.telemetry['VBAT']()}", file = open("pfs-output.txt", "a"))
         return pwr
