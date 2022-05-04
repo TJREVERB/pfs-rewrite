@@ -18,7 +18,7 @@ class Charging(Mode):
         :type mode: type
         """
         super().__init__(sfr)
-        self.iridium_clock = Clock(60)  # Poll iridium every 5 minutes to allow for charging, TODO: DEBUG CONSTANT
+        self.iridium_clock = Clock(60*5)  # Poll iridium every 5 minutes to allow for charging
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             """
@@ -60,13 +60,12 @@ class Charging(Mode):
         return super().start([self.sfr.vars.PRIMARY_RADIO])
 
     @wrap_errors(LogicalError)
-    def poll_aprs(self) -> None:  #TODO not called anywhere???!!!
+    def poll_aprs(self) -> None:
         """
         Poll the APRS once per orbit
         Transmits heartbeat ping and reads messages
         """
         self.sfr.power_on("APRS")
-        print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
         self.sfr.command_executor.IHB(UnsolicitedData("IHB"))  # Transmit heartbeat immediately
         self.read_aprs()
         self.sfr.power_off("APRS")

@@ -80,7 +80,6 @@ class AntennaDeployer(Device):
         try:
             self.write(AntennaDeployerCommand.GET_TEMP, 0)
         except Exception as e:
-            print(e, file = open("pfs-output.txt", "a"))
             raise AntennaError(details = "Bad Connection")
 
         return True

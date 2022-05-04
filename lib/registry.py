@@ -1,6 +1,6 @@
 import time
 from Drivers.eps import EPS
-from Drivers.battery_emulator import Battery  # TODO: DEBUG, CHANGE
+from Drivers.battery import Battery
 from Drivers.bno055 import IMU_I2C
 from MainControlLoop.Mode.mode import Mode
 from MainControlLoop.Mode.startup import Startup
@@ -38,7 +38,7 @@ class Vars:
         # Switch to charging mode if battery capacity (J) dips below threshold. 30% of max capacity
         self.LOWER_THRESHOLD = 133732.8 * 0.3
         self.UPPER_THRESHOLD = 133732.8 * .8
-        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications  # TODO: DEBUG VALUE
+        self.PRIMARY_RADIO = "Iridium"  # Primary radio to use for communications
         self.SIGNAL_STRENGTH_MEAN = -1.0  # Science mode result
         self.SIGNAL_STRENGTH_VARIABILITY = -1.0  # Science mode result
         self.OUTREACH_MAX_CALCULATION_TIME = 15  # max calculation time for minimax calculations in outreach (seconds)
@@ -208,7 +208,6 @@ class StateFieldRegistry:
         :rtype: bool
         """
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
-            print("Syncing volt to charge (upper)", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -224,10 +223,7 @@ class StateFieldRegistry:
         :return: whether switch is required
         :rtype: bool
         """
-        print(f"Checking lower threshold, vbat "
-              f"{self.battery.telemetry['VBAT']()} capacity {self.vars.BATTERY_CAPACITY_INT}", file = open("pfs-output.txt", "a"))
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
-            print("Syncing volt to charge", file = open("pfs-output.txt", "a"))
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
             return True
@@ -246,7 +242,6 @@ class StateFieldRegistry:
         try:
             fields = self.logs["sfr"].read()
         except Exception as e:  # This is bad dumb code but it is bad dumb code that probably works
-            print(e)
             return defaults
         if not fields:  # If log doesn't exist
             return defaults  # Return defaults
@@ -310,7 +305,6 @@ class StateFieldRegistry:
         """
         for i in self.logs.keys():
             self.logs[i].clear()
-        print("Logs cleared", file = open("pfs-output.txt", "a"))
 
     @wrap_errors(LogicalError)
     def reset(self) -> None:

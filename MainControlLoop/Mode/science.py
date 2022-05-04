@@ -64,7 +64,6 @@ class Science(Mode):
         :return: whether function ran and pinged iridium
         :rtype: bool
         """
-        print("Executing science mode ping", file = open("pfs-output.txt", "a"))  # TODO: remove this after testing
         if self.sfr.devices["Iridium"] is None:  # if iridium is off
             return False
         try:  # Log Iridium data
@@ -81,11 +80,8 @@ class Science(Mode):
         :return: whether function ran and transmitted results of signal strength variability
         :rtype: bool
         """
-        print("Transmitting results...", file = open("pfs-output.txt", "a"))
         self.sfr.vars.SIGNAL_STRENGTH_MEAN = self.sfr.analytics.signal_strength_mean()
         self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY = self.sfr.analytics.signal_strength_variability()
-        print("Signal strength mean:", self.sfr.vars.SIGNAL_STRENGTH_MEAN, file = open("pfs-output.txt", "a"))
-        print("Signal strength variability:", self.sfr.vars.SIGNAL_STRENGTH_VARIABILITY, file = open("pfs-output.txt", "a"))
         # Transmit signal strength variability
         self.sfr.command_executor.ASV(UnsolicitedData("ASV", args=[len(self.sfr.logs["iridium"].read())]))
         self.sfr.logs["iridium"].clear()  # once data is transmitted, clear log

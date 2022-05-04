@@ -12,7 +12,7 @@ class Mode:
     All the modes extend this mode. Some functions are placeholders in :class: 'Mode' and
     only serve as a framework of what functions to include for development of the child classes.
     """
-    MIN_SIGNAL_STRENGTH = 1
+    MIN_SIGNAL_STRENGTH = 2
     # initialization: does not turn on devices, initializes instance variables
 
     @wrap_errors(LogicalError)
@@ -25,7 +25,7 @@ class Mode:
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
         self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
-        self.heartbeat_clock = Clock(60*10)  # Heartbeat every hr (not appended to queue)  TODO: DEBUG CONSTANT
+        self.heartbeat_clock = Clock(60*60)  # Heartbeat every hr (not appended to queue) 
 
     @wrap_errors(LogicalError)
     def __str__(self) -> str:
@@ -77,8 +77,7 @@ class Mode:
             try:
                 self.poll_iridium()  # Poll Iridium
             except NoSignalException:
-                print("Signal Lost", file = open("pfs-output.txt", "a"))
-            self.iridium_clock.update_time()  # Update last iteration
+                self.iridium_clock.update_time()  # Update last iteration
         if self.heartbeat_clock.time_elapsed():  # Heartbeat pings
             self.heartbeat()
             self.heartbeat_clock.update_time()
@@ -98,7 +97,6 @@ class Mode:
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
-        print("Iridium signal strength: ", signal, file = open("pfs-output.txt", "a"))
         if signal < Mode.MIN_SIGNAL_STRENGTH:
             return False
 
@@ -112,8 +110,7 @@ class Mode:
         current_datetime = datetime.datetime.utcnow()
         iridium_datetime = self.sfr.devices["Iridium"].processed_time()
         if abs((current_datetime - iridium_datetime).total_seconds()) > self.TIME_ERR_THRESHOLD:
-            print("Updating time", file = open("pfs-output.txt", "a"))
-            os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")  
+            os.system(f"sudo date -s \"{iridium_datetime.strftime('%Y-%m-%d %H:%M:%S UTC')}\" ")
             # Update system time
             os.system("sudo hwclock -w")  # Write to RTC
 
@@ -124,7 +121,6 @@ class Mode:
         """
         Transmits proof of life if enough time has elapsed
         """
-        print("Transmitting heartbeat...", file = open("pfs-output.txt", "a"))
         self.sfr.command_executor.IHB(UnsolicitedData("IHB"))
 
     @wrap_errors(LogicalError)

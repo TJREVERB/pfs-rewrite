@@ -90,11 +90,9 @@ class Outreach(Mode):
         time_started = time.time()
         while len(self.sfr.vars.outreach_buffer) > 0:
             game = self.decode_game_queue()
-            print(game)
             ai_move = game.get_best_move()
             if ai_move is None:  # if invalid board_string
                 continue
-            print(f"AIMOVE: {ai_move}", file = open("pfs-output.txt", "a"))
             game.push(ai_move)
             self.transmit_string(str(game))
             if time.time() - 60 > time_started:  # limit compute time per cycle

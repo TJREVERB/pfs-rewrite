@@ -36,8 +36,6 @@ class Log:
             try:
                 return func(self, *args, **kwargs)
             except Exception as e:
-                print(f"Error in handling log of type {type(self.sub).__name__}: {e}", file = open("pfs-output.txt", "a"))
-                print("Assuming corruption, attempting to proceed by clearing log", file = open("pfs-output.txt", "a"))
                 self.sub.clear()
                 return func(self, *args, **kwargs)  # Attempt to run function again, raises error if still fails
         return wrapped
@@ -228,10 +226,10 @@ class Logger:
         :param pwr: array of power draws from each pdm, in W. [1.3421 W, 0 W, .42123 W...]
         :type pwr: list
         """
-        print("Power: ", int(t := time.time()), buspower := round(buspower, 3), pwr := [round(i, 3) for i in pwr], file = open("pfs-output.txt", "a"))
+        pwr = [round(i, 3) for i in pwr]
         self.sfr.logs["power"].write({
-            "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
-            "buspower": buspower,
+            "ts0": time.time() // 100000 * 100000, "ts1": int(time.time() % 100000),
+            "buspower": round(buspower, 3),
         } | {self.sfr.PDMS[i]: pwr[i] for i in range(len(pwr))})  # "|" is a dictionary merge
 
     @wrap_errors(LogicalError)
@@ -241,7 +239,8 @@ class Logger:
         :param gen: array of power inputs from each panel, in Watts
         :type gen: list
         """
-        print("Solar: ", int(t := time.time()), gen := [round(i, 3) for i in gen], file = open("pfs-output.txt", "a"))
+        t = time.time()
+        gen = [round(i, 3) for i in gen]
         self.sfr.logs["solar"].write({
             "ts0": t // 100000 * 100000, "ts1": int(t % 100000),
         } | {self.sfr.PANELS[i]: gen[i] for i in range(len(gen))})
@@ -253,7 +252,7 @@ class Logger:
         """
         if self.sfr.devices["IMU"] is None:
             return
-        print("Imu: ", int(t := time.time()), tbl := [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]], file = open("pfs-output.txt", "a"))
+        tbl = [round(i, 3) for i in self.sfr.devices["IMU"].get_tumble()[0]]
         if len(self.sfr.imulog) > 10: # Keep the length low
             self.sfr.imulog.pop(0)
         self.sfr.imulog.append(tbl)
@@ -275,7 +274,7 @@ class Logger:
         delta = (power := self.sfr.battery.charging_power()) * \
                 (time.time() - self.clocks["integrate"][0].last_iteration)
         # If we're drawing/gaining absurd amounts of power
-        if abs(power) > 1000: # TODO: 10W
+        if abs(power) > 10:
             # Verify we're actually drawing an absurd amount of power
             total_draw = []
             for i in range(5):

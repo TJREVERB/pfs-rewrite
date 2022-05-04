@@ -227,7 +227,6 @@ class Iridium(Device):
         :param packet: (TransmissionPacket) packet to encode
         :return: (list) of bytes
         """
-        print(packet, file = open("pfs-output.txt", "a"))
         encoded = [(packet.response << 1) | packet.numerical] # First byte "return code"
         encoded.append(packet.index) # Second byte index
         date = (packet.timestamp.day << 11) | (packet.timestamp.hour << 6) | packet.timestamp.minute  # third and fourth bytes date
@@ -386,7 +385,6 @@ class Iridium(Device):
             if True: Discard contents of MO buffer when reading in new messages.
         :return: (bool) transmission successful
         """
-        print("Transmitting " + str(packet), file = open("pfs-output.txt", "a"))
         stat = self.SBD_STATUS()
         ls = self.process(stat, "SBDS").split(",")
         if int(ls[2]) == 1:  # If message in MT, and discardbuf False, save MT to sfr
@@ -481,10 +479,8 @@ class Iridium(Device):
                     raw += self.serial.read(50)
                 raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                 self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(ls[3])))
-                print("Received message " + self.sfr.vars.command_buffer[-1].descriptor, file = open("pfs-output.txt", "a"))
             except Exception as e:
                 self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(ls[3])))
-                print("Garbled message received " + repr(e), file = open("pfs-output.txt", "a"))
                 # Append garbled message indicator and msn, args set to exception string to debug
         if self.SBD_CLR(2).find("0\r\n\r\nOK") == -1:
             raise IridiumError(details="Error clearing buffers")
@@ -494,7 +490,6 @@ class Iridium(Device):
         """
         Stores next received messages in sfr
         """
-        print("Checking Iridium Messages", file = open("pfs-output.txt", "a"))
         self.check_buffer()
         self.SBD_TIMEOUT(60)
         time.sleep(1)
@@ -504,7 +499,6 @@ class Iridium(Device):
             result = [int(s) for s in self.process(self.SBD_INITIATE_EX(), "SBDIX").split(",")]
             lastqueued.append(result[5])
             if len(lastqueued) > 3 and sum(lastqueued[-3:]) / 3 == lastqueued[-1]:
-                print("GSS Not Changing, aborting", file = open("pfs-output.txt", "a"))
                 break  # If GSS queue is not changing, don't bother to keep trying, just break
             if result[2] == 1:
                 try:
@@ -517,10 +511,8 @@ class Iridium(Device):
                         raw += self.serial.read(50)
                     raw = raw[raw.find(b'SBDRB\r\n') + 7:].split(b'\r\nOK')[0]
                     self.sfr.vars.command_buffer.append(FullPacket(*self.decode(list(raw)), int(result[3])))
-                    print("Received message " + self.sfr.vars.command_buffer[-1].descriptor, file = open("pfs-output.txt", "a"))
                 except Exception as e:
                     self.sfr.vars.command_buffer.append(FullPacket("GRB", [repr(e)], int(result[3])))  
-                    print("Garbled message received " + repr(e), file = open("pfs-output.txt", "a"))
                     # Append garbled message indicator and msn
             elif result[2] == 0:
                 break

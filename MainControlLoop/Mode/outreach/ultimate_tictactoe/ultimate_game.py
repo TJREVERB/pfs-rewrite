@@ -29,7 +29,7 @@ class UltimateTicTacToeGame:
         i.e. x-ooox--x,o-xxx-oo-, ...(continues),---o-x-o-,0,1,2,a
         'UltimateTicTacToe' is then inserted to the front, and turn char is appended at the back, either
         """
-        board_string = ",".join([str(board) for board in self.board])  # TODO: FIX
+        board_string = ",".join([str(board) for board in self.board])
         if self.previous_move is None:
             board_string += ",-1,-1,-1,"  # set as -1 if no previous move
         else:

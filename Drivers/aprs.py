@@ -39,7 +39,6 @@ class APRS(Device):
         Enter APRS firmware menu
         :return: (bool) whether entering menu was successful
         """
-        print("entering firmware", file = open("pfs-output.txt", "a"))
         self.write("\x1b\x1b\x1b")
         time.sleep(1)
         self.write("\x1b\x1b\x1b")
@@ -52,7 +51,6 @@ class APRS(Device):
         time.sleep(3)
         serinput = str(self.serial.read(300))
         if serinput.find("Byonics MTT4B Alpha") == -1:
-            print("Failed", file = open("pfs-output.txt", "a"))
             raise APRSError(details="Failed to enter firmware menu")
             
         return True
@@ -157,16 +155,13 @@ class APRS(Device):
         msgs = self.read().split("\r\n")
         for msg in msgs:
             if msg.find(prefix := self.sfr.command_executor.TJ_PREFIX) != -1:
-                print("TJ message received", file = open("pfs-output.txt", "a"))
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
-                print(processed, file = open("pfs-output.txt", "a"))
                 if processed[0] in self.sfr.command_executor.primary_registry.keys():
                     if len(processed) > 2:
                         self.sfr.vars.command_buffer.append(FullPacket(processed[0], [float(s) for s in processed[2:]], int(processed[1])))
                     else:
                         self.sfr.vars.command_buffer.append(FullPacket(processed[0], [], int(processed[1])))
             elif msg.find(prefix := self.sfr.command_executor.OUTREACH_PREFIX) != -1:
-                print("Outreach message received", file = open("pfs-output.txt", "a"))
                 processed = msg[msg.find(prefix) + len(prefix):].strip().split(":")[:-1]
                 if processed[0] in self.sfr.command_executor.secondary_registry.keys():
                     if len(processed) > 2:

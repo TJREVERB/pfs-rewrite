@@ -14,8 +14,8 @@ class Startup(Mode):
     Deploys antenna after maximum threshold regardless of tumble status
     Establishes contact with ground
     """
-    ANTENNA_WAIT_TIME = 2*60  # real value, 45 min  TODO: DEBUG CONSTANT
-    ANTENNA_MAXIMUM_THRESHOLD = 4*60  # real value, one day  TODO: DEBUG CONSTANT
+    ANTENNA_WAIT_TIME = 60*45  # real value, 45 min
+    ANTENNA_MAXIMUM_THRESHOLD = 24*60*60  # real value, one day
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -30,7 +30,6 @@ class Startup(Mode):
             Transmit proof of life every 2 minutes if contact hasn't already been established
             Function gets redefined to normal Mode heartbeats by command_executor in the command to establish contact
             """
-            print("Transmitting proof of life...", file = open("pfs-output.txt", "a"))
             self.sfr.command_executor.GPL(UnsolicitedData("GPL"))
         self.heartbeat = pol_ping  # Redefine heartbeat function to ping proof of life instead of heartbeat
         self.heartbeat_clock = Clock(120)
@@ -50,10 +49,9 @@ class Startup(Mode):
         Powers off all devices and sleeps for a full orbit to allow us to charge a little
         """
         self.sfr.all_off()  # turn everything off
-        print("Sleeping (startup)", file=open("pfs-output.txt", "a"))
         # Transmit message
         self.sfr.command_executor.transmit(UnsolicitedString(return_data="Sleeping (startup)..."))
-        self.sfr.sleep(120)  # sleep for one full orbit #TODO: 5400
+        self.sfr.sleep(90*60)  # sleep for one full orbit
 
     @wrap_errors(LogicalError)
     def wake(self) -> None:
@@ -86,31 +84,25 @@ class Startup(Mode):
         :rtype: bool
         """
         if self.sfr.vars.ANTENNA_DEPLOYED:  # If the antenna has already been deployed, do nothing
-            print("Antenna already deployed", file = open("pfs-output.txt", "a"))
             return False
         # If aprs and antenna deployer are locked off, do nothing
         if "APRS" in self.sfr.vars.LOCKED_OFF_DEVICES and \
                 "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
-            print("APRS and Antenna deployer locked off", file = open("pfs-output.txt", "a"))
             return False
         # If not enough time has passed to deploy the antenna, do nothing
         elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
-            print("Time not elapsed", file = open("pfs-output.txt", "a"))
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
         if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
             if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
-                print("currently tumbling", file = open("pfs-output.txt", "a"))
                 return False  # Do nothing
         # Enable power to antenna deployer
         self.sfr.power_on("Antenna Deployer")
         time.sleep(5)
         self.sfr.devices["Antenna Deployer"].deploy()  # Deploy antenna
-        print("Antenna deployment attempted", file = open("pfs-output.txt", "a"))
         self.sfr.sleep(30)
         self.sfr.devices["Antenna Deployer"].check_deployment()
         if not self.sfr.vars.ANTENNA_DEPLOYED:  # If antenna deployment failed
-            print("Antenna deployment unsuccessful", file = open("pfs-output.txt", "a"))
             # Lock off antenna deployer/aprs and set primary radio to iridium
             # better to use nonfunctional radio than send power to a loadless aprs
             self.sfr.power_off("Antenna Deployer")
@@ -120,7 +112,6 @@ class Startup(Mode):
             self.sfr.command_executor.transmit(UnsolicitedString(
                 "Antenna deployment failed, Iridium is now primary radio"))
             return False
-        print("Antenna deployment successful", file = open("pfs-output.txt", "a"))
         return True
 
     @wrap_errors(LogicalError)
@@ -152,11 +143,9 @@ class Startup(Mode):
         """
         super().suggested_mode()
         if not self.sfr.vars.CONTACT_ESTABLISHED:
-            print("Contact not established", file = open("pfs-output.txt", "a"))
             return self  # If contact hasn't been established, stay in startup
         elif ("APRS" not in self.sfr.vars.LOCKED_OFF_DEVICES and
               "Antenna Deployer" not in self.sfr.vars.LOCKED_OFF_DEVICES) and not self.sfr.vars.ANTENNA_DEPLOYED:
-            print("Antenna still can be deployed", file = open("pfs-output.txt", "a"))
             return self  # If antenna hasn't been deployed and it's possible to deploy the antenna, stay in startup
         else:  # If we can switch out of this mode
             return self.sfr.modes_list["Charging"](self.sfr)  # go to charging
