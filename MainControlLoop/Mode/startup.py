@@ -14,7 +14,7 @@ class Startup(Mode):
     Deploys antenna after maximum threshold regardless of tumble status
     Establishes contact with ground
     """
-    ANTENNA_WAIT_TIME = 60*45  # real value, 45 min
+    ANTENNA_WAIT_TIME = 60*120  # real value, 120 min
     ANTENNA_MAXIMUM_THRESHOLD = 24*60*60  # real value, one day
 
     @wrap_errors(LogicalError)
@@ -90,10 +90,10 @@ class Startup(Mode):
                 "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
             return False
         # If not enough time has passed to deploy the antenna, do nothing
-        elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+        elif time.time() < self.sfr.vars.LAST_STARTUP + self.ANTENNA_WAIT_TIME:
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
-        if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
+        if not time.time() > self.sfr.vars.LAST_STARTUP + self.ANTENNA_MAXIMUM_THRESHOLD:
             if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
                 return False  # Do nothing
         # Enable power to antenna deployer
