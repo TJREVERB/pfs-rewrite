@@ -14,8 +14,8 @@ class Startup(Mode):
     Deploys antenna after maximum threshold regardless of tumble status
     Establishes contact with ground
     """
-    ANTENNA_WAIT_TIME = 60*120  # real value, 120 min
-    ANTENNA_MAXIMUM_THRESHOLD = 24*60*60  # real value, one day
+    ANTENNA_WAIT_TIME = 30*60  # real value, 30 min
+    ANTENNA_MAXIMUM_THRESHOLD = 40*60  # real value, 40 min
 
     @wrap_errors(LogicalError)
     def __init__(self, sfr):
@@ -73,6 +73,9 @@ class Startup(Mode):
         :return: whether we're supposed to be in this mode
         :rtype: bool
         """
+        if time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
+            self.sfr.all_off()
+            self.sfr.sleep(30*60)
         return super().start(["Iridium"])
 
     @wrap_errors(LogicalError)
@@ -90,10 +93,10 @@ class Startup(Mode):
                 "Antenna Deployer" in self.sfr.vars.LOCKED_OFF_DEVICES:
             return False
         # If not enough time has passed to deploy the antenna, do nothing
-        elif time.time() < self.sfr.vars.LAST_STARTUP + self.ANTENNA_WAIT_TIME:
+        elif time.time() < self.sfr.vars.START_TIME + self.ANTENNA_WAIT_TIME:
             return False
         # If we haven't yet reached the maximum threshold of time to wait for antenna deployment
-        if not time.time() > self.sfr.vars.LAST_STARTUP + self.ANTENNA_MAXIMUM_THRESHOLD:
+        if not time.time() > self.sfr.vars.START_TIME + self.ANTENNA_MAXIMUM_THRESHOLD:
             if self.sfr.devices["IMU"].is_tumbling():  # If we're still tumbling
                 return False  # Do nothing
         # Enable power to antenna deployer
@@ -122,6 +125,7 @@ class Startup(Mode):
         Attempt to deploy antenna (see deploy_antenna for conditions)
         Every 2 minutes, attempt to establish contact by transmitting proof of life
         """
+
         super().execute_cycle()
         if self.sfr.check_lower_threshold():  # Execute cycle low battery
             self.sleep()  # Sleep for a full orbit
