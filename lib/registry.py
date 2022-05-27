@@ -210,7 +210,6 @@ class StateFieldRegistry:
         if self.battery.telemetry["VBAT"]() > self.VOLT_UPPER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
-            return True
         if self.vars.BATTERY_CAPACITY_INT > self.vars.UPPER_THRESHOLD:
             return True
         return False
@@ -226,7 +225,6 @@ class StateFieldRegistry:
         if self.battery.telemetry["VBAT"]() < self.VOLT_LOWER_THRESHOLD:
             self.vars.BATTERY_CAPACITY_INT = self.analytics.volt_to_charge(self.battery.telemetry["VBAT"]())
             # Sync up the battery charge integration to voltage
-            return True
         if self.vars.BATTERY_CAPACITY_INT < self.vars.LOWER_THRESHOLD:
             return True
         return False
