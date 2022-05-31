@@ -57,6 +57,9 @@ class Vars:
         self.LAST_IRIDIUM_RECEIVED = time.time()
         self.PACKET_AGE_LIMIT = 3600*24*7
         self.DETUMBLE_THRESHOLD = 10
+        self.MIN_SIGNAL_STRENGTH = 2
+        self.IRIDIUM_WAIT = 40
+        self.IRIDIUM_WAIT_CHARGING = 300
 
     @wrap_errors(LogicalError)
     def to_dict(self) -> dict:
@@ -94,6 +97,9 @@ class Vars:
             "LAST_IRIDIUM_RECEIVED_1": int(self.LAST_IRIDIUM_RECEIVED % 100000),
             "PACKET_AGE_LIMIT": int(self.PACKET_AGE_LIMIT),
             "DETUMBLE_THRESHOLD": self.DETUMBLE_THRESHOLD,
+            "MINIMUM_SIGNAL_STRENGTH": self.MIN_SIGNAL_STRENGTH,
+            "IRIDIUM_WAIT": self.IRIDIUM_WAIT,
+            "IRIDIUM_WAIT_CHARGING": self.IRIDIUM_WAIT_CHARGING,
         }
 
     @wrap_errors(LogicalError)

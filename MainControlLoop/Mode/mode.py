@@ -12,7 +12,6 @@ class Mode:
     All the modes extend this mode. Some functions are placeholders in :class: 'Mode' and
     only serve as a framework of what functions to include for development of the child classes.
     """
-    MIN_SIGNAL_STRENGTH = 2
     # initialization: does not turn on devices, initializes instance variables
 
     @wrap_errors(LogicalError)
@@ -24,7 +23,7 @@ class Mode:
         """
         self.sfr = sfr
         self.TIME_ERR_THRESHOLD = 120  # Two minutes acceptable time error between iridium network and rtc
-        self.iridium_clock = Clock(40)  # Poll iridium every "wait" seconds
+        self.iridium_clock = Clock(self.sfr.vars.IRIDIUM_WAIT)  # Poll iridium every "wait" seconds
         self.heartbeat_clock = Clock(60*60)  # Heartbeat every hr (not appended to queue) 
 
     @wrap_errors(LogicalError)
@@ -97,7 +96,7 @@ class Mode:
             return False
 
         signal = self.sfr.devices["Iridium"].check_signal_passive()
-        if signal < Mode.MIN_SIGNAL_STRENGTH:
+        if signal < self.sfr.vars.MIN_SIGNAL_STRENGTH:
             return False
 
         startlen = len(self.sfr.vars.command_buffer)

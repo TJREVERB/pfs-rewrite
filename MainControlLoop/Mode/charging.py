@@ -18,7 +18,7 @@ class Charging(Mode):
         :type mode: type
         """
         super().__init__(sfr)
-        self.iridium_clock = Clock(60*5)  # Poll iridium every 5 minutes to allow for charging
+        self.iridium_clock = Clock(self.sfr.vars.IRIDIUM_WAIT_CHARGING)  # Poll iridium every 5 minutes to allow for charging
 
         def charging_poll() -> bool:  # Switch Iridium off when not using
             """
