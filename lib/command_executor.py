@@ -60,7 +60,7 @@ class CommandExecutor:
             "ICE": self.ICE,
             "IAK": self.IAK,
             "ZMV": self.ZMV,
-            "IRw": self.IRW,
+            "IRW": self.IRW,
             "IWC": self.IWC,
             "MSS": self.MSS
         }
