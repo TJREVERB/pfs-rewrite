@@ -59,7 +59,10 @@ class CommandExecutor:
             "ICT": self.ICT,
             "ICE": self.ICE,
             "IAK": self.IAK,
-            "ZMV": self.ZMV
+            "ZMV": self.ZMV,
+            "IRW": self.IRW,
+            "IWC": self.IWC,
+            "MSS": self.MSS
         }
 
         self.secondary_registry = {  # Secondary command registry for APRS, in outreach mode
@@ -737,4 +740,22 @@ class CommandExecutor:
     def ZMV(self, packet: TransmissionPacket):
         self.sfr.vars.outreach_buffer.append(packet.args[0])
         self.transmit(packet, result := [])
+        return result
+
+    def IRW(self, packet: TransmissionPacket):
+        if len(packet.args) > 0:
+            self.sfr.vars.IRIDIUM_WAIT = int(packet.args[0])
+        self.transmit(packet, result := [self.sfr.vars.IRIDIUM_WAIT])
+        return result
+    
+    def IWC(self, packet: TransmissionPacket):
+        if len(packet.args) > 0:
+            self.sfr.vars.IRIDIUM_WAIT_CHARGING = int(packet.args[0])
+        self.transmit(packet, result := [self.sfr.vars.IRIDIUM_WAIT_CHARGING])
+        return result
+
+    def MSS(self, packet: TransmissionPacket):
+        if len(packet.args) > 0:
+            self.sfr.vars.MIN_SIGNAL_STRENGTH = int(packet.args[0])
+        self.transmit(packet, result := [self.sfr.vars.MIN_SIGNAL_STRENGTH])
         return result
